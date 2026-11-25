@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T05:14:02+07:00
+updated: 2026-11-26T05:46:30+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -37,4 +37,5 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **Workers answer through events.** `services::spawn` runs a job on its own thread and sends the `services::Event` it returns through the app's `AppProxy`; `app/` applies each event on the UI thread. A reply may arrive after the tree changed, so `apply` checks that the path is still in the tree.
 - **Git runs on a private index copy.** `services/git.rs` copies `.git/index` for each call, keeps its modification time (git's racy-index check), and removes the copy in a `Drop` guard. Git's `diff` rewrites the index it reads even with `GIT_OPTIONAL_LOCKS=0` (Scouter decision 0007).
 - **The tree is drawn from a scroll position.** `ui/tree.rs` paints only the visible rows; the scrollbar column exists only while the list overflows (a hidden widget takes no space).
+- **Overlapping captures cascade as Core's.** The vendored grammars register with `Grammar::core_captures()` (`src/ui/syntax/mod.rs`, `grammar`). Without it, a TOML key takes `(bare_key) @type`'s style where Scouter shows `(pair ...) @property`'s; with it, every vendored grammar's captures match Scouter's (plan-00001 phase 11). Rust, bundled with `opentui`, is registered by the binding and matched Scouter without it.
 - **Widths come from the native measure.** Footer fitting measures with `Context::text_width` and the app's width method, so `↑`, `…`, and wide characters count as the terminal draws them; tests pass a character count.

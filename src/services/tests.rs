@@ -9,7 +9,7 @@ fn open_lists_a_folder_and_names_a_file() {
     fs::write(dir.path().join("vault-713.md"), "Griphook\n").unwrap();
     match open(&dir.path().join("Gringotts"), &[]).unwrap() {
         Opened::Folder(entries) => assert!(entries.is_empty()),
-        Opened::File => panic!("a folder opened as a file"),
+        Opened::File(_) => panic!("a folder opened as a file"),
     }
-    assert!(matches!(open(&dir.path().join("vault-713.md"), &[]).unwrap(), Opened::File));
+    assert!(matches!(open(&dir.path().join("vault-713.md"), &[]).unwrap(), Opened::File(_)));
 }

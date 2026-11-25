@@ -62,10 +62,13 @@ fn socket_is_refused() {
     assert!(String::from_utf8_lossy(&out.stdout).contains("fmc: Only files and directories can be opened."));
 }
 
-/// Runs fmc on a pseudo-terminal with `input` typed after a pause; returns everything fmc wrote.
+/// Runs fmc on a pseudo-terminal with `input` typed once it has entered the alternate screen (the setup that
+/// also puts the terminal in raw mode); returns everything fmc wrote.
 fn session(env: &[(&str, &str)], input: &str) -> String {
-    use std::io::Write;
+    use std::io::{Read, Write};
     use std::process::Stdio;
+    use std::sync::mpsc;
+    const ALTERNATE_ON: &[u8] = b"\x1b[?1049h";
     let dir = tempfile::tempdir().unwrap();
     let mut child = Command::new("script")
         .args(["-q", "/dev/null"])
@@ -76,10 +79,27 @@ fn session(env: &[(&str, &str)], input: &str) -> String {
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
-    std::thread::sleep(std::time::Duration::from_millis(800));
-    let _ = child.stdin.as_mut().unwrap().write_all(input.as_bytes());
-    let out = child.wait_with_output().unwrap();
-    String::from_utf8_lossy(&out.stdout).into_owned()
+    let mut stdout = child.stdout.take().unwrap();
+    let (entered, ready) = mpsc::channel();
+    let reader = std::thread::spawn(move || {
+        let mut out = Vec::new();
+        let mut chunk = [0; 4096];
+        let mut sent = false;
+        while let Ok(n @ 1..) = stdout.read(&mut chunk) {
+            out.extend_from_slice(&chunk[..n]);
+            if !sent && out.windows(ALTERNATE_ON.len()).any(|w| w == ALTERNATE_ON) {
+                sent = true;
+                let _ = entered.send(());
+            }
+        }
+        out
+    });
+    ready.recv_timeout(std::time::Duration::from_secs(20)).expect("fmc entered the alternate screen");
+    let mut stdin = child.stdin.take().unwrap();
+    stdin.write_all(input.as_bytes()).unwrap();
+    drop(stdin);
+    child.wait().unwrap();
+    String::from_utf8_lossy(&reader.join().unwrap()).into_owned()
 }
 
 #[test]

@@ -7,7 +7,6 @@ use opentui::prelude::*;
 use super::styled::{Seg, color, content};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(not(test), expect(dead_code, reason = "the reader, finder, and changes phases of plan-00001 use the rest"))]
 pub enum BadgeKind {
     Pill,
     Quiet,

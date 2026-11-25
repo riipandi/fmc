@@ -1,0 +1,38 @@
+use std::path::Path;
+
+use fmc::theme::DARK;
+use opentui::prelude::Attributes;
+use opentui::syntax::{has_grammar, prewarm};
+
+use super::*;
+
+#[test]
+fn every_vendored_grammar_compiles_with_its_query() {
+    register();
+    for filetype in ["json", "css", "html", "go", "python", "bash", "yaml", "toml", "c", "java"] {
+        assert!(prewarm(filetype), "{filetype} does not compile");
+    }
+    assert!(has_grammar("javascriptreact") && has_grammar("rust") && has_grammar("markdown_inline"));
+}
+
+#[test]
+fn a_path_gets_the_filetype_scouter_names_or_none() {
+    assert_eq!(language_for(Path::new("hogwarts/Potter.rs")), Some("rust"));
+    assert_eq!(language_for(Path::new("Gringotts/vault.TSX")), Some("typescriptreact"));
+    assert_eq!(language_for(Path::new("Louvre/key.jsx")), Some("javascriptreact"));
+    assert_eq!(language_for(Path::new("CERN/config.toml")), Some("toml"));
+    assert_eq!(language_for(Path::new("CERN/Makefile")), None);
+    assert_eq!(language_for(Path::new("Diagon/owls.txt")), None);
+}
+
+#[test]
+fn the_style_table_reads_the_palette() {
+    let theme = theme(&DARK);
+    let keyword = theme.get("keyword").unwrap();
+    assert_eq!(keyword.fg, Some(color(DARK.syntax.keyword)));
+    assert!(keyword.attributes.contains(Attributes::BOLD) && !keyword.attributes.contains(Attributes::ITALIC));
+    // A capture with no style of its own takes its first part's, as Core does: `keyword.return` is a keyword.
+    assert_eq!(theme.get("keyword.return"), theme.get("keyword"));
+    assert_eq!(theme.get("markup.raw.block"), None);
+    assert_eq!(theme.get("type.builtin"), theme.get("constant"));
+}

@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Expand, Reveal, Tree};
 use fmc::keys::{Action, Focus};
+use fmc::text::display_label;
 
-use super::{Model, Pending};
+use super::{Model, Pending, Ui, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -76,20 +77,25 @@ fn go_up(m: &mut Model) {
     let height = m.browser.height();
     m.browser = Browser::new(Tree::new(parent.clone()));
     m.browser.set_height(height);
-    m.pending = Some(Pending { target: root, expand: true });
+    m.pending = Some(Pending { target: root, expand: true, open: false });
     list(m, parent);
     refresh_marks(m);
 }
 
-/// Opens an entry: a folder expands (listed off the UI thread when it has no listing yet); a file is left for the
-/// reader (plan-00001 W3).
+/// Opens an entry: a folder expands, and a file is read; both off the UI thread when they are not in memory. One
+/// open runs at a time: another is refused until it finishes (Scouter `runLoading`).
 pub fn open(m: &mut Model, path: PathBuf) {
     match m.browser.tree.expand(&path) {
         Expand::Ready => {
             m.browser.select(&path);
             folder_opened(m, &path);
         }
+        Expand::NeedsListing if m.loading => {
+            m.message = Some(Message { text: "Still loading. Try again when it finishes.".into(), error: false });
+        }
         Expand::NeedsListing => {
+            m.loading = true;
+            m.message = Some(Message { text: "Loading…".into(), error: false });
             let parents = m.browser.tree.ancestors(&path);
             let work = path.clone();
             services::spawn(&m.proxy, move || Event::Opened { path: work.clone(), result: fs::open(&work, &parents) });
@@ -107,8 +113,9 @@ fn folder_opened(m: &mut Model, path: &Path) {
 
 /// An error goes to the footer and to the reader's header notice (Scouter `showError`).
 fn show_error(m: &mut Model, text: &str) {
-    m.message = Some(Message { text: text.to_string(), error: true });
-    m.notice = Some(text.to_string());
+    let text = display_label(text);
+    m.message = Some(Message { text: text.clone(), error: true });
+    m.notice = Some(text);
 }
 
 /// Lists a folder for the tree; the result comes back as `Event::Listed`.
@@ -126,7 +133,7 @@ pub fn refresh_marks(m: &mut Model) {
 }
 
 /// Applies a worker's event on the UI thread.
-pub fn apply(m: &mut Model, event: &Event) {
+pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
     match event {
         Event::Listed { path, result } => match result {
             Ok(entries) => {
@@ -138,16 +145,21 @@ pub fn apply(m: &mut Model, event: &Event) {
                 show_error(m, text);
             }
         },
-        Event::Opened { path, result } => match result {
-            Ok(fs::Opened::Folder(entries)) => {
-                m.browser.tree.listed(path, entries.clone());
-                m.browser.select(path);
-                folder_opened(m, path);
+        Event::Opened { path, result } => {
+            m.loading = false;
+            match result {
+                Ok(fs::Opened::Folder(entries)) => {
+                    m.browser.tree.listed(path, entries.clone());
+                    m.browser.select(path);
+                    folder_opened(m, path);
+                }
+                Ok(fs::Opened::File(document)) => reader::show(m, ui, path, document.clone()),
+                Err(text) => {
+                    m.focus = Focus::List;
+                    show_error(m, text);
+                }
             }
-            // A file: the reader opens it from plan-00001 W3.
-            Ok(fs::Opened::File) => {}
-            Err(text) => show_error(m, text),
-        },
+        }
         Event::Marks { root, result } => {
             if let (true, Ok(listing)) = (root == m.browser.tree.root(), result) {
                 m.marks = listing.clone().map_or_else(Default::default, Marks::new);
@@ -173,6 +185,9 @@ fn advance(m: &mut Model) {
                 return;
             }
             m.browser.select(&target);
+            if pending.open {
+                open(m, target);
+            }
         }
     }
 }

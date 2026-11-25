@@ -16,6 +16,18 @@ opentui = { version = "=0.9.9", features = ["tree-sitter"] }
 opentui-sys = "=0.9.9"
 clap = { version = "4.6", default-features = false, features = ["std", "derive", "help", "usage"] }
 icu_collator = "2.4"
+# The grammars Scouter vendors beyond OpenTUI's bundled set (Rust comes with `opentui`'s `tree-sitter` feature).
+# Pinned exactly: their highlight queries are Scouter's `grammars/*/highlights.scm`.
+tree-sitter-json = "=0.24.8"
+tree-sitter-css = "=0.25.0"
+tree-sitter-html = "=0.23.2"
+tree-sitter-go = "=0.25.0"
+tree-sitter-python = "=0.25.0"
+tree-sitter-bash = "=0.25.1"
+tree-sitter-yaml = "=0.7.2"
+tree-sitter-toml-ng = "=0.7.0"
+tree-sitter-c = "=0.24.2"
+tree-sitter-java = "=0.23.5"
 
 [dev-dependencies]
 assert_cmd = "2.2"

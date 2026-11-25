@@ -1,11 +1,12 @@
 use std::fs;
+use std::io;
 use std::os::unix::fs::symlink;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fmc::explorer::Kind;
 use tempfile::TempDir;
 
-use super::list;
+use super::{Opened, describe, list, open, read};
 
 /// A vault with the Harry Potter and Dan Brown names Scouter's fixtures use, plus the noise files it drops.
 fn vault() -> TempDir {
@@ -72,4 +73,53 @@ fn a_link_outside_the_tree_expands() {
     let entries = list(&dir.path().join("outside"), &parents).unwrap();
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].name, "Azkaban.md");
+}
+
+#[test]
+fn file_errors_read_like_node() {
+    let dir = vault();
+    let missing = dir.path().join("azkaban");
+    assert_eq!(
+        list(&missing, &[]).unwrap_err(),
+        format!("ENOENT: no such file or directory, lstat '{}'", missing.display())
+    );
+    let file = dir.path().join("README.md");
+    assert_eq!(list(&file, &[]).unwrap_err(), format!("ENOTDIR: not a directory, scandir '{}'", file.display()));
+}
+
+#[test]
+fn a_read_error_has_no_path_like_node() {
+    let error = io::Error::from(io::ErrorKind::IsADirectory);
+    assert_eq!(describe(&error, "read", None), "EISDIR: illegal operation on a directory, read");
+    let error = io::Error::from(io::ErrorKind::PermissionDenied);
+    assert_eq!(
+        describe(&error, "scandir", Some(Path::new("/var/root"))),
+        "EACCES: permission denied, scandir '/var/root'"
+    );
+}
+
+#[test]
+fn a_text_file_opens_as_a_document() {
+    let dir = vault();
+    let path = dir.path().join("README.md");
+    fs::write(&path, "Hermione\r\nGranger\n").unwrap();
+    let Opened::File(document) = open(&path, &[]).unwrap() else { panic!("a file") };
+    assert_eq!(document.text, "Hermione\nGranger\n");
+    assert_eq!(document.lines, 2);
+}
+
+#[test]
+fn a_binary_or_non_utf8_file_is_refused_with_scouters_message() {
+    let dir = vault();
+    fs::write(dir.path().join("owl.bin"), b"Hedwig\0").unwrap();
+    fs::write(dir.path().join("owl.txt"), b"Hedwig \xff").unwrap();
+    assert_eq!(read(&dir.path().join("owl.bin")).unwrap_err(), "Binary files are not supported.");
+    assert_eq!(read(&dir.path().join("owl.txt")).unwrap_err(), "Only UTF-8 text files are supported.");
+}
+
+#[test]
+fn a_missing_file_is_an_error_with_the_stat_call() {
+    let dir = vault();
+    let path = dir.path().join("azkaban.txt");
+    assert_eq!(open(&path, &[]).unwrap_err(), format!("ENOENT: no such file or directory, stat '{}'", path.display()));
 }

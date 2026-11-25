@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T05:14:02+07:00
+updated: 2026-11-26T05:46:30+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -305,4 +305,8 @@ Alternatives considered:
 
 ## Pending decisions
 
-- None. (`rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.)
+- Highlight queries for JavaScript, TypeScript, TSX, JSX, and Zig (`issue-00001-w3-reader-parity-gaps.md`, plan-00001 W3 phase 11, decided by the owner). Scouter colours these with Core's bundled queries; OpenTUI's Rust binding bundles the grammar crates' own queries, which name some captures differently. Options:
+  1. Approve four direct dependencies pinned to the versions OpenTUI already links (`tree-sitter-javascript` `=0.25.0`, `tree-sitter-typescript` `=0.23.2`, `tree-sitter-md` `=0.5.4`, `tree-sitter-zig` `=1.1.2`), and copy Core's `assets/*/highlights.scm` with their MIT notice. Exact parity; four crates added to `rules.md`. [recommended: the parity rule makes a difference a defect, and the cost is four crates the engine already builds]
+  2. Keep OpenTUI's bundled queries and record a deviation naming the captures that differ. No new dependency; a visible colour difference on these five languages.
+  3. Other: reply with the design you want.
+- `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.

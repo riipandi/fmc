@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T04:22:25+07:00
+updated: 2026-11-26T05:46:30+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -60,6 +60,7 @@ Tools (installed, not crate dependencies): zig `0.17.1` (native library build), 
 - Allowed dependency licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `Unicode-3.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`. `cargo deny check licenses` enforces it.
 - One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
+- The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, each with its grammar's MIT `LICENSE` beside it; a copy keeps both files together.
 
 ## Sample data
 

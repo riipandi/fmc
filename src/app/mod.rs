@@ -2,6 +2,7 @@
 //! changes. Terminal restore on exit and on panic is OpenTUI's (`rust.md`, "Contracts and traps").
 
 mod keys;
+mod reader;
 mod theme;
 mod tree;
 
@@ -20,9 +21,10 @@ use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
 use crate::ui::help::Help;
 use crate::ui::hints::Pane;
+use crate::ui::reader::CodeView;
 use crate::ui::styled::color;
 use crate::ui::tree::{LIST_TOP, TreeView, line_at};
-use crate::ui::{sidebar, welcome};
+use crate::ui::{sidebar, syntax, welcome};
 
 /// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2).
 const LIST_CHROME_ROWS: usize = 6;
@@ -35,6 +37,7 @@ struct Ui {
     viewer_panel: View,
     viewer_header: PaneHeader,
     welcome: View,
+    reader: CodeView,
     footer: Footer,
     layout: View,
     help: Option<Help>,
@@ -45,6 +48,8 @@ struct Ui {
 struct Pending {
     target: PathBuf,
     expand: bool,
+    /// Read the target once it is revealed (a file on the command line).
+    open: bool,
 }
 
 struct Model {
@@ -59,6 +64,9 @@ struct Model {
     browser: Browser,
     marks: Marks,
     pending: Option<Pending>,
+    shown: reader::Shown,
+    /// A file or folder open is in flight; another open is refused (Scouter `runLoading`).
+    loading: bool,
     notice: Option<String>,
     message: Option<Message>,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
@@ -81,7 +89,7 @@ impl Model {
             screen: Screen::Browse,
             focus: self.focus,
             help_open: self.help_open,
-            reader_ready: false,
+            reader_ready: self.shown.is_some(),
             previewing: false,
             typing: false,
         }
@@ -100,12 +108,13 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         ..AppOptions::default()
     };
     let app = App::new(options)?;
+    syntax::register();
     // A file opens its folder, with the file revealed (Scouter `reveal`, `src/app/app.ts:344-356`).
     let (root, pending) = if target.is_dir() {
         (target.to_path_buf(), None)
     } else {
         let parent = target.parent().unwrap_or(target).to_path_buf();
-        (parent, Some(Pending { target: target.to_path_buf(), expand: false }))
+        (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
     };
     let model = Rc::new(RefCell::new(Model {
         location: target.to_string_lossy().into_owned(),
@@ -118,6 +127,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         browser: Browser::new(Tree::new(root.clone())),
         marks: Marks::default(),
         pending,
+        shown: reader::Shown::None,
+        loading: false,
         notice: None,
         message: None,
         sidebar: None,
@@ -145,8 +156,9 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event: &Event| {
             let mut m = model.borrow_mut();
-            tree::apply(&mut m, event);
-            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+            let mut u = ui.borrow_mut();
+            tree::apply(&mut m, &u, event);
+            paint(cx.app(), &mut m, &mut u);
         }
     });
     app.on_key_capture({
@@ -165,7 +177,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::Quit => return cx.quit(),
                 Action::Help => m.help_open = true,
                 Action::CloseHelp => m.help_open = false,
-                // No reader content yet: Tab and Esc both leave the focus on the file list.
+                // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
+                Action::SwitchPane if m.focus == Focus::List && m.shown.is_some() => m.focus = Focus::Reader,
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
                 Action::Move(_)
@@ -271,13 +284,26 @@ fn build(app: &App, p: &Palette) -> Ui {
     let viewer_panel = View::new(app).grow(1.0).min_width(0).column().border(BorderStyle::Rounded);
     let viewer_header = PaneHeader::new(app);
     let welcome = welcome::welcome(app, p);
+    let reader = CodeView::new(app, p);
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&tree.root);
-    viewer_panel.add(&viewer_header.root).add(&welcome);
+    viewer_panel.add(&viewer_header.root).add(&welcome).add(&reader.widget());
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
     layout.add(&panes).add(&footer.root);
     app.root().add(&layout);
-    Ui { browser_panel, browser_header, tree, handle, viewer_panel, viewer_header, welcome, footer, layout, help: None }
+    Ui {
+        browser_panel,
+        browser_header,
+        tree,
+        handle,
+        viewer_panel,
+        viewer_header,
+        welcome,
+        reader,
+        footer,
+        layout,
+        help: None,
+    }
 }
 
 /// Rebuilds the parts that bake colors in (welcome, help), then repaints.
@@ -285,6 +311,7 @@ fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.welcome.detach();
     ui.welcome = welcome::welcome(app, m.palette());
     ui.viewer_panel.add(&ui.welcome);
+    ui.reader.restyle(m.palette());
     if let Some(help) = ui.help.take() {
         help.overlay.detach();
     }
@@ -317,22 +344,32 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     ui.browser_header.paint(&sidebar, p);
     ui.tree.paint(app, &m.browser, &m.marks, p, &root);
-    let reader = HeaderState {
-        title: "Reader".into(),
-        badges: vec![Badge::quiet("read-only")],
+    let (title, parent) = match &m.shown {
+        reader::Shown::None => ("Reader".into(), None),
+        reader::Shown::Text { path, .. } => reader::title_parts(&root, path),
+    };
+    let viewer = HeaderState {
+        title,
+        parent,
+        badges: reader::badges(&m.shown),
         focused: m.focus == Focus::Reader,
         notice: m.notice.clone(),
-        ..Default::default()
     };
-    ui.viewer_header.paint(&reader, p);
+    ui.viewer_header.paint(&viewer, p);
+    ui.welcome.visible(!m.shown.is_some());
+    ui.reader.visible(m.shown.is_some());
 
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
+    let (document, position) = reader::footer_facts(&m.shown, usize::from(rows).saturating_sub(LIST_CHROME_ROWS))
+        .map_or((None, None), |(info, label)| (Some(info), Some(label)));
     let footer = FooterState {
         location,
         pane,
         message: m.message.clone(),
+        document,
+        positions: [position, None],
         pending: m.parser.pending_count(),
         ..FooterState::default()
     };

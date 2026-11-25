@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Git marks in the tree: status letters, a dot on folders with changes, and ignored entries dimmed. A scrollbar appears on long lists.
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Project workspace: agent instructions, agent docs, and project skills.
+- Text files open in the reader with a line-number gutter, syntax colours for Scouter's languages, and the footer's line count, language, and scroll position. A file over 1 MiB shows its first 1 MiB.
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
+
+### Changed
+
+- Enter on a file opens it in the reader and moves focus there; Tab moves between the file list and an open file.
+- File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
 
 [Unreleased]: https://github.com/riipandi/fmc/commits/main

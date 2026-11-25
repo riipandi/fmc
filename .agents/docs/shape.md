@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-26T05:14:02+07:00
+updated: 2026-11-26T05:46:30+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 
@@ -8,9 +8,9 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 
 | Path | Role |
 | --- | --- |
-| `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. Dependencies are listed in `rules.md` ("Dependencies"); the engine is `opentui` =0.9.9. |
-| `src/lib.rs` | The pure core (no I/O, no `opentui`): `keys/` (key list for `--help` and `?`, the `Key` and `Action` types, and the pending-key `Parser` in Scouter's dispatch order; tests tie the list to the parser and to `docs/keymaps.md`), `explorer/` (the tree model: `tree.rs` rows, expansion, reveal; `browser.rs` selection, scroll, hit-test; `sort.rs` noise and collation), `reader/`, `find/`, `diff/` (`marks.rs`: change kinds, `--name-status` parsing, the tree's marks), `text.rs` (one-line display text), `theme.rs` (palettes, brightness, tint, `ThemeWatch`; tests check them against `DESIGN.md`). |
-| `src/main.rs`, `src/args.rs` | The binary: command line (`args.rs`, tests in `args_tests.rs`), then the app. Binary-only modules: `app/` (loop and dispatch; `app/keys.rs` names OpenTUI keys as Core does, `app/theme.rs` reads the terminal background), `ui/` (`styled.rs` segments and fitting, `header.rs`, `footer.rs` and `hints.rs`, `help.rs`, `welcome.rs`, `sidebar.rs` width), `services/` (I/O workers, each on its own thread, sending `Event`s: `fs.rs` lists and opens entries, `git.rs` reads the tree's marks from a private index copy, `mod.rs` holds `Event` and `spawn`), `app/tree.rs` (tree keys and events), `ui/tree.rs` (rows, scrollbar thumb, hit-test line), `ui/` (views). |
+| `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. Dependencies are listed in `rules.md` ("Dependencies"); the engine is `opentui` =0.9.9, and the vendored grammar crates are pinned exactly beside it. |
+| `src/lib.rs` | The pure core (no I/O, no `opentui`): `keys/` (key list for `--help` and `?`, the `Key` and `Action` types, and the pending-key `Parser` in Scouter's dispatch order; tests tie the list to the parser and to `docs/keymaps.md`), `explorer/` (the tree model: `tree.rs` rows, expansion, reveal; `browser.rs` selection, scroll, hit-test; `sort.rs` noise and collation), `reader/` (`document.rs`: the 1 MiB cap, the NUL and UTF-8 checks, display text; `language.rs`: the highlighted filetypes; `position.rs`: the footer's scroll label), `find/`, `diff/` (`marks.rs`: change kinds, `--name-status` parsing, the tree's marks), `text.rs` (one-line display text), `theme.rs` (palettes, brightness, tint, `ThemeWatch`; tests check them against `DESIGN.md`). |
+| `src/main.rs`, `src/args.rs` | The binary: command line (`args.rs`, tests in `args_tests.rs`), then the app. Binary-only modules: `app/` (loop and dispatch; `app/keys.rs` names OpenTUI keys as Core does, `app/theme.rs` reads the terminal background), `ui/` (`styled.rs` segments and fitting, `header.rs`, `footer.rs` and `hints.rs`, `help.rs`, `welcome.rs`, `sidebar.rs` width), `services/` (I/O workers, each on its own thread, sending `Event`s: `fs.rs` lists, opens, and reads entries (Node's error wording in `describe`), `git.rs` reads the tree's marks from a private index copy, `mod.rs` holds `Event` and `spawn`), `app/tree.rs` (tree keys and events), `app/reader.rs` (the shown document, its header and footer facts), `ui/reader.rs` (the code view with its line-number gutter), `ui/syntax/` (the grammars Scouter vendors and the style table from the palette; `queries/<filetype>/` holds each `highlights.scm` with its `LICENSE`), `ui/tree.rs` (rows, scrollbar thumb, hit-test line), `ui/` (views). |
 | `tests/cli.rs` | End-to-end command-line tests; the ones that need a terminal run fmc under `script -q /dev/null`. |
 | `LICENSE-MIT`, `LICENSE-APACHE` | fmc is `MIT OR Apache-2.0` (`Cargo.toml`). |
 | `rust-toolchain.toml`, `rustfmt.toml` | Toolchain pin and formatting rules. |
