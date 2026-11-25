@@ -318,6 +318,8 @@ Images (`src/reader/image-view.ts`, `docs/decision/0013-...`):
 
 Only `.md` files are Markdown (`src/reader/code-view.ts:230-232`, `languageFor` from `pathToFiletype`: `md` and `markdown` map to `markdown`, `mdx` does not; `node_modules/@opentui/core/chunk-bun-rgb7yx3r.js:5539-5540`). The rendered view is the default on open (`src/reader/code-view.ts:235-243`, `:248`). The choice resets when another file opens (`:248`). It is not persisted (`docs/decision/0012-...`).
 
+Core 0.9.0 vs 0.9.9 (checked 2026-11-26, `plan-00001` phase 4): the demo README rendered at 187x60, top and bottom, gives byte-identical text and HTML captures under both versions, tables included. The `Markdown.ts`/`TextTable.ts` changes between the versions do not show on this document.
+
 Engine: `MarkdownRenderable` (`src/reader/code-view.ts:132-151`), an OpenTUI renderable backed by a native document (`MarkdownDocument`, `node_modules/@opentui/core/index.bun.js:10513`, `:10645`). It is given:
 - `syntaxStyle`: the same `SyntaxStyle` as code.
 - `treeSitterClient`: the same client, so fenced code blocks use the same grammars.

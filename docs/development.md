@@ -38,3 +38,29 @@ cargo deny check licenses
 cargo install cargo-deny
 cargo install cargo-about --locked --features cli
 ```
+
+## Demo repository
+
+The demo repository is a small git repository with every kind of file and change fmc shows: Markdown, code in several languages, an image, a binary file, staged, unstaged, untracked, deleted, and renamed files, ignored folders, a very large log, a very wide line, text that is not UTF-8, and symbolic links (one of them a loop). Build it with:
+
+```sh
+scripts/demo-repo.sh /tmp/fmc-demo
+```
+
+Run it again at any time to get the same repository back. The script only replaces a folder it made itself, or an empty one.
+
+## Run the parity reference
+
+fmc copies Scouter's screens and keys. To compare the two, run Scouter on the same OpenTUI version as fmc (0.9.9). You need [Bun](https://bun.sh).
+
+```sh
+git clone https://github.com/indrazm/scouter /tmp/scouter
+cd /tmp/scouter
+git checkout 434d000f0f934fb04fced8b1bc1d0e673c6ed4fe
+bun install
+bun add @opentui/core@0.9.9 --exact
+cd /tmp/fmc-demo
+bun --config=/dev/null --no-env-file /tmp/scouter/src/index.ts .
+```
+
+Open fmc on the same folder in a terminal of the same size, press the same keys, and compare the two screens.

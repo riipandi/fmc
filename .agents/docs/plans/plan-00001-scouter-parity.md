@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:22:25+07:00
+updated: 2026-11-26T04:25:00+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -17,8 +17,8 @@ phases:
       note: "release 12 MB, 13.9 s; otool -L system libs only; Rex capture shows rendered Markdown and highlighted Rust; rust-version 1.90 confirmed"
     - id: 4
       title: "W0: parity reference and demo repository"
-      status: pending
-      note: —
+      status: done
+      note: "demo-repo.sh: two runs give identical git status and hashes (ab4f5d2, d7da111). Scouter on core 0.9.9 vs 0.9.0, README rendered at 187x60, top and bottom: text and HTML captures byte-identical (tables included). W0 complete."
     - id: 5
       title: "W1: crate layout and command line"
       status: pending
