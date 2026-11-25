@@ -2,7 +2,7 @@ use std::path::Path;
 
 use fmc::theme::DARK;
 use opentui::prelude::Attributes;
-use opentui::syntax::{has_grammar, prewarm};
+use opentui::syntax::{has_grammar, highlights, prewarm};
 
 use super::*;
 
@@ -12,7 +12,21 @@ fn every_vendored_grammar_compiles_with_its_query() {
     for filetype in ["json", "css", "html", "go", "python", "bash", "yaml", "toml", "c", "java"] {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
-    assert!(has_grammar("javascriptreact") && has_grammar("rust") && has_grammar("markdown_inline"));
+    for filetype in ["javascript", "typescript", "typescriptreact", "markdown", "markdown_inline", "zig"] {
+        assert!(prewarm(filetype), "{filetype} does not compile");
+    }
+    assert!(has_grammar("javascriptreact") && has_grammar("rust"));
+}
+
+#[test]
+fn typescript_names_a_property_as_core_does() {
+    register();
+    // Core's query names an interface's property `variable.member` (plain text in Scouter); the crate's says `property`.
+    let source = "export interface Vault {\n  kind: string;\n}\n";
+    let captures = highlights(source, "typescript").expect("typescript highlights");
+    let property = source.find("kind").unwrap();
+    let name = captures.iter().find(|c| c.start == property).map(|c| c.name);
+    assert_eq!(name, Some("variable.member"));
 }
 
 #[test]

@@ -1,6 +1,6 @@
-//! Syntax highlighting (Scouter `src/reader/grammars.ts`, `src/reader/code-view.ts`): the grammars Scouter vendors,
-//! the filetype a path gets, and the style of each capture name from the palette (`research/scouter-inventory.md`
-//! §8.3). Rust and the JavaScript family come bundled with `opentui`.
+//! Syntax highlighting (Scouter `src/reader/grammars.ts`, `src/reader/code-view.ts`): the grammars and queries Scouter
+//! uses, the filetype a path gets, and the style of each capture name from the palette (`research/scouter-inventory.md`
+//! §8.3). Rust is registered by `opentui`'s `tree-sitter` feature; the others are registered here.
 
 use std::path::Path;
 
@@ -12,9 +12,30 @@ use opentui::syntax::{CompiledGrammar, Grammar, SyntaxTheme, filetype_for_path, 
 
 use super::styled::color;
 
-/// Registers the vendored grammars, compiled on first use as OpenTUI's bundled ones are. Call it once, before the
-/// first code view is shown.
+/// Registers the grammars, compiled on first use as OpenTUI's bundled ones are. Core's queries replace the bundled
+/// ones for JavaScript, TypeScript, TSX, Markdown, and Zig (`architecture.md`, "Core's highlight queries"). Call it
+/// once, before the first code view is shown.
 pub fn register() {
+    register_lazy("javascript", || {
+        grammar(tree_sitter_javascript::LANGUAGE, include_str!("queries/javascript/highlights.scm"))
+    });
+    register_lazy("typescript", || {
+        grammar(tree_sitter_typescript::LANGUAGE_TYPESCRIPT, include_str!("queries/typescript/highlights.scm"))
+    });
+    register_lazy("typescriptreact", || {
+        grammar(tree_sitter_typescript::LANGUAGE_TSX, include_str!("queries/typescriptreact/highlights.scm"))
+    });
+    register_lazy("markdown", || {
+        Grammar::new(tree_sitter_md::LANGUAGE, include_str!("queries/markdown/highlights.scm"))
+            .injections(include_str!("queries/markdown/injections.scm"))
+            .core_captures()
+            .compile()
+            .ok()
+    });
+    register_lazy("markdown_inline", || {
+        grammar(tree_sitter_md::INLINE_LANGUAGE, include_str!("queries/markdown_inline/highlights.scm"))
+    });
+    register_lazy("zig", || grammar(tree_sitter_zig::LANGUAGE, include_str!("queries/zig/highlights.scm")));
     register_lazy("json", || grammar(tree_sitter_json::LANGUAGE, include_str!("queries/json/highlights.scm")));
     register_lazy("css", || grammar(tree_sitter_css::LANGUAGE, include_str!("queries/css/highlights.scm")));
     register_lazy("html", || grammar(tree_sitter_html::LANGUAGE, include_str!("queries/html/highlights.scm")));

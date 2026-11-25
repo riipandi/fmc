@@ -28,6 +28,11 @@ tree-sitter-yaml = "=0.7.2"
 tree-sitter-toml-ng = "=0.7.0"
 tree-sitter-c = "=0.24.2"
 tree-sitter-java = "=0.23.5"
+# The language handles Core's highlight queries need (`src/ui/syntax`); the versions OpenTUI already links.
+tree-sitter-javascript = "=0.25.0"
+tree-sitter-typescript = "=0.23.2"
+tree-sitter-md = "=0.5.4"
+tree-sitter-zig = "=1.1.2"
 
 [dev-dependencies]
 assert_cmd = "2.2"
