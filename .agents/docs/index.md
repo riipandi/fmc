@@ -1,6 +1,6 @@
 # Agents Documentation Index
 
-updated: 2026-11-26T03:19:42+07:00
+updated: 2026-11-26T04:09:25+07:00
 
 Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), then the core documents below. Everything else is reference, history, or contract; navigate from here.
 
@@ -14,11 +14,13 @@ Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), t
 | `.agents/docs/rules.md` | Cross-area rules: parity with Scouter, where a fact lives, dependencies, sample data, secrets. |
 | `.agents/docs/rust.md` | Rust code contracts and traps for the crate. |
 | `.agents/docs/architecture.md` | Decision records, approved parity deviations, and the pending decisions. |
+| `/PRODUCT.md`, `/DESIGN.md`, `/README.md` | Human docs: product purpose and principles; palettes, layout, and components (Scouter wins during parity); overview and usage. |
+| `.agents/docs/research/` | Point-in-time research of 2026-11-26: `scouter-inventory.md` (the parity reference, cited by every port phase), `rendering-research.md`, `opentui-binding-risk.md`, `dependency-survey.md`, `editor-study.md`, `sqltui-study.md`. The tree and the locked crates win. |
 
 ## Terms
 
 - **Agent docs**: `.agents/docs/` (this ledger and the core documents), `AGENTS.md`, and the project skills in `.agents/skills/`. Written for agents, English, with `file:line` evidence.
-- **Human docs**: `docs/`. Not created yet.
+- **Human docs**: `README.md`, `PRODUCT.md`, `DESIGN.md`, and `docs/` (created by `plan-00001` phase 2).
 - **Scouter**: the parity reference, <https://github.com/indrazm/scouter>. Its behavior is verified from its source or a live run (`rules.md`).
 
 ## Docs sync
@@ -39,13 +41,13 @@ Global skills used here too: `security-review`, `clarity`, `run`, `rex`.
 
 ## Ledger
 
-The ledger directories exist and are empty. Each file keeps its name for life; an archived file moves unchanged to `archive/`.
+Each file keeps its name for life; an archived file moves unchanged to `archive/`.
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | empty |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00001-scouter-parity.md` (awaiting-approval): Scouter parity in 25 phases over 7 waves. |
 | `issues/` | Findings that outlive a turn. | empty |
-| `roadmap/` | Parked improvements with a named unlock. | empty |
+| `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | empty |
 | `audit/` | Point-in-time audit reports. | empty |
 | `archive/` | Completed ledger files. | empty |

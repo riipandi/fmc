@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-26T03:19:42+07:00
+updated: 2026-11-26T04:09:25+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 
@@ -10,11 +10,12 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 | --- | --- |
 | `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. The one dependency is `opentui_rust` 0.2.3. |
 | `src/main.rs` | The entry point. Today a hello-world buffer demo: it draws into an `OptimizedBuffer` and prints; it never enters a terminal. |
+| `README.md`, `PRODUCT.md`, `DESIGN.md` | Human docs: overview and usage, product purpose and principles, the design system (palettes, layout, components). |
 | `.agents/docs/`, `.agents/skills/` | Agent docs and project skills (`.claude/skills` links to the skills). |
 | `.claude/` | Claude Code settings and the format hook. |
 | `target/` | Build output, git-ignored. |
 
-No workspace, no `docs/` (human docs), no `justfile`, no server, no database. Phase 1 is a read-only terminal app (`rules.md`, "Parity with Scouter").
+No workspace, no `docs/` yet (`plan-00001` phase 2 creates it), no `justfile`, no server, no database. Phase 1 is a read-only terminal app (`rules.md`, "Parity with Scouter").
 
 ## Toolchain
 

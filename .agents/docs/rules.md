@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T03:19:42+07:00
+updated: 2026-11-26T04:09:25+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -11,7 +11,8 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 - **Parity-first.** A behavior difference is a defect unless the owner approved it and the approval is recorded in `architecture.md`.
 - **Verify before porting.** Establish a Scouter behavior from its source or from a live run through Rex, never from memory or from this file. Scouter's `docs/decision/` records (0001 to 0037) and its `src/` tree (`app/`, `core/`, `explorer/`, `reader/`, `diff/`, `find/`, `ui/`) are the starting map. Record the evidence in the plan or issue that carries the port.
 - **Read-only until parity is closed.** No file-writing feature (create, rename, move, delete, save, or any other write to the user's files) until the owner opens that phase.
-- **Library source.** `opentui_rust` is read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Its source wins over docs, READMEs, and examples.
+- **Library source.** The UI crates (`opentui_rust` today; `opentui` and `opentui-sys` once `plan-00001` phase 3 lands) are read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Their source wins over docs, READMEs, and examples.
+- **Parity reference.** Scouter at commit `434d000` with `@opentui/core` bumped to 0.9.9, run from a scratch checkout outside this repository (`architecture.md`). Research snapshots of its behavior live in `research/`.
 
 ## Where a fact lives
 
@@ -21,14 +22,40 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 | A contract or trap across areas | this file |
 | A decision, its rejected alternatives, or an approved parity deviation | `architecture.md` |
 | A path, tool, or command | `shape.md` |
+| A dependency approved, or a license rule | this file ("Dependencies", "Licenses") |
 | A new or moved agent document | `index.md` |
-| A user-visible behavior | `docs/` (human docs, once the owner asks for them) |
+| A user-visible behavior | `docs/` (`cli.md`, `keymaps.md`, `development.md` as the plan lands them), `README.md`, and the `[Unreleased]` section of `CHANGELOG.md` (Keep a Changelog) |
+| Product purpose, users, principles | `PRODUCT.md` |
+| A palette token, layout metric, or component look | `DESIGN.md` (describes Scouter's look during parity; Scouter wins on disagreement) and `theme.rs` once it exists |
 
 ## Dependencies
 
 - A new dependency needs the owner's approval. Declare it once in `[dependencies]` of `Cargo.toml`, at the version the owner approved.
 - `cargo add`, `cargo remove`, `cargo install`, and edits to `Cargo.toml` are behind a permission prompt (`.claude/settings.json`).
 - No backward compatibility (early-stage project): a replaced name, shape, or stored value is removed, not aliased or migrated.
+
+### Approved for phase 1 (owner, 2026-11-26)
+
+Versions are the crates.io snapshot of 2026-11-26 (`research/dependency-survey.md`); each lands in the plan phase that first uses it, and the phase confirms the version still resolves. Anything not listed needs a new approval.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `opentui`, `opentui-sys` | `=0.9.9` | default (`static`), `tree-sitter` | UI engine and native library binding |
+| `clap` | `4.6` | `default-features = false`, `std`, `derive`, `help`, `usage` | Command line |
+| `anyhow` | `1.0` | default | Error plumbing |
+| `imagesize` | `0.15` | default | Image width, height, and format from the header |
+| `icu_collator` | `2.4` | default (`compiled_data`) | Tree sort order (`Intl.Collator` parity) |
+| `tree-sitter-json` `=0.24.8`, `tree-sitter-css` `=0.25.0`, `tree-sitter-html` `=0.23.2`, `tree-sitter-go` `=0.25.0`, `tree-sitter-python` `=0.25.0`, `tree-sitter-bash` `=0.25.1`, `tree-sitter-yaml` `=0.7.2`, `tree-sitter-toml-ng` `=0.7.0`, `tree-sitter-c` `=0.24.2`, `tree-sitter-java` `=0.23.5` | exact | default | The grammars Scouter vendors beyond OpenTUI's bundled set |
+| dev: `insta` `1.49`, `assert_cmd` `2.2`, `tempfile` `3.27` | | default | Snapshots, CLI tests, fixture repositories |
+
+Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
+
+## Licenses
+
+- fmc is `MIT OR Apache-2.0` (`architecture.md`).
+- Allowed dependency licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `Unicode-3.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`. `cargo deny check licenses` enforces it.
+- One documented exception: `opentui` and `opentui-sys` declare `MIT AND LGPL-2.1-or-later` because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
+- Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
 
 ## Sample data
 

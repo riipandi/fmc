@@ -41,7 +41,7 @@ Unclear: <decision> — wrong pick means <cost>.
 - **Plans.** A plan in `.agents/docs/plans/` is a contract; it runs only on the owner's explicit go-ahead, phase by phase.
 - **Validation.** Run the gates in `shape.md` ("Commands") before claiming a change works. A change to what is drawn or how input is handled also needs a live run (`run` skill or Rex): the unit suite never sees the rendered screen.
 - **Library docs.** Check crates against the locked version (docs.rs, changelogs); the locked source wins.
-- **Audience.** `.agents/docs/` is for agents (English, `file:line` evidence). Human docs (`docs/`) do not exist yet; create them only when the owner asks.
+- **Audience.** `.agents/docs/` is for agents (English, `file:line` evidence). Human docs are `README.md`, `PRODUCT.md` (purpose, users, principles), `DESIGN.md` (palettes, layout, components), and `docs/` (created by the plan phase that lands its first page): no paths or internals. During parity, Scouter wins over `DESIGN.md`; a disagreement is a defect in `DESIGN.md`.
 
 ## Skills
 

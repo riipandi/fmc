@@ -1,0 +1,215 @@
+---
+status: awaiting-approval
+created: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:09:25+07:00
+phases:
+    - id: 1
+      title: "W0: licenses, toolchain, formatting, license gate"
+      status: pending
+      note: —
+    - id: 2
+      title: "W0: native library build script and cache"
+      status: pending
+      note: —
+    - id: 3
+      title: "W0: engine swap spike (opentui =0.9.9)"
+      status: pending
+      note: —
+    - id: 4
+      title: "W0: parity reference and demo repository"
+      status: pending
+      note: —
+    - id: 5
+      title: "W1: crate layout and command line"
+      status: pending
+      note: —
+    - id: 6
+      title: "W1: theme palettes and detection"
+      status: pending
+      note: —
+    - id: 7
+      title: "W1: key table and pending-key parser"
+      status: pending
+      note: —
+    - id: 8
+      title: "W1: app loop, chrome, welcome, help"
+      status: pending
+      note: —
+    - id: 9
+      title: "W2: tree model and filesystem service"
+      status: pending
+      note: —
+    - id: 10
+      title: "W2: tree view, git marks, sidebar resize"
+      status: pending
+      note: —
+    - id: 11
+      title: "W3: text loading and code view"
+      status: pending
+      note: —
+    - id: 12
+      title: "W3: Markdown rendered and source"
+      status: pending
+      note: —
+    - id: 13
+      title: "W3: image and binary views"
+      status: pending
+      note: —
+    - id: 14
+      title: "W3: reader motions, jump history, wrap, pan, copy"
+      status: pending
+      note: —
+    - id: 15
+      title: "W3: in-file search"
+      status: pending
+      note: —
+    - id: 16
+      title: "W4: file finder"
+      status: pending
+      note: —
+    - id: 17
+      title: "W4: text search and preview"
+      status: pending
+      note: —
+    - id: 18
+      title: "W5: git service"
+      status: pending
+      note: —
+    - id: 19
+      title: "W5: changes screen and change list"
+      status: pending
+      note: —
+    - id: 20
+      title: "W5: stacked diff, split, fold, context, hunks"
+      status: pending
+      note: —
+    - id: 21
+      title: "W5: polling refresh"
+      status: pending
+      note: —
+    - id: 22
+      title: "W6: parity audit"
+      status: pending
+      note: —
+    - id: 23
+      title: "W6: parity fixes"
+      status: pending
+      note: —
+    - id: 24
+      title: "W6: docs sync, ledger close, handover"
+      status: pending
+      note: —
+    - id: 25
+      title: "W6: final validation"
+      status: pending
+      note: —
+---
+
+## Port Scouter to Rust — fmc reaches 100% read-only parity with Scouter on macOS aarch64
+
+### Objective
+
+The owner asked for a Rust port of Scouter on OpenTUI with 100% visual and functional parity as the first milestone. After this plan, fmc opens a folder or a file, browses the tree, reads text, Markdown, images, and binaries, finds files and text, and shows git changes as stacked diffs, the same way Scouter does, except for the two approved deviations in `architecture.md`. The plan stays read-only: no write to the user's files, and every post-parity feature stays in `roadmap-00001-post-parity.md`.
+
+### Current state (verified in the tree, 2026-11-26)
+
+- **The crate is a hello world.** `src/main.rs` draws into an `OptimizedBuffer` and prints; it never enters a terminal. `Cargo.toml` declares only `opentui_rust = "0.2.3"`.
+- **No tooling files.** No `rustfmt.toml`, `rust-toolchain.toml`, `.cargo/config.toml`, `deny.toml`, license files, or `docs/` (checked with `ls -A` at the root). `README.md`, `PRODUCT.md`, and `DESIGN.md` are written with this plan.
+- **Toolchain.** `rustc 1.100.0 (2026-11-09)`, `stable-aarch64-apple-darwin`.
+- **Decisions.** All 15 records in `architecture.md` are dated 2026-11-26; one pending item (the exact `rust-version`) is settled by phase 3.
+- **Reference.** Scouter at commit `434d000` is inventoried in `research/scouter-inventory.md`; the static build of `opentui` 0.9.9 was proven on macOS arm64 in `research/opentui-binding-risk.md` §3.
+
+### Decisions
+
+The decisions are the records in `architecture.md` (all 2026-11-26): engine, video-off native library, license, platform, crate layout, toolchain pins, clap, git subprocess with polling, ICU sort, parity reference on core 0.9.9, the 16 grammars, the finder, the key table and parser, and the two approved deviations. This plan adds two execution decisions:
+
+- **D1 (2026-11-26): Scouter's evidence is cited per phase from `research/scouter-inventory.md` sections, and re-verified against `scouter:` source before the port.** The inventory is a snapshot; the source at commit `434d000` wins. Rejected: porting from the inventory alone — it has known drift (§21) and untriggered paths (§19.3).
+- **D2 (2026-11-26): mouse behavior is validated by unit tests on hit-testing and by an owner check, not by Rex.** Rex cannot inject mouse events (`research/scouter-inventory.md` §4.6). Rejected: skipping mouse parity — Scouter enables the mouse (`scouter:src/index.ts:54`).
+
+### Shape and enforcement points
+
+| What | Where | The record |
+| --- | --- | --- |
+| Decisions and deviations | `architecture.md` | The 15 records; a new deviation is a new record |
+| Dependency allowlist, license policy | `rules.md`, "Dependencies", "Licenses" | Approved crates and versions; the `opentui` license exception |
+| Core purity, file size, test placement | `rust.md`, "Layout rules" | Binding from phase 5 |
+| Commands, tools, native library path | `shape.md` | Updated in phases 1 to 4 |
+| Human docs | `README.md`, `PRODUCT.md`, `DESIGN.md`, `docs/{development,cli,keymaps}.md` | Each phase syncs what it changes |
+
+### Execution rules
+
+- **Atomic commit per phase.** The owner's go-ahead for a wave authorizes one commit per phase in it, with the message the phase names. Waves group phases; a wave runs only on the owner's go-ahead.
+- **Approved dependencies only** (`rules.md`, "Dependencies"); each is added in the phase that first uses it, and the phase confirms the version resolves. Anything else stops and asks.
+- **Read-only.** No feature writes to the user's files. The only writes are fmc's own temp files (the private git index copy, phase 18), removed by a `Drop` guard.
+- **Scouter first.** Before a phase ports a behavior, re-read the cited `scouter:` source; a difference from the inventory is fixed in `research/scouter-inventory.md` in the same commit.
+- **Per-phase validation runs before the commit**: the matrix rows the phase touches, always format, lint, test, and build.
+- **Live runs.** A phase that changes the screen captures fmc and Scouter in Rex on the demo repository (phase 4) at 80x24 and 160x48, the same keys on both, and diffs the text captures. Every difference is fixed, or recorded as an issue for phase 23.
+- **Docs sync per phase.** The phase that lands a user-visible behavior updates `docs/` and `README.md`; the phase that lands a tool, path, or rule updates the agent doc `rules.md` names.
+
+### Phases
+
+#### W0 — Foundation
+
+1. **Licenses, toolchain, formatting, license gate** — `LICENSE-MIT`, `LICENSE-APACHE`; `Cargo.toml` `license = "MIT OR Apache-2.0"`, `description`, `repository`; `rustfmt.toml` (`max_width = 120`, `use_small_heuristics = "Max"`); `rust-toolchain.toml` pinning `1.100.0` with `clippy` and `rustfmt`; `deny.toml` with the license allowlist from `rules.md`; `about.toml` and template for `THIRD_PARTY_LICENSES`; `shape.md` (toolchain, tools). Validation: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo build`, `cargo deny check licenses` pass on the current tree. _Commit: `chore: add licenses, toolchain pin, rustfmt and license gate`._
+2. **Native library build script and cache** — `scripts/opentui-native.sh <version>`: checks `zig version` is 0.17.1, fetches the OpenTUI source at tag `v<version>`, runs `zig build -Doptimize=ReleaseFast -Dvideo=false`, installs `libopentui.a` and headers into `~/.cache/fmc/opentui-native/<version>/`, and is a no-op when the cache exists; `.cargo/config.toml` `[env] OPENTUI_LIB_DIR`; `docs/development.md` (prerequisites: Rust via the toolchain file, zig 0.17.1, git, a Nerd Font; first build); `shape.md`. Validation: the script runs twice (second run under 1 s); `nm` on the archive shows 0 `avcodec`/`avformat` symbols. _Commit: `chore: build the opentui native library without video`._
+3. **Engine swap spike** — replace `opentui_rust` with `opentui` and `opentui-sys` `=0.9.9` (`tree-sitter` feature); `src/main.rs` renders one Markdown widget and one Rust `Code` widget, quits on `q`; set `rust-version` to the lowest version that builds (start at 1.90) and record it in `rust.md`; `rules.md` "Library source" drops `opentui_rust`. Validation: `cargo build --release`; `otool -L target/release/fmc` lists only system libraries; a Rex capture shows highlighted Rust and rendered Markdown; `cargo deny check licenses` passes with the documented exception. Undo: `git revert` of this commit restores `opentui_rust`; if the spike fails, stop and report before any later phase. _Commit: `feat: switch the engine to opentui 0.9.9`._
+4. **Parity reference and demo repository** — `scripts/demo-repo.sh <dir>` builds the demo git repository from `research/scouter-inventory.md` §19.1 (Markdown with every construct and a `mermaid` fence, rs/ts/py/go files, nested folders, `.gitignore`, staged, unstaged, untracked, deleted, renamed, binary, image), with Harry Potter and Dan Brown names; `docs/development.md` gains "Run the parity reference": clone Scouter at `434d000` into a scratch directory, bump `@opentui/core` to 0.9.9, run it with `bun --config=/dev/null --no-env-file src/index.ts`. Validation: the script is idempotent (`git -C <dir> status --short` gives the same output twice); Scouter on core 0.9.9 opens the demo repository in Rex, and the capture is stored in the phase's notes. _Commit: `chore: add the demo repository script and parity reference steps`._
+
+#### W1 — App shell
+
+5. **Crate layout and command line** — create `src/lib.rs`, the empty core modules, `src/services/`, `src/app/`, `src/ui/`, `src/args.rs` per `architecture.md`; `clap` reproduces `-h/--help` (usage plus the key list with the Mouse section), `-v/--version` (`fmc <version>`), one optional path, the TTY check, and Scouter's errors and exit code 1 (`research/scouter-inventory.md` §1); `docs/cli.md`; `README.md` usage. Validation: `assert_cmd` tests for every row of §1 (help, version, two paths, not a TTY, socket path, missing path); `cargo test`. _Commit: `feat(cli): add the command line and crate layout`._
+6. **Theme palettes and detection** — `theme.rs`: both palettes with every token in `research/scouter-inventory.md` §14.1, brightness, 2.5% tint, fallback background; the app side queries the terminal background, listens for theme changes, and polls every 3 s (§14.3). Validation: unit tests for brightness, tint, and a contrast check per palette (as `scouter:tests/theme.test.ts`); every hex in `DESIGN.md` matches `theme.rs` (a test reads both). _Commit: `feat(theme): add the dark and light palettes and detection`._
+7. **Key table and pending-key parser** — `keys/`: one table with every key in §4.1 to §4.6 (context, key, action, help label, hint), the dispatch order of §4, and the parser returning `More | Bad | Done` with counts; `--help` and the `?` card read the table. Validation: table tests for each key sequence in §4 (including `gg`, `zz`, `120G`, count reset, `Esc i` as `Alt+i`); a test that every `?` entry and every `--help` line comes from the table; `docs/keymaps.md` generated from or checked against the table. _Commit: `feat(keys): add the key table and the pending-key parser`._
+8. **App loop, chrome, welcome, help** — the `opentui` app loop on the alternate screen with the mouse on; two rounded panels with the focus border, headers, badges, error notice, the 2-row footer with pills, location, facts, and fitted hints (§2); the welcome screen (§3 row 1); the help card with the Mouse section (approved deviation); `Tab`, `Esc`, `q`, `Ctrl+c`; terminal restore on exit and on panic (recorded in `rust.md`). Validation: Rex captures of welcome and help at both sizes match Scouter's except the Mouse section; a panic test restores the terminal; owner check of the mouse pointer on the resize edge. _Commit: `feat(app): add the app loop, panels, footer, welcome and help`._
+
+#### W2 — Explorer
+
+9. **Tree model and filesystem service** — core tree model: lazy folder listing, the noise list, folders first then `icu_collator` order (§9.1, §9.2), expansion rules, reveal that expands every ancestor (approved deviation), `-` to make the parent the root; `services/fs.rs` lists folders off the UI thread. Validation: unit tests with `tempfile` trees for sort (including punctuation and case), noise, symlink loop (`Cannot expand a symbolic-link loop.`), reveal of a file three folders deep. _Commit: `feat(explorer): add the tree model and the folder listing service`._
+10. **Tree view, git marks, sidebar resize** — row anatomy, Nerd Font icons and colours, depth guides, ignored rows dimmed from one `git ls-files --others --ignored --exclude-standard --directory -z` (§9.3, §9.4); status letters and folder dots for the browsed repository only; keys of §4.2; click to open or toggle; sidebar width rule, `Ctrl+←/→`, and edge drag (§2). Validation: Rex captures of the tree at both sizes, expanded and collapsed, match Scouter; hit-test unit tests for click and drag; owner mouse check. _Commit: `feat(explorer): add the file tree view, git marks and sidebar resize`._
+
+#### W3 — Reader
+
+11. **Text loading and code view** — `services/fs.rs` reads with the 1 MiB cap, UTF-8 and NUL checks, tabs as 4 spaces, control characters as `�` (§22); the code view with the line-number gutter; OpenTUI's bundled grammars plus the 10 approved grammar crates with Scouter's `highlights.scm` through `include_str!`; the syntax style from the palette (§8). Validation: unit tests for the loader limits; a Rex capture per language in the demo repository compared with Scouter's (HTML capture for colours on at least Rust, TypeScript, HTML, and Markdown source). _Commit: `feat(reader): add the text loader and the highlighted code view`._
+12. **Markdown rendered and source** — `.md` opens rendered (§6): headings, emphasis, OSC 8 links, inline code, fences highlighted by info string, lists, task boxes, quotes, rules, tables; `m` toggles source; a `mermaid` fence stays plain text; search and `{ }` refused with Scouter's hints. Validation: Rex captures of the demo README rendered and source match Scouter on core 0.9.9. _Commit: `feat(reader): render Markdown and toggle its source`._
+13. **Image and binary views** — images (PNG, JPG, JPEG, GIF, WEBP) scaled to fit with `W×H · format` from `imagesize`; the binary notice screen with focus kept in the sidebar (§3 rows 6 and 7). Validation: Rex captures of the binary notice match; an owner check of the image in a Kitty-capable terminal; the footer position after an image then a binary is correct (Scouter's stale `All` is a defect to report, not copy, unless the owner says otherwise in phase 23). _Commit: `feat(reader): add the image and binary views`._
+14. **Reader motions, jump history, wrap, pan, copy** — the keys of §4.3: scroll, pages, half pages, `gg`, `G`, counts, `{ }`, `zz`; jump history of 100 with `Ctrl+o` and `Alt+i`; wrap `w` kept across files; pan by 4; `y` copies the selection or the path through OSC 52 and the host helper, skipped over SSH; drag-to-copy. Validation: unit tests for motions and history in the core; Rex captures of `120G`, `{`, `zz`, wrap, and pan match Scouter; an owner check of drag-to-copy. _Commit: `feat(reader): add motions, jump history, wrap, pan and copy`._
+15. **In-file search** — `/` prompt, live jump, `Enter`, `↓`, `Shift+Enter`, `↑`, `n`, `N`, `p`, the three-step `Esc`, amber chips, `N of M` (§4.3, §3 row 11). Validation: core tests for match finding and wrap-around; Rex captures of search states match Scouter's screens 29 to 33. _Commit: `feat(reader): add in-file search`._
+
+#### W4 — Finder
+
+16. **File finder** — `/` in the sidebar: a 20 000-entry index built off the UI thread, AND words over names, Scouter's order (name group, then shorter path in UTF-16 units, then code-unit order), result rows with paths, prompt states (§3 row 9, §10.1); opening reveals the file. Validation: core tests on order with a fixed index; Rex captures of screens 08, 09, 12 match. _Commit: `feat(find): add the file finder`._
+17. **Text search and preview** — `Tab` in the finder: 2+ characters, 150 ms debounce, 200 hits, 10 per file, 64 MiB budget, status strings, the preview with the `preview` badge and third-line scroll (§3 row 10, §10.1). Validation: core tests for limits and debounce; Rex captures of screens 10 and 80 match. _Commit: `feat(find): add text search with preview`._
+
+#### W5 — Git changes
+
+18. **Git service** — `services/git.rs`: `rev-parse`, the private index copy with a `Drop` guard, `diff --name-status/--numstat -z --no-ext-diff --no-textconv -M` against `HEAD` or the empty tree, `--no-optional-locks`, untracked synthesis, the per-repository queue, the 2 s racy window, the 1000-change cap, the 1 MiB and 4 MiB limits (§11.1, §11.4). Validation: integration tests on `tempfile` repositories for each change kind (M, A, D, R, T, U, ?), an empty repository, and a non-repository; the user's `.git/index` is byte-identical before and after. _Commit: `feat(git): add the git reader service`._
+19. **Changes screen and change list** — `d` enters and leaves (with `Loading changes…` and cancel), the `Changes N` header, list rows with letters and marks, the empty state, keys of §4.4 for the list. Validation: Rex captures of screens 35, 36, and the empty state match. _Commit: `feat(diff): add the changes screen and the change list`._
+20. **Stacked diff, split, fold, context, hunks** — one `Diff` widget per file with band headers, 5-cell stat bars, shared gutter width, notices, no `@@` lines (§11.3); `s` split at 60+ columns, `a` one file, `c` fold, `x` context 3 or 12, `n`/`]` and `N`/`p`/`[` hunks across files, `o` opens in the reader, click on a header folds. Validation: core tests for the stat bar and hunk index; Rex captures of screens 37 to 45, 75, 77 match. _Commit: `feat(diff): add the stacked diff with split, fold, context and hunk navigation`._
+21. **Polling refresh** — `services/poll.rs`: browse polling every 2 s with back-off, re-listing expanded folders, refreshing marks, re-reading the open file by `mtime:size` stamp, the `no longer on disk` notice, paused on the changes screen; diff polling with per-file stamps (§11.7, §12). Validation: an integration test edits a file and sees one refresh event; a Rex run edits a demo file and captures screen 67's state. _Commit: `feat(services): add polling refresh for the tree, reader and changes`._
+
+#### W6 — Parity and close
+
+22. **Parity audit** — run `parity-audit` over every screen in `research/scouter-inventory.md` §3 and every key table; report in `.agents/docs/audit/audit-00001-scouter-parity.md`. Validation: every row of §3 and §4 has a verdict with evidence. _Commit: `docs(audit): record the scouter parity audit`._
+23. **Parity fixes** — before this phase runs, the plan gains one sub-phase per finding group (23a, 23b, …) with its own validation and commit; a finding the owner accepts as a deviation becomes an `architecture.md` record instead. Validation: re-run `parity-audit` on each fixed screen. _Commit: one per sub-phase, `fix(<area>): <the finding>`._
+24. **Docs sync, ledger close, handover** — `README.md`, `PRODUCT.md`, `DESIGN.md`, `docs/` checked against the binary; agent docs synced; this plan archived; `index.md` rows moved; handover written. Validation: every key in `docs/keymaps.md` exists in the key table; `grep` finds no dangling ledger reference. _Commit: `docs: close the scouter parity plan`._
+25. **Final validation** — the full matrix over the tree as it stands. Validation: the matrix green end to end. _Commit: none if green._
+
+### Test matrix
+
+| What | How | Green |
+| --- | --- | --- |
+| Format | `cargo fmt --check` | No drift |
+| Lint | `cargo clippy --all-targets -- -D warnings` | 0 warnings |
+| Unit and integration | `cargo test` | All green; core tests need no terminal and no git |
+| Build | `cargo build` and `cargo build --release` | Builds; `otool -L` lists only system libraries |
+| Licenses | `cargo deny check licenses` | Only the documented `opentui` exception |
+| Live run | Rex, fmc and Scouter (core 0.9.9) on the demo repository, 80x24 and 160x48, same keys | Text captures identical except approved deviations |
+| Mouse | hit-test unit tests and an owner check | Click, drag-resize, drag-copy, header fold behave as §4.6 |
+| Parity | `parity-audit` per screen | No open difference, or each one recorded |
+| E2E | n/a: no E2E harness beyond the CLI tests; the live run covers the screen | — |
+
+### Explicitly out of scope
+
+- **Everything in `roadmap-00001-post-parity.md`**: Mermaid rendering, the Neovim grammar set, fuzzy finding, file-manager write operations, the SQLite and DuckDB viewer, more platforms, an alternate Vim keymap, `notify`-based watching.
+- **Scouter's installer and `--upgrade`** — they belong to Scouter's Bun launcher; fmc ships as one binary. Packaging is a later plan.
+- **Scouter defects other than the two approved deviations** — reported in the audit, fixed only on the owner's word.
