@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T05:39:36+07:00
+updated: 2026-11-26T06:16:20+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -131,3 +131,13 @@ Scouter lists every entry except a fixed noise list (`.git`, `.hg`, `.svn`, `.DS
 Trap: `Ctrl+.` has no legacy encoding; only terminals with the kitty keyboard protocol (Ghostty, Rio, kitty, WezTerm) send it, and Terminal.app cannot. It shares the terminal check and the fallback-key decision with RI-11's `Ctrl+/`.
 
 **Unlock:** plan-00001 done; run it with RI-11. **First move:** the same per-terminal key check as RI-11, then a fallback key that does not collide with the key table.
+
+### RI-13 — Configurable keymap in `~/.config/fmc/keymap.json`
+
+- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done and RI-9 landed) · updated 2026-11-26
+
+The owner asked on 2026-11-26 for user keybindings in the style of Zed, persisted at `~/.config/fmc/keymap.json`. Zed's shape is a JSON array of blocks, each with an optional `context` predicate and a `bindings` map from a key sequence (`"ctrl-q"`, `"g g"`) to an action name; user blocks override the defaults, and `null` unbinds a key. fmc already dispatches every key from one table through a pure pending-key parser (`architecture.md`, "Keys are dispatched from one key table"), so the file maps onto it: contexts are the table's focus and screen values, actions are its `Action` names. The defaults stay Scouter's keys plus the approved deviations; `--help`, the `?` card, and the footer hints keep reading the merged table. Crates: `serde` and `serde_json` (approved for after parity, `rules.md`). A file that fails to parse or names an unknown action or context is not applied: fmc keeps the defaults and shows a notice naming the line.
+
+Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.`; RI-11, RI-12) need a per-terminal note; a user binding can shadow a prefix (`g`), so the parser's `More` state must follow the merged table.
+
+**Unlock:** plan-00001 done and RI-9 landed (shared config directory, load and error rules). **First move:** freeze the action names and context names as a public list, then write the schema with Zed's file as the model.
