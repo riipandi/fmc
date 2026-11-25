@@ -5,15 +5,16 @@ use std::path::{Path, PathBuf};
 
 use fmc::keys::Focus;
 use fmc::reader::document::Document;
+use fmc::reader::markdown::{View, is_markdown};
 use fmc::reader::position::scroll_label;
 use fmc::text::display_label;
 
 use super::{Model, Ui};
-use crate::ui::footer::DocumentInfo;
+use crate::ui::footer::{DocumentInfo, Message};
 use crate::ui::header::{Badge, BadgeKind};
 use crate::ui::syntax::language_for;
 
-/// What the reader shows.
+/// What the reader shows. `markdown` is the view of a Markdown document, `None` for any other.
 #[derive(Debug, Default)]
 pub enum Shown {
     #[default]
@@ -22,12 +23,18 @@ pub enum Shown {
         path: PathBuf,
         document: Document,
         language: Option<&'static str>,
+        markdown: Option<View>,
     },
 }
 
 impl Shown {
     pub fn is_some(&self) -> bool {
         !matches!(self, Self::None)
+    }
+
+    /// Whether the rendered Markdown view shows (Scouter `previewing`).
+    pub fn previewing(&self) -> bool {
+        matches!(self, Self::Text { markdown: Some(view), .. } if view.is_rendered())
     }
 }
 
@@ -38,7 +45,11 @@ pub fn show(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
         return;
     }
     let language = language_for(path);
+    let markdown = language.filter(|filetype| is_markdown(filetype)).map(|_| View::default());
     ui.reader.show(&document, language);
+    if markdown.is_some() {
+        ui.markdown.show(&document.text);
+    }
     m.browser.select(path);
     m.location = path.to_string_lossy().into_owned();
     m.message = None;
@@ -46,7 +57,19 @@ pub fn show(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     if std::mem::take(&mut m.focus_reader_on_open) {
         m.focus = Focus::Reader;
     }
-    m.shown = Shown::Text { path: path.to_path_buf(), document, language };
+    m.shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+}
+
+/// `m`: switches a Markdown document between its rendered view and its source (Scouter `toggleMarkdownSource`).
+pub fn toggle_markdown(m: &mut Model) {
+    if let Shown::Text { markdown: Some(view), .. } = &mut m.shown {
+        *view = view.toggled();
+    }
+}
+
+/// A key the rendered view refuses: the footer says which key shows the source (Scouter `showMessage`, not an error).
+pub fn refuse(m: &mut Model, text: &str) {
+    m.message = Some(Message { text: text.into(), error: false });
 }
 
 /// The title and the dim parent folder of a path under `root` (Scouter `titleParts`).
@@ -57,9 +80,13 @@ pub fn title_parts(root: &Path, path: &Path) -> (String, Option<String>) {
     (title, folder.map(|folder| format!("{}/", display_label(&folder.to_string_lossy()))))
 }
 
-/// The viewer header's badges for what is shown (Scouter `viewerBadgesFor`): the read-only mark, then the cap.
+/// The viewer header's badges for what is shown (Scouter `viewerBadgesFor`): the read-only mark, the rendered view,
+/// then the cap.
 pub fn badges(shown: &Shown) -> Vec<Badge> {
     let mut badges = vec![Badge::quiet("read-only")];
+    if shown.previewing() {
+        badges.push(Badge::quiet("rendered"));
+    }
     if let Shown::Text { document, .. } = shown
         && document.truncated
     {
@@ -68,17 +95,29 @@ pub fn badges(shown: &Shown) -> Vec<Badge> {
     badges
 }
 
+/// The rows the shown text takes: its lines, or the rendered Markdown's rows (`rendered_rows`).
+pub fn content_rows(shown: &Shown, rendered_rows: usize) -> usize {
+    if shown.previewing() { rendered_rows } else { lines_of(shown).max(1) }
+}
+
+fn lines_of(shown: &Shown) -> usize {
+    match shown {
+        Shown::Text { document, .. } => document.lines,
+        Shown::None => 0,
+    }
+}
+
 /// The footer's facts for a shown document (Scouter `documentInfo`), and its scroll position in a viewport of
-/// `viewport` rows.
-pub fn footer_facts(shown: &Shown, viewport: usize) -> Option<(DocumentInfo, String)> {
-    let Shown::Text { document, language, .. } = shown else { return None };
+/// `viewport` rows, where a rendered document is `rendered_rows` tall.
+pub fn footer_facts(shown: &Shown, viewport: usize, rendered_rows: usize) -> Option<(DocumentInfo, String)> {
+    let Shown::Text { document, language, markdown, .. } = shown else { return None };
     let info = DocumentInfo::Text {
         lines: document.lines,
         language: language.unwrap_or("plain text").into(),
         truncated: document.truncated,
-        rendered: None,
+        rendered: markdown.map(|view| view.is_rendered()),
     };
-    Some((info, scroll_label(document.lines.max(1), viewport, 0)))
+    Some((info, scroll_label(content_rows(shown, rendered_rows), viewport, 0)))
 }
 
 #[cfg(test)]
@@ -94,5 +133,20 @@ mod tests {
         );
         assert_eq!(title_parts(root, Path::new("/vault/README.md")), ("README.md".into(), None));
         assert_eq!(title_parts(root, Path::new("/elsewhere/Louvre.txt")), ("Louvre.txt".into(), None));
+    }
+
+    #[test]
+    fn only_a_rendered_markdown_document_previews() {
+        let document = Document { text: "# Hogwarts\n".into(), lines: 1, truncated: false };
+        let shown = |markdown| Shown::Text {
+            path: "a.md".into(),
+            document: document.clone(),
+            language: Some("markdown"),
+            markdown,
+        };
+        assert!(shown(Some(View::Rendered)).previewing());
+        assert!(!shown(Some(View::Source)).previewing());
+        assert!(!shown(None).previewing());
+        assert_eq!(badges(&shown(Some(View::Rendered))).len(), 2);
     }
 }

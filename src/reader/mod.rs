@@ -3,4 +3,5 @@
 
 pub mod document;
 pub mod language;
+pub mod markdown;
 pub mod position;

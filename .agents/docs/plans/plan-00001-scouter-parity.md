@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T05:55:13+07:00
+updated: 2026-11-26T06:06:09+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -49,8 +49,8 @@ phases:
       note: "Node's I/O wording in one place (services/fs.rs describe), phase 10 listings on it; loader (reader/document.rs: 1 MiB, NUL and UTF-8 checks, BOM, tabs, controls) and the code view with Scouter's gutter (minWidth 3, paddingRight 2); the vendored grammars cascade with core_captures; Core's queries for JavaScript, TypeScript, TSX, JSX, Markdown, and Zig with the four pinned crates (architecture.md; Lua predicates translated, rust.md). Ctrl+q quits and a plain q does not; a file opened from the tree keeps list focus; a file refused at startup keeps its folder (architecture.md approved deviations). Live at 80x24 against Scouter 0.9.9: text and colours identical for Rust, HTML, CSS, JSON, YAML, TOML, C, Java, Bash, Go, Python, the JavaScript family, plain text, empty, controls, a file over 1 MiB (text), and the Enter and Tab flow, apart from the approved footer quit label, focus, and wordmark. Later: scrollbar and pan (14), Markdown rendering (12), binary and image (13)"
     - id: 12
       title: "W3: Markdown rendered and source"
-      status: pending
-      note: —
+      status: done
+      note: "Rendered view is OpenTUI Markdown with the palette styles, scope styles on, Core's grey for table and rule borders (no conceal scope in Scouter); m toggles the source with line numbers and resets to rendered per file; / and { } refuse with Scouter's footer text; the viewer scrollbar (one column, only while the text overflows) and the clip of the body. Live at 80x24 against Scouter 0.9.9 on the demo README: rendered and source text identical, colours identical, apart from the approved footer quit label. Scrolling and the paragraph motion wait for phase 14 and 15."
     - id: 13
       title: "W3: image and binary views"
       status: pending

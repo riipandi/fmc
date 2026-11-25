@@ -1,27 +1,14 @@
-; Query from: https://raw.githubusercontent.com/nvim-treesitter/nvim-treesitter/refs/heads/master/queries/markdown/injections.scm
+; fmc: Core's injections (Scouter's markdown source) use #set-lang-from-info-string! and #offset!, which the binding does not
+; evaluate, and inline text needs its punctuation kept (rust.md). This is the binding's own MARKDOWN_INJECTIONS (opentui-0.9.9,
+; src/syntax/highlight.rs), which it applies to the same grammar.
+
 (fenced_code_block
-  (info_string
-    (language) @_lang)
+  (info_string (language) @injection.language)
   (code_fence_content) @injection.content
-  (#set-lang-from-info-string! @_lang))
-
-((html_block) @injection.content
-  (#set! injection.language "html")
-  (#set! injection.combined)
-  (#set! injection.include-children))
-
-((minus_metadata) @injection.content
-  (#set! injection.language "yaml")
-  (#offset! @injection.content 1 0 -1 0)
-  (#set! injection.include-children))
-
-((plus_metadata) @injection.content
-  (#set! injection.language "toml")
-  (#offset! @injection.content 1 0 -1 0)
-  (#set! injection.include-children))
-
-([
-  (inline)
-  (pipe_table_cell)
-] @injection.content
-  (#set! injection.language "markdown_inline"))
+  (#set! injection.include-unnamed-children))
+((html_block) @injection.content (#set! injection.language "html"))
+((minus_metadata) @injection.content (#set! injection.language "yaml"))
+((plus_metadata) @injection.content (#set! injection.language "toml"))
+([(inline) (pipe_table_cell)] @injection.content
+  (#set! injection.language "markdown_inline")
+  (#set! injection.include-unnamed-children))

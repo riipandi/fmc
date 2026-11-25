@@ -13,6 +13,7 @@ use std::rc::Rc;
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
+use fmc::reader::markdown::{PARAGRAPH_REFUSED, SEARCH_REFUSED};
 use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
 use opentui::prelude::*;
 
@@ -21,7 +22,9 @@ use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
 use crate::ui::help::Help;
 use crate::ui::hints::Pane;
+use crate::ui::markdown::MarkdownView;
 use crate::ui::reader::CodeView;
+use crate::ui::scrollbar::ScrollBar;
 use crate::ui::styled::color;
 use crate::ui::tree::{LIST_TOP, TreeView, line_at};
 use crate::ui::{sidebar, syntax, welcome};
@@ -37,7 +40,11 @@ struct Ui {
     viewer_panel: View,
     viewer_header: PaneHeader,
     welcome: View,
+    /// The viewer body: the welcome, the code view, and the rendered view stacked (one shows at a time), beside the bar.
+    stack: View,
     reader: CodeView,
+    markdown: MarkdownView,
+    bar: ScrollBar,
     footer: Footer,
     layout: View,
     help: Option<Help>,
@@ -93,7 +100,7 @@ impl Model {
             focus: self.focus,
             help_open: self.help_open,
             reader_ready: self.shown.is_some(),
-            previewing: false,
+            previewing: self.shown.previewing(),
             typing: false,
         }
     }
@@ -154,7 +161,10 @@ pub fn run(target: &Path) -> opentui::Result<()> {
     });
     app.on_resize({
         let (model, ui) = (model.clone(), ui.clone());
-        move |cx, _, _| paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
+        move |cx, _, _| {
+            paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+            repaint_after_layout(cx.app(), &model, &ui);
+        }
     });
     app.on_message({
         let (model, ui) = (model.clone(), ui.clone());
@@ -163,6 +173,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             let mut u = ui.borrow_mut();
             tree::apply(&mut m, &u, event);
             paint(cx.app(), &mut m, &mut u);
+            repaint_after_layout(cx.app(), &model, &ui);
         }
     });
     app.on_key_capture({
@@ -185,6 +196,12 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::SwitchPane if m.focus == Focus::List && m.shown.is_some() => m.focus = Focus::Reader,
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
+                Action::ToggleMarkdown => reader::toggle_markdown(&mut m),
+                // The rendered view has no search or paragraph motion: the footer says which key shows the source.
+                Action::Search | Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
+                    let text = if action == Action::Search { SEARCH_REFUSED } else { PARAGRAPH_REFUSED };
+                    reader::refuse(&mut m, text);
+                }
                 Action::Move(_)
                 | Action::MovePage(_)
                 | Action::Top
@@ -264,6 +281,15 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     });
 }
 
+/// Paints again once the frame has laid out the new text: a rendered Markdown document's rows, which the scrollbar
+/// and the footer count, exist only after that layout.
+fn repaint_after_layout(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
+    let (model, ui) = (model.clone(), ui.clone());
+    app.set_timeout(std::time::Duration::from_millis(20), move |cx| {
+        paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
+    });
+}
+
 /// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`).
 fn resize_sidebar(m: &mut Model, app: &App, step: i8) {
     let columns = app.size().0;
@@ -290,9 +316,15 @@ fn build(app: &App, p: &Palette) -> Ui {
     let viewer_header = PaneHeader::new(app);
     let welcome = welcome::welcome(app, p);
     let reader = CodeView::new(app, p);
+    let markdown = MarkdownView::new(app, p);
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&tree.root);
-    viewer_panel.add(&viewer_header.root).add(&welcome).add(&reader.widget());
+    let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
+    let bar = ScrollBar::new(app);
+    let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
+    stack.add(&welcome).add(&reader.widget()).add(&markdown.widget());
+    body.add(&stack).add(&bar.root());
+    viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
     layout.add(&panes).add(&footer.root);
     app.root().add(&layout);
@@ -304,7 +336,10 @@ fn build(app: &App, p: &Palette) -> Ui {
         viewer_panel,
         viewer_header,
         welcome,
+        stack,
         reader,
+        markdown,
+        bar,
         footer,
         layout,
         help: None,
@@ -315,8 +350,9 @@ fn build(app: &App, p: &Palette) -> Ui {
 fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.welcome.detach();
     ui.welcome = welcome::welcome(app, m.palette());
-    ui.viewer_panel.add(&ui.welcome);
+    ui.stack.add(&ui.welcome);
     ui.reader.restyle(m.palette());
+    ui.markdown.restyle(m.palette());
     if let Some(help) = ui.help.take() {
         help.overlay.detach();
     }
@@ -362,12 +398,16 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     ui.viewer_header.paint(&viewer, p);
     ui.welcome.visible(!m.shown.is_some());
-    ui.reader.visible(m.shown.is_some());
+    let previewing = m.shown.previewing();
+    ui.reader.visible(m.shown.is_some() && !previewing);
+    ui.markdown.visible(previewing);
 
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
-    let (document, position) = reader::footer_facts(&m.shown, usize::from(rows).saturating_sub(LIST_CHROME_ROWS))
+    let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
+    ui.bar.paint(app, reader::content_rows(&m.shown, ui.markdown.rows()), viewport, 0, viewport, p);
+    let (document, position) = reader::footer_facts(&m.shown, viewport, ui.markdown.rows())
         .map_or((None, None), |(info, label)| (Some(info), Some(label)));
     let footer = FooterState {
         location,
