@@ -15,10 +15,6 @@ const MIN_LOCATION_COLUMNS: usize = 16;
 
 /// What the reader shows, for the facts on the right.
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "the image and binary views (plan-00001 W3 phase 13) construct the other variants")
-)]
 pub enum DocumentInfo {
     Text { lines: usize, language: String, truncated: bool, rendered: Option<bool> },
     Image { width: u32, height: u32, format: String },

@@ -4,7 +4,9 @@
 use std::path::{Path, PathBuf};
 
 use fmc::keys::Focus;
+use fmc::reader::binary::format_size;
 use fmc::reader::document::Document;
+use fmc::reader::image;
 use fmc::reader::markdown::{View, is_markdown};
 use fmc::reader::position::scroll_label;
 use fmc::text::display_label;
@@ -14,7 +16,7 @@ use crate::ui::footer::{DocumentInfo, Message};
 use crate::ui::header::{Badge, BadgeKind};
 use crate::ui::syntax::language_for;
 
-/// What the reader shows. `markdown` is the view of a Markdown document, `None` for any other.
+/// What the reader shows. `markdown` is the view of a Markdown document, `None` for any other text.
 #[derive(Debug, Default)]
 pub enum Shown {
     #[default]
@@ -25,11 +27,24 @@ pub enum Shown {
         language: Option<&'static str>,
         markdown: Option<View>,
     },
+    Image {
+        path: PathBuf,
+        info: image::Info,
+    },
+    Binary {
+        path: PathBuf,
+        size: u64,
+    },
 }
 
 impl Shown {
     pub fn is_some(&self) -> bool {
         !matches!(self, Self::None)
+    }
+
+    /// Whether the reader holds a document the keys can reach (Scouter `hasDocument`): text or an image.
+    pub fn has_document(&self) -> bool {
+        matches!(self, Self::Text { .. } | Self::Image { .. })
     }
 
     /// Whether the rendered Markdown view shows (Scouter `previewing`).
@@ -38,10 +53,27 @@ impl Shown {
     }
 }
 
-/// Shows a document the worker read, with its file revealed and selected. A file that left the tree while the read
-/// ran is dropped (`rust.md`, "Workers answer through events").
-pub fn show(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
+/// Reveals a file the worker read: it is selected, and the footer shows its path. A file that left the tree while
+/// the read ran is dropped (`rust.md`, "Workers answer through events"). The reader takes focus only for the startup
+/// file, which Scouter opens with the reader focused; a binary keeps the list, as Scouter's `showBinary` does.
+fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
+    let startup = std::mem::take(&mut m.focus_reader_on_open);
     if m.browser.tree.entry(path).is_none() {
+        return false;
+    }
+    m.browser.select(path);
+    m.location = path.to_string_lossy().into_owned();
+    m.message = None;
+    m.notice = None;
+    if startup && focus_reader {
+        m.focus = Focus::Reader;
+    }
+    true
+}
+
+/// Shows a text document the worker read.
+pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
+    if !reveal(m, path, true) {
         return;
     }
     let language = language_for(path);
@@ -50,14 +82,25 @@ pub fn show(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     if markdown.is_some() {
         ui.markdown.show(&document.text);
     }
-    m.browser.select(path);
-    m.location = path.to_string_lossy().into_owned();
-    m.message = None;
-    m.notice = None;
-    if std::mem::take(&mut m.focus_reader_on_open) {
-        m.focus = Focus::Reader;
-    }
     m.shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+}
+
+/// Shows an image: the picture is decoded by the view, and the header facts go to the footer.
+pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes: &[u8]) {
+    if !reveal(m, path, true) {
+        return;
+    }
+    ui.picture.show(bytes);
+    m.shown = Shown::Image { path: path.to_path_buf(), info };
+}
+
+/// Shows a binary file's notice. Focus stays on the list, as in Scouter.
+pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
+    if !reveal(m, path, false) {
+        return;
+    }
+    m.focus = Focus::List;
+    m.shown = Shown::Binary { path: path.to_path_buf(), size };
 }
 
 /// `m`: switches a Markdown document between its rendered view and its source (Scouter `toggleMarkdownSource`).
@@ -81,11 +124,16 @@ pub fn title_parts(root: &Path, path: &Path) -> (String, Option<String>) {
 }
 
 /// The viewer header's badges for what is shown (Scouter `viewerBadgesFor`): the read-only mark, the rendered view,
-/// then the cap.
+/// the image or binary kind, then the cap.
 pub fn badges(shown: &Shown) -> Vec<Badge> {
     let mut badges = vec![Badge::quiet("read-only")];
     if shown.previewing() {
         badges.push(Badge::quiet("rendered"));
+    }
+    match shown {
+        Shown::Image { .. } => badges.push(Badge::quiet("image")),
+        Shown::Binary { .. } => badges.push(Badge::quiet("binary")),
+        _ => {}
     }
     if let Shown::Text { document, .. } = shown
         && document.truncated
@@ -95,29 +143,36 @@ pub fn badges(shown: &Shown) -> Vec<Badge> {
     badges
 }
 
-/// The rows the shown text takes: its lines, or the rendered Markdown's rows (`rendered_rows`).
+/// The rows the shown text takes: its lines, or the rendered Markdown's rows (`rendered_rows`). An image fills the
+/// viewport, so it takes none.
 pub fn content_rows(shown: &Shown, rendered_rows: usize) -> usize {
-    if shown.previewing() { rendered_rows } else { lines_of(shown).max(1) }
-}
-
-fn lines_of(shown: &Shown) -> usize {
     match shown {
-        Shown::Text { document, .. } => document.lines,
-        Shown::None => 0,
+        Shown::Text { .. } if shown.previewing() => rendered_rows.max(1),
+        Shown::Text { document, .. } => document.lines.max(1),
+        _ => 0,
     }
 }
 
-/// The footer's facts for a shown document (Scouter `documentInfo`), and its scroll position in a viewport of
-/// `viewport` rows, where a rendered document is `rendered_rows` tall.
-pub fn footer_facts(shown: &Shown, viewport: usize, rendered_rows: usize) -> Option<(DocumentInfo, String)> {
-    let Shown::Text { document, language, markdown, .. } = shown else { return None };
-    let info = DocumentInfo::Text {
-        lines: document.lines,
-        language: language.unwrap_or("plain text").into(),
-        truncated: document.truncated,
-        rendered: markdown.map(|view| view.is_rendered()),
-    };
-    Some((info, scroll_label(content_rows(shown, rendered_rows), viewport, 0)))
+/// The footer's facts for what is shown (Scouter `documentInfo`, `setDocument`), and its scroll position in a
+/// viewport of `viewport` rows. A binary has no position: Scouter's stale `All` is not copied (`plan-00001` phase 13).
+pub fn footer_facts(shown: &Shown, viewport: usize, rendered_rows: usize) -> Option<(DocumentInfo, Option<String>)> {
+    match shown {
+        Shown::None => None,
+        Shown::Text { document, language, markdown, .. } => {
+            let info = DocumentInfo::Text {
+                lines: document.lines,
+                language: language.unwrap_or("plain text").into(),
+                truncated: document.truncated,
+                rendered: markdown.map(|view| view.is_rendered()),
+            };
+            Some((info, Some(scroll_label(content_rows(shown, rendered_rows), viewport, 0))))
+        }
+        Shown::Image { info, .. } => {
+            let info = DocumentInfo::Image { width: info.width, height: info.height, format: info.format.into() };
+            Some((info, Some(scroll_label(viewport, viewport, 0))))
+        }
+        Shown::Binary { size, .. } => Some((DocumentInfo::Binary { size: format_size(*size) }, None)),
+    }
 }
 
 #[cfg(test)]

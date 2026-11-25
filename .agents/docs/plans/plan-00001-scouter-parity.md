@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T06:06:09+07:00
+updated: 2026-11-26T06:14:58+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -53,8 +53,8 @@ phases:
       note: "Rendered view is OpenTUI Markdown with the palette styles, scope styles on, Core's grey for table and rule borders (no conceal scope in Scouter); m toggles the source with line numbers and resets to rendered per file; / and { } refuse with Scouter's footer text; the viewer scrollbar (one column, only while the text overflows) and the clip of the body. Live at 80x24 against Scouter 0.9.9 on the demo README: rendered and source text identical, colours identical, apart from the approved footer quit label. Scrolling and the paragraph motion wait for phase 14 and 15."
     - id: 13
       title: "W3: image and binary views"
-      status: pending
-      note: —
+      status: done
+      note: "Images decode the header with imagesize 0.15 (approved; resolves at 0.15.0) and open through OpenTUI's ImageView with the auto protocol, fit contain, scaled to the reader; the footer shows WxH and the format from the native names (png, jpeg, webp, gif). Binary notice centred as Scouter draws it, focus stays in the list. Live at 80x24 against Scouter 0.9.9: the PNG and the binary at startup, and the PNG opened from the tree, identical apart from the approved footer quit label and focus. Owner check: the picture in a Kitty-capable terminal (Rex draws no pixels). Scouter's stale footer position after a binary is recorded in issue-00002, not copied."
     - id: 14
       title: "W3: reader motions, jump history, wrap, pan, copy"
       status: pending

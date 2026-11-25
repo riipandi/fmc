@@ -1,10 +1,12 @@
 //! Views, one per screen or component.
 
+pub mod binary;
 pub mod footer;
 pub mod header;
 pub mod help;
 pub mod hints;
 pub mod markdown;
+pub mod picture;
 pub mod reader;
 pub mod scrollbar;
 pub mod sidebar;

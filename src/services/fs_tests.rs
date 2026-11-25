@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use fmc::explorer::Kind;
 use tempfile::TempDir;
 
-use super::{Opened, describe, list, open, read};
+use super::{Opened, describe, list, open};
 
 /// A vault with the Harry Potter and Dan Brown names Scouter's fixtures use, plus the noise files it drops.
 fn vault() -> TempDir {
@@ -103,18 +103,48 @@ fn a_text_file_opens_as_a_document() {
     let dir = vault();
     let path = dir.path().join("README.md");
     fs::write(&path, "Hermione\r\nGranger\n").unwrap();
-    let Opened::File(document) = open(&path, &[]).unwrap() else { panic!("a file") };
+    let Opened::Text(document) = open(&path, &[]).unwrap() else { panic!("a text file") };
     assert_eq!(document.text, "Hermione\nGranger\n");
     assert_eq!(document.lines, 2);
 }
 
 #[test]
-fn a_binary_or_non_utf8_file_is_refused_with_scouters_message() {
+fn a_binary_file_opens_as_its_size_and_a_non_utf8_file_is_refused() {
     let dir = vault();
     fs::write(dir.path().join("owl.bin"), b"Hedwig\0").unwrap();
     fs::write(dir.path().join("owl.txt"), b"Hedwig \xff").unwrap();
-    assert_eq!(read(&dir.path().join("owl.bin")).unwrap_err(), "Binary files are not supported.");
-    assert_eq!(read(&dir.path().join("owl.txt")).unwrap_err(), "Only UTF-8 text files are supported.");
+    let Opened::Binary { size } = open(&dir.path().join("owl.bin"), &[]).unwrap() else { panic!("a binary") };
+    assert_eq!(size, 7);
+    assert_eq!(open(&dir.path().join("owl.txt"), &[]).unwrap_err(), "Only UTF-8 text files are supported.");
+}
+
+/// A 1x1 PNG, the smallest valid header the decoder reads.
+const PNG_1X1: &[u8] = &[
+    0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, b'I', b'H', b'D', b'R', 0, 0, 0, 1, 0, 0, 0, 1, 8,
+    6, 0, 0, 0, 0x1f, 0x15, 0xc4, 0x89, 0, 0, 0, 0x0d, b'I', b'D', b'A', b'T', 0x78, 0x9c, 0x63, 0x60, 0xf8, 0xff,
+    0xff, 0x3f, 0, 0x05, 0xfe, 0x02, 0xfe, 0xa7, 0xd8, 0x9c, 0x0a, 0, 0, 0, 0, b'I', b'E', b'N', b'D', 0xae, 0x42,
+    0x60, 0x82,
+];
+
+#[test]
+fn an_image_opens_with_its_header_facts() {
+    let dir = vault();
+    let path = dir.path().join("marauder-map.PNG");
+    fs::write(&path, PNG_1X1).unwrap();
+    let Opened::Image { info, bytes } = open(&path, &[]).unwrap() else { panic!("an image") };
+    assert_eq!((info.width, info.height, info.format), (1, 1, "png"));
+    assert_eq!(bytes, PNG_1X1);
+}
+
+#[test]
+fn an_image_that_will_not_decode_is_unreadable_and_a_big_one_is_refused_unread() {
+    let dir = vault();
+    let broken = dir.path().join("seal.png");
+    fs::write(&broken, b"Hedwig").unwrap();
+    assert_eq!(open(&broken, &[]).unwrap_err(), "This image could not be read.");
+    let big = dir.path().join("map.jpg");
+    fs::File::create(&big).unwrap().set_len(10 * 1024 * 1024 + 1).unwrap();
+    assert_eq!(open(&big, &[]).unwrap_err(), "Image is too large (limit: 10 MiB).");
 }
 
 #[test]

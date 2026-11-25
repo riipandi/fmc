@@ -18,11 +18,13 @@ use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
 use opentui::prelude::*;
 
 use crate::services::Event;
+use crate::ui::binary::BinaryView;
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
 use crate::ui::help::Help;
 use crate::ui::hints::Pane;
 use crate::ui::markdown::MarkdownView;
+use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
 use crate::ui::styled::color;
@@ -44,6 +46,8 @@ struct Ui {
     stack: View,
     reader: CodeView,
     markdown: MarkdownView,
+    picture: Picture,
+    binary: BinaryView,
     bar: ScrollBar,
     footer: Footer,
     layout: View,
@@ -99,7 +103,7 @@ impl Model {
             screen: Screen::Browse,
             focus: self.focus,
             help_open: self.help_open,
-            reader_ready: self.shown.is_some(),
+            reader_ready: self.shown.has_document(),
             previewing: self.shown.previewing(),
             typing: false,
         }
@@ -193,7 +197,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::Help => m.help_open = true,
                 Action::CloseHelp => m.help_open = false,
                 // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
-                Action::SwitchPane if m.focus == Focus::List && m.shown.is_some() => m.focus = Focus::Reader,
+                Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
                 Action::ToggleMarkdown => reader::toggle_markdown(&mut m),
@@ -317,12 +321,14 @@ fn build(app: &App, p: &Palette) -> Ui {
     let welcome = welcome::welcome(app, p);
     let reader = CodeView::new(app, p);
     let markdown = MarkdownView::new(app, p);
+    let picture = Picture::new(app);
+    let binary = BinaryView::new(app);
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&tree.root);
     let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
     let bar = ScrollBar::new(app);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
-    stack.add(&welcome).add(&reader.widget()).add(&markdown.widget());
+    stack.add(&welcome).add(&reader.widget()).add(&markdown.widget()).add(&picture.widget()).add(&binary.root());
     body.add(&stack).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
@@ -339,6 +345,8 @@ fn build(app: &App, p: &Palette) -> Ui {
         stack,
         reader,
         markdown,
+        picture,
+        binary,
         bar,
         footer,
         layout,
@@ -387,7 +395,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.tree.paint(app, &m.browser, &m.marks, p, &root);
     let (title, parent) = match &m.shown {
         reader::Shown::None => ("Reader".into(), None),
-        reader::Shown::Text { path, .. } => reader::title_parts(&root, path),
+        reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. } => {
+            reader::title_parts(&root, path)
+        }
     };
     let viewer = HeaderState {
         title,
@@ -399,8 +409,14 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.viewer_header.paint(&viewer, p);
     ui.welcome.visible(!m.shown.is_some());
     let previewing = m.shown.previewing();
-    ui.reader.visible(m.shown.is_some() && !previewing);
+    ui.reader.visible(matches!(m.shown, reader::Shown::Text { .. }) && !previewing);
     ui.markdown.visible(previewing);
+    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }));
+    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }));
+    if let reader::Shown::Binary { path, size } = &m.shown {
+        let name = fmc::text::display_label(&path.file_name().unwrap_or_default().to_string_lossy());
+        ui.binary.paint(&name, &fmc::reader::binary::format_size(*size), p);
+    }
 
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
@@ -408,7 +424,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
     ui.bar.paint(app, reader::content_rows(&m.shown, ui.markdown.rows()), viewport, 0, viewport, p);
     let (document, position) = reader::footer_facts(&m.shown, viewport, ui.markdown.rows())
-        .map_or((None, None), |(info, label)| (Some(info), Some(label)));
+        .map_or((None, None), |(info, label)| (Some(info), label));
     let footer = FooterState {
         location,
         pane,

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Project workspace: agent instructions, agent docs, and project skills.
 - Text files open in the reader with a line-number gutter, syntax colours for Scouter's languages, and the footer's line count, language, and scroll position. A file over 1 MiB shows its first 1 MiB.
+- Images (PNG, JPG, GIF, WEBP) open scaled to fit the reader, with their size and format in the footer. A binary file shows Scouter's notice with its name and size, and focus stays in the file list.
 - Markdown files open rendered: headings, emphasis, links, lists, task boxes, quotes, tables, and highlighted code blocks. `m` shows the source with line numbers, and `/` and `{ }` say which key shows the source while the document is rendered.
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
 

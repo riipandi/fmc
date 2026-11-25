@@ -1,0 +1,17 @@
+---
+status: open
+created: 2026-11-26T06:14:02+07:00
+updated: 2026-11-26T06:14:02+07:00
+summary: "Scouter keeps the footer's position from the previous document after a binary file opens (the footer reads `All` where no document is shown). fmc shows no position for a binary. The count matches the items listed."
+count: 1
+---
+
+# Binary files and the footer position
+
+## Scouter's footer keeps a stale position after a binary file
+
+- status: open
+  area: reader, footer (`src/app/mod.rs` `paint`, `src/app/reader.rs` `footer_facts`)
+  summary: Scouter's binary view does not call `updatePosition`, and `setDocument` does not clear the position, so after an image the footer keeps that image's `All` (`scouter:src/app/app.ts:411-419`, `showBinary`; `research/scouter-inventory.md` section 18). Live at 80x24, Scouter reads `4.0 KB · binary · All` for `assets/seal.bin` opened after `assets/marauder-map.png`; fmc reads `4.0 KB · binary` (`/tmp/fmc-ref/out/w3-11/{fmc,sco}-imgbin-03.txt`, outside the repository). fmc shows no position for a binary.
+  plan: plan-00001 phase 13 says report it, not copy it; phase 23 decides
+  trigger: plan-00001 phase 23 (the owner may approve the stale value as a deviation, or fmc keeps the clean footer)
