@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T05:02:31+07:00
+updated: 2026-11-26T05:08:07+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -100,3 +100,19 @@ Scouter has no configuration by design (`research/scouter-inventory.md` §15), s
 User themes as JSON files, one per theme, each with a dark and a light variant or a declared mode, selected from settings (RI-9). The starting catalog comes from bjarneo/editor (MIT; keep its notice): editor dark, Catppuccin Mocha and Latte, Tokyo Night and Tokyo Night Day, Gruvbox and Gruvbox Light, Everforest, Kanagawa, Nord, One Dark and One Light, Flexoki Light (source: `src/theme.rs` in github.com/bjarneo/editor). Each theme maps onto fmc's palette tokens (`DESIGN.md`, `theme.rs`) and passes the contrast tests the Scouter palettes pass.
 
 **Unlock:** RI-9 landed. **First move:** map editor's theme fields onto fmc's tokens and list the tokens with no source value.
+
+## Layout
+
+### RI-11 — Adaptive layout and a collapsible sidebar
+
+- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+
+Scouter always shows the sidebar: its width is `min(40, max(28, floor(termWidth × 0.25)))` and `Ctrl+←`/`Ctrl+→` resize it (`research/scouter-inventory.md` §2, §4.2); it has no hide or collapse. The owner asked on 2026-11-26 for:
+
+- Auto-hide: below a width breakpoint the sidebar hides and the reader takes the full width; above it the sidebar comes back at its last width. The breakpoint is an open design point (a candidate: the sidebar minimum of 28 plus a usable reader width).
+- A toggle: `Ctrl+/` (shown as `^/` on macOS) and a mouse click (candidate targets: the sidebar title, or a collapse mark on the panel border) hide or show the sidebar. A manual choice wins over auto-hide until the width crosses the breakpoint again.
+- With RI-9, the collapsed state and the width persist in `settings.json`.
+
+Trap: in the legacy keyboard encoding `Ctrl+/` arrives as `0x1F`, the same byte as `Ctrl+_` (and `Ctrl+7` in some terminals). Telling them apart needs the kitty keyboard protocol; check what the locked `opentui` parser reports for each terminal fmc supports before binding it, and keep a fallback key if a terminal cannot send it.
+
+**Unlock:** plan-00001 done. **First move:** check `Ctrl+/` in Ghostty, Rio, and Terminal.app through `opentui`'s key events, then write the breakpoint rule and the `architecture.md` deviation record.
