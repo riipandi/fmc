@@ -21,6 +21,8 @@ cargo build
 
 With just, `just build` does both. `just` alone lists every task.
 
+To put fmc on your `PATH`, run `just install`. It builds a release binary and copies it to `~/.local/bin/fmc`. `just install debug` installs a debug build as `fmc-debug`. Set `INSTALL_DIR` to use another folder.
+
 The script builds the library without video support, so the fmc binary contains no FFmpeg code. The first run takes a few minutes. It keeps the result in `~/.cache/fmc/opentui-native/<version>`, so later runs and other checkouts finish at once.
 
 ## Checks

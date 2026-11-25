@@ -35,3 +35,20 @@ demo dir="tmp/demo-repo":
 [group('development')]
 deps *args:
     @cargo update {{ args }}
+
+[doc('Install fmc to ~/.local/bin: `just install` (release -> fmc) or `just install debug` (-> fmc-debug)')]
+[group('development')]
+install profile="release": native
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ profile }}" in
+        release) cargo build --release; src=target/release/{{ app_bin }}; name={{ app_bin }} ;;
+        debug) cargo build; src=target/debug/{{ app_bin }}; name={{ app_bin }}-debug ;;
+        *) echo "unknown profile: {{ profile }} (expected release or debug)" >&2; exit 2 ;;
+    esac
+    dir="${INSTALL_DIR:-$HOME/.local/bin}"
+    mkdir -p "$dir"
+    # Remove first: overwriting a signed binary in place makes macOS kill the next launch.
+    rm -f "$dir/$name"
+    cp "$src" "$dir/$name"
+    printf '{{ BOLD + GREEN }}%12s{{ NORMAL }} %s [%s]\n' "Installed" "$dir/$name" "{{ profile }}"

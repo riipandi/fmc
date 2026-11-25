@@ -15,14 +15,14 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 | `LICENSE-MIT`, `LICENSE-APACHE` | fmc is `MIT OR Apache-2.0` (`Cargo.toml`). |
 | `rust-toolchain.toml`, `rustfmt.toml` | Toolchain pin and formatting rules. |
 | `deny.toml`, `about.toml`, `about.hbs` | License gate (`cargo deny`) and third-party notices (`cargo about`). |
-| `justfile`, `scripts/task-*.just` | Task shortcuts (`just` lists them): development (`native`, `run`, `build`, `start`, `demo`, `deps`), quality (`format`, `format-check`, `check`, `lint`, `test`, `licenses`, `notices`, `verify`), utility (`cleanup`). Build, run, and quality tasks run `native` first. |
+| `justfile`, `scripts/task-*.just` | Task shortcuts (`just` lists them): development (`native`, `run`, `build`, `start`, `install`, `demo`, `deps`), quality (`format`, `format-check`, `check`, `lint`, `test`, `licenses`, `notices`, `verify`), utility (`cleanup`). Build, run, and quality tasks run `native` first. |
 | `scripts/opentui-native.sh`, `.cargo/config.toml` | Builds the OpenTUI native library with video off into `~/.cache/fmc/opentui-native/<version>` and links it at `.cache/opentui-native/<version>` (git-ignored); `.cargo/config.toml` points `OPENTUI_LIB_DIR` there. Run it before the first build and after an `opentui` version bump (both files name the version). |
 | `scripts/demo-repo.sh <dir>` | Builds the deterministic demo git repository for live runs of fmc and Scouter (same hashes and `git status` every run); replaces `<dir>` only when it holds the script's marker `.git/fmc-demo-repo` or is empty. |
 | `docs/` | Human docs: `development.md` (prerequisites, first build, checks, demo repository, parity reference). |
 | `CHANGELOG.md` | Keep a Changelog; user-visible changes go under `[Unreleased]`. |
 | `README.md`, `PRODUCT.md`, `DESIGN.md` | Human docs: overview and usage, product purpose and principles, the design system (palettes, layout, components). |
 | `.agents/docs/`, `.agents/skills/` | Agent docs and project skills (`.claude/skills` links to the skills). |
-| `.claude/` | Claude Code settings and the format hook. |
+| `.claude/` | Claude Code settings, the format hook, and the project agents (`agents/executor.md`, `agents/scout.md`). |
 | `target/` | Build output, git-ignored. |
 
 No workspace, no `justfile`, no server, no database. Phase 1 is a read-only terminal app (`rules.md`, "Parity with Scouter").

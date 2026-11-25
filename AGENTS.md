@@ -43,6 +43,10 @@ Unclear: <decision> — wrong pick means <cost>.
 - **Library docs.** Check crates against the locked version (docs.rs, changelogs); the locked source wins.
 - **Audience.** `.agents/docs/` is for agents (English, `file:line` evidence). Human docs are `README.md`, `PRODUCT.md` (purpose, users, principles), `DESIGN.md` (palettes, layout, components), and `docs/` (created by the plan phase that lands its first page): no paths or internals. During parity, Scouter wins over `DESIGN.md`; a disagreement is a defect in `DESIGN.md`.
 
+## Subagents
+
+Project agents live in `.claude/agents/`: `executor` (Sonnet) runs approved plan phases; `scout` (Haiku) answers narrow read-only lookups. Use them instead of a fork for that work; a fork always runs on the main model.
+
 ## Skills
 
 A skill advises; this file and `.agents/docs/` win. Project skills live in `.agents/skills/` (`.claude/skills` links there).
