@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T05:49:00+07:00
+updated: 2026-11-26T05:58:45+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -362,6 +362,22 @@ Consequences:
 Alternatives considered:
 
 - Reproduce the empty sidebar — rejected by the owner: it reads as a defect.
+
+### Approved deviation: dragging selects text, `y` copies it
+
+Context: in Scouter a left drag across text selects it, copies it on release (OSC 52 plus the local clipboard), and clears the selection; `y` copies the active selection, else the current path (`scouter:src/app/app.ts:801-830`, `docs/decision/0033-...`).
+
+Decision: a drag selects and the selection stays on screen; nothing is copied on release. `y` copies the selection, shows Scouter's `Copied N characters.` / `Copied N lines.` notice, and clears the selection; with no selection `y` copies the path as Scouter does. `Esc` clears the selection. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) Selecting text no longer overwrites the clipboard by accident; copying works like a yank in Neovim.
+- (negative) Copying a drag needs one more key than in Scouter.
+
+Alternatives considered:
+
+- Keep copy on release — rejected by the owner.
+- Add a keyboard visual mode (`v`, `V`) now — not asked for; it would be a separate post-parity item.
 
 ## Pending decisions
 
