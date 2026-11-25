@@ -84,7 +84,14 @@ fn go_up(m: &mut Model) {
 
 /// Opens an entry: a folder expands, and a file is read; both off the UI thread when they are not in memory. One
 /// open runs at a time: another is refused until it finishes (Scouter `runLoading`).
+/// Opens an entry from the tree, as Scouter's `open`: the place left is recorded for the jump history first.
 pub fn open(m: &mut Model, path: PathBuf) {
+    m.jumps.leave(reader::here(m));
+    open_entry(m, path);
+}
+
+/// Opens an entry without recording the place left: the open itself, or a jump that is already in the history.
+pub fn open_entry(m: &mut Model, path: PathBuf) {
     match m.browser.tree.expand(&path) {
         Expand::Ready => {
             m.browser.select(&path);
@@ -158,6 +165,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                 Ok(fs::Opened::Binary { size }) => reader::show_binary(m, path, *size),
                 Err(text) => {
                     m.focus_reader_on_open = false;
+                    m.restore = None;
                     m.focus = Focus::List;
                     show_error(m, text);
                 }

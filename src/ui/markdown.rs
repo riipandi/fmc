@@ -17,7 +17,7 @@ pub struct MarkdownView {
 
 impl MarkdownView {
     pub fn new(app: &App, p: &Palette) -> Self {
-        let doc = Markdown::new(app).grow(1.0).min_width(0).min_height(0).padding_x(2).visible(false);
+        let doc = Markdown::new(app).padding_x(2).visible(false);
         let view = Self { doc };
         view.restyle(p);
         view

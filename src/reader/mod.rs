@@ -4,6 +4,8 @@
 pub mod binary;
 pub mod document;
 pub mod image;
+pub mod jump;
 pub mod language;
 pub mod markdown;
+pub mod motion;
 pub mod position;

@@ -3,6 +3,7 @@
 
 mod keys;
 mod reader;
+mod scroll;
 mod theme;
 mod tree;
 
@@ -29,6 +30,7 @@ use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
 use crate::ui::styled::color;
 use crate::ui::tree::{LIST_TOP, TreeView, line_at};
+use crate::ui::viewer::Viewer;
 use crate::ui::{sidebar, syntax, welcome};
 
 /// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2).
@@ -44,11 +46,14 @@ struct Ui {
     welcome: View,
     /// The viewer body: the welcome, the code view, and the rendered view stacked (one shows at a time), beside the bar.
     stack: View,
+    viewer: Viewer,
     reader: CodeView,
     markdown: MarkdownView,
     picture: Picture,
     binary: BinaryView,
+    /// Two bars: beside plain text the bar is the thumb's column alone; beside filled content it has two blanks before it.
     bar: ScrollBar,
+    narrow_bar: ScrollBar,
     footer: Footer,
     layout: View,
     help: Option<Help>,
@@ -83,6 +88,15 @@ struct Model {
     focus_reader_on_open: bool,
     notice: Option<String>,
     message: Option<Message>,
+    /// Wrapping, kept across files (Scouter `wrap`).
+    wrap: bool,
+    /// The places opened, back and forward (Scouter `JumpHistory`).
+    jumps: fmc::reader::jump::History,
+    /// The reader's viewport rows, and the row it last painted, for the motions and the jump history.
+    viewport: usize,
+    top: f64,
+    /// The place a jump opens at: applied when that file shows.
+    restore: Option<(PathBuf, usize)>,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
     sidebar: Option<i64>,
     /// An edge drag in progress: the pointer's start column and the sidebar's width then.
@@ -117,6 +131,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
     let options = AppOptions {
         palette_size: theme::PALETTE_SIZE,
         tab_focus: false,
+        // A drag selects and keeps the selection; `y` copies it (architecture.md, approved deviation).
+        copy_on_select: false,
         theme: dark,
         light_theme: Some(light),
         ..AppOptions::default()
@@ -142,6 +158,11 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         marks: Marks::default(),
         pending,
         shown: reader::Shown::None,
+        wrap: false,
+        jumps: Default::default(),
+        viewport: 0,
+        top: 0.0,
+        restore: None,
         loading: false,
         focus_reader_on_open: false,
         notice: None,
@@ -192,15 +213,52 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 paint(cx.app(), &mut m, &mut ui.borrow_mut());
                 return;
             };
+            // A keypress can move the reader; the position it moves to is laid out by the next frame.
+            repaint_after_layout(cx.app(), &model, &ui);
             match action {
                 Action::Quit => return cx.quit(),
                 Action::Help => m.help_open = true,
                 Action::CloseHelp => m.help_open = false,
+                Action::Escape if cx.app().selected_text().is_some() || cx.app().is_selecting() => {
+                    cx.app().clear_selection();
+                }
                 // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
                 Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
-                Action::ToggleMarkdown => reader::toggle_markdown(&mut m),
+                Action::ToggleMarkdown => {
+                    reader::toggle_markdown(&mut m);
+                    ui.borrow().viewer.scroll_to(0.0, 0.0);
+                }
+                Action::ToggleWrap if m.shown.has_document() => m.wrap = !m.wrap,
+                Action::Copy if m.shown.is_some() || m.focus == Focus::List => {
+                    if scroll::yank(&mut m, cx.app()) {
+                        clear_message_later(cx.app(), &model, &ui);
+                    }
+                }
+                Action::JumpBack | Action::JumpForward if m.loading => {
+                    m.message =
+                        Some(Message { text: "Still loading. Try again when it finishes.".into(), error: false });
+                }
+                Action::JumpBack | Action::JumpForward => {
+                    if let Some(target) = scroll::jump(&mut m, action == Action::JumpBack) {
+                        m.restore = Some((target.path.clone(), target.top));
+                        tree::open_entry(&mut m, target.path);
+                    }
+                }
+                Action::Scroll(_)
+                | Action::Pan(_)
+                | Action::Page(_)
+                | Action::HalfPage(_)
+                | Action::Top
+                | Action::Bottom
+                | Action::GoToLine(_)
+                | Action::Centre
+                | Action::Paragraph(_)
+                    if m.focus == Focus::Reader && m.shown.has_document() =>
+                {
+                    scroll::motion(&m, &ui.borrow(), action)
+                }
                 // The rendered view has no search or paragraph motion: the footer says which key shows the source.
                 Action::Search | Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
                     let text = if action == Action::Search { SEARCH_REFUSED } else { PARAGRAPH_REFUSED };
@@ -223,6 +281,11 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });
+    {
+        let (model, ui) = (model.clone(), ui.clone());
+        let viewer = ui.borrow().viewer.widget();
+        viewer.on_scroll(move |cx, _| paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut()));
+    }
     wire_mouse(&model, &ui);
 
     #[cfg(debug_assertions)]
@@ -294,6 +357,16 @@ fn repaint_after_layout(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<U
     });
 }
 
+/// Clears the footer's message two seconds on, as Scouter does after a copy; a later message is cleared too early
+/// only if it lands in those two seconds, as in Scouter.
+fn clear_message_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
+    let (model, ui) = (model.clone(), ui.clone());
+    app.set_timeout(std::time::Duration::from_secs(2), move |cx| {
+        model.borrow_mut().message = None;
+        paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
+    });
+}
+
 /// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`).
 fn resize_sidebar(m: &mut Model, app: &App, step: i8) {
     let columns = app.size().0;
@@ -321,15 +394,18 @@ fn build(app: &App, p: &Palette) -> Ui {
     let welcome = welcome::welcome(app, p);
     let reader = CodeView::new(app, p);
     let markdown = MarkdownView::new(app, p);
+    let viewer = Viewer::new(app);
     let picture = Picture::new(app);
     let binary = BinaryView::new(app);
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&tree.root);
     let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
-    let bar = ScrollBar::new(app);
+    let bar = ScrollBar::new(app, 2);
+    let narrow_bar = ScrollBar::new(app, 0);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
-    stack.add(&welcome).add(&reader.widget()).add(&markdown.widget()).add(&picture.widget()).add(&binary.root());
-    body.add(&stack).add(&bar.root());
+    viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
+    stack.add(&welcome).add(&binary.root()).add(&viewer.widget());
+    body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
     layout.add(&panes).add(&footer.root);
@@ -343,11 +419,13 @@ fn build(app: &App, p: &Palette) -> Ui {
         viewer_header,
         welcome,
         stack,
+        viewer,
         reader,
         markdown,
         picture,
         binary,
         bar,
+        narrow_bar,
         footer,
         layout,
         help: None,
@@ -402,7 +480,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let viewer = HeaderState {
         title,
         parent,
-        badges: reader::badges(&m.shown),
+        badges: reader::badges(&m.shown, m.wrap),
         focused: m.focus == Focus::Reader,
         notice: m.notice.clone(),
     };
@@ -422,15 +500,33 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
     let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
-    ui.bar.paint(app, reader::content_rows(&m.shown, ui.markdown.rows()), viewport, 0, viewport, p);
-    let (document, position) = reader::footer_facts(&m.shown, viewport, ui.markdown.rows())
-        .map_or((None, None), |(info, label)| (Some(info), label));
+    // The position is the one the last frame laid out; a move made since then lands in the next frame.
+    m.viewport = viewport;
+    m.top = ui.viewer.position().1;
+    let fill = m.wrap || !matches!(m.shown, reader::Shown::Text { .. }) || previewing;
+    ui.viewer.set_wrap(fill);
+    ui.reader.set_wrap(m.wrap);
+    // The pane is the viewer less its one-column bar; unwrapped text takes that width.
+    ui.reader.set_width(u32::from(columns.saturating_sub(width + 3)));
+    ui.picture.fill(viewport as u32);
+    let lines = match &m.shown {
+        reader::Shown::Text { document, .. } => document.lines,
+        _ => 0,
+    };
+    let total = reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines));
+    let top = m.top.floor() as usize;
+    ui.bar.paint(app, total, viewport, top, fill, p);
+    ui.narrow_bar.paint(app, total, viewport, top, !fill, p);
+    let (document, position) =
+        reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
+            .map_or((None, None), |(info, label)| (Some(info), label));
     let footer = FooterState {
         location,
         pane,
         message: m.message.clone(),
         document,
         positions: [position, None],
+        wrap: m.wrap,
         pending: m.parser.pending_count(),
         ..FooterState::default()
     };

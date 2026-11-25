@@ -13,4 +13,5 @@ pub mod sidebar;
 pub mod styled;
 pub mod syntax;
 pub mod tree;
+pub mod viewer;
 pub mod welcome;

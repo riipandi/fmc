@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T06:05:59+07:00
+updated: 2026-11-26T06:46:46+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -41,4 +41,5 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **Core's queries use `#match?`, not `#lua-match?`.** The binding evaluates tree-sitter's regex predicates and ignores unknown ones, so a `#lua-match?` would colour every identifier. `src/ui/syntax/queries/{typescript,typescriptreact,zig}/highlights.scm` carry the translation (same patterns; the comment pattern takes `(?s)`); the test `typescript_names_a_property_as_core_does` pins one capture.
 - **The Markdown injections are the binding's own.** `src/ui/syntax/queries/markdown/injections.scm` is the text of `MARKDOWN_INJECTIONS` (`opentui-0.9.9/src/syntax/highlight.rs`), not Core's: Core's `#set-lang-from-info-string!` and `#offset!` are not evaluated, and inline text needs `injection.include-unnamed-children` to keep its backticks in the string colour.
 - **Rendered Markdown has rows only after a frame.** The viewer's scrollbar and the footer's position count `Markdown::block_rows`, which are empty until the frame lays the document out; `repaint_after_layout` (`src/app/mod.rs`) paints again 20 ms after each event and resize. The body and the stack clip with `Overflow::Hidden`, or a rendered block paints over the footer.
+- **The reader scrolls in a `ScrollBox`, and unwrapped text is pane-wide.** `ui/viewer.rs` wraps the text, the rendered view, and the picture; the pan range is then the gutter's six columns, as in Scouter (`ui/reader.rs` `set_width`). The wrapped row count, which the bar and the footer use, comes from a second `TextView` on the code's buffer (`CodeView::rows`), because `Code` keeps its own view private.
 - **Widths come from the native measure.** Footer fitting measures with `Context::text_width` and the app's width method, so `↑`, `…`, and wide characters count as the terminal draws them; tests pass a character count.

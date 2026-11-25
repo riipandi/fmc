@@ -28,3 +28,40 @@ mod tests {
         assert_eq!(display_text("Langdon\u{202e}"), "Langdon\u{fffd}");
     }
 }
+
+/// What `y` says after a copy (Scouter `copiedSummary`, `src/core/clipboard.ts`): the lines, or the characters, with
+/// thousands separators as `en-US` writes them.
+pub fn copied_summary(text: &str) -> String {
+    let lines = text.split('\n').count();
+    if lines > 1 {
+        return format!("Copied {} lines.", grouped(lines));
+    }
+    let characters = text.chars().count();
+    let noun = if characters == 1 { "character" } else { "characters" };
+    format!("Copied {} {noun}.", grouped(characters))
+}
+
+fn grouped(number: usize) -> String {
+    let digits = number.to_string();
+    let mut out = String::new();
+    for (index, digit) in digits.chars().enumerate() {
+        if index > 0 && (digits.len() - index).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(digit);
+    }
+    out
+}
+
+#[cfg(test)]
+mod copy_tests {
+    use super::*;
+
+    #[test]
+    fn the_summary_counts_lines_or_characters_like_scouter() {
+        assert_eq!(copied_summary("Hermione"), "Copied 8 characters.");
+        assert_eq!(copied_summary("x"), "Copied 1 character.");
+        assert_eq!(copied_summary("Hermione\nGranger"), "Copied 2 lines.");
+        assert_eq!(copied_summary(&"ü".repeat(1234)), "Copied 1,234 characters.");
+    }
+}

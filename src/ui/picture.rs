@@ -11,13 +11,7 @@ pub struct Picture {
 
 impl Picture {
     pub fn new(app: &App) -> Self {
-        let view = ImageView::new(app)
-            .fit(ImageFit::Contain)
-            .protocol(ImageProtocol::Auto)
-            .grow(1.0)
-            .min_width(0)
-            .min_height(0)
-            .visible(false);
+        let view = ImageView::new(app).fit(ImageFit::Contain).protocol(ImageProtocol::Auto).visible(false);
         Self { view }
     }
 
@@ -28,6 +22,11 @@ impl Picture {
     /// Decodes the picture for display. A decode failure leaves the area blank, as Scouter's does.
     pub fn show(&self, bytes: &[u8]) {
         let _ = self.view.load(bytes);
+    }
+
+    /// The picture fills `rows` rows, the reader's viewport height (Scouter `image.height = viewport.height`).
+    pub fn fill(&self, rows: u32) {
+        self.view.height(rows);
     }
 
     pub fn visible(&self, visible: bool) {

@@ -132,7 +132,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
 
 pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Left click", "open a file or toggle a folder"),
-    ("Drag text", "select and copy to clipboard"),
+    ("Drag text", "select; y copies it"),
     ("Wheel", "scroll the pane under the pointer"),
     ("Drag edge", "resize the list"),
 ];

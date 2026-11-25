@@ -7,6 +7,7 @@ use fmc::keys::Focus;
 use fmc::reader::binary::format_size;
 use fmc::reader::document::Document;
 use fmc::reader::image;
+use fmc::reader::jump::Jump;
 use fmc::reader::markdown::{View, is_markdown};
 use fmc::reader::position::scroll_label;
 use fmc::text::display_label;
@@ -83,6 +84,16 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
         ui.markdown.show(&document.text);
     }
     m.shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+    reset_scroll(m, ui, path);
+}
+
+/// A shown file starts at its top, as Scouter's `revealViewer` does; a jump opens at the row it was left at.
+fn reset_scroll(m: &mut Model, ui: &Ui, path: &Path) {
+    let top = match m.restore.take() {
+        Some((restored, top)) if restored == path => top,
+        _ => 0,
+    };
+    ui.viewer.scroll_to(0.0, top as f64);
 }
 
 /// Shows an image: the picture is decoded by the view, and the header facts go to the footer.
@@ -92,6 +103,7 @@ pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes:
     }
     ui.picture.show(bytes);
     m.shown = Shown::Image { path: path.to_path_buf(), info };
+    reset_scroll(m, ui, path);
 }
 
 /// Shows a binary file's notice. Focus stays on the list, as in Scouter.
@@ -101,6 +113,16 @@ pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
     }
     m.focus = Focus::List;
     m.shown = Shown::Binary { path: path.to_path_buf(), size };
+    m.restore = None;
+}
+
+/// The place the reader is at, for the jump history (Scouter `here`): a text's row, and the top of an image or binary.
+pub fn here(m: &Model) -> Option<Jump> {
+    match &m.shown {
+        Shown::None => None,
+        Shown::Text { path, .. } => Some(Jump { path: path.clone(), top: m.top.floor() as usize }),
+        Shown::Image { path, .. } | Shown::Binary { path, .. } => Some(Jump { path: path.clone(), top: 0 }),
+    }
 }
 
 /// `m`: switches a Markdown document between its rendered view and its source (Scouter `toggleMarkdownSource`).
@@ -125,7 +147,7 @@ pub fn title_parts(root: &Path, path: &Path) -> (String, Option<String>) {
 
 /// The viewer header's badges for what is shown (Scouter `viewerBadgesFor`): the read-only mark, the rendered view,
 /// the image or binary kind, then the cap.
-pub fn badges(shown: &Shown) -> Vec<Badge> {
+pub fn badges(shown: &Shown, wrap: bool) -> Vec<Badge> {
     let mut badges = vec![Badge::quiet("read-only")];
     if shown.previewing() {
         badges.push(Badge::quiet("rendered"));
@@ -140,22 +162,32 @@ pub fn badges(shown: &Shown) -> Vec<Badge> {
     {
         badges.push(Badge { text: "first 1 MiB".into(), kind: BadgeKind::Pill });
     }
+    // Wrapping has no effect on the rendered view, and the image and binary have no text (Scouter `viewerBadgesFor`).
+    if wrap && matches!(shown, Shown::Text { .. }) && !shown.previewing() {
+        badges.push(Badge { text: "wrap".into(), kind: BadgeKind::Pill });
+    }
     badges
 }
 
 /// The rows the shown text takes: its lines, or the rendered Markdown's rows (`rendered_rows`). An image fills the
 /// viewport, so it takes none.
-pub fn content_rows(shown: &Shown, rendered_rows: usize) -> usize {
+pub fn content_rows(shown: &Shown, rendered_rows: usize, text_rows: usize) -> usize {
     match shown {
         Shown::Text { .. } if shown.previewing() => rendered_rows.max(1),
-        Shown::Text { document, .. } => document.lines.max(1),
+        Shown::Text { .. } => text_rows.max(1),
         _ => 0,
     }
 }
 
 /// The footer's facts for what is shown (Scouter `documentInfo`, `setDocument`), and its scroll position in a
 /// viewport of `viewport` rows. A binary has no position: Scouter's stale `All` is not copied (`plan-00001` phase 13).
-pub fn footer_facts(shown: &Shown, viewport: usize, rendered_rows: usize) -> Option<(DocumentInfo, Option<String>)> {
+pub fn footer_facts(
+    shown: &Shown,
+    viewport: usize,
+    rendered_rows: usize,
+    text_rows: usize,
+    top: f64,
+) -> Option<(DocumentInfo, Option<String>)> {
     match shown {
         Shown::None => None,
         Shown::Text { document, language, markdown, .. } => {
@@ -165,11 +197,11 @@ pub fn footer_facts(shown: &Shown, viewport: usize, rendered_rows: usize) -> Opt
                 truncated: document.truncated,
                 rendered: markdown.map(|view| view.is_rendered()),
             };
-            Some((info, Some(scroll_label(content_rows(shown, rendered_rows), viewport, 0))))
+            Some((info, Some(scroll_label(content_rows(shown, rendered_rows, text_rows), viewport, top))))
         }
         Shown::Image { info, .. } => {
             let info = DocumentInfo::Image { width: info.width, height: info.height, format: info.format.into() };
-            Some((info, Some(scroll_label(viewport, viewport, 0))))
+            Some((info, Some(scroll_label(viewport, viewport, 0.0))))
         }
         Shown::Binary { size, .. } => Some((DocumentInfo::Binary { size: format_size(*size) }, None)),
     }
@@ -202,6 +234,7 @@ mod tests {
         assert!(shown(Some(View::Rendered)).previewing());
         assert!(!shown(Some(View::Source)).previewing());
         assert!(!shown(None).previewing());
-        assert_eq!(badges(&shown(Some(View::Rendered))).len(), 2);
+        assert_eq!(badges(&shown(Some(View::Rendered)), false).len(), 2);
+        assert_eq!(badges(&shown(Some(View::Source)), true).last().map(|b| b.text.as_str()), Some("wrap"));
     }
 }

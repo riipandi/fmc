@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T06:14:58+07:00
+updated: 2026-11-26T06:46:46+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -57,8 +57,8 @@ phases:
       note: "Images decode the header with imagesize 0.15 (approved; resolves at 0.15.0) and open through OpenTUI's ImageView with the auto protocol, fit contain, scaled to the reader; the footer shows WxH and the format from the native names (png, jpeg, webp, gif). Binary notice centred as Scouter draws it, focus stays in the list. Live at 80x24 against Scouter 0.9.9: the PNG and the binary at startup, and the PNG opened from the tree, identical apart from the approved footer quit label and focus. Owner check: the picture in a Kitty-capable terminal (Rex draws no pixels). Scouter's stale footer position after a binary is recorded in issue-00002, not copied."
     - id: 14
       title: "W3: reader motions, jump history, wrap, pan, copy"
-      status: pending
-      note: —
+      status: done
+      note: "ScrollBox viewer; keys of §4.3 (j k, h l pan, space b, ctrl d u, gg G, counts, { }, zz, w) through the parser; jump history of 100 (ctrl+o, alt+i; jump.rs core); wrap kept across files; y copies the selection or the path through OpenTUI (OSC 52 and the system clipboard, copied_summary); drag selects and keeps the selection, nothing copied on release (approved, architecture.md). Live at 80x24 against Scouter 0.9.9 on the chapters fixture: 120G, G, gg, zz, { }, ctrl+d and ctrl+u, space and b, j k, w, pan, identical apart from the approved footer quit label; the jump back is identical apart from the approved focus. Open: the rendered view stops two rows short at the bottom (issue-00003). Owner check: drag selection and the wheel."
     - id: 15
       title: "W3: in-file search"
       status: pending
