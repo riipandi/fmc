@@ -12,10 +12,7 @@ fn main() {
     buffer.clear(Rgba::from_rgb_u8(20, 20, 30));
 
     // Draw some styled text
-    let title_style = Style::builder()
-        .fg(Rgba::from_hex("#FF6600").unwrap())
-        .bold()
-        .build();
+    let title_style = Style::builder().fg(Rgba::from_hex("#FF6600").unwrap()).bold().build();
 
     let text_style = Style::fg(Rgba::WHITE);
 
