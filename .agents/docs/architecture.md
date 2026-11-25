@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T05:46:30+07:00
+updated: 2026-11-26T05:49:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -303,10 +303,66 @@ Alternatives considered:
 
 - OpenTUI `ScrollBox` with a row widget per entry — rejected: its scrollbar glyphs differ from Scouter's, and hit-testing, selection, and the thumb would then be checked only in the terminal.
 
+### JavaScript, TypeScript, TSX, JSX, Markdown, and Zig use Core's highlight queries
+
+Context: Scouter colours these with the queries `@opentui/core` ships (`assets/{javascript,typescript,typescriptreact,markdown,markdown_inline,zig}/highlights.scm`); the Rust binding bundles the grammar crates' own queries, which name some captures differently (TypeScript property: plain text in Scouter, function colour in fmc; `issue-00001-w3-reader-parity-gaps.md`).
+
+Decision: fmc depends directly on `tree-sitter-javascript`, `tree-sitter-typescript`, `tree-sitter-md`, and `tree-sitter-zig` at the exact versions `opentui` 0.9.9 links, and registers Core's copied queries (MIT notice beside them) for those languages. Chosen by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) Colours match Scouter cell for cell; no extra C build, the crates are already in the graph.
+- (negative) Four direct dependencies whose versions must move with every `opentui` bump.
+
+Alternatives considered:
+
+- Keep the binding's bundled queries and record a colour deviation — rejected by the owner: a visible difference on six languages.
+
+### Approved deviation: `Ctrl+q` quits, plain `q` does not
+
+Context: Scouter quits on `q` or `Ctrl+c`, also from inside the help overlay (`scouter:src/core/keys.ts:7-9`, `src/app/app.ts:740-744`).
+
+Decision: `Ctrl+q` (shown `^q`) and `Ctrl+c` quit; plain `q` does nothing at the global level. `--help`, the `?` card, the footer hints, the welcome hint card, and `docs/keymaps.md` say `^q`. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) No quit on a stray key; `q` is free for file-manager actions later.
+- (negative) Scouter users' muscle memory for `q` stops working.
+
+Alternatives considered:
+
+- `Ctrl+q` in addition to `q` — rejected by the owner.
+
+### Approved deviation: Enter on a file keeps focus in the sidebar
+
+Context: in browse mode, Enter, `l`, or `→` on a file opens it and moves focus to the reader (`scouter:src/app/app.ts:425`, `finishShowing`); a binary file already keeps focus on the list (`:417`).
+
+Decision: opening a file from the tree keeps focus on the list, so `j`/`k` keep browsing; `Tab` or a click on the reader moves focus there. The finder and the changes screen keep Scouter's behaviour. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) Browsing file after file needs no `Tab` back.
+- (negative) Reading a long file needs one extra `Tab` before scrolling keys apply to it.
+
+Alternatives considered:
+
+- Enter previews, a second Enter on the same file focuses the reader — rejected by the owner.
+
+### Approved deviation: a file refused at startup still shows its folder
+
+Context: Scouter reads a startup file before it reveals it (`scouter:src/app/app.ts:330-335`), so a refused file (not UTF-8) leaves the sidebar empty under `Files`.
+
+Decision: fmc lists the parent folder and selects the file, then shows the same footer and reader notice as Scouter. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The user can browse away from the refused file at once.
+- (negative) The startup capture differs from Scouter's in the sidebar.
+
+Alternatives considered:
+
+- Reproduce the empty sidebar — rejected by the owner: it reads as a defect.
+
 ## Pending decisions
 
-- Highlight queries for JavaScript, TypeScript, TSX, JSX, and Zig (`issue-00001-w3-reader-parity-gaps.md`, plan-00001 W3 phase 11, decided by the owner). Scouter colours these with Core's bundled queries; OpenTUI's Rust binding bundles the grammar crates' own queries, which name some captures differently. Options:
-  1. Approve four direct dependencies pinned to the versions OpenTUI already links (`tree-sitter-javascript` `=0.25.0`, `tree-sitter-typescript` `=0.23.2`, `tree-sitter-md` `=0.5.4`, `tree-sitter-zig` `=1.1.2`), and copy Core's `assets/*/highlights.scm` with their MIT notice. Exact parity; four crates added to `rules.md`. [recommended: the parity rule makes a difference a defect, and the cost is four crates the engine already builds]
-  2. Keep OpenTUI's bundled queries and record a deviation naming the captures that differ. No new dependency; a visible colour difference on these five languages.
-  3. Other: reply with the design you want.
 - `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.

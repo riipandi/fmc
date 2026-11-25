@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T05:46:30+07:00
+updated: 2026-11-26T05:49:00+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -46,6 +46,7 @@ Versions are the crates.io snapshot of 2026-11-26 (`research/dependency-survey.m
 | `imagesize` | `0.15` | default | Image width, height, and format from the header |
 | `icu_collator` | `2.4` | default (`compiled_data`) | Tree sort order (`Intl.Collator` parity) |
 | `tree-sitter-json` `=0.24.8`, `tree-sitter-css` `=0.25.0`, `tree-sitter-html` `=0.23.2`, `tree-sitter-go` `=0.25.0`, `tree-sitter-python` `=0.25.0`, `tree-sitter-bash` `=0.25.1`, `tree-sitter-yaml` `=0.7.2`, `tree-sitter-toml-ng` `=0.7.0`, `tree-sitter-c` `=0.24.2`, `tree-sitter-java` `=0.23.5` | exact | default | The grammars Scouter vendors beyond OpenTUI's bundled set |
+| `tree-sitter-javascript` `=0.25.0`, `tree-sitter-typescript` `=0.23.2`, `tree-sitter-md` `=0.5.4`, `tree-sitter-zig` `=1.1.2` | exact (the versions `opentui` already links) | default | Language handles to register Core's highlight queries for JS, TS, TSX, JSX, Markdown, and Zig (owner, 2026-11-26) |
 | dev: `insta` `1.49`, `assert_cmd` `2.2`, `tempfile` `3.27` | | default | Snapshots, CLI tests, fixture repositories |
 
 Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
@@ -60,7 +61,7 @@ Tools (installed, not crate dependencies): zig `0.17.1` (native library build), 
 - Allowed dependency licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `Unicode-3.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`. `cargo deny check licenses` enforces it.
 - One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
-- The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, each with its grammar's MIT `LICENSE` beside it; a copy keeps both files together.
+- The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
 
 ## Sample data
 
