@@ -131,7 +131,7 @@ The decisions are the records in `architecture.md` (all 2026-11-26): engine, vid
 | What | Where | The record |
 | --- | --- | --- |
 | Decisions and deviations | `architecture.md` | The 15 records; a new deviation is a new record |
-| Dependency allowlist, license policy | `rules.md`, "Dependencies", "Licenses" | Approved crates and versions; the `opentui` license exception |
+| Dependency allowlist, license policy | `rules.md`, "Dependencies", "Licenses" | Approved crates and versions; the `opentui-sys` license exception |
 | Core purity, file size, test placement | `rust.md`, "Layout rules" | Binding from phase 5 |
 | Commands, tools, native library path | `shape.md` | Updated in phases 1 to 4 |
 | Human docs | `README.md`, `PRODUCT.md`, `DESIGN.md`, `docs/{development,cli,keymaps}.md` | Each phase syncs what it changes |
@@ -202,7 +202,7 @@ The decisions are the records in `architecture.md` (all 2026-11-26): engine, vid
 | Lint | `cargo clippy --all-targets -- -D warnings` | 0 warnings |
 | Unit and integration | `cargo test` | All green; core tests need no terminal and no git |
 | Build | `cargo build` and `cargo build --release` | Builds; `otool -L` lists only system libraries |
-| Licenses | `cargo deny check licenses` | Only the documented `opentui` exception |
+| Licenses | `cargo deny check licenses` | Only the documented `opentui-sys` exception |
 | Live run | Rex, fmc and Scouter (core 0.9.9) on the demo repository, 80x24 and 160x48, same keys | Text captures identical except approved deviations |
 | Mouse | hit-test unit tests and an owner check | Click, drag-resize, drag-copy, header fold behave as §4.6 |
 | Parity | `parity-audit` per screen | No open difference, or each one recorded |

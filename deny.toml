@@ -16,13 +16,9 @@ allow = [
 confidence-threshold = 0.9
 unused-allowed-license = "allow"
 
-# opentui declares LGPL because the upstream release library embeds FFmpeg. fmc links a native
+# opentui-sys declares `MIT AND LGPL-2.1-or-later` because the upstream release library embeds FFmpeg. fmc links a native
 # library built with `-Dvideo=false` (scripts/opentui-native.sh), which has no FFmpeg code.
 # This exception is valid only while that holds.
-[[licenses.exceptions]]
-crate = "opentui"
-allow = ["LGPL-2.1-or-later"]
-
 [[licenses.exceptions]]
 crate = "opentui-sys"
 allow = ["LGPL-2.1-or-later"]

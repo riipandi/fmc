@@ -54,7 +54,7 @@ Tools (installed, not crate dependencies): zig `0.17.1` (native library build), 
 
 - fmc is `MIT OR Apache-2.0` (`architecture.md`).
 - Allowed dependency licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `Unicode-3.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`. `cargo deny check licenses` enforces it.
-- One documented exception: `opentui` and `opentui-sys` declare `MIT AND LGPL-2.1-or-later` because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
+- One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
 
 ## Sample data
