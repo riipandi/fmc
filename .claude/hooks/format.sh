@@ -15,7 +15,7 @@ root=${CLAUDE_PROJECT_DIR:-$PWD}
 
 case "$file" in
 *.rs)
-    # Direct rustfmt skips cargo's metadata pass; the default style applies (no rustfmt.toml).
+    # rustfmt reads rustfmt.toml from the file's ancestors; direct use skips cargo's metadata pass.
     command -v rustfmt >/dev/null && rustfmt --edition 2024 "$file" 2>/dev/null
     ;;
 *.md)

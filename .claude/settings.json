@@ -15,11 +15,14 @@
     },
     "permissions": {
         "allow": [
-            "Bash(cargo *)",
-            "Bash(just *)"
+            "Bash(just)",
+            "Bash(just *)",
+            "Bash(cargo *)"
         ],
         "ask": [
             "Edit(/Cargo.toml)",
+            "Edit(/rust-toolchain.toml)",
+            "Edit(/.cargo/config.toml)",
             "Bash(cargo add *)",
             "Bash(cargo remove *)",
             "Bash(cargo install *)",
