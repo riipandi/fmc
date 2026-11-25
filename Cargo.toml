@@ -14,3 +14,8 @@ categories = ["command-line-utilities"]
 # Both pinned exactly: the native library in .cache/opentui-native must match the -sys header.
 opentui = { version = "=0.9.9", features = ["tree-sitter"] }
 opentui-sys = "=0.9.9"
+clap = { version = "4.6", default-features = false, features = ["std", "derive", "help", "usage"] }
+
+[dev-dependencies]
+assert_cmd = "2.2"
+tempfile = "3.27"

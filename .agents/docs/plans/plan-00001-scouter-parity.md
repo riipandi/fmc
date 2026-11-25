@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:25:00+07:00
+updated: 2026-11-26T04:30:16+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -21,8 +21,8 @@ phases:
       note: "demo-repo.sh: two runs give identical git status and hashes (ab4f5d2, d7da111). Scouter on core 0.9.9 vs 0.9.0, README rendered at 187x60, top and bottom: text and HTML captures byte-identical (tables included). W0 complete."
     - id: 5
       title: "W1: crate layout and command line"
-      status: pending
-      note: —
+      status: done
+      note: "--help byte-identical to Scouter (name swapped, --upgrade dropped as out of scope); -h/-v matched as exact tokens before clap; 12 tests"
     - id: 6
       title: "W1: theme palettes and detection"
       status: pending

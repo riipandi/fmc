@@ -1,26 +1,42 @@
-//! Engine spike: one Markdown widget and one Rust code widget on the OpenTUI engine. Quit with `q`.
+mod app;
+mod args;
+mod services;
+mod ui;
 
-use opentui::prelude::*;
-use opentui::widget::{Code, Markdown};
+use std::io::{IsTerminal, Write};
+use std::process::ExitCode;
 
-const NOTES: &str = "# The Marauder's Map\n\nA **magical** map of `Hogwarts`, drawn by Moony, Wormtail, Padfoot, and Prongs.\n\n\
-- [x] Find the Room of Requirement\n- [ ] Return the map to Harry Potter\n\n\
-| Room | Floor |\n|---|---|\n| Great Hall | 1 |\n| Gryffindor Tower | 7 |\n\n\
-> I solemnly swear that I am up to no good.\n";
+use args::Command;
 
-const SPELL: &str = "/// Opens the vault at Gringotts.\nfn open_vault(number: u32) -> Result<String, String> {\n    \
-if number == 713 {\n        return Err(\"Only Albus Dumbledore may open it\".into());\n    }\n    \
-Ok(format!(\"Vault {number} is open\"))\n}\n";
-
-fn main() -> opentui::Result<()> {
-    let app = App::new(AppOptions::default())?;
-    let notes = Markdown::new(&app).set_markdown(NOTES);
-    let spell = Code::new(&app).filetype("rust").line_numbers(true).set_code(SPELL);
-    app.root().add(&notes).add(&spell);
-    app.on_key(|cx, key| {
-        if key.matches("q") {
-            cx.quit();
+fn main() -> ExitCode {
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(message) => {
+            let line = format!("fmc: {}", fmc::text::display_label(&message));
+            let mut stderr = std::io::stderr();
+            // Bun's console.error colors the line red on a terminal; match it.
+            let _ = if stderr.is_terminal() {
+                writeln!(stderr, "\x1b[0m\x1b[31m{line}\x1b[0m")
+            } else {
+                writeln!(stderr, "{line}")
+            };
+            ExitCode::FAILURE
         }
-    });
-    app.run()
+    }
+}
+
+fn run() -> Result<(), String> {
+    match args::parse(std::env::args_os().skip(1))? {
+        Command::Help => println!("{}", args::help_text()),
+        Command::Version => println!("{}", args::version_text()),
+        Command::Open(path) => {
+            if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
+                return Err("Run fmc in an interactive terminal.".into());
+            }
+            let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
+            let target = args::open_target(path, &cwd)?;
+            app::run(&target).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }
