@@ -7,6 +7,22 @@ use std::path::{Path, PathBuf};
 
 use fmc::explorer::{Entry, Kind, is_noise, sort_entries};
 
+/// What opening an entry found: a folder's listing, or a file.
+#[derive(Clone, Debug)]
+pub enum Opened {
+    Folder(Vec<Entry>),
+    File,
+}
+
+/// Opens an entry as Scouter's `openPath` does: it follows a link and asks whether the target is a folder
+/// (`src/app/app.ts:317-318`). A link to a folder lists it; a link to a file is a file.
+pub fn open(path: &Path, loop_parents: &[PathBuf]) -> Result<Opened, String> {
+    if fs::metadata(path).map_err(text)?.is_dir() {
+        return list(path, loop_parents).map(Opened::Folder);
+    }
+    Ok(Opened::File)
+}
+
 /// Lists a folder: noise dropped, folders first, names in collation order. A symbolic link is refused when it
 /// resolves to one of `loop_parents`, the folders above it in the tree.
 pub fn list(path: &Path, loop_parents: &[PathBuf]) -> Result<Vec<Entry>, String> {

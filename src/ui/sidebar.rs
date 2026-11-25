@@ -15,6 +15,12 @@ pub fn fit(terminal: u16, preferred: Option<i64>) -> u16 {
     constrain(terminal, preferred.unwrap_or(default))
 }
 
+/// The preferred width after a drag that started at column `start_x` with the sidebar `start_width` wide, now at
+/// column `x` (Scouter `dragTo`). The caller constrains it.
+pub fn dragged(start_width: u16, start_x: u16, x: u16) -> i64 {
+    i64::from(start_width) + i64::from(x) - i64::from(start_x)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -27,5 +33,12 @@ mod tests {
         assert_eq!(fit(50, None), 22);
         assert_eq!(fit(20, None), 1);
         assert_eq!(fit(80, Some(10)), 24);
+    }
+
+    #[test]
+    fn a_drag_moves_the_edge_by_its_distance() {
+        assert_eq!(dragged(28, 27, 33), 34);
+        assert_eq!(dragged(28, 27, 10), 11);
+        assert_eq!(constrain(80, dragged(28, 27, 0)), 24, "the constraint applies after the drag");
     }
 }

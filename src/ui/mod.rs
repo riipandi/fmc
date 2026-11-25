@@ -6,4 +6,5 @@ pub mod help;
 pub mod hints;
 pub mod sidebar;
 pub mod styled;
+pub mod tree;
 pub mod welcome;

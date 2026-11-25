@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:56:51+07:00
+updated: 2026-11-26T05:16:41+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -41,10 +41,8 @@ phases:
       note: "core tree (explorer/tree.rs) takes listings as values; sort via icu_collator 2.4 root collation, checked against Bun Intl.Collator order; services/fs.rs lists with noise, folders first, loop refusal; 59 tests in verify, 16 new
     - id: 10
       title: "W2: tree view, git marks, sidebar resize"
-      status: pending
-      note: —
-    - id: 11
-      title: "W3: text loading and code view"
+      status: done
+      note: "80x24 live captures against Scouter 0.9.9 (same keys, same demo repository): 11 text states of the tree, 10 scroll states of an overflowing list, the file-target, root `-`, page, edge, and Backspace keys, the loop refusal on a link, and 4 HTML colour states. The sidebar columns match in every state; the reader differs only in the approved wordmark and version. Mouse (edge drag, click, wheel) is an owner check. Enter on a file and `/` are W3 and W4 no-ops. services/git.rs (private index copy with a Drop guard) was built here for the marks; phase 18 extends it"W3: text loading and code view"
       status: pending
       note: —
     - id: 12
@@ -74,7 +72,7 @@ phases:
     - id: 18
       title: "W5: git service"
       status: pending
-      note: —
+      note: "phase 10 built the marks part (services/git.rs: private index copy with a Drop guard, rev-parse, name-status, ls-files); this phase adds the change list and patches"
     - id: 19
       title: "W5: changes screen and change list"
       status: pending

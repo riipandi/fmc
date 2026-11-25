@@ -1,11 +1,13 @@
 //! The file tree model (Scouter `src/explorer/`, `src/core/files.ts`): the rows, expansion, and reveal, with the
 //! sort order. Listing a folder is I/O, so the model takes the listing as values (`services/fs.rs`).
 
+mod browser;
 mod sort;
 mod tree;
 
 use std::path::{Path, PathBuf};
 
+pub use browser::{Browser, relative};
 pub use sort::{is_noise, sort_entries};
 pub use tree::{Expand, Reveal, Row, Tree};
 

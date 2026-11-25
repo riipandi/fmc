@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T04:49:38+07:00
+updated: 2026-11-26T05:14:02+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -285,6 +285,23 @@ Alternatives considered:
 
 - Show `SCOUTER` until parity closes — rejected by the owner: it ships a wrong name for the whole milestone.
 - A new fmc wordmark — rejected: a larger visual deviation with no design yet.
+
+### The file tree is a list fmc draws from a scroll position, not OpenTUI's ScrollBox
+
+Context: Scouter's tree is a `ScrollBoxRenderable` of row boxes with a custom half-block thumb (`scouter:src/ui/styled.ts:28-51`) and a native scroll-into-view (`scrollChildIntoView`). The row's selection background and the thumb must not overlap, and the folder dot sits at the row's right edge, beside the thumb only while the list overflows (`research/scouter-inventory.md` §9.4, §19.2).
+
+Decision: fmc keeps the selection and the scroll position in the core (`explorer/browser.rs`), draws the visible rows and the thumb itself (`ui/tree.rs`), and keeps the selection at the nearest edge as OpenTUI's scroll-into-view does. Captures at 80x24 match Scouter's text and colours for every tree state in plan-00001 W2 phase 10 (`research/` evidence in the plan note).
+
+Consequences:
+
+- (positive) Scroll, selection, and hit-testing are pure and unit-tested; the thumb matches Scouter's glyphs.
+- (positive) A click maps a screen row to a list row by arithmetic, so it is testable without a mouse.
+- (negative) fmc keeps its own copy of the scroll rules; a change in OpenTUI's scroll-into-view will not reach the tree on its own.
+- (negative) The wheel scrolls one row per tick. Scouter's wheel is OpenTUI's default, not verified (`research/scouter-inventory.md` §4.6); the owner checks it with a mouse.
+
+Alternatives considered:
+
+- OpenTUI `ScrollBox` with a row widget per entry — rejected: its scrollbar glyphs differ from Scouter's, and hit-testing, selection, and the thumb would then be checked only in the terminal.
 
 ## Pending decisions
 

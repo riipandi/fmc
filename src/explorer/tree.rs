@@ -102,6 +102,11 @@ impl Tree {
         }
     }
 
+    /// Whether the folder's children are in the tree (a folder that was never expanded is not listed).
+    pub fn is_listed(&self, path: &Path) -> bool {
+        self.nodes.get(path).is_some_and(|node| node.children.is_some())
+    }
+
     pub fn is_expanded(&self, path: &Path) -> bool {
         self.nodes.get(path).is_some_and(|node| node.expanded)
     }

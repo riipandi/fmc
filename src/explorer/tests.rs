@@ -221,3 +221,109 @@ fn relisting_replaces_the_old_children() {
     assert!(tree.entry(Path::new("/vault/hogwarts")).is_none());
     assert_eq!(tree.rows().len(), 2);
 }
+
+/// A browser over a root with `files` children, named `f00.md`, `f01.md`, ..., and a viewport of `height` rows.
+fn browser(files: usize, height: usize) -> Browser {
+    let root = PathBuf::from("/vault");
+    let mut tree = Tree::new(root.clone());
+    let entries = (0..files).map(|n| Entry::new(&root, &format!("f{n:02}.md"), Kind::File)).collect();
+    tree.listed(&root, entries);
+    let mut browser = Browser::new(tree);
+    browser.set_height(height);
+    browser
+}
+
+fn selected_name(browser: &Browser) -> String {
+    browser.selected().file_name().unwrap().to_string_lossy().into_owned()
+}
+
+#[test]
+fn moving_past_the_bottom_scrolls_from_the_nearest_edge() {
+    let mut browser = browser(10, 5);
+    browser.move_by(3);
+    assert_eq!((browser.selected_index(), browser.top()), (3, 0));
+    browser.move_by(1);
+    assert_eq!((browser.selected_index(), browser.top()), (4, 0));
+    browser.move_by(1);
+    assert_eq!((browser.selected_index(), browser.top()), (5, 1));
+    browser.move_to_edge(true);
+    assert_eq!((browser.selected_index(), browser.top()), (10, 6));
+    browser.move_by(-20);
+    assert_eq!((browser.selected_index(), browser.top()), (0, 0));
+}
+
+#[test]
+fn moves_clamp_at_both_ends() {
+    let mut browser = browser(2, 10);
+    browser.move_by(-1);
+    assert_eq!(selected_name(&browser), "vault");
+    browser.move_by(99);
+    assert_eq!(selected_name(&browser), "f01.md");
+}
+
+#[test]
+fn a_page_is_one_row_less_than_the_viewport() {
+    let mut browser = browser(30, 6);
+    browser.page(true);
+    assert_eq!(browser.selected_index(), 5);
+    browser.page(true);
+    assert_eq!(browser.selected_index(), 10);
+    browser.page(false);
+    assert_eq!(browser.selected_index(), 5);
+}
+
+#[test]
+fn the_wheel_scrolls_without_moving_the_selection() {
+    let mut browser = browser(10, 4);
+    browser.scroll(3);
+    assert_eq!((browser.top(), browser.selected_index()), (3, 0));
+    browser.scroll(100);
+    assert_eq!(browser.top(), 7, "rows minus the viewport: the last full page");
+    browser.scroll(-100);
+    assert_eq!(browser.top(), 0);
+}
+
+#[test]
+fn a_click_maps_a_line_to_its_row_through_the_scroll_position() {
+    let mut browser = browser(10, 4);
+    browser.scroll(2);
+    assert_eq!(browser.row_at(0), Some(2));
+    assert_eq!(browser.row_at(3), Some(5));
+    assert_eq!(browser.row_at(4), None, "below the viewport");
+    browser.select_index(5);
+    assert_eq!(selected_name(&browser), "f04.md");
+}
+
+#[test]
+fn a_click_past_the_last_row_selects_nothing() {
+    let browser = browser(1, 6);
+    assert_eq!(browser.row_at(1), Some(1));
+    assert_eq!(browser.row_at(2), None);
+}
+
+#[test]
+fn selecting_a_missing_path_falls_back_to_the_first_row() {
+    let mut browser = browser(3, 5);
+    browser.move_by(2);
+    browser.select(Path::new("/vault/gone.md"));
+    assert_eq!(selected_name(&browser), "vault");
+    assert!(!browser.select_row(Path::new("/vault/gone.md")));
+    assert!(browser.select_row(Path::new("/vault/f01.md")));
+    assert_eq!(selected_name(&browser), "f01.md");
+}
+
+#[test]
+fn relative_paths_use_slashes_and_keep_the_root_out() {
+    assert_eq!(relative(Path::new("/vault"), Path::new("/vault/hogwarts/notes.md")), "hogwarts/notes.md");
+    assert_eq!(relative(Path::new("/vault"), Path::new("/vault")), "");
+}
+
+#[test]
+fn reflow_clamps_after_rows_disappear() {
+    let mut browser = browser(10, 4);
+    browser.move_to_edge(true);
+    browser.tree.listed(Path::new("/vault"), vec![Entry::new(Path::new("/vault"), "only.md", Kind::File)]);
+    browser.reflow();
+    assert_eq!(browser.top(), 0);
+    assert_eq!(browser.visible_rows().len(), 2);
+}
