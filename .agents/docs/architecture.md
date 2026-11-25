@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T06:00:38+07:00
+updated: 2026-11-26T06:57:20+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -257,11 +257,13 @@ Alternatives considered:
 
 - Reproduce the bug — rejected by the owner.
 
-### Approved deviation: the `?` card lists the Mouse section
+### Approved deviation: the `?` card lists the Mouse section (superseded)
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: `--help` prints a Mouse section; the `?` card omits it (`scouter:src/ui/help.ts:55`).
+
+Superseded on 2026-11-26 by "`?` opens the key list as a table in the reader"; the Mouse section lives in that page.
 
 Decision: the `?` card shows the Mouse section too, drawn from the same key table. Approved by the owner on 2026-11-26.
 
@@ -392,6 +394,40 @@ Alternatives considered:
 
 - Keep copy on release — rejected by the owner.
 - Add a keyboard visual mode (`v`, `V`) now — not asked for; it would be a separate post-parity item.
+
+### Approved deviation: the tree has no root row
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter draws the browsed folder as row 0 of the tree, with a `▾`/`▸` marker, and it collapses like any folder; its children sit one level in (`scouter:src/explorer/explorer.ts:258-293`, `src/explorer/file-tree.ts`). The sidebar title already shows the root folder's name (`scouter:src/app/chrome.ts:29-32`).
+
+Decision: fmc drops the root row. The root's children are the top level, with no depth guide and no extra indent; the name stays in the sidebar title. `h`/`←`/`Backspace` on a top-level row does nothing; `-` still makes the parent folder the root; a selection that loses its row falls back to the first row. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) One level less indentation on every row; no way to collapse the whole tree by accident.
+- (negative) Every tree capture is one row shorter and one level shallower than Scouter's.
+
+Alternatives considered:
+
+- Keep the root row without a marker, not collapsible — rejected by the owner.
+
+### Approved deviation: `?` opens the key list as a table in the reader
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's `?` draws a centred help card over the panes and consumes the next key (`scouter:src/ui/help.ts`, `src/app/app.ts:746-750`).
+
+Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` grouped as Global, Files, Reader, Changes, Prompts, and Mouse, generated from the key table and drawn with the Markdown table renderer. The page scrolls with the reader keys and `/` searches it; `?` or `Esc` returns to the previous document. This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The full list is readable, scrollable, and searchable; it always matches the dispatch table.
+- (negative) The help no longer floats over the current view; the reader's document is swapped out while it is open.
+
+Alternatives considered:
+
+- Keep Scouter's card and add the table under another key — rejected by the owner.
 
 ## Pending decisions
 
