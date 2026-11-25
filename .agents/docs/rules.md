@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T05:55:13+07:00
+updated: 2026-11-26T06:00:38+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -12,6 +12,8 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 - **Verify before porting.** Establish a Scouter behavior from its source or from a live run through Rex, never from memory or from this file. Scouter's `docs/decision/` records (0001 to 0037) and its `src/` tree (`app/`, `core/`, `explorer/`, `reader/`, `diff/`, `find/`, `ui/`) are the starting map. Record the evidence in the plan or issue that carries the port.
 - **Read-only until parity is closed.** No file-writing feature (create, rename, move, delete, save, or any other write to the user's files) until the owner opens that phase.
 - **Library source.** The UI crates `opentui` and `opentui-sys` are read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Their source wins over docs, READMEs, and examples.
+- **Baseline.** fmc ports Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Every deviation record in `architecture.md` and every line of `docs/parity.md` names it. A commit that ports Scouter behavior ends with the trailer `Scouter-Base: v0.3.4 (434d000f)`. Moving the baseline is an owner decision; it re-checks every deviation and `research/scouter-inventory.md` against the new commit.
+- **Every deviation is documented.** An owner-approved difference lands in the same commit as its `architecture.md` record (rationale) and its `docs/parity.md` line (what users see). An unrecorded difference is a defect.
 - **Parity reference.** Scouter at commit `434d000` with `@opentui/core` bumped to 0.9.9, run from a scratch checkout outside this repository (`architecture.md`). Research snapshots of its behavior live in `research/`.
 
 ## Where a fact lives
@@ -20,7 +22,7 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 | --- | --- |
 | A Rust contract or trap | `rust.md` |
 | A contract or trap across areas | this file |
-| A decision, its rejected alternatives, or an approved parity deviation | `architecture.md` |
+| A decision, its rejected alternatives, or an approved parity deviation | `architecture.md`; a deviation also gets a line in `docs/parity.md` |
 | A path, tool, or command | `shape.md` |
 | A dependency approved, or a license rule | this file ("Dependencies", "Licenses") |
 | A new or moved agent document | `index.md` |

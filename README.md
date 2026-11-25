@@ -2,7 +2,7 @@
 
 A fast, read-only file viewer for the terminal, written in Rust on OpenTUI.
 
-fmc browses a folder, reads code, Markdown, and images, finds files and text, and shows your git changes as diffs. Today it is a port of [Scouter](https://github.com/indrazm/scouter), with the same screens and keys. Later it grows into a file manager.
+fmc browses a folder, reads code, Markdown, and images, finds files and text, and shows your git changes as diffs. Today it is a port of [Scouter](https://github.com/indrazm/scouter), with the same screens and keys, except for the [differences listed here](docs/parity.md). Later it grows into a file manager.
 
 > **Status:** early. The port is in progress and fmc does not run as a viewer yet. It targets macOS on Apple silicon first.
 

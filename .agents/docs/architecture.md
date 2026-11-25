@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T05:58:45+07:00
+updated: 2026-11-26T06:00:38+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -25,7 +25,7 @@ Alternatives considered:
 - <alternative> — rejected: <the reason, specific to this tree>
 ```
 
-An approved parity deviation is a record too. It names the Scouter behavior (with its `file:line` or its decision record), the fmc behavior, and the owner's approval with its date. A difference with no record is a defect.
+An approved parity deviation is a record too. It names the Scouter baseline (version and commit), the Scouter behavior (with its `file:line` or its decision record), the fmc behavior, and the owner's approval with its date. Every deviation also gets a line in `docs/parity.md`. A difference with no record is a defect.
 
 All records below were decided by the owner on 2026-11-26 during the planning of `plan-00001-scouter-parity.md`. Research behind them: `.agents/docs/research/`.
 
@@ -242,6 +242,8 @@ Alternatives considered:
 
 ### Approved deviation: revealing a file expands its immediate parent folder
 
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
 Context: in Scouter, opening a file inside a collapsed nested folder (finder, `o` from the changes screen, or a startup file argument) expands the grandparent but not the parent, so the file has no row and the selection falls to the root (`scouter:src/explorer/file-tree.ts:76-81`, reproduced live). The same happens for a folder picked in the finder.
 
 Decision: fmc expands every ancestor and selects the revealed row. Approved by the owner on 2026-11-26.
@@ -257,6 +259,8 @@ Alternatives considered:
 
 ### Approved deviation: the `?` card lists the Mouse section
 
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
 Context: `--help` prints a Mouse section; the `?` card omits it (`scouter:src/ui/help.ts:55`).
 
 Decision: the `?` card shows the Mouse section too, drawn from the same key table. Approved by the owner on 2026-11-26.
@@ -271,6 +275,8 @@ Alternatives considered:
 - Reproduce the omission — rejected by the owner.
 
 ### Approved deviation: the product name is fmc wherever Scouter says scouter
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter names itself on screen: the welcome wordmark (block letters `SCOUTER` and its version), `--help`, `-v`, and error messages (`scouter:src/ui/welcome.ts`, `scouter:src/index.ts`).
 
@@ -320,6 +326,8 @@ Alternatives considered:
 
 ### Approved deviation: `Ctrl+q` quits, plain `q` does not
 
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
 Context: Scouter quits on `q` or `Ctrl+c`, also from inside the help overlay (`scouter:src/core/keys.ts:7-9`, `src/app/app.ts:740-744`).
 
 Decision: `Ctrl+q` (shown `^q`) and `Ctrl+c` quit; plain `q` does nothing at the global level. `--help`, the `?` card, the footer hints, the welcome hint card, and `docs/keymaps.md` say `^q`. Approved by the owner on 2026-11-26.
@@ -334,6 +342,8 @@ Alternatives considered:
 - `Ctrl+q` in addition to `q` — rejected by the owner.
 
 ### Approved deviation: Enter on a file keeps focus in the sidebar
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: in browse mode, Enter, `l`, or `→` on a file opens it and moves focus to the reader (`scouter:src/app/app.ts:425`, `finishShowing`); a binary file already keeps focus on the list (`:417`).
 
@@ -350,6 +360,8 @@ Alternatives considered:
 
 ### Approved deviation: a file refused at startup still shows its folder
 
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
 Context: Scouter reads a startup file before it reveals it (`scouter:src/app/app.ts:330-335`), so a refused file (not UTF-8) leaves the sidebar empty under `Files`.
 
 Decision: fmc lists the parent folder and selects the file, then shows the same footer and reader notice as Scouter. Approved by the owner on 2026-11-26.
@@ -364,6 +376,8 @@ Alternatives considered:
 - Reproduce the empty sidebar — rejected by the owner: it reads as a defect.
 
 ### Approved deviation: dragging selects text, `y` copies it
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: in Scouter a left drag across text selects it, copies it on release (OSC 52 plus the local clipboard), and clears the selection; `y` copies the active selection, else the current path (`scouter:src/app/app.ts:801-830`, `docs/decision/0033-...`).
 
