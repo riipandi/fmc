@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:18:51+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 
@@ -10,6 +10,10 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 | --- | --- |
 | `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. The one dependency is `opentui_rust` 0.2.3. |
 | `src/main.rs` | The entry point. Today a hello-world buffer demo: it draws into an `OptimizedBuffer` and prints; it never enters a terminal. |
+| `LICENSE-MIT`, `LICENSE-APACHE` | fmc is `MIT OR Apache-2.0` (`Cargo.toml`). |
+| `rust-toolchain.toml`, `rustfmt.toml` | Toolchain pin and formatting rules. |
+| `deny.toml`, `about.toml`, `about.hbs` | License gate (`cargo deny`) and third-party notices (`cargo about`). |
+| `CHANGELOG.md` | Keep a Changelog; user-visible changes go under `[Unreleased]`. |
 | `README.md`, `PRODUCT.md`, `DESIGN.md` | Human docs: overview and usage, product purpose and principles, the design system (palettes, layout, components). |
 | `.agents/docs/`, `.agents/skills/` | Agent docs and project skills (`.claude/skills` links to the skills). |
 | `.claude/` | Claude Code settings and the format hook. |
@@ -19,9 +23,9 @@ No workspace, no `docs/` yet (`plan-00001` phase 2 creates it), no `justfile`, n
 
 ## Toolchain
 
-- Cargo with rustc, rustfmt, and clippy from rustup. Edition 2024 (`Cargo.toml:3`). No `rust-toolchain.toml`: the toolchain is whatever rustup provides.
-- Formatting: rustfmt with its defaults (no `rustfmt.toml`). The Claude Code `PostToolUse` hook (`.claude/hooks/format.sh`) formats each edited `.rs` file with `rustfmt --edition 2024`, and each edited `.md` file with `rumdl fmt`.
-- Tools: `jq` (the hook needs it), `rumdl` (optional: the Markdown branch of the hook skips it when missing), Rex (the `rex` skill: live runs of fmc and of Scouter). Check that a tool is installed before relying on it; do not install one unasked.
+- Rust 1.100.0 pinned in `rust-toolchain.toml` with clippy and rustfmt; rustup installs it on first use. Edition 2024.
+- Formatting: `rustfmt.toml` (`max_width = 120`, `use_small_heuristics = "Max"`). The Claude Code `PostToolUse` hook (`.claude/hooks/format.sh`) formats each edited `.rs` file with `rustfmt --edition 2024`, and each edited `.md` file with `rumdl fmt`.
+- Tools: `jq` (the hook needs it), `rumdl` (optional: the Markdown branch of the hook skips it when missing), Rex (the `rex` skill: live runs of fmc and of Scouter), `cargo-deny` and `cargo-about` (`cargo install cargo-deny`, `cargo install cargo-about --locked --features cli`). Check that a tool is installed before relying on it; do not install one unasked.
 
 ## Commands
 
@@ -33,6 +37,8 @@ Run from the repository root.
 | Lint | `cargo clippy --all-targets -- -D warnings` | Warnings are errors. |
 | Test | `cargo test` | Unit and integration tests. |
 | Build | `cargo build` | Debug build; `cargo build --release` for the release profile. |
+| Licenses | `cargo deny check licenses` | Allowlist from `rules.md` ("Licenses"); the `opentui` exception lives in `deny.toml`. |
+| Notices | `cargo about generate about.hbs -o target/THIRD_PARTY_LICENSES.html` | Ships with a release binary. |
 | Run | `cargo run` | Runs the binary. Once fmc draws a terminal UI, drive it through Rex or the `run` skill, not through a pipe. |
 
 A change claims done only when format, lint, test, and build pass (`rust-verify-harden`). A change to what is drawn or how input is handled also gets a live run.

@@ -2,6 +2,12 @@
 name = "fmc"
 version = "0.1.0"
 edition = "2024"
+description = "A terminal file browser with Markdown, code, image, and git diff views"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/riipandi/fmc"
+readme = "README.md"
+keywords = ["tui", "terminal", "file-manager", "git", "markdown"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 opentui_rust = "0.2.3"

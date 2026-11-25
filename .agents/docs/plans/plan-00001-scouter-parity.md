@@ -1,12 +1,12 @@
 ---
-status: awaiting-approval
+status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:18:55+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
-      status: pending
-      note: —
+      status: done
+      note: "cargo-about 0.9.3 installed; deny passes on the current tree"
     - id: 2
       title: "W0: native library build script and cache"
       status: pending
