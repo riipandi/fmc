@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T05:08:07+07:00
+updated: 2026-11-26T05:39:36+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -116,3 +116,18 @@ Scouter always shows the sidebar: its width is `min(40, max(28, floor(termWidth 
 Trap: in the legacy keyboard encoding `Ctrl+/` arrives as `0x1F`, the same byte as `Ctrl+_` (and `Ctrl+7` in some terminals). Telling them apart needs the kitty keyboard protocol; check what the locked `opentui` parser reports for each terminal fmc supports before binding it, and keep a fallback key if a terminal cannot send it.
 
 **Unlock:** plan-00001 done. **First move:** check `Ctrl+/` in Ghostty, Rio, and Terminal.app through `opentui`'s key events, then write the breakpoint rule and the `architecture.md` deviation record.
+
+### RI-12 — Toggle hidden files with `Ctrl+.`
+
+- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done, together with RI-11) · updated 2026-11-26
+
+Scouter lists every entry except a fixed noise list (`.git`, `.hg`, `.svn`, `.DS_Store`, `.AppleDouble`, `Thumbs.db`, `desktop.ini`; `research/scouter-inventory.md` §9.1, `scouter:src/core/files.ts:34`) and has no hidden-file toggle. The owner chose on 2026-11-26:
+
+- Default: dotfiles and dotfolders shown, as Scouter does.
+- `Ctrl+.` (shown as `^.` on macOS) hides or shows them in the tree and the finder.
+- The noise list stays hidden in both states.
+- With RI-9, the state persists in `settings.json`.
+
+Trap: `Ctrl+.` has no legacy encoding; only terminals with the kitty keyboard protocol (Ghostty, Rio, kitty, WezTerm) send it, and Terminal.app cannot. It shares the terminal check and the fallback-key decision with RI-11's `Ctrl+/`.
+
+**Unlock:** plan-00001 done; run it with RI-11. **First move:** the same per-terminal key check as RI-11, then a fallback key that does not collide with the key table.
