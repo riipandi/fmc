@@ -209,7 +209,7 @@ Mouse on a row: selects and opens or toggles (see section 4.6).
 | `Space` `PageDown` | Scroll 0.9 page | `src/core/keys.ts:57-62` |
 | `b` `PageUp` | Scroll back 0.9 page | `src/core/keys.ts:57-62` |
 | `Ctrl+d` `Ctrl+u` | Scroll ½ page | `src/core/keys.ts:67-72` |
-| `gg` `Home` | Top | `src/app/app.ts:954-961` |
+| `g` (so also `gg`) `Home` | Top. A single `g` already goes to the top (`boundaryOf`); `gg` is two presses of it. | `src/app/app.ts:954-961`, `src/core/keys.ts:17-21` |
 | `G` `End` | Bottom. With a count (`120G`), goes to line 120. | `src/app/app.ts:954-961`, `src/reader/reader-motion.ts:20-31` |
 | `0`–`9` | Build a count (only before `G`). Shown in footer. Ignored for rendered Markdown and in the file list. | `src/reader/reader-motion.ts:20-31`, `docs/decision/0029-...` |
 | `{` `}` | Previous / next blank line (paragraph) into the top row. Refused for rendered Markdown. | `src/reader/reader-motion.ts:44-66`, `:98-112` |

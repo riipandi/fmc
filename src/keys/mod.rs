@@ -1,4 +1,77 @@
-//! The key list shown by `--help` and the `?` card (Scouter `src/core/keymap.ts`).
+//! Keys: the parser that turns presses into actions, and the key list shown by `--help` and the `?` card (Scouter
+//! `src/core/keymap.ts`). Tests check that every key the list documents is one the parser binds.
+
+mod parser;
+
+pub use parser::{Focus, Parser, Screen, State, Step};
+
+/// One key press, named as OpenTUI Core names it: `name` is the lowercase key (`g`, `return`, `pagedown`), `text`
+/// the typed text (`G`, `?`, `{`), and Shift is set for capitals.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Key<'a> {
+    pub name: &'a str,
+    pub text: &'a str,
+    pub ctrl: bool,
+    pub alt: bool,
+    pub shift: bool,
+}
+
+impl Key<'_> {
+    /// No Ctrl and no Alt (Scouter `isPlain`); Shift may be set.
+    pub fn plain(&self) -> bool {
+        !self.ctrl && !self.alt
+    }
+}
+
+/// What a key asks the app to do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Action {
+    Quit,
+    Help,
+    CloseHelp,
+    SwitchPane,
+    Escape,
+    /// Narrower (-1) or wider (1) list, by two columns.
+    Resize(i8),
+    JumpBack,
+    JumpForward,
+    ToggleWrap,
+    ToggleMarkdown,
+    ToggleChanges,
+    Copy,
+    /// Move the list selection by rows.
+    Move(i32),
+    /// Move the list selection by a screen, down (1) or up (-1).
+    MovePage(i8),
+    Top,
+    Bottom,
+    /// Enter on a tree row: toggle a folder, open a file.
+    Toggle,
+    /// `l` or Right on a tree row: expand a folder or step into it, open a file.
+    Expand,
+    Collapse,
+    GoUp,
+    Find,
+    FocusDiff,
+    Scroll(i32),
+    Pan(i32),
+    /// 0.9 of a page, down (1) or up (-1).
+    Page(i8),
+    HalfPage(i8),
+    GoToLine(u32),
+    Paragraph(i8),
+    Centre,
+    Search,
+    NextMatch,
+    PreviousMatch,
+    ToggleSplit,
+    ToggleScope,
+    ToggleFold,
+    ToggleContext,
+    Reload,
+    OpenChanged,
+    Hunk(i8),
+}
 
 /// One help row: the keys, then what they do.
 pub type KeyRow = (&'static str, &'static str);
@@ -80,3 +153,6 @@ pub fn key_list_text() -> String {
         .collect::<Vec<_>>()
         .join("\n\n")
 }
+
+#[cfg(test)]
+mod tests;

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:32:30+07:00
+updated: 2026-11-26T04:34:54+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -29,8 +29,8 @@ phases:
       note: "tint values match Scouter output; DESIGN.md hex checked by a test; polling via opentui refresh_palette, stops when a refresh goes unanswered or the terminal announces; live run shows dark text #d4d8de"
     - id: 7
       title: "W1: key table and pending-key parser"
-      status: pending
-      note: —
+      status: done
+      note: "parser in Scouter onKeyPress order (prompts read keys first, in the app); g alone goes to the top in Scouter, so gg is two Top steps; 12 key tests incl. every documented key bound and docs/keymaps.md in step"
     - id: 8
       title: "W1: app loop, chrome, welcome, help"
       status: pending
