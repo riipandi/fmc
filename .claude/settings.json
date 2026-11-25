@@ -14,7 +14,16 @@
         ]
     },
     "permissions": {
-        "allow": ["Bash(cargo *)"],
-        "ask": ["Edit(/Cargo.toml)", "Bash(cargo add *)", "Bash(cargo remove *)", "Bash(cargo install *)", "Bash(git push *)"]
+        "allow": [
+            "Bash(cargo *)",
+            "Bash(just *)"
+        ],
+        "ask": [
+            "Edit(/Cargo.toml)",
+            "Bash(cargo add *)",
+            "Bash(cargo remove *)",
+            "Bash(cargo install *)",
+            "Bash(git push *)"
+        ]
     }
 }

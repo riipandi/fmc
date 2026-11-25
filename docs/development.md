@@ -7,6 +7,7 @@ fmc builds on macOS with Apple silicon. Other platforms come later.
 - Rust. `rustup` installs the pinned version from `rust-toolchain.toml` the first time you run `cargo`.
 - Zig 0.17.1 (`brew install zig`). fmc uses it once per OpenTUI version to build the native library.
 - Git.
+- [just](https://just.systems) (`brew install just`), for the task shortcuts. Optional: every task is a plain command you can run yourself.
 - A terminal with a Nerd Font, for the file icons.
 
 ## First build
@@ -18,11 +19,13 @@ scripts/opentui-native.sh
 cargo build
 ```
 
+With just, `just build` does both. `just` alone lists every task.
+
 The script builds the library without video support, so the fmc binary contains no FFmpeg code. The first run takes a few minutes. It keeps the result in `~/.cache/fmc/opentui-native/<version>`, so later runs and other checkouts finish at once.
 
 ## Checks
 
-Run these before you send a change:
+Run these before you send a change, or run `just verify`:
 
 ```sh
 cargo fmt --check
