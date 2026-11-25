@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T04:22:25+07:00
+updated: 2026-11-26T04:49:38+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -269,6 +269,22 @@ Consequences:
 Alternatives considered:
 
 - Reproduce the omission — rejected by the owner.
+
+### Approved deviation: the product name is fmc wherever Scouter says scouter
+
+Context: Scouter names itself on screen: the welcome wordmark (block letters `SCOUTER` and its version), `--help`, `-v`, and error messages (`scouter:src/ui/welcome.ts`, `scouter:src/index.ts`).
+
+Decision: fmc shows its own name and version in the same places: the wordmark spells `FMC` in Scouter's block-letter style and colours, `-v` prints `fmc <version>`, and help and error text say `fmc`. Layout, colours, and wording around the name stay Scouter's. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The binary never claims to be another product.
+- (negative) Text captures differ from Scouter's on the name and version; a parity diff masks those spans.
+
+Alternatives considered:
+
+- Show `SCOUTER` until parity closes — rejected by the owner: it ships a wrong name for the whole milestone.
+- A new fmc wordmark — rejected: a larger visual deviation with no design yet.
 
 ## Pending decisions
 
