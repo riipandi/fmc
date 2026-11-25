@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:47:14+07:00
+updated: 2026-11-26T04:56:51+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -37,8 +37,8 @@ phases:
       note: "80x24 text captures equal Scouter (core 0.9.9) for welcome, ?, help closed, Tab, Esc outside the tree rows (W2) and the wordmark/version; colors equal except tree colors; larger tabs could not be forced (Rex opens 80x24 tabs; stty cannot grow them), a 190x61 run matched by eye; name substitution in the wordmark awaits owner confirmation"
     - id: 9
       title: "W2: tree model and filesystem service"
-      status: pending
-      note: —
+      status: done
+      note: "core tree (explorer/tree.rs) takes listings as values; sort via icu_collator 2.4 root collation, checked against Bun Intl.Collator order; services/fs.rs lists with noise, folders first, loop refusal; 59 tests in verify, 16 new
     - id: 10
       title: "W2: tree view, git marks, sidebar resize"
       status: pending

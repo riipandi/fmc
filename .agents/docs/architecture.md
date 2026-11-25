@@ -168,7 +168,7 @@ Alternatives considered:
 
 Context: Scouter sorts with `Intl.Collator` (CLDR root order, `research/scouter-inventory.md` §9.2). Only ICU reproduces it; lowercase comparison in std matches the sampled order but differs on punctuation (`research/dependency-survey.md`).
 
-Decision: `icu_collator` 2 with compiled data.
+Decision: `icu_collator` 2.4 with compiled data (`rules.md`, "Dependencies").
 
 Consequences:
 
