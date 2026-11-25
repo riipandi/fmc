@@ -5,6 +5,7 @@
 Date: 2026-11-26. Scope: research only. Nothing was compiled or run; claims come from source reading and crates.io / GitHub metadata snapshots taken on that date.
 
 Sources and abbreviations:
+
 - `CRATE` = `~/.cargo/registry/src/<index>/opentui_rust-0.2.3` (locked 0.2.3). Its `src/` is byte-identical to the repo clone `<scratch>/opentui_rust` (diff -rq clean); `Cargo.toml.orig` matches the repo `Cargo.toml`. So the repo HEAD and the locked source agree.
 - `UP` = `<scratch>/opentui` (upstream TypeScript OpenTUI, `@opentui/*` 0.9.9 in-tree; `packages/rust` is the official Rust binding, workspace version 0.9.9).
 - `SC` = `scouter:` (uses `@opentui/core` 0.9.0 per `package.json:18` and the installed `node_modules/@opentui/core/package.json`).
@@ -22,6 +23,7 @@ Sources and abbreviations:
 Dependencies (`CRATE/Cargo.toml:268-286`): bitflags, libc, ropey, unicode-bidi, unicode-normalization, unicode-segmentation, unicode-width. No layout, async, or parser crates. `rust-version = "1.85"` (`Cargo.toml:14`).
 
 Present:
+
 - Renderer: `Renderer::new` enters alt screen, hides cursor, enables mouse, and optionally queries capabilities (`src/renderer/mod.rs:233-250`); double buffer and diff (`present`, `:499`); threaded renderer (`src/renderer/threaded.rs`); debug overlay (`:315`); layers (`render_to_layer`, `:430`); hit grid (`register_hit_area`, `:673`; `src/renderer/hitgrid.rs`).
 - Terminal: raw mode with RAII guard (`src/terminal/raw.rs:69-73`), `terminal_size` via TIOCGWINSZ (`raw.rs:88`), cursor styles, sync output, title, OSC 12 cursor color (`src/terminal/mod.rs:153-310`).
 - Capability detection: DA1 gives sixel and kitty-graphics flags (`src/terminal/mod.rs:110-119`; `src/terminal/capabilities.rs:42,52`); XTVERSION and pixel/kitty queries are sent (`src/terminal/queries.rs`).
@@ -35,6 +37,7 @@ Present:
 - Threading and examples: `examples/` (11 numbered examples plus editor, hello, dashboard). `src/bin/demo_showcase.rs` (10k lines) is a demo app with its own input pump, toasts, palette, panels and animation clock (`demo_showcase.rs:834`). It is not library API.
 
 Absent (checked by grep over `src/`, excluding the demo binary):
+
 - Event loop: "OpenTUI doesn't include an event loop" (`README.md:250`, limitations `:657`). Caller must poll stdin and call `present()`. `src/input` has no stdin reader; `raw.rs:73` only builds a guard.
 - Widgets: no Box/Text/ScrollBox/Input/Select/Tabs/Textarea/Slider/Table component types (README `:658`, "No widgets").
 - Layout: no flex or Yoga (README `:659`, "You calculate positions yourself").
@@ -47,49 +50,58 @@ Absent (checked by grep over `src/`, excluding the demo binary):
 - Post-processing effects: absent (only opacity stacks).
 
 Notes that could mislead:
+
 - README says "Nightly Rust required" (`README.md:660`), but the manifest says `rust-version = "1.85"` and edition 2024 is stable from 1.85. Treat the README line as stale.
 - `FEATURE_PARITY.md` says 78/78 features complete. That list covers Zig-core spec items (buffer, renderer, terminal, input, unicode). It does not cover the TypeScript component layer.
 
 ## 2. Upstream TypeScript OpenTUI and the official Rust binding
 
 ### Markdown
+
 - Upstream: present. Parser is native Zig: "one streaming CommonMark 0.31.2 and GFM parser" (`UP/packages/native/src/markdown.zig:1-3`), with inline and table modules (`markdown-inline.zig`, `markdown-tables.zig`). The TS `MarkdownRenderable` (`UP/packages/core/src/renderables/Markdown.ts`) writes paragraphs and headings to text nodes and uses `CodeRenderable` for fences; code fences are highlighted via `treeSitterClient` (`Markdown.ts:18`, `:168`). Per-language fence renderers go through `createMarkdownCodeBlockRenderer` (`Markdown.ts:232`). Math extension is supported (`Markdown.ts:130`).
 - Rust binding: present, same native engine. `widget/markdown.rs` uses `crate::native::{MarkdownBlock, MarkdownDoc, ...}`; `MarkdownExtension::Math` (`widget/markdown.rs:205-210`); `code_block_renderer` (`:631`); conceal, streaming, table options (`:553`, `:591`, `:609`). Design doc: `packages/rust/crates/opentui/docs/markdown.md` ("Markdown parity with Core").
 - opentui_rust: absent (only the source tokenizer at `src/highlight/languages/markdown.rs`).
 
 ### Code (syntax-highlighted code view)
+
 - Upstream: present. `CodeRenderable` (`UP/packages/core/src/renderables/Code.ts`) takes a `treeSitterClient` and `SimpleHighlight` spans, converted to styled chunks by `lib/tree-sitter-styled-text.ts` (`Code.ts:9-11`). Parsers are web-tree-sitter WASM with nvim-treesitter-style `highlights.scm` (`UP/packages/core/src/lib/tree-sitter/default-parsers.ts`). Bundled filetypes: javascript, typescript, tsx, markdown, markdown_inline, zig. Other grammars are added at runtime with `addFiletypeParser` (Scouter does this at `SC/src/reader/grammars.ts:16-25`, for 11 languages in `SC/grammars/manifest.json`).
 - Rust binding: present. `Code` widget (`widget/code.rs`, `set_code`, `filetype`, `syntax_theme`, line numbers, selection, scroll). Highlighting needs the `tree-sitter` cargo feature, which bundles tree-sitter-javascript 0.25, tree-sitter-typescript 0.23, tree-sitter-md 0.5, tree-sitter-zig 1.1 and tree-sitter-rust 0.24 (`packages/rust/crates/opentui/Cargo.toml`, feature `tree-sitter`; `src/syntax/mod.rs:1-20`). Others are added with `syntax::register(name, Grammar::new(LANGUAGE, HIGHLIGHTS_QUERY))` (`src/syntax/mod.rs:1-20`). Caveat in the docs: capture names follow each grammar's own query, while Core uses nvim-treesitter's query names; `SyntaxTheme::from_theme` maps both.
 - opentui_rust: partial at best. Six hand-written tokenizers, no tree-sitter, no widget that consumes them except `HighlightedBuffer` on a text buffer. Not usable for parity.
 
 ### Diff
+
 - Upstream: present. `DiffRenderable` (`UP/packages/core/src/renderables/Diff.ts`) parses the patch with the npm `diff` package (`Diff.ts:7` import, `:202` `parsePatch(this._diff)`), then renders each side through `CodeRenderable` plus `LineNumberRenderable` (`Diff.ts:3-4`). Syntax comes from the same tree-sitter client. Scouter uses it through `DiffRenderable` (`SC/src/diff/diff-blocks.ts:3`).
 - Rust binding: present. `widget/diff.rs` has its own unified-diff parser (`:114-144`, "Parses the first file of a unified diff"), `set_diff`, `view(DiffView)` unified/split, `filetype`, `line_numbers`, `gutter`, `colors`, and `code_views`.
 - opentui_rust: absent. No diff parser, no diff view.
 - Diff computation: Scouter does not compute diffs; it gets git's output (`SC/src/diff/git.ts:54`). Upstream expects a patch string too.
 
 ### Mermaid
+
 - Upstream: absent. No Mermaid code in `UP/packages/core` except tests that exercise the code-block hook (`UP/packages/core/src/renderables/__tests__/Markdown.test.ts:1755-1779`, `:5710-5721`). Grep of all of `UP/packages`: no other mermaid hits outside these tests, a docs mention, and the Rust docs.
 - Rust binding: absent as a renderer. Example hook for ` ```mermaid ` at `widget/markdown.rs:1755` and the docs `widget/markdown.rs:627`.
 - opentui_rust: absent.
 - Scouter: absent (zero references).
 
 ### Images
+
 - Upstream: present. `Image.ts` with protocol `auto|kitty|sixel|blocks` (`UP/packages/core/src/types.ts:114`; `Image.ts:19-26` resolves the protocol and falls back from sixel to blocks when resolution is unknown). Scouter uses `ImageRenderable` (`SC/src/reader/image-view.ts:19`).
 - Rust binding: present. `ImageView` with Kitty graphics, Sixel or half blocks (`widget/image.rs:29`); `VideoView` also exists (`lib.rs:14-15`), backed by a native decode-only FFmpeg build.
 - opentui_rust: absent (capability flags only).
 
 ### Layout, scroll, input, select, tabs
+
 - Upstream: yoga-based flex (`UP/packages/core/src/yoga.ts`); ScrollBox, Input, Textarea, Select, TabSelect, Slider, Table, ASCIIFont etc. (`UP/packages/core/src/renderables/`). Scouter uses ScrollBox 28 times and TextRenderable 57 times.
 - Rust binding: Yoga-backed `layout.rs` (`Length`, `FlexDirection`, `Edge`, `Gutter`), `widget/scroll.rs`, `input.rs`, `select.rs`, `tabs.rs`, `textarea.rs`, `slider.rs`, `table.rs`, `text.rs`, `view.rs`.
 - opentui_rust: absent.
 
 ### Event loop and app
+
 - Upstream: `createCliRenderer` (Scouter `SC/src/index.ts:46`).
 - Rust binding: `App::new(AppOptions)` and `App::run()`, handlers `on_key`, timers, animation, messages from other threads (`lib.rs:6-9`; `app/mod.rs:453`). `Host` handles setup, input, resizes, suspension and restoration (`lib.rs:39`).
 - opentui_rust: absent. You write the loop (README `:250`).
 
 ### Clipboard, hyperlinks, animation
+
 - Rust binding has `app/clipboard.rs` (OSC 52 copy and read). Scouter's own clipboard uses `Bun.spawn` (`SC/src/core/clipboard.ts:28`), so no parity gap there.
 - Hyperlinks: present in opentui_rust (see section 1). The Rust binding's hyperlink API was not inspected.
 - Animation: Rust binding has `animation.rs` (timelines, easing, loops; `lib.rs:9`). opentui_rust has none outside the demo.
@@ -126,6 +138,7 @@ Notes that could mislead:
 | Tests without a terminal | not verified | present | absent (demo has a PTY harness) | present (`testing.rs`, `app/headless.rs`) | n/a |
 
 Partial-vs-absent summary for the four gaps in the brief:
+
 - Markdown: upstream present; opentui_rust absent; official Rust present.
 - Code highlighting: upstream present (tree-sitter WASM); opentui_rust absent (hand-written tokenizers, six languages, no widget); official Rust present (tree-sitter feature).
 - Diff: upstream present (npm diff plus DiffRenderable); opentui_rust absent; official Rust present (own parser).

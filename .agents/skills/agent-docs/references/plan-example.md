@@ -21,22 +21,22 @@ phases:
       note: —
 ---
 
-# <Verb the outcome> — <the one-sentence scope>
+## <Verb the outcome> — <the one-sentence scope>
 
 > Example plan document — generic names throughout. The shape is the
 > lesson; substitute the repository's real surfaces.
 
-## Objective
+### Objective
 
 <What this plan settles or ships, in three sentences: the finding or request that caused it, what the tree will look like after, and the one boundary the plan does not cross.>
 
-## Current state (verified in the tree, YYYY-MM-DD)
+### Current state (verified in the tree, YYYY-MM-DD)
 
 - **<Claim 1>** — `<path/file.rs:LINE>` names the code as it stands today, quoted or paraphrased precisely.
 - **<Claim 2>** — the absence or behavior the plan responds to, with the search that proved it (absence claims name their search).
 - **<Claim 3>** — the decision or record this plan extends or closes, with its reference.
 
-## Decisions
+### Decisions
 
 - **D1 (date): <the pick, stated as fact>.** <The reason that survived the alternatives — specific to this tree.> The cost the pick carries:
   <the trade-off, named>.
@@ -44,7 +44,7 @@ phases:
   Rejected: <alternative> — <the reason>.
 - **D2 (date): <the second fork, resolved>.** <Reason.> Rejected: <the alternative and its reason>.
 
-## Shape and enforcement points
+### Shape and enforcement points
 
 | What                   | Where                            | The record                              |
 | ---------------------- | -------------------------------- | --------------------------------------- |
@@ -53,7 +53,7 @@ phases:
 | <The Rust contract>    | `rust.md`, <the section>         | <the sentence the next change needs>    |
 | <The closed finding>   | the issue → archived             | <the owner's pick, the date, this plan> |
 
-## Execution rules
+### Execution rules
 
 - **Atomic commit per phase** is authorized; each phase's heading names its suggested commit message; the owner's per-phase go-ahead authorizes that phase's commit and nothing else.
 - **Execution waits for the owner's explicit "continue with phase N".** When the phases have all landed, the agent stops and recommends the closing commit message with its paths — it does not commit the closing state on its own.
@@ -62,14 +62,14 @@ phases:
 - **Per-phase validation runs before each phase's commit.**
 - **Live run only when relevant** — recorded n/a otherwise, never skipped silently.
 
-## Phases
+### Phases
 
 1. **<The contract or type change>** — <what lands>. Validation: <the exact command or probe that proves it>. _Commit: `<type>(<scope>): <the message>`._
 2. **<The implementation>** — <what lands>. Validation: <the command>; the edge cases from the matrix rows it touches. _Commit: `<type>(<scope>): <the message>`._
 3. **Docs sync, ledger close, handover** — the records land (rules / architecture / rust), the issue flips and archives, the index rows move, the handover carries the decisions. Validation: the docs' claims diff-checked against the landed code; the index agrees with the tree. _Commit: `docs: <the message>`._
 4. **Final validation** — the matrix below, run over the tree as it stands. Validation: the matrix green end to end. _Commit: none if green; the ledger note rides the docs phase._
 
-## Test matrix
+### Test matrix
 
 | What        | How                                                                 | Green                                |
 | ----------- | ------------------------------------------------------------------- | ------------------------------------ |
@@ -82,7 +82,7 @@ phases:
 | Parity      | `parity-audit` on the changed screen                                | <no open difference, or each one recorded> |
 | E2E         | — recorded n/a with the reason (no E2E harness exists)              | —                                    |
 
-## Explicitly out of scope
+### Explicitly out of scope
 
 - **<The tempting neighbor>** — <the reason it stays out>.
 - **<The deferred mechanism>** — <the trigger that would open it>.

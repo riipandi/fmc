@@ -142,12 +142,12 @@ A three-row block wordmark in the three `wordmark` colours, a tagline with the v
 
 ## Do's and Don'ts
 
-### Do:
+### Do
 
 - Match Scouter's screen first; describe it here second.
 - Use the palette tokens by name.
 
-### Don't:
+### Don't
 
 - Add colour for decoration.
 - Use emoji for icons.

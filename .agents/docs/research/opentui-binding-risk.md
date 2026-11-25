@@ -90,6 +90,7 @@ Linux musl: `libopentui.a` 57.4 MB and `libopentui.so` 8.9 MB, same license file
 Note: the framework list in the macOS binary is a consequence of `build.rs` linking those frameworks unconditionally for `apple-darwin` (`build.rs:147-161`), including VideoToolbox and CoreMedia even in the no-video build. Apple system frameworks are dynamic on macOS whatever you do; "static" here means no third-party dylib.
 
 Captures (in `<scratch>/out/probe-evidence/`):
+
 - `static-screen.txt` / `.html`: Markdown (heading, bold, code fence, table, list) and Code with line numbers. The HTML capture has multiple distinct syntax colors (for example `rgb(199, 146, 234)` on keywords), so tree-sitter highlighting ran.
 - `dyn-screen.txt`: same content; the table is narrower because the tab geometry differs (not investigated).
 - `novideo-static-screen.txt` / `.html`: same content from the no-video build.

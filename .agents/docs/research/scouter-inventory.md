@@ -2,10 +2,11 @@
 
 # Scouter 0.3.4: feature and visual inventory
 
-Target: https://github.com/indrazm/scouter, commit `434d000` ("Release 0.3.4"), cloned at `scouter:`.
+Target: <https://github.com/indrazm/scouter>, commit `434d000` ("Release 0.3.4"), cloned at `scouter:`.
 Purpose: a 1:1 reference for a Rust port.
 
 Conventions:
+
 - Source citations are `path:line`, relative to `scouter:`.
 - "Observed" means seen in a live Rex capture. Screen captures (117 Rex text and HTML captures) were taken during the run and are not kept in the repo; section 19 indexes what they showed. Section 19 indexes them.
 - "Not verified" means the claim comes from code or docs only.
@@ -24,6 +25,7 @@ Conventions:
 | Runtime deps | Two, pinned exactly: `@opentui/core` 0.9.0 and `web-tree-sitter` 0.25.10 (peer of OpenTUI; Scouter never imports it). Plus Bun 1.4.4 and git on the host. |
 
 Port-relevant notes:
+
 - Everything is drawn into a retained tree of flex-layout renderables. Most "modes" are visibility toggles on shared panes, not separate screens.
 - The file tree, change list, and diff stack all reuse row/block objects across refreshes and only repaint on changes.
 - The reader, the diff, and the preview each own their own tree-sitter buffer. Re-highlighting happens on content change only.
@@ -52,6 +54,7 @@ Renderer options (`src/index.ts:48-54`): `exitOnCtrlC: true`, `screenMode: "alte
 Launcher (installed only, `install.sh:136-153`): runs `bun --config=/dev/null --no-env-file <app>/src/index.ts "$@"`, so a viewed folder's `bunfig.toml` or `.env` cannot run code. Documented in `docs/decision/0008-the-launcher-ignores-the-viewed-folders-config.md`.
 
 Installer (`install.sh`):
+
 - `--help`, `--uninstall`. Usage is at `install.sh:30-47`.
 - Install location `${SCOUTER_HOME:-$HOME/.scouter}` (`:15`). Launcher `${SCOUTER_BIN_DIR:-$HOME/.local/bin}/scouter` (`:16`).
 - Repo `${SCOUTER_REPO:-https://github.com/indrazm/scouter.git}` (`:12`). Ref `${SCOUTER_REF}`, which defaults to the newest `v*` tag via `git ls-remote`, or `main` (`:14`, `:73-76`, `:86-92`).
@@ -71,7 +74,7 @@ Source: `src/app/app.ts:86-197`.
 
 Overall: a column with a `panes` row (flex 1) and a 2-row footer (`src/app/app.ts:86-187`).
 
-```
+```text
 ┌─ sidebar (browser panel, rounded border) ─┐┌─ reader (viewer panel, rounded border) ───┐
 │ header 2 rows (title, badge, hairline)    ││ header 2 rows (parent dim + bold title)   │
 │ find bar (2 rows, only in find mode)      ││                                           │
@@ -83,6 +86,7 @@ Overall: a column with a `panes` row (flex 1) and a 2-row footer (`src/app/app.t
 ```
 
 Geometry:
+
 - Sidebar width: `min(40, max(28, floor(termWidth × 0.25)))` (`src/explorer/sidebar-resizer.ts:49`). A width the user has set is kept for the session (`src/explorer/sidebar-resizer.ts:55-58`, `:69-72`; `DEVELOPMENT.md:49` says the same).
 - Constraints: sidebar ≥ 24 columns, reader ≥ 28 columns (`src/explorer/sidebar-resizer.ts:4-5`, `:64-67`). Observed: sidebar 24 when shrunk (screen 78).
 - Resize handle: a 1-column absolute strip on the sidebar's right edge with `col-resize` pointer. Keyboard `Ctrl+←/→` moves by 2 columns (`:6`, `:55-58`).
@@ -92,6 +96,7 @@ Geometry:
 - Panel borders: rounded (`src/app/app.ts:96-103`, `:107-116`). Focused pane: `theme.accent` (indigo). Unfocused: `theme.border` (`src/app/app.ts:708-713`; `docs/decision/0021-the-active-pane-has-an-indigo-border.md`).
 
 Header content:
+
 - Sidebar title: root folder name in browse mode (`src/app/chrome.ts:29-32`), or `Changes` plus a count in diff mode (`:24-27`, count gets `+` when truncated). Badge `files` (quiet) in browse mode.
 - Reader title: `Reader` when empty, else the file's path split into a dim parent (`dir/`) and a bold title (`src/app/chrome.ts:7-18`). Focused title is bold and `theme.text`. Unfocused is `theme.muted` (`src/ui/header.ts:81-84`).
 - Reader badges (`src/app/chrome.ts:61-99`, rendered in `src/ui/header.ts:78-102`): `read-only` (quiet, browse mode), `rendered` (quiet, Markdown preview), `image` (quiet), `binary` (quiet), `first 1 MiB` (pill, truncated), `wrap` (pill, not shown for rendered, image, or binary). In diff mode: change kind (`modified`, `added`, `untracked`, ...), `all files` / `one file` (quiet), `split` (pill), `wide context` (pill). `preview` (pill) while a text-search hit is previewed (`src/app/app.ts:461-463`).
@@ -99,6 +104,7 @@ Header content:
 - Error notice: an error from the last action replaces the reader header's badges in `theme.error`, bold, until the next key (`src/app/app.ts:531-534`, `src/app/app.ts:734`; `src/ui/header.ts:86-88`; `docs/decision/0015-...`).
 
 Footer status row (`src/ui/footer.ts:198-228`):
+
 - Left: a pill then the location or a message. Pill text (`src/ui/footer-hints.ts:7`, `:32-35`):
   - browse/files: `FILES`; browse/reader: `READER`
   - diff/list: `CHANGES`; diff/reader: `DIFF`
@@ -140,6 +146,7 @@ Hint row (`src/ui/footer-hints.ts:9-127`), chosen per pane and per state, droppe
 | 16 | Empty / no-document reader | Welcome as in row 1 (sidebar focus). | `src/app/reader-pane.ts:50`, `:156`, `:225` |
 
 Modal behaviours:
+
 - Find bar and in-file search are prompts. While open, typed keys go to the prompt, not to commands (`src/app/app.ts:733-736`). Observed: `d` typed into the in-file search became part of the query (`/letd`). `q` searches instead of quitting.
 - Help overlay consumes the next key (`src/app/app.ts:746-750`). `q` and `Ctrl+c` still quit first (`:740-744`).
 - Loading never blocks movement or scrolling. Only starting another open or diff read is refused, with `Still loading. Try again when it finishes.` Pressing `d` during a diff load cancels it (`src/app/app.ts:291-315`, `:495-504`; `docs/decision/0020-...`).
@@ -149,6 +156,7 @@ Modal behaviours:
 ## 4. Keybindings
 
 Dispatch order (`src/app/app.ts:733-768`):
+
 1. Find or in-file search prompt (`src/find/file-finder.ts:140-155`, `src/reader/document-search.ts:38-53`).
 2. Quit: `q` (plain) or `Ctrl+c` (`src/core/keys.ts:7-9`).
 3. Help overlay: any key closes it.
@@ -212,6 +220,7 @@ Mouse on a row: selects and opens or toggles (see section 4.6).
 | `m`, `w`, `y`, `d`, `Tab`, `Esc` | As global | section 4.1 |
 
 Keys while the in-file search prompt is open (`src/reader/document-search.ts:38-53`):
+
 - Typing and `Backspace` edit the query. Typing jumps to the first match at or below the top line (`:126-142`).
 - `Enter` or `↓`: next match. `Shift+Enter` or `↑`: previous match. Wraps.
 - `Esc`: closes the prompt and keeps the matches (`n`, `N` still work). An empty query is cleared at once. The next `Esc` clears the kept search and a further `Esc` returns focus to the list (`docs/decision/0026-...`).
@@ -242,6 +251,7 @@ Changes list (focus on list):
 | `Tab` | Switch list ↔ diff body | `src/app/app.ts:862-867` |
 
 Diff body (focus on diff reader):
+
 - `j` `k` `↓` `↑` scroll; `h` `l` pan when not wrapping; `gg` `G`; `Ctrl+d` `Ctrl+u`; `Space` `b`; `Tab`; `w` wrap; `c` fold; mouse click on a header to fold (`src/diff/diff-blocks.ts:468-473`).
 - Footer hints for the diff reader: `j k scroll`, `n N hunk`, `o open file`, `s split`, `a one file`, `Tab files`, `c fold`, `x context`, `y copy`, `w wrap`, `h l pan` (no wrap), `gg G top/bottom`, `^d ^u page`, `d back`, `? help`, `q quit` (`src/ui/footer-hints.ts:47-79`).
 
@@ -285,6 +295,7 @@ The `?` card lists, among others, `Ctrl+o Alt+i`, `Space b ^d ^u` and `n N p`. I
 ## 5. Rendering per file type
 
 Dispatch (`src/app/app.ts:317-342`):
+
 1. Directory: list it.
 2. Image extension (`.png .jpg .jpeg .gif .webp`, case-insensitive; `src/core/files.ts:9`, `:13-15`): read ≤ 10 MiB (`src/core/files.ts:137-150`), decode header with `imageInfo`, else `This image could not be read.` (`src/reader/image-view.ts:5-12`).
 3. Otherwise read as a text document (`src/core/files.ts:90-113`). Limits and classification:
@@ -296,6 +307,7 @@ Dispatch (`src/app/app.ts:317-342`):
 4. Binary → binary notice (section 3 row 7).
 
 Text rules (`src/core/files.ts:17-24`, `:100`):
+
 - CRLF and lone CR → LF.
 - Control characters (U+0000–U+0008, U+000B, U+000C, U+000E–U+001F, U+007F–U+009F) and bidi overrides (U+202A–U+202E, U+2066–U+2069) → `�`.
 - Tabs → 4 spaces.
@@ -307,6 +319,7 @@ Syntax highlighting is on for languages that `languageFor()` recognises, otherwi
 Search over unhighlighted text uses the placeholder filetype `scouter-plain` so the match highlight still runs (`src/reader/match-style.ts:9`, `src/reader/code-view.ts:225-226`, `docs/decision/0025-...`).
 
 Images (`src/reader/image-view.ts`, `docs/decision/0013-...`):
+
 - `ImageRenderable` with `protocol: "auto"` (Kitty graphics, Sixel, or character blocks), `fit: "fit"`, `width: 100%`, height = viewport. Protocol is overridable only by `ScouterAppOptions.imageProtocol` (`src/app/types.ts:6`), which the CLI does not set.
 - Footer: `W×H · format`. Header badge: `image`.
 - No zoom, scroll, crop, or animation. SVG is refused as binary.
@@ -321,6 +334,7 @@ Only `.md` files are Markdown (`src/reader/code-view.ts:230-232`, `languageFor` 
 Core 0.9.0 vs 0.9.9 (checked 2026-11-26, `plan-00001` phase 4): the demo README rendered at 187x60, top and bottom, gives byte-identical text and HTML captures under both versions, tables included. The `Markdown.ts`/`TextTable.ts` changes between the versions do not show on this document.
 
 Engine: `MarkdownRenderable` (`src/reader/code-view.ts:132-151`), an OpenTUI renderable backed by a native document (`MarkdownDocument`, `node_modules/@opentui/core/index.bun.js:10513`, `:10645`). It is given:
+
 - `syntaxStyle`: the same `SyntaxStyle` as code.
 - `treeSitterClient`: the same client, so fenced code blocks use the same grammars.
 - `fg`: `theme.text`. `width: 100%`, `paddingLeft: 2`, `paddingRight: 2`.
@@ -328,12 +342,13 @@ Engine: `MarkdownRenderable` (`src/reader/code-view.ts:132-151`), an OpenTUI ren
 - `renderBlock`: calls the default renderer, then retints selections (`src/reader/code-view.ts:142-150`).
 
 Rendering model (from the OpenTUI bundle, observed in captures):
+
 - Headings: no `#` markers. Bold, `markup.heading` style → `syntax.function` colour (`src/reader/code-view.ts:60-63`). Observed `#82aaff`, bold (screen 20 html).
 - Paragraphs: word-wrapped to reader width. Always wraps, so `w` and `h l` have no effect (`docs/decision/0012-...`; the `wrap` badge is suppressed for rendered, `src/app/chrome.ts:96`).
 - Emphasis: `markup.bold` / `markup.strong` → bold (`:64-65`). `markup.italic` → italic (`:66`).
 - Inline code: `markup.raw` → `syntax.string` colour (`:67`). Observed `cargo build` in `#a7c7a1`.
 - Links: `markup.link` → `syntax.function` colour, underlined (`:68`). The text is shown; the URL is hidden. Each link is emitted as a terminal hyperlink (OSC 8), observed as `<a href>` in the HTML capture (screen 21). Reference-style links work (`[Da Vinci notes][davinci]`, screen 21).
-- Unordered lists: `- ` marker kept. Ordered lists: `1. ` kept (observed, screens 04, 05).
+- Unordered lists: `-` marker kept. Ordered lists: `1.` kept (observed, screens 04, 05).
 - Task lists: `- [x]` → `☑`, `- [ ]` → `☐` (observed, screen 04).
 - Blockquotes: left bar `│` (quote border, `node_modules/@opentui/core/index.bun.js:11227-11234`). Observed, screens 04 and 05.
 - Thematic break: full-width `─` line (`index.bun.js:11208-11216`). Observed, screen 05.
@@ -348,6 +363,7 @@ Rendering model (from the OpenTUI bundle, observed in captures):
 - Selection colour: `theme.selectionBg` via `applySelectionTint` (`src/reader/code-view.ts:73-80`).
 
 Behaviour differences with source mode:
+
 - Search: refused in rendered mode with `Press m to search this Markdown file's source.` (`src/app/app.ts:999-1005`).
 - Paragraph motion: refused with `Press m to move by paragraph in this Markdown file's source.` (`src/reader/reader-motion.ts:103-106`).
 - Count prefix: digits ignored (`src/reader/reader-motion.ts:25`).
@@ -361,6 +377,7 @@ Behaviour differences with source mode:
 ## 7. Mermaid
 
 **Mermaid is not implemented.** Evidence:
+
 - `grep -ri mermaid` over the repo, excluding `.git`, returns nothing (no source, docs, tests, or fixtures; the README is free of it).
 - `bun.lock` has no Mermaid package.
 - `node_modules/@opentui/core` (`index.bun.js` and both `chunk-bun-*.js`) contains no `mermaid` string.
@@ -368,6 +385,7 @@ Behaviour differences with source mode:
 - Source mode (`m`) shows the fence and body as text (screen 06).
 
 Mechanism, if a future version wanted Mermaid:
+
 - The info string `mermaid` maps to filetype `mermaid` (`infoStringToFiletype` returns the token when no extension mapping exists, `node_modules/@opentui/core/chunk-bun-rgb7yx3r.js:5659-5671`).
 - OpenTUI then creates a `CodeRenderable` with `filetype: "mermaid"` (`index.bun.js:11266`). No parser is registered for `mermaid`, so it is drawn as plain text.
 - To render diagrams would need an external layout engine. None is present. This is a port decision, not a 1:1 feature.
@@ -478,9 +496,10 @@ Source: `src/explorer/explorer.ts`, `src/explorer/file-tree.ts`, `src/core/files
 ### 9.4 Row anatomy
 
 From `paintRow` (`src/explorer/explorer.ts:258-293`):
+
 - Column 0: `▎` in `theme.accent` on the selected row, otherwise a space.
-- Depth guides: `│ ` repeated per depth level in `theme.ignored` (`:280`).
-- Folder marker `▾ ` (open) or `▸ ` (closed) in `theme.dim`, accent when selected (`:263`, `:283`). Files get two spaces.
+- Depth guides: `│` repeated per depth level in `theme.ignored` (`:280`).
+- Folder marker `▾` (open) or `▸` (closed) in `theme.dim`, accent when selected (`:263`, `:283`). Files get two spaces.
 - Icon and a space (`:284`).
 - Name, plus `/` for folders. Bold and `theme.accent` when selected. Name colour `theme.text`, or `theme.ignored` for ignored (`:272-273`, `:285`).
 - Right side: a git status letter in its colour, bold (`row.mark`, `:290-292`). Folders with changes inside get `•` in `theme.modified` (`src/diff/marks.ts:84`).
@@ -526,6 +545,7 @@ Files: `src/find/file-finder.ts`, `src/find/search.ts`, `src/find/types.ts`.
 - Index is walked on demand and discarded on close (`docs/decision/0016-...`).
 
 Text search (Tab in finder; `src/find/search.ts:90-237`, `src/find/file-finder.ts:181-205`):
+
 - Starts 150 ms after typing stops (`src/find/file-finder.ts:13`, `:189`). Needs ≥ 2 characters (`:12`).
 - Reads only indexed regular files (not links, not ignored, not images; `src/find/search.ts:190-202`), through `readDocument` (1 MiB cap, UTF-8 only; `src/core/files.ts:90`).
 - 16 files per batch (`src/find/search.ts:93`, `:198-202`). Status reports every 120 ms (`:94`, `:221-233`).
@@ -607,6 +627,7 @@ Git is never asked for `status`, and no write command is run.
 - Scroll follows selection in all-files scope (`src/diff/diff-blocks.ts:373-389`, `src/diff/diff-screen.ts:552-565`).
 
 Notice texts (`src/diff/patch.ts:9-11`, `:167-169`, `:188-194`; `src/diff/diff-blocks.ts:523`):
+
 - `Binary file: no preview.` (binary, or `Binary files … differ`).
 - `This diff is too large to display (limit: 1 MiB).` (per-file patch > 1 MiB).
 - `Too much to show at once. Press a to view this file alone.` (stacked total > 4 MiB).
@@ -620,6 +641,7 @@ Notice texts (`src/diff/patch.ts:9-11`, `:167-169`, `:188-194`; `src/diff/diff-b
 ### 11.4 Patch synthesis
 
 Source: `src/diff/patch.ts`.
+
 - Whole-tree patch: one `git diff -U<n> <base>` call under the limit of 4 MiB (partial), then split into per-file chunks at `diff --git` boundaries (`:30-40`, `:108-117`). The last chunk is dropped if cut (`:109`).
 - Chunk path resolution uses `rename to`, then `+++ b/`, then `--- a/`, then the `diff --git` header (`:119-142`).
 - Per-file: `git diff -U<n> <base> <opts> -- <paths>` (old and new paths for renames), 1 MiB cap (`:144-156`).
@@ -663,6 +685,7 @@ Source: `src/diff/patch.ts`.
 No filesystem watchers (`docs/decision/0006-...`, `docs/decision/0017-...`). Polling only.
 
 Browse (`src/explorer/browse-watcher.ts`, `src/app/app.ts:170-174`, `:579-611`):
+
 - Every 2 s (`src/app/app.ts:44`), back-off as above (`src/explorer/browse-watcher.ts:3`, `:22-42`).
 - Each tick: re-list expanded folders (`src/app/app.ts:587-589`), refresh git marks (`:590`), then re-read the open text document if its `mtime:size` stamp changed (`src/app/reader-pane.ts:173-201`, `src/core/files.ts:82-88`).
 - A missing open file keeps its content and shows `<name> is no longer on disk.` in the header (`src/app/app.ts:593-595`, `src/app/reader-pane.ts:178-186`; observed screen 102).
@@ -679,6 +702,7 @@ Browse (`src/explorer/browse-watcher.ts`, `src/app/app.ts:170-174`, `:579-611`):
 - Help overlay omits the `Mouse` section that `--help` shows (`src/ui/help.ts:55` iterates `keySections` only; `src/core/keymap.ts:57-62`).
 
 Footer hint sets (`src/ui/footer-hints.ts:37-127`):
+
 - Browse, file list: `j k move`, `Enter open`, `/ find`, `- up`, `h back`, `Tab reader`, `d changes`, `w wrap`, `^←→ resize`, `^o alt+i jump`, `? help`, `q quit`.
 - Browse, reader: `j k scroll`, `h l pan` (no wrap), `gg G top/bottom`, `{ } paragraph` (no Markdown), `z z centre`, `^d ^u page`, `Tab files`, `m preview|source` (Markdown), `/ search` (no Markdown), `y copy`, `d changes`, `^o alt+i jump`, `w wrap` (no Markdown), `? help`, `q quit`.
 - Browse, image: `Tab files`, `d changes`, `q quit`.
@@ -745,6 +769,7 @@ Literal colours outside the palette: `transparent` = RGBA(0,0,0,0) (`src/ui/them
 ### 14.3 Detection and switching
 
 Source: `src/ui/system-theme.ts`, `src/app/app.ts:194-218`.
+
 - On start: query the terminal palette (`getPalette({ size: 1, timeout: 500 })`) for `defaultBackground` (`src/ui/system-theme.ts:73-82`).
 - On announce: OpenTUI `theme_mode` event triggers a fresh check (`:31-35`).
 - Polling: every 3 s (`:4`), only if the terminal answered the first time and has not announced a change (`:37-46`). Late answers older than the latest request are dropped (`:53`, `:76`).
@@ -772,6 +797,7 @@ Environment variables read by Scouter:
 Installer variables (install.sh): `SCOUTER_REF`, `SCOUTER_HOME`, `SCOUTER_BIN_DIR`, `SCOUTER_REPO` (section 1).
 
 Files written by Scouter at runtime:
+
 - Tree-sitter cache under `${XDG_CACHE_HOME:-~/.cache}/scouter` (`src/reader/code-view.ts:105`).
 - Temporary git index copies `scouter-index-*` under `os.tmpdir()`, removed on close and on exit (`src/diff/git.ts:124`, `:150-154`, `:372-375`).
 - Nothing in the working tree or `.git`. Read-only by design (`docs/decision/0001-...`, `docs/decision/0007-...`).
@@ -819,7 +845,9 @@ Installed-in-this-study `node_modules` (`bun install --frozen-lockfile --ignore-
 11. Bounded I/O: 1 MiB read cap, 8 KiB probe buffer (`src/core/files.ts:6`, `:8`, `:152-177`); 8 MiB listing cap, 1 MiB per-file patch, 4 MiB stacked (`src/diff/git.ts:8`, `src/diff/patch.ts:5-6`); 10 MiB image cap (`src/core/files.ts:7`).
 12. Batching: 32 directories per index batch (`src/find/search.ts:8`), 16 files per text-search batch (`:93`), 16 untracked patches per batch (`src/diff/patch.ts:7`).
 13. Text-search throttling: 150 ms debounce (`src/find/file-finder.ts:13`), 120 ms progress report (`src/find/search.ts:94`), hard stops at 200 hits or 64 MiB (`src/find/search.ts:90-92`).
+
 - One `Intl.Collator` and a cached scrollbar colour (`src/core/files.ts:11`, `src/ui/styled.ts:14-22`). `Bun.stringWidth` for display width (`src/ui/styled.ts:63-85`).
+
 15. Git runs with `GIT_OPTIONAL_LOCKS=0` and a private index, so polling never takes the repository's index lock (`src/diff/git.ts:38`, `docs/decision/0007-...`).
 
 ---
@@ -827,6 +855,7 @@ Installed-in-this-study `node_modules` (`bun install --frozen-lockfile --ignore-
 ## 18. Edge cases
 
 Observed in live run (screen numbers in section 19):
+
 - Welcome hint line is cut at 80 columns: `…No editing. Just readin` (screen 01).
 - `/private/tmp/…` paths on macOS because `process.cwd()` resolves symlinks (every footer).
 - Footer position stuck at `All` after an image is opened and a binary file is selected: binary does not call `updatePosition`, and `setDocument` does not clear the browse position (screen 25). Minor.
@@ -845,6 +874,7 @@ Observed in live run (screen numbers in section 19):
 - Finder `Enter` on a nested folder match: selection falls to the root (screen 13).
 
 From source, not triggered:
+
 - Image over 10 MiB: `Image is too large (limit: 10 MiB).` (`src/core/files.ts:140`).
 - Header decode failure: `This image could not be read.` (`src/reader/image-view.ts:10`).
 - File over 1 MiB text: `first 1 MiB` and `+` (observed, screen 85).

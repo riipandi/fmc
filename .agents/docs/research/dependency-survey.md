@@ -102,6 +102,7 @@ Declared MSRV of the set: Rust 1.90, set by opentui's `tree-sitter` feature (`tr
 ### 1.3 Scouter's finder, for comparison
 
 From `src/find/search.ts:49-88`:
+
 - Query: lowercased, split on whitespace. Every word must be a substring of the lowercased relative path (AND).
 - Order: entries whose name contains the first word come first. Within each group, shorter relative path first (`relative.length`, a UTF-16 length), then code-unit order.
 - Limits: display 200 (`MAX_MATCHES`), index 20,000 entries, walk on demand and discard on close (decision 0016), git-ignored paths skipped.
@@ -122,6 +123,7 @@ From `src/find/search.ts:49-88`:
 ### 1.5 Verdict: (c) not now
 
 Reasons:
+
 1. Parity. Scouter's results are substring AND-matches in a fixed order (name group, then shorter path). Fuzzy typo-tolerant ranking admits paths that Scouter excludes (for example `mian` matches `main.rs`) and orders the rest by a different score. Phase 1 cannot use it without breaking the screen-by-screen parity audit.
 2. Behaviour. fff keeps a live index with a watcher and can write LMDB frecency state. Scouter is read-only, polls, uses no watchers (decisions 0006, 0017), and walks on demand (decision 0016). fff's design runs against all three.
 3. Weight. 96 crates, including three C builds (libgit2, zlib, LMDB), notify with macOS framework bindings, rayon and regex.
@@ -148,6 +150,7 @@ Column key: "Crates" is the number of crates added to the graph, including the c
 | `pico-args` / `lexopt` / std `env::args` | not measured | | not measured | | | Fine for Scouter's surface (`-h`, `-v`, one path). Clap helps with generated help text. |
 
 Recommendation: `clap` derive with the trimmed feature set. Parity notes:
+
 - Scouter's `-v` prints `scouter 0.3.4`. Use `disable_version_flag = true` and a custom `-v`/`--version` with `ArgAction::Version`.
 - Scouter's error for more than one argument is `Expected one file or directory. Use --help for usage.` (exit 1). Clap's default error text differs. Take the path as `Vec<PathBuf>` and emit Scouter's message yourself.
 - Scouter's `--upgrade` belongs to its installer launcher and does not apply to fmc.
@@ -182,6 +185,7 @@ Recommendation: `std::fs` for both the tree and the finder. For ignored marks an
 | `opentui-sys` | 0.9.9 | (pulled by opentui) | 1.88 | Licence `MIT AND LGPL-2.1-or-later` (FFmpeg decode build). Needs `OPENTUI_LIB_DIR` pointing at the release native library. Ship the `LICENSE-*` files. |
 
 Feature notes:
+
 - `opentui/tree-sitter` pulls tree-sitter 0.27.2 (MSRV 1.90), tree-sitter-language 0.1.9, and the grammar crates for JavaScript 0.25, TypeScript 0.23 (TS and TSX), MD 0.5, Zig 1.1 and Rust 0.24. Whether `tree-sitter-md` exposes the inline grammar separately was not checked.
 - `log`, `tokio` are off by default and not needed.
 - Scouter pins `@opentui/core` 0.9.0. The Rust crate starts at 0.9.4 and 0.9.9 matches the in-tree TypeScript source. The version skew is already noted in `rendering-research.md`.

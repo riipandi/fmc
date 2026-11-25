@@ -2,7 +2,7 @@
 
 # sqltui reference study
 
-Subject: https://github.com/dzulfikar08/sqltui (cloned to `<scratch>/sqltui`, shallow clone at commit `90bcf39`, "Prepare repo for public collaboration").
+Subject: <https://github.com/dzulfikar08/sqltui> (cloned to `<scratch>/sqltui`, shallow clone at commit `90bcf39`, "Prepare repo for public collaboration").
 Purpose: input for a post-parity fmc milestone (SQLite and DuckDB file viewer on `opentui` 0.9.9).
 Method: read-only source review. Nothing was built, installed or executed. Paths below are relative to `<scratch>/sqltui` unless absolute.
 Crate data: crates.io API and docs.rs, fetched 2026-11-26.
@@ -29,6 +29,7 @@ Crate data: crates.io API and docs.rs, fetched 2026-11-26.
 | Web front end | React 19 + Vite 6, built to `web/dist` and embedded | `web/package.json`, `src/api.rs:16-18` |
 
 Other notes:
+
 - AGENTS.md says rusqlite is "bundled by default" (`AGENTS.md:61`). That is wrong for this tree. `Cargo.toml:23` enables no `bundled` feature, and `Cargo.lock:944-950` lists libsqlite3-sys's deps as only `pkg-config` and `vcpkg`, with no `cc`. The binary therefore links a system SQLite (inferred from the lock file; not built to confirm).
 
 ## 3. Feature matrix
@@ -89,6 +90,7 @@ Keys (from `src/ui/talbe_view.rs:1052-1272` and `src/ui.rs:61-75`, `src/main.rs:
 | Copy menu | `↑`/`↓`, `Enter`, `Esc` | Pick, copy, close |
 
 Doc vs code mismatches (README and in-app hints):
+
 - `README.md:99`, `src/ui/talbe_view.rs:453`, `src/ui/help_view.rs:37`: "Backspace: back to file menu". No Backspace handler exists outside search and query modes (`src/ui/talbe_view.rs:1097`, `1170`). Not implemented.
 - `README.md:109`: "u / d: page up / down half". Code pages a full 500-row page (`src/ui/talbe_view.rs:1220-1231`).
 - `README.md:96`: "q / e" is listed as switching Tables/Views. Matches code, but `q` is "previous" and `e` is "next".
@@ -149,6 +151,7 @@ Ordered by impact.
 Widgets available in `opentui::widget` (crate docs, docs.rs): View, Text, Input, Textarea, Select, TabSelect, Slider, ScrollBox, Table, TextTable, Code, LineNumbers, Diff, Markdown, TerminalView, ImageView, VideoView, FrameBuffer, Custom. App provides an event loop with timers and cross-thread messages.
 
 Clean fits:
+
 - Tables/Views switch: `TabSelect`.
 - Browse/Schema/Query tabs: `TabSelect`.
 - Nav list with counts and filter: `Select`, with the filter applied app-side (no list-search API seen in its method list).
@@ -161,6 +164,7 @@ Clean fits:
 - Scroll containers: `ScrollBox`.
 
 Needs custom work (`Custom` widget, or a composed grid):
+
 - Per-cell cursor with row and column selection and column horizontal scroll. `Table` appears row-selected (`selected`/`select`), so sqltui's cell model is a custom widget (verify with a spike).
 - Per-cell preview as in `draw_preview` with Blob/Null styling: compose `Text`.
 - Per-statement results with a tab strip and error styling: compose `TabSelect` + `Table`/`Text`.
@@ -180,10 +184,12 @@ Needs custom work (`Custom` widget, or a composed grid):
 Sources for the table: crates.io `/api/v1/crates/<name>/<version>` (feature maps, `crate_size`, `rust_version`); docs.rs for `OpenFlags::SQLITE_OPEN_READ_ONLY` (rusqlite) and `Config::access_mode` / `AccessMode::ReadOnly` / `Connection::open_with_flags` (duckdb). sqltui pins rusqlite 0.33 and libsqlite3-sys 0.31 (`Cargo.lock`).
 
 Read-only support:
+
 - rusqlite: `Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)`.
 - duckdb: `Config::access_mode(AccessMode::ReadOnly)` with `Connection::open_with_flags`.
 
 Cost and implications (what was checked and what was not):
+
 - Checked: feature wiring, crate sizes (the crate source is what gets compiled), MSRVs.
 - Not checked: compile time, resulting binary size, runtime behaviour. Nothing was built.
 - rusqlite `bundled`: compiles SQLite C source via `cc`. Produces a statically linked SQLite, no system library needed, so single-binary distribution is simple. Expect a short added compile step; size impact expected to be small (unmeasured).
@@ -194,6 +200,7 @@ Cost and implications (what was checked and what was not):
 ## 11. Features worth porting (ideas only, no code copied)
 
 Worth porting:
+
 - Sidebar of tables and views with counts, plus a name filter.
 - Schema tab showing the stored CREATE text, copyable.
 - Paged grid with row numbers, cell preview, and a clear "rows x-y of N" title.
@@ -203,6 +210,7 @@ Worth porting:
 - Export CSV, JSON and SQL INSERT (fmc's version should write to a file, which sqltui does not do).
 
 Skip, or do differently:
+
 - Read-write by default with no guard. fmc should default to read-only and make writes explicit.
 - Connection-per-call. Use one read-only connection per open file.
 - Eager `COUNT(*)` for every table at open. Count lazily or on demand.
