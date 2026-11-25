@@ -7,3 +7,4 @@ pub mod find;
 pub mod keys;
 pub mod reader;
 pub mod text;
+pub mod theme;

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:30:16+07:00
+updated: 2026-11-26T04:32:30+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -25,8 +25,8 @@ phases:
       note: "--help byte-identical to Scouter (name swapped, --upgrade dropped as out of scope); -h/-v matched as exact tokens before clap; 12 tests"
     - id: 6
       title: "W1: theme palettes and detection"
-      status: pending
-      note: —
+      status: done
+      note: "tint values match Scouter output; DESIGN.md hex checked by a test; polling via opentui refresh_palette, stops when a refresh goes unanswered or the terminal announces; live run shows dark text #d4d8de"
     - id: 7
       title: "W1: key table and pending-key parser"
       status: pending
