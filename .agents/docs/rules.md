@@ -50,6 +50,10 @@ Versions are the crates.io snapshot of 2026-11-26 (`research/dependency-survey.m
 
 Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
 
+### Approved for after parity (owner, 2026-11-26)
+
+- `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
+
 ## Licenses
 
 - fmc is `MIT OR Apache-2.0` (`architecture.md`).

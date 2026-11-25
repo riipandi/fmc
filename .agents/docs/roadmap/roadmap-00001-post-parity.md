@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T05:02:31+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -82,3 +82,21 @@ The key table and pending-key parser (`architecture.md`) can carry a second keym
 Scouter polls (`research/scouter-inventory.md` §12) and fmc copies it. `notify` 9 would cut idle work but raises the MSRV to 1.91.
 
 **Unlock:** a measured polling cost on a large tree, and the toolchain at 1.91 or later. **First move:** measure CPU per poll tick on a 20 000-file tree.
+
+## Settings and themes
+
+### RI-9 — Persistent settings in `~/.config/fmc/settings.json`
+
+- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+
+Scouter has no configuration by design (`research/scouter-inventory.md` §15), so this is a post-parity deviation the owner asked for on 2026-11-26. fmc remembers the UI state the user changes: sidebar width, reader wrap, diff layout (unified or split), diff context (`x`), and the theme mode (`auto` follows the terminal as Scouter does, or `dark`, `light`). Path: `~/.config/fmc/settings.json` (owner's choice). Crates approved for this item: `serde` with `derive` and `serde_json` (`rules.md`, "Dependencies"). The write is fmc's own file, not a user file: temp file plus `rename`; a file that fails to parse is never overwritten, fmc starts with defaults and shows a notice.
+
+**Unlock:** plan-00001 done. **First move:** a plan with the schema (every key, type, default), the load and save points, and the `architecture.md` deviation record.
+
+### RI-10 — Theme catalog in `~/.config/fmc/themes/*.json`
+
+- status: parked (owner-deferred 2026-11-26; unlock: RI-9 landed) · updated 2026-11-26
+
+User themes as JSON files, one per theme, each with a dark and a light variant or a declared mode, selected from settings (RI-9). The starting catalog comes from bjarneo/editor (MIT; keep its notice): editor dark, Catppuccin Mocha and Latte, Tokyo Night and Tokyo Night Day, Gruvbox and Gruvbox Light, Everforest, Kanagawa, Nord, One Dark and One Light, Flexoki Light (source: `src/theme.rs` in github.com/bjarneo/editor). Each theme maps onto fmc's palette tokens (`DESIGN.md`, `theme.rs`) and passes the contrast tests the Scouter palettes pass.
+
+**Unlock:** RI-9 landed. **First move:** map editor's theme fields onto fmc's tokens and list the tokens with no source value.
