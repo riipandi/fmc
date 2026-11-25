@@ -18,7 +18,7 @@ Always-on rules. Detail lives in `.agents/docs/` (map: `index.md`). Before a cha
 - **Scouter is the reference.** Phase 1 goal: 100% visual and functional parity with Scouter (https://github.com/indrazm/scouter). A behavior difference is a defect unless the owner approved it and the approval is recorded in `architecture.md`.
 - **Verify Scouter before porting.** Establish each Scouter behavior from its source or from a live run through Rex (`rex` skill), never from memory. Cite the evidence: a `file:line` in Scouter, or the captured terminal output.
 - **Read-only until parity is closed.** No file-writing feature (create, rename, move, delete, save) until the owner opens that phase.
-- **The `opentui_rust` locked source wins over docs.** Read its API from the version in `Cargo.lock`; a README, doc page, or example that disagrees with the source is the wrong one.
+- **The `opentui` locked source wins over docs.** Read the API of `opentui` and `opentui-sys` from the version in `Cargo.lock`; a README, doc page, or example that disagrees with the source is the wrong one.
 
 ## Ambiguous decisions
 

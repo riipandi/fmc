@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-26T04:20:50+07:00
+updated: 2026-11-26T04:22:25+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 
@@ -8,8 +8,8 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 
 | Path | Role |
 | --- | --- |
-| `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. The one dependency is `opentui_rust` 0.2.3. |
-| `src/main.rs` | The entry point. Today a hello-world buffer demo: it draws into an `OptimizedBuffer` and prints; it never enters a terminal. |
+| `Cargo.toml`, `Cargo.lock` | The package `fmc`: one crate, edition 2024. Dependencies are listed in `rules.md` ("Dependencies"); the engine is `opentui` =0.9.9. |
+| `src/main.rs` | The entry point. Today the engine spike: a Markdown widget and a Rust code widget; `q` quits. |
 | `LICENSE-MIT`, `LICENSE-APACHE` | fmc is `MIT OR Apache-2.0` (`Cargo.toml`). |
 | `rust-toolchain.toml`, `rustfmt.toml` | Toolchain pin and formatting rules. |
 | `deny.toml`, `about.toml`, `about.hbs` | License gate (`cargo deny`) and third-party notices (`cargo about`). |

@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:22:25+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -10,7 +10,8 @@ Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cr
   - Every unsafe operation sits in an explicit `unsafe {}` block, even inside an `unsafe fn`; `extern` blocks are `unsafe extern`.
   - `gen` is a reserved keyword.
   - Tail-expression temporaries and `if let` scrutinee drop order changed in 2024: check them when a lock guard or a borrow is involved.
-- `opentui_rust` 0.2.3 is the only dependency today (`Cargo.lock:25-27`). `plan-00001` phase 3 replaces it with `opentui` and `opentui-sys` =0.9.9 (`architecture.md`). Read the API from the locked source; docs.rs for the locked version is the second source.
+- The engine is `opentui` and `opentui-sys` =0.9.9 with the `tree-sitter` feature (`Cargo.toml`). Read the API from the locked source; docs.rs for the locked version is the second source.
+- `rust-version = "1.90"`: the floor set by `tree-sitter` 0.27.2; `cargo +1.90 check` passed on 2026-11-26. The pinned toolchain (`rust-toolchain.toml`) is newer.
 
 ## Layout rules
 

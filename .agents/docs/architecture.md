@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:22:25+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -272,4 +272,4 @@ Alternatives considered:
 
 ## Pending decisions
 
-- The exact `rust-version`: the survey's floor is 1.90 (set by `tree-sitter` 0.27.2); `plan-00001` phase 3 confirms it with a build and records it in `rust.md`.
+- None. (`rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.)

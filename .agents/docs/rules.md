@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T04:09:25+07:00
+updated: 2026-11-26T04:22:25+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -11,7 +11,7 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 - **Parity-first.** A behavior difference is a defect unless the owner approved it and the approval is recorded in `architecture.md`.
 - **Verify before porting.** Establish a Scouter behavior from its source or from a live run through Rex, never from memory or from this file. Scouter's `docs/decision/` records (0001 to 0037) and its `src/` tree (`app/`, `core/`, `explorer/`, `reader/`, `diff/`, `find/`, `ui/`) are the starting map. Record the evidence in the plan or issue that carries the port.
 - **Read-only until parity is closed.** No file-writing feature (create, rename, move, delete, save, or any other write to the user's files) until the owner opens that phase.
-- **Library source.** The UI crates (`opentui_rust` today; `opentui` and `opentui-sys` once `plan-00001` phase 3 lands) are read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Their source wins over docs, READMEs, and examples.
+- **Library source.** The UI crates `opentui` and `opentui-sys` are read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Their source wins over docs, READMEs, and examples.
 - **Parity reference.** Scouter at commit `434d000` with `@opentui/core` bumped to 0.9.9, run from a scratch checkout outside this repository (`architecture.md`). Research snapshots of its behavior live in `research/`.
 
 ## Where a fact lives

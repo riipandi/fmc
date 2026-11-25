@@ -14,9 +14,9 @@ Run the quality gates, fix what fails, then do a focused safety and performance 
 
 ## Sources of truth
 
-- The locked library source first: `opentui_rust` 0.2.3 from `~/.cargo/registry/src/` (the version in `Cargo.lock`). Then docs.rs for the same version, doc.rust-lang.org for the language, std, and edition guide, the Clippy lint list for lint rationale, and the crate's changelog for deprecations.
+- The locked library source first: `opentui` and `opentui-sys` from `~/.cargo/registry/src/` (the version in `Cargo.lock`). Then docs.rs for the same version, doc.rust-lang.org for the language, std, and edition guide, the Clippy lint list for lint rationale, and the crate's changelog for deprecations.
 - Use whatever fetch or search tool the runtime provides (web fetch, `cargo doc --open` locally). If none is available, say which claims rest on memory.
-- When documentation conflicts with memory or with existing code, documentation wins; for `opentui_rust`, the locked source wins over docs. Note the source in the summary.
+- When documentation conflicts with memory or with existing code, documentation wins; for `opentui`, the locked source wins over docs. Note the source in the summary.
 
 ## Phase 1 — Quality gates
 

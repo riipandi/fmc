@@ -1,32 +1,26 @@
-//! Simple hello world example.
+//! Engine spike: one Markdown widget and one Rust code widget on the OpenTUI engine. Quit with `q`.
 
-use opentui::buffer::BoxStyle;
-use opentui::{OptimizedBuffer, Rgba, Style};
-use opentui_rust as opentui;
+use opentui::prelude::*;
+use opentui::widget::{Code, Markdown};
 
-fn main() {
-    // Create a buffer
-    let mut buffer = OptimizedBuffer::new(80, 24);
+const NOTES: &str = "# The Marauder's Map\n\nA **magical** map of `Hogwarts`, drawn by Moony, Wormtail, Padfoot, and Prongs.\n\n\
+- [x] Find the Room of Requirement\n- [ ] Return the map to Harry Potter\n\n\
+| Room | Floor |\n|---|---|\n| Great Hall | 1 |\n| Gryffindor Tower | 7 |\n\n\
+> I solemnly swear that I am up to no good.\n";
 
-    // Clear with a dark background
-    buffer.clear(Rgba::from_rgb_u8(20, 20, 30));
+const SPELL: &str = "/// Opens the vault at Gringotts.\nfn open_vault(number: u32) -> Result<String, String> {\n    \
+if number == 713 {\n        return Err(\"Only Albus Dumbledore may open it\".into());\n    }\n    \
+Ok(format!(\"Vault {number} is open\"))\n}\n";
 
-    // Draw some styled text
-    let title_style = Style::builder().fg(Rgba::from_hex("#FF6600").unwrap()).bold().build();
-
-    let text_style = Style::fg(Rgba::WHITE);
-
-    buffer.draw_text(10, 5, "OpenTUI for Rust", title_style);
-    buffer.draw_text(10, 7, "A high-performance terminal UI library", text_style);
-
-    // Draw a box
-    let box_style = BoxStyle::rounded(Style::fg(Rgba::from_hex("#4488FF").unwrap()));
-    buffer.draw_box(5, 3, 50, 7, box_style);
-
-    // Print buffer dimensions
-    println!("Buffer created: {}x{}", buffer.width(), buffer.height());
-    println!("Total cells: {}", buffer.cells().len());
-
-    // In a real app, we'd render to the terminal here
-    println!("\nTo see actual rendering, run with a terminal renderer.");
+fn main() -> opentui::Result<()> {
+    let app = App::new(AppOptions::default())?;
+    let notes = Markdown::new(&app).set_markdown(NOTES);
+    let spell = Code::new(&app).filetype("rust").line_numbers(true).set_code(SPELL);
+    app.root().add(&notes).add(&spell);
+    app.on_key(|cx, key| {
+        if key.matches("q") {
+            cx.quit();
+        }
+    });
+    app.run()
 }

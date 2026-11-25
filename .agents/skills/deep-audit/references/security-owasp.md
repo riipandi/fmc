@@ -9,7 +9,7 @@ Scope: a local terminal app that reads the user's file system, runs `git`, and r
 - **Path traversal and symbolic links (OWASP A01)**: paths built from input or from the repository stay inside the intended root. Whether a symbolic link is followed or shown as a link is a parity question: verify Scouter first.
 - **Secrets in the tree**: a secret scanner over the repository when one is installed. Report location and type only, never the value.
 - **Logs (OWASP A09)**: no file contents or secrets in logs; logs go to a file, never to the terminal the app draws on.
-- **Dependencies (OWASP A06)**: `cargo audit` when installed; report advisories against the locked version of `opentui_rust` and against any new dependency.
+- **Dependencies (OWASP A06)**: `cargo audit` when installed; report advisories against the locked versions of `opentui` and `opentui-sys` and against any new dependency.
 - **Resource exhaustion from content**: very large files, deeply nested directories, and pathological regular expressions (ReDoS) in search. Bound the work and the memory each one can take.
 
 ## How to report
