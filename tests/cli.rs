@@ -104,7 +104,7 @@ fn session(env: &[(&str, &str)], input: &str) -> String {
 
 #[test]
 fn quit_restores_the_terminal() {
-    let out = session(&[], "q");
+    let out = session(&[], "\x11");
     let entered = out.find("\x1b[?1049h").expect("alternate screen entered");
     assert!(out[entered..].contains("\x1b[?1049l"), "alternate screen left");
 }

@@ -226,7 +226,7 @@ impl FooterState {
                 hints_for(self.mode, self.pane, self.wrap, all_files, shown)
             }
         };
-        let (quit, rest): (Vec<_>, Vec<_>) = hints.into_iter().partition(|(key, _)| *key == "q");
+        let (quit, rest): (Vec<_>, Vec<_>) = hints.into_iter().partition(|(key, _)| *key == "^q");
         let tail = fit_hint_list(&quit, columns, p, measure);
         let room = columns.saturating_sub(if tail.is_empty() { 0 } else { width(&tail, measure) + HINT_GAP.len() });
         let mut head = fit_hint_list(&rest, room, p, measure);

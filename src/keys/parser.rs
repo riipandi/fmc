@@ -59,7 +59,8 @@ impl Parser {
     pub fn feed(&mut self, key: Key<'_>, state: State) -> Step {
         let after_z = std::mem::take(&mut self.z_pending);
 
-        if (key.name == "q" && key.plain()) || (key.name == "c" && key.ctrl) {
+        // Ctrl+q and Ctrl+c quit; a plain `q` does nothing (approved deviation, architecture.md).
+        if (key.name == "q" || key.name == "c") && key.ctrl {
             return Step::Done(Action::Quit);
         }
         if state.help_open {

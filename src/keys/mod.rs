@@ -125,7 +125,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
             ("Esc", "clear selection or search, or back to the file list"),
             ("?", "this help (any key closes)"),
-            ("q Ctrl+c", "quit"),
+            ("^q ^c", "quit"),
         ],
     ),
 ];

@@ -155,6 +155,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                 }
                 Ok(fs::Opened::File(document)) => reader::show(m, ui, path, document.clone()),
                 Err(text) => {
+                    m.focus_reader_on_open = false;
                     m.focus = Focus::List;
                     show_error(m, text);
                 }
@@ -186,6 +187,7 @@ fn advance(m: &mut Model) {
             }
             m.browser.select(&target);
             if pending.open {
+                m.focus_reader_on_open = true;
                 open(m, target);
             }
         }

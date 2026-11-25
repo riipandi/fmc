@@ -67,6 +67,9 @@ struct Model {
     shown: reader::Shown,
     /// A file or folder open is in flight; another open is refused (Scouter `runLoading`).
     loading: bool,
+    /// The next file shown is the startup file, which opens with the reader focused as in Scouter (`finishShowing`);
+    /// a file opened from the tree keeps the list focused (approved deviation, architecture.md).
+    focus_reader_on_open: bool,
     notice: Option<String>,
     message: Option<Message>,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
@@ -129,6 +132,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         pending,
         shown: reader::Shown::None,
         loading: false,
+        focus_reader_on_open: false,
         notice: None,
         message: None,
         sidebar: None,
@@ -216,6 +220,7 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             let mut m = model.borrow_mut();
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
+                    m.focus = Focus::List;
                     let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
                     let Some(index) = row else { return };
                     m.browser.select_index(index);

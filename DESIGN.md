@@ -112,7 +112,7 @@ A column: a row of two panels that fills the screen, then the footer.
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
 - **Panels**: rounded borders; the focused panel border is accent, the other is `border`.
 - **Header**: two rows at the top of each panel, with a hairline under it.
-- **Footer**: two rows. Row one: a pill, the location or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `q quit` kept last.
+- **Footer**: two rows. Row one: a pill, the location or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last.
 
 ## Components
 

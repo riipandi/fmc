@@ -79,7 +79,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
                 ("d", "back"),
                 ("^←→", "resize"),
                 ("?", "help"),
-                ("q", "quit"),
+                ("^q", "quit"),
             ]
         } else {
             let mut hints = vec![
@@ -95,12 +95,12 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
                 ("w", "wrap"),
             ];
             hints.extend_from_slice(pan);
-            hints.extend([("gg G", "top/bottom"), ("^d ^u", "page"), ("d", "back"), ("?", "help"), ("q", "quit")]);
+            hints.extend([("gg G", "top/bottom"), ("^d ^u", "page"), ("d", "back"), ("?", "help"), ("^q", "quit")]);
             hints
         };
     }
     if shown.image && pane != Pane::Files {
-        return vec![("Tab", "files"), ("d", "changes"), ("q", "quit")];
+        return vec![("Tab", "files"), ("d", "changes"), ("^q", "quit")];
     }
     if pane == Pane::Files {
         return vec![
@@ -115,7 +115,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
             ("^←→", "resize"),
             ("^o alt+i", "jump"),
             ("?", "help"),
-            ("q", "quit"),
+            ("^q", "quit"),
         ];
     }
     let rendered = shown.markdown == Some(true);
@@ -138,7 +138,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     if !rendered {
         hints.push(("w", "wrap"));
     }
-    hints.extend([("?", "help"), ("q", "quit")]);
+    hints.extend([("?", "help"), ("^q", "quit")]);
     hints
 }
 

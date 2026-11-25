@@ -19,7 +19,7 @@ fn startup_band_and_hints_at_80_columns() {
     assert_eq!(plain(&left), " FILES  /private/tmp/fmc-ref/demo-repo");
     assert!(right.is_empty());
     // Scouter's capture at 80 columns (screen 01).
-    assert_eq!(plain(&hints), " j k move   Enter open   / find   - up   h back   Tab reader   q quit");
+    assert_eq!(plain(&hints), " j k move   Enter open   / find   - up   h back   Tab reader   ^q quit");
     assert_eq!(left[2], Seg::new("/private/tmp/fmc-ref/", DARK.dim));
     assert_eq!(left[3], Seg::new("demo-repo", DARK.text));
 }
@@ -30,7 +30,7 @@ fn hints_at_160_columns_match_scouter() {
     let (_, _, hints) = state.render(160, &DARK, &chars);
     assert_eq!(
         plain(&hints),
-        " j k move   Enter open   / find   - up   h back   Tab reader   d changes   w wrap   ^←→ resize   ^o alt+i jump   ? help   q quit"
+        " j k move   Enter open   / find   - up   h back   Tab reader   d changes   w wrap   ^←→ resize   ^o alt+i jump   ? help   ^q quit"
     );
 }
 

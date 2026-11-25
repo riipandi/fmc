@@ -45,9 +45,9 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00001-scouter-parity.md` (awaiting-approval): Scouter parity in 25 phases over 7 waves. |
-| `issues/` | Findings that outlive a turn. | `issue-00001-w3-reader-parity-gaps.md` (considering: Core highlight queries land in plan-00001 phase 11 follow-up; 1 resolved) |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00001-scouter-parity.md` (in-progress): Scouter parity in 25 phases over 7 waves; phases 1 to 11 done. |
+| `issues/` | Findings that outlive a turn. | none live |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | empty |
 | `audit/` | Point-in-time audit reports. | empty |
-| `archive/` | Completed ledger files. | empty |
+| `archive/` | Completed ledger files. | `issue-00001-w3-reader-parity-gaps.md` (resolved: the Core highlight queries and the reader focus and startup deviations) |

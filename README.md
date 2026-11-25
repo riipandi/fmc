@@ -15,7 +15,7 @@ fmc <file>     # open a file, with its folder in the tree
 fmc --help     # every key
 ```
 
-Press `?` inside fmc for every key, and `q` to quit. A [Nerd Font](https://www.nerdfonts.com/) shows the file icons.
+Press `?` inside fmc for every key, and `Ctrl+q` to quit. A [Nerd Font](https://www.nerdfonts.com/) shows the file icons.
 
 ## Build
 

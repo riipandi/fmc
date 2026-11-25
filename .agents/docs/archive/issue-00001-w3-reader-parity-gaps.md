@@ -1,8 +1,8 @@
 ---
-status: considering
+status: resolved
 created: 2026-11-26T05:45:28+07:00
-updated: 2026-11-26T05:49:00+07:00
-summary: "Two findings from the W3 phase 11 live runs: highlight colours for JavaScript, TypeScript, TSX, JSX, and Zig differ from Scouter (Core bundles its own queries), and a refused file at startup leaves Scouter's tree unloaded where fmc shows the folder. The count matches the items listed."
+updated: 2026-11-26T05:55:06+07:00
+summary: "Two findings from the W3 phase 11 live runs, both resolved: highlight colours for JavaScript, TypeScript, TSX, JSX, and Zig differ from Scouter (Core bundles its own queries), and a refused file at startup leaves Scouter's tree unloaded where fmc shows the folder. The count matches the items listed."
 count: 2
 ---
 
@@ -12,11 +12,12 @@ Captures for both items are in `/tmp/fmc-ref/out/w3-11/` (outside the repository
 
 ## Highlight queries for JavaScript, TypeScript, TSX, JSX, and Zig differ from Scouter
 
-- status: considering (owner chose Core's queries and four direct grammar crates on 2026-11-26, `architecture.md`; resolves when plan-00001 phase 11's follow-up lands them)
+- status: resolved (2026-11-26, plan-00001 phase 11 follow-up: Core's queries and the four pinned crates, `architecture.md`)
   area: reader, syntax highlighting (`src/ui/syntax/mod.rs`)
   summary: Scouter highlights these five with the queries Core ships, `node_modules/@opentui/core/assets/{javascript,typescript,typescriptreact,zig}/highlights.scm` in the 0.9.9 reference (`typescript/highlights.scm:10` names a property `@variable.member`, which Scouter's table draws as plain text). OpenTUI's Rust binding bundles the grammar crates' own queries instead (`opentui-0.9.9/src/syntax/highlight.rs`, `bundled()`), and the property is `@property` there, drawn in the function colour. The binding can register a query only with the language handle, and the handles for these grammars come from crates fmc does not depend on directly. Differing cells: TypeScript 60, TSX 19, JSX 4, Zig 16 (`fmc-ts-00.html` against `sco-ts-00.html`, and the rest).
   plan: plan-00001 phase 11 (its colour validation) and phase 12 (Markdown uses Core's `markdown` and `markdown_inline` assets)
-  trigger: the owner chooses an option in `architecture.md` "Pending decisions"; nothing else fires it.
+  resolution: the four crates are direct dependencies at the pinned versions; Core's queries for these six filetypes are registered in `src/ui/syntax/mod.rs` (Markdown is registered and checked in phase 12). The binding ignores `#lua-match?`, so those Core predicates became `#match?` with the same patterns (`rust.md`). Live at 80x24: the reader colours of the TypeScript, TSX, JSX, JavaScript, and Zig fixtures match Scouter cell for cell; the only text difference is the footer hint `^q quit`, an approved deviation.
+  trigger: None, closed.
 
 ## A refused file at startup leaves Scouter's tree unloaded; fmc shows the folder
 

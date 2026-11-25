@@ -56,8 +56,11 @@ fn last(keys: &[&str], state: State) -> Step {
 
 #[test]
 fn quit_wins_even_over_help() {
-    assert_eq!(last(&["q"], State { help_open: true, ..READER }), Step::Done(Action::Quit));
-    assert_eq!(last(&["Q"], TREE), Step::Done(Action::Quit));
+    assert_eq!(last(&["^q"], State { help_open: true, ..READER }), Step::Done(Action::Quit));
+    assert_eq!(last(&["^c"], TREE), Step::Done(Action::Quit));
+    // A plain `q` quits nowhere: in the help card it only closes the card, as any key does.
+    assert_ne!(last(&["q"], TREE), Step::Done(Action::Quit));
+    assert_eq!(last(&["q"], State { help_open: true, ..READER }), Step::Done(Action::CloseHelp));
     assert_eq!(last(&["^c"], CHANGES), Step::Done(Action::Quit));
     assert_eq!(last(&["j"], State { help_open: true, ..READER }), Step::Done(Action::CloseHelp));
 }
@@ -176,7 +179,6 @@ fn every_documented_key_is_bound() {
                     "Ctrl+←" => vec!["^left".into()],
                     "→" if i > 0 && tokens[0] == "Ctrl+←" => vec!["^right".into()],
                     "Ctrl+o" => vec!["^o".into()],
-                    "Ctrl+c" => vec!["^c".into()],
                     "Alt+i" => vec!["M-i".into()],
                     "Enter" => vec!["enter".into()],
                     "Backspace" => vec!["backspace".into()],

@@ -13,7 +13,7 @@ const HINTS: [(&str, &str); 5] = [
     ("Enter", "open file or folder"),
     ("/", "find a file"),
     ("d", "changes in a git repository"),
-    ("q", "quit"),
+    ("^q", "quit"),
 ];
 
 const KEY_COLUMN_WIDTH: usize = 7;

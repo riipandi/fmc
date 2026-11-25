@@ -43,7 +43,9 @@ pub fn show(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     m.location = path.to_string_lossy().into_owned();
     m.message = None;
     m.notice = None;
-    m.focus = Focus::Reader;
+    if std::mem::take(&mut m.focus_reader_on_open) {
+        m.focus = Focus::Reader;
+    }
     m.shown = Shown::Text { path: path.to_path_buf(), document, language };
 }
 

@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Enter on a file opens it in the reader and moves focus there; Tab moves between the file list and an open file.
+- Enter on a file opens it in the reader and keeps focus in the file list; Tab, or a click on the reader, moves focus there.
+- Quit is `Ctrl+q` (or `Ctrl+c`); a plain `q` no longer quits.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
 
 [Unreleased]: https://github.com/riipandi/fmc/commits/main

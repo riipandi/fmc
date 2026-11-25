@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T05:46:26+07:00
+updated: 2026-11-26T05:55:13+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -45,8 +45,8 @@ phases:
       note: "80x24 live captures against Scouter 0.9.9 (same keys, same demo repository): 11 text states of the tree, 10 scroll states of an overflowing list, the file-target, root `-`, page, edge, and Backspace keys, the loop refusal on a link, and 4 HTML colour states. The sidebar columns match in every state; the reader differs only in the approved wordmark and version. Mouse (edge drag, click, wheel) is an owner check. Enter on a file and `/` are W3 and W4 no-ops. services/git.rs (private index copy with a Drop guard) was built here for the marks; phase 18 extends it"
     - id: 11
       title: "W3: text loading and code view"
-      status: partially-done
-      note: "Node's I/O wording in one place (services/fs.rs describe), phase 10 listings on it; loader (reader/document.rs: 1 MiB, NUL and UTF-8 checks, BOM, tabs, controls) and the code view with Scouter's gutter (minWidth 3, paddingRight 2); 10 vendored grammar crates pinned, queries copied with their LICENSE; core_captures for the vendored grammars (TOML needed it). Live at 80x24 against Scouter 0.9.9: text and colours identical for Rust, HTML, CSS, JSON, YAML, TOML, C, Java, Bash, Go, Python, plain text, empty, controls, a file over 1 MiB (text), Enter and Tab. Open: JavaScript, TypeScript, TSX, JSX, Zig colours (Core's own queries; owner decision in architecture.md) and a refused startup file (issue-00001). Later: scrollbar and pan (14), Markdown (12), binary and image (13)"
+      status: done
+      note: "Node's I/O wording in one place (services/fs.rs describe), phase 10 listings on it; loader (reader/document.rs: 1 MiB, NUL and UTF-8 checks, BOM, tabs, controls) and the code view with Scouter's gutter (minWidth 3, paddingRight 2); the vendored grammars cascade with core_captures; Core's queries for JavaScript, TypeScript, TSX, JSX, Markdown, and Zig with the four pinned crates (architecture.md; Lua predicates translated, rust.md). Ctrl+q quits and a plain q does not; a file opened from the tree keeps list focus; a file refused at startup keeps its folder (architecture.md approved deviations). Live at 80x24 against Scouter 0.9.9: text and colours identical for Rust, HTML, CSS, JSON, YAML, TOML, C, Java, Bash, Go, Python, the JavaScript family, plain text, empty, controls, a file over 1 MiB (text), and the Enter and Tab flow, apart from the approved footer quit label, focus, and wordmark. Later: scrollbar and pan (14), Markdown rendering (12), binary and image (13)"
     - id: 12
       title: "W3: Markdown rendered and source"
       status: pending
