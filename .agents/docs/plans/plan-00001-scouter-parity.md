@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:18:55+07:00
+updated: 2026-11-26T04:20:50+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -9,8 +9,8 @@ phases:
       note: "cargo-about 0.9.3 installed; deny passes on the current tree"
     - id: 2
       title: "W0: native library build script and cache"
-      status: pending
-      note: —
+      status: done
+      note: "first build 1 min 16 s, cached rerun 0.02 s, 0 FFmpeg symbols; repo-local .cache symlink because cargo [env] cannot expand $HOME"
     - id: 3
       title: "W0: engine swap spike (opentui =0.9.9)"
       status: pending

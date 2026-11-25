@@ -19,13 +19,18 @@ Press `?` inside fmc for every key, and `q` to quit. A [Nerd Font](https://www.n
 
 ## Build
 
-Build instructions arrive with the first build tooling.
+You need Rust and Zig 0.17.1. See [docs/development.md](docs/development.md).
+
+```sh
+scripts/opentui-native.sh
+cargo build --release
+```
 
 ## License
 
 Licensed under either of
 
-- Apache License, Version 2.0
-- MIT license
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
+- MIT license ([LICENSE-MIT](LICENSE-MIT))
 
 at your option.
