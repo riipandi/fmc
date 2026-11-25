@@ -1,19 +1,24 @@
 //! The text view (Scouter `src/reader/code-view.ts`): the document's lines in a line-number gutter, coloured by its
 //! filetype. It scrolls inside the viewer (`ui/viewer.rs`); wrapping and the width it takes are set here.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use fmc::reader::document::Document;
+use fmc::reader::search::match_ranges;
 use fmc::theme::Palette;
-use opentui::native::{TextView, Viewport};
+use opentui::native::{LayerRun, TextView, Viewport};
 use opentui::prelude::*;
+use opentui::widget::LineColor;
 
 use super::styled::color;
 use super::syntax;
 
 /// Shown in place of an empty file's lines, with no gutter (`src/reader/code-view.ts:288`).
 const EMPTY_FILE: &str = "(empty file)";
+
+/// The layer the search marks go on, drawn over the syntax layer (1), as Scouter's `search.match` group is.
+const SEARCH_LAYER: u32 = 2;
 
 pub struct CodeView {
     code: Code,
@@ -24,6 +29,8 @@ pub struct CodeView {
     /// only past the gutter (six columns), and longer lines are cut at the pane's edge.
     width: Cell<u32>,
     wrap: Cell<bool>,
+    /// The search marks last applied, as the query and the current line: skipped while they stay the same.
+    applied: RefCell<Option<(String, Option<usize>)>>,
 }
 
 impl CodeView {
@@ -32,7 +39,8 @@ impl CodeView {
         // Scouter's gutter is a `LineNumberRenderable` with `minWidth: 3` and `paddingRight: 2` (`code-view.ts:99-108`).
         let numbers = LineNumbers::new(app, &code).gutter_min_width(3).gutter_padding(2).visible(false);
         let counter = TextView::new(code.buffer()).ok();
-        let view = Self { code, numbers, counter, width: Cell::new(0), wrap: Cell::new(false) };
+        let view =
+            Self { code, numbers, counter, width: Cell::new(0), wrap: Cell::new(false), applied: RefCell::new(None) };
         view.restyle(p);
         view
     }
@@ -43,6 +51,7 @@ impl CodeView {
 
     pub fn restyle(&self, p: &Palette) {
         self.code.fg(color(p.text)).syntax_theme(Arc::new(syntax::theme(p)));
+        self.install_table(p);
         self.numbers.fg(color(p.dim));
     }
 
@@ -53,7 +62,32 @@ impl CodeView {
         self.numbers.show_line_numbers(!empty);
         let content = if empty { EMPTY_FILE } else { document.content() };
         self.code.set_code(content);
+        // Setting the text empties the buffer's layers, so the marks are applied again.
+        *self.applied.borrow_mut() = None;
         self.apply_width();
+    }
+
+    /// The search's marks over the code, and its current line in the gutter (Scouter `markMatches`, `setActiveLine`).
+    /// Nothing changes when the query and the line stay the same.
+    pub fn sync_search(&self, p: &Palette, query: &str, current: Option<usize>, text: &str) {
+        let key = (query.to_owned(), current);
+        if self.applied.borrow().as_ref() == Some(&key) {
+            return;
+        }
+        *self.applied.borrow_mut() = Some(key);
+        let buffer = self.code.buffer();
+        if let Ok(group) = buffer.context().group_set(&["opentui.search.match"]) {
+            let runs: Vec<LayerRun> = match_ranges(text, query)
+                .into_iter()
+                .map(|range| LayerRun { start_byte: range.start as u32, end_byte: range.end as u32, group_set: group })
+                .collect();
+            let _ = buffer.set_layer(SEARCH_LAYER, 0..u32::MAX, &runs);
+        }
+        self.numbers.clear_line_colors();
+        if let Some(line) = current {
+            let colors = LineColor::new(color(p.target_gutter), color(p.target_bg));
+            self.numbers.line_color(line as u32, colors);
+        }
     }
 
     pub fn visible(&self, visible: bool) {
@@ -83,6 +117,15 @@ impl CodeView {
     pub fn set_width(&self, columns: u32) {
         if self.width.replace(columns) != columns {
             self.apply_width();
+        }
+    }
+
+    /// The buffer's style table: the widget's own names, and the search mark (see `syntax::table`).
+    fn install_table(&self, p: &Palette) {
+        let buffer = self.code.buffer();
+        let search = Style::new().fg(color(p.match_fg)).bg(color(p.match_bg)).bold();
+        if let Ok(table) = syntax::table(buffer.context(), &syntax::theme(p), search) {
+            let _ = buffer.set_syntax_style(Some(&table));
         }
     }
 

@@ -30,7 +30,10 @@ pub fn motion(m: &Model, ui: &Ui, action: Action) {
         Action::Bottom => ui.viewer.scroll_to_bottom(),
         Action::GoToLine(line) => ui.viewer.scroll_to(0.0, motion::line_top(line as usize - 1, viewport) as f64),
         Action::Centre => {
-            let line = motion::centre_line(m.top.floor() as usize, viewport);
+            // `zz` centres the hit the search is on, else the middle of the view (Scouter `centre`).
+            let hit =
+                if m.shown.previewing() { None } else { m.search.as_ref().and_then(|search| search.current_line()) };
+            let line = hit.unwrap_or_else(|| motion::centre_line(m.top.floor() as usize, viewport));
             ui.viewer.scroll_to(0.0, motion::line_top(line, viewport) as f64);
         }
         Action::Paragraph(direction) => {

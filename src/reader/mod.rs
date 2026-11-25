@@ -9,3 +9,4 @@ pub mod language;
 pub mod markdown;
 pub mod motion;
 pub mod position;
+pub mod search;

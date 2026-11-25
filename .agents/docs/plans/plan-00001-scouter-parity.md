@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T06:46:46+07:00
+updated: 2026-11-26T06:56:18+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -61,8 +61,8 @@ phases:
       note: "ScrollBox viewer; keys of §4.3 (j k, h l pan, space b, ctrl d u, gg G, counts, { }, zz, w) through the parser; jump history of 100 (ctrl+o, alt+i; jump.rs core); wrap kept across files; y copies the selection or the path through OpenTUI (OSC 52 and the system clipboard, copied_summary); drag selects and keeps the selection, nothing copied on release (approved, architecture.md). Live at 80x24 against Scouter 0.9.9 on the chapters fixture: 120G, G, gg, zz, { }, ctrl+d and ctrl+u, space and b, j k, w, pan, identical apart from the approved footer quit label; the jump back is identical apart from the approved focus. Open: the rendered view stops two rows short at the bottom (issue-00003). Owner check: drag selection and the wheel."
     - id: 15
       title: "W3: in-file search"
-      status: pending
-      note: —
+      status: done
+      note: "In-file search: core reader/search.rs (whole-line matches ignoring case, wrap-around stepping, the footer text, the refresh on a shown text); app/search.rs keys (the prompt takes plain keys, Enter and arrows step, Esc keeps then clears, n N p, and / refused in the rendered view); the marks are a layer over the code, naming opentui.search.match in a buffer table that lists every capture name (rust.md). Live at 80x24 against Scouter 0.9.9 on the chapters fixture and the demo main.rs: the prompt, typing, the count (1 of 183, wrap), Enter, Shift+Enter via arrows, n, Esc keeps and clears, text and chip colours identical, including Rust syntax under a search. Owner check: none beyond the approved footer and focus differences."
     - id: 16
       title: "W4: file finder"
       status: pending

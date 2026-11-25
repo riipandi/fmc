@@ -12,7 +12,7 @@ use fmc::reader::markdown::{View, is_markdown};
 use fmc::reader::position::scroll_label;
 use fmc::text::display_label;
 
-use super::{Model, Ui};
+use super::{Model, Ui, search};
 use crate::ui::footer::{DocumentInfo, Message};
 use crate::ui::header::{Badge, BadgeKind};
 use crate::ui::syntax::language_for;
@@ -84,6 +84,7 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
         ui.markdown.show(&document.text);
     }
     m.shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+    search::follow(m);
     reset_scroll(m, ui, path);
 }
 
@@ -103,6 +104,7 @@ pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes:
     }
     ui.picture.show(bytes);
     m.shown = Shown::Image { path: path.to_path_buf(), info };
+    m.search = None;
     reset_scroll(m, ui, path);
 }
 
@@ -114,6 +116,7 @@ pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
     m.focus = Focus::List;
     m.shown = Shown::Binary { path: path.to_path_buf(), size };
     m.restore = None;
+    m.search = None;
 }
 
 /// The place the reader is at, for the jump history (Scouter `here`): a text's row, and the top of an image or binary.

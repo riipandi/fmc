@@ -6,7 +6,8 @@ use std::path::Path;
 
 use fmc::reader::language::is_highlighted;
 use fmc::theme::Palette;
-use opentui::prelude::Style;
+use opentui::native::{Context, SyntaxStyle};
+use opentui::prelude::{Result, Style};
 use opentui::syntax::tree_sitter::Language;
 use opentui::syntax::{CompiledGrammar, Grammar, SyntaxTheme, filetype_for_path, register_alias, register_lazy};
 
@@ -71,6 +72,7 @@ pub fn theme(p: &Palette) -> SyntaxTheme {
     let (constant, function, punctuation) = (fg(s.constant), fg(s.function), fg(s.punctuation));
     let text = fg(p.text);
     let mut theme = SyntaxTheme::new()
+        .style("search.match", Style::new().fg(color(p.match_fg)).bg(color(p.match_bg)).bold())
         .first_part_fallback()
         .style("default", text)
         .style("variable", text)
@@ -100,3 +102,113 @@ pub fn theme(p: &Palette) -> SyntaxTheme {
 
 #[cfg(test)]
 mod tests;
+
+/// The capture names the queries use (`src/ui/syntax/queries` and OpenTUI's bundled Rust query). The buffer's style
+/// table names each one `opentui.<name>`, so a layer can paint by name; a name missing here is drawn plain.
+const CAPTURE_NAMES: &[&str] = &[
+    "attribute",
+    "boolean",
+    "character",
+    "character.special",
+    "charset",
+    "cImport",
+    "comment",
+    "comment.documentation",
+    "conceal",
+    "constant",
+    "constant.builtin",
+    "constructor",
+    "delimiter",
+    "embedded",
+    "escape",
+    "function",
+    "function.builtin",
+    "function.call",
+    "function.macro",
+    "function.method",
+    "function.method.call",
+    "function.special",
+    "import",
+    "keyframes",
+    "keyword",
+    "keyword.conditional",
+    "keyword.conditional.ternary",
+    "keyword.coroutine",
+    "keyword.directive",
+    "keyword.exception",
+    "keyword.function",
+    "keyword.import",
+    "keyword.modifier",
+    "keyword.operator",
+    "keyword.repeat",
+    "keyword.return",
+    "keyword.type",
+    "label",
+    "markup.heading",
+    "markup.heading.1",
+    "markup.heading.2",
+    "markup.heading.3",
+    "markup.heading.4",
+    "markup.heading.5",
+    "markup.heading.6",
+    "markup.italic",
+    "markup.link",
+    "markup.link.bracket.close",
+    "markup.link.label",
+    "markup.link.url",
+    "markup.list",
+    "markup.list.checked",
+    "markup.list.unchecked",
+    "markup.quote",
+    "markup.raw",
+    "markup.raw.block",
+    "markup.strikethrough",
+    "markup.strong",
+    "markup.underline",
+    "media",
+    "module",
+    "module.builtin",
+    "namespace",
+    "none",
+    "nospell",
+    "number",
+    "number.float",
+    "operator",
+    "property",
+    "punctuation.bracket",
+    "punctuation.delimiter",
+    "punctuation.special",
+    "spell",
+    "string",
+    "string.escape",
+    "string.regexp",
+    "string.special",
+    "string.special.key",
+    "string.special.url",
+    "supports",
+    "tag",
+    "tag.attribute",
+    "tag.builtin",
+    "tag.delimiter",
+    "tag.error",
+    "type",
+    "type.builtin",
+    "variable",
+    "variable.builtin",
+    "variable.member",
+    "variable.parameter",
+];
+
+/// The style table of a code view's buffer: each capture name's style as the widget would register it, plus the search
+/// mark, which layers name as `opentui.search.match` (Scouter `search.match`). A buffer keeps the table it was given, so
+/// this one stands in for the widget's own.
+pub fn table(context: &Context, theme: &SyntaxTheme, search: Style) -> Result<SyntaxStyle> {
+    let table = SyntaxStyle::new(context)?;
+    for name in CAPTURE_NAMES {
+        if let Some(style) = theme.get(name) {
+            table.register(&format!("opentui.{name}"), style)?;
+        }
+    }
+    table.register("opentui.search.match", search)?;
+    Ok(table)
+}

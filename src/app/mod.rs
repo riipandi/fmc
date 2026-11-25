@@ -4,6 +4,7 @@
 mod keys;
 mod reader;
 mod scroll;
+mod search;
 mod theme;
 mod tree;
 
@@ -23,7 +24,7 @@ use crate::ui::binary::BinaryView;
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
 use crate::ui::help::Help;
-use crate::ui::hints::Pane;
+use crate::ui::hints::{Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
@@ -97,6 +98,8 @@ struct Model {
     top: f64,
     /// The place a jump opens at: applied when that file shows.
     restore: Option<(PathBuf, usize)>,
+    /// The in-file search, while there is one (Scouter `DocumentSearch`).
+    search: Option<fmc::reader::search::Search>,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
     sidebar: Option<i64>,
     /// An edge drag in progress: the pointer's start column and the sidebar's width then.
@@ -163,6 +166,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         viewport: 0,
         top: 0.0,
         restore: None,
+        search: None,
         loading: false,
         focus_reader_on_open: false,
         notice: None,
@@ -209,6 +213,13 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             // Scouter clears the reader's error notice on every key (`src/app/app.ts:531-534`).
             m.notice = None;
             let state = m.key_state();
+            // While the search prompt is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
+            if m.search.as_ref().is_some_and(|search| search.editing) && named.key().plain() {
+                search::prompt_key(&mut m, &ui.borrow(), named.key());
+                paint(cx.app(), &mut m, &mut ui.borrow_mut());
+                repaint_after_layout(cx.app(), &model, &ui);
+                return;
+            }
             let Step::Done(action) = m.parser.feed(named.key(), state) else {
                 paint(cx.app(), &mut m, &mut ui.borrow_mut());
                 return;
@@ -224,6 +235,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 }
                 // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
                 Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
+                Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
                 Action::ToggleMarkdown => {
@@ -263,6 +275,12 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::Search | Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
                     let text = if action == Action::Search { SEARCH_REFUSED } else { PARAGRAPH_REFUSED };
                     reader::refuse(&mut m, text);
+                }
+                Action::Search if m.focus == Focus::Reader && matches!(m.shown, reader::Shown::Text { .. }) => {
+                    search::start(&mut m)
+                }
+                Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
+                    search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
                 }
                 Action::Move(_)
                 | Action::MovePage(_)
@@ -520,9 +538,20 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let (document, position) =
         reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
             .map_or((None, None), |(info, label)| (Some(info), label));
+    let search_text = match &m.shown {
+        reader::Shown::Text { document, .. } => document.content().to_owned(),
+        _ => String::new(),
+    };
+    ui.reader.sync_search(
+        p,
+        m.search.as_ref().map_or("", |search| search.query.as_str()),
+        m.search.as_ref().and_then(|search| search.current_line()),
+        &search_text,
+    );
     let footer = FooterState {
         location,
         pane,
+        prompt: m.search.as_ref().filter(|search| search.editing).map(|_| Prompt::Reader),
         message: m.message.clone(),
         document,
         positions: [position, None],
