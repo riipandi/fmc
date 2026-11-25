@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Command line: `fmc [file-or-directory]`, `--help` with every key, and `--version`, with the same checks and messages as Scouter.
 - Dark and light palettes that follow the terminal's background, checked at start, every 3 seconds, and when the terminal reports a change.
+- The two panes with their headers, the two-row footer with hints that fit the width, the welcome screen, and the `?` card, which also lists the mouse.
 - Project workspace: agent instructions, agent docs, and project skills.
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
 

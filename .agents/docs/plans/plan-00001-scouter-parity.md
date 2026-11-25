@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T04:34:54+07:00
+updated: 2026-11-26T04:47:14+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -33,8 +33,8 @@ phases:
       note: "parser in Scouter onKeyPress order (prompts read keys first, in the app); g alone goes to the top in Scouter, so gg is two Top steps; 12 key tests incl. every documented key bound and docs/keymaps.md in step"
     - id: 8
       title: "W1: app loop, chrome, welcome, help"
-      status: pending
-      note: —
+      status: done
+      note: "80x24 text captures equal Scouter (core 0.9.9) for welcome, ?, help closed, Tab, Esc outside the tree rows (W2) and the wordmark/version; colors equal except tree colors; larger tabs could not be forced (Rex opens 80x24 tabs; stty cannot grow them), a 190x61 run matched by eye; name substitution in the wordmark awaits owner confirmation"
     - id: 9
       title: "W2: tree model and filesystem service"
       status: pending

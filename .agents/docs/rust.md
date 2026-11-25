@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T04:22:25+07:00
+updated: 2026-11-26T04:47:14+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -31,4 +31,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 ## Contracts and traps
 
-None recorded yet. Record the first one here when the terminal loop lands (for example, terminal state restored on normal exit and on panic).
+- **Terminal restore is OpenTUI's.** `App::run` enters the alternate screen and leaves it on return; the host installs a panic hook that restores the terminal before the panic message prints (`opentui-0.9.9/src/host.rs`, `install_panic_hook`). fmc adds no hook of its own. `tests/cli.rs` checks both paths; the panic path uses the debug-only `FMC_PANIC_AFTER_START` variable (`src/app/mod.rs`), compiled out of release builds.
+- **The root keeps the terminal's background.** OpenTUI's themes fill the root with a color (`#12161c` dark); Scouter draws on the default background, so `app::run` sets both themes' `background` to `Color::DEFAULT_BACKGROUND`.
+- **Keys are read in capture.** `on_key_capture` sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab.
+- **Widths come from the native measure.** Footer fitting measures with `Context::text_width` and the app's width method, so `↑`, `…`, and wide characters count as the terminal draws them; tests pass a character count.

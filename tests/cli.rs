@@ -61,3 +61,38 @@ fn socket_is_refused() {
     let out = fmc_on_tty(socket.to_str().unwrap());
     assert!(String::from_utf8_lossy(&out.stdout).contains("fmc: Only files and directories can be opened."));
 }
+
+/// Runs fmc on a pseudo-terminal with `input` typed after a pause; returns everything fmc wrote.
+fn session(env: &[(&str, &str)], input: &str) -> String {
+    use std::io::Write;
+    use std::process::Stdio;
+    let dir = tempfile::tempdir().unwrap();
+    let mut child = Command::new("script")
+        .args(["-q", "/dev/null"])
+        .arg(cargo_bin("fmc"))
+        .arg(dir.path())
+        .envs(env.iter().copied())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(800));
+    let _ = child.stdin.as_mut().unwrap().write_all(input.as_bytes());
+    let out = child.wait_with_output().unwrap();
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+#[test]
+fn quit_restores_the_terminal() {
+    let out = session(&[], "q");
+    let entered = out.find("\x1b[?1049h").expect("alternate screen entered");
+    assert!(out[entered..].contains("\x1b[?1049l"), "alternate screen left");
+}
+
+#[test]
+fn a_panic_restores_the_terminal_before_its_message() {
+    let out = session(&[("FMC_PANIC_AFTER_START", "1")], "");
+    let left = out.rfind("\x1b[?1049l").expect("alternate screen left");
+    let message = out.find("Peeves was here").expect("panic message printed");
+    assert!(left < message, "the terminal is restored before the panic message");
+}
