@@ -54,8 +54,9 @@ impl MarkdownView {
         self.doc.visible(visible);
     }
 
-    /// The rows the rendered document takes in the latest frame: the footer's scroll position counts them.
+    /// The rows the rendered document takes in the latest frame: the footer's scroll position and the bar count them.
+    /// The block rows are screen rows, which move up as the view scrolls, so the widget's own height is the total.
     pub fn rows(&self) -> usize {
-        self.doc.block_rows().last().map_or(0, |rows| rows.end as usize)
+        self.doc.rect().height.max(0.0) as usize
     }
 }
