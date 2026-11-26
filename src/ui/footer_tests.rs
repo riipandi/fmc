@@ -155,3 +155,18 @@ fn a_hidden_sidebar_names_its_key_and_drops_tab_to_the_files() {
         assert!(shown.contains(&("Tab", "files")), "{mode:?}: {shown:?}");
     }
 }
+
+#[test]
+fn a_hidden_sidebar_hint_survives_a_phone_width() {
+    use crate::ui::hints::Pane;
+    // At 40 columns only the first hints fit; the one that shows the sidebar must be among them.
+    let state = FooterState {
+        pane: Pane::Reader,
+        sidebar_hidden: true,
+        document: Some(DocumentInfo::Text { lines: 18, language: "rust".into(), truncated: false, rendered: None }),
+        ..FooterState::default()
+    };
+    let (_, _, hints) = state.render(40, &DARK, &chars);
+    assert!(plain(&hints).contains("^/ sidebar"), "{:?}", plain(&hints));
+    assert!(plain(&hints).contains("^q quit"), "{:?}", plain(&hints));
+}

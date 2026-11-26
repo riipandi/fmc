@@ -94,8 +94,12 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
                 ("^q", "quit"),
             ]
         } else {
-            let mut hints = vec![
-                ("j k", "scroll"),
+            // A hidden sidebar's key comes second: at a phone width the footer keeps only the first few hints.
+            let mut hints = vec![("j k", "scroll")];
+            if shown.sidebar_hidden {
+                hints.push(switch_hint(shown));
+            }
+            hints.extend([
                 ("n N", "hunk"),
                 ("o", "open file"),
                 ("s", "split"),
@@ -104,8 +108,10 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
                 ("x", "context"),
                 ("y", "copy"),
                 ("w", "wrap"),
-            ];
-            hints.push(switch_hint(shown));
+            ]);
+            if !shown.sidebar_hidden {
+                hints.push(switch_hint(shown));
+            }
             hints.extend_from_slice(pan);
             hints.extend([("gg G", "top/bottom"), ("^d ^u", "page"), ("d", "back"), ("?", "help"), ("^q", "quit")]);
             hints
@@ -136,6 +142,9 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     }
     let rendered = shown.markdown == Some(true);
     let mut hints = vec![("j k", "scroll")];
+    if shown.sidebar_hidden {
+        hints.push(switch_hint(shown));
+    }
     if !rendered {
         hints.extend_from_slice(pan);
     }
@@ -143,7 +152,10 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     if !rendered {
         hints.push(("{ }", "paragraph"));
     }
-    hints.extend([("z z", "centre"), ("^d ^u", "page"), switch_hint(shown)]);
+    hints.extend([("z z", "centre"), ("^d ^u", "page")]);
+    if !shown.sidebar_hidden {
+        hints.push(switch_hint(shown));
+    }
     if let Some(rendered) = shown.markdown {
         hints.push(("m", if rendered { "source" } else { "preview" }));
     }
