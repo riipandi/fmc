@@ -53,3 +53,23 @@ fn a_press_on_the_thumb_does_not_jump() {
     app.mouse(MouseEventKind::Down(MouseButton::Left), 0, 1);
     assert!(values.borrow().is_empty());
 }
+
+#[test]
+fn the_blank_columns_before_a_thumb_are_not_the_track() {
+    // A bar with two blank columns (the text's bar) is a track only in its last column, the thumb's.
+    let app = TestApp::new(4, 10);
+    let row = View::new(app.app()).row().height(10);
+    let bar = ScrollBar::new(app.app(), 2);
+    row.add(&bar.root());
+    app.app().root().add(&row);
+    bar.paint(app.app(), 30, 10, 0, true, &DARK);
+    let values = Rc::new(RefCell::new(Vec::new()));
+    let log = values.clone();
+    bar.track().on_change(move |_, value| log.borrow_mut().push(value));
+    app.render();
+    app.click(0, 9);
+    app.click(1, 9);
+    assert!(values.borrow().is_empty());
+    app.click(2, 9);
+    assert_eq!(values.borrow().last().copied(), Some(18.0));
+}

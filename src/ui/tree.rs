@@ -197,7 +197,7 @@ impl TreeView {
         let body = View::new(app).width(Length::percent(100.0)).grow(1.0).min_height(0).row();
         let rows = View::new(app).grow(1.0).min_width(0).column();
         let bar = View::new(app).width(1).shrink(0.0).column();
-        let track = scrollbar::track(app, 1);
+        let track = scrollbar::track(app);
         bar.add(&track);
         body.add(&rows).add(&bar);
         root.add(&body);

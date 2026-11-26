@@ -16,8 +16,9 @@ use opentui::prelude::*;
 use super::styled::{Seg, content};
 use super::tree::thumb;
 
-/// The drag over a bar `width` columns wide, the height of the bar it is added to.
-pub fn track(app: &App, width: u32) -> Slider {
+/// The drag over a bar's thumb column: the bar's last column, the height of the bar it is added to. The blank columns
+/// before the thumb are not the track: a press there does nothing in Scouter (`scouter:src/app/reader-pane.ts:31-48`).
+pub fn track(app: &App) -> Slider {
     Slider::new(app)
         .vertical()
         .focusable(false)
@@ -25,7 +26,8 @@ pub fn track(app: &App, width: u32) -> Slider {
         .absolute()
         .position(Edge::Top, 0)
         .position(Edge::Bottom, 0)
-        .width(width)
+        .position(Edge::Right, 0)
+        .width(1)
         // Above the thumb's cells, which are added later: a press on a cell must reach the slider.
         .z_index(i32::MAX)
         // A release leaves the thumb where the drag put it. The slider would apply the press's grab offset again, which
@@ -56,7 +58,7 @@ impl ScrollBar {
     /// A bar that takes `gap + 1` columns from the row it sits in.
     pub fn new(app: &App, gap: usize) -> Self {
         let root = View::new(app).column().width(gap as u32 + 1).shrink(0.0).visible(false);
-        let track = track(app, gap as u32 + 1);
+        let track = track(app);
         root.add(&track);
         Self { root, track, cells: RefCell::new(Vec::new()), gap }
     }
