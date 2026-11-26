@@ -1,9 +1,9 @@
 ---
 title: "Audit: Scouter parity, whole system (plan-00001 phase 22)"
-status: in_review
+status: completed
 created_at: 2026-11-26T12:01:10+07:00
-updated_at: 2026-11-26T12:18:05+07:00
-completed_at: null
+updated_at: 2026-11-26T12:29:18+07:00
+completed_at: 2026-11-26T12:29:18+07:00
 scope:
     type: system
     feature: null
@@ -31,7 +31,7 @@ findings:
     total: 8
     by_severity: { critical: 0, high: 0, medium: 5, low: 3, info: 0 }
     by_status:
-        { open: 3, fixed: 5, deferred: 0, wont_fix: 0, false_positive: 0 }
+        { open: 0, fixed: 6, deferred: 0, wont_fix: 2, false_positive: 0 }
     verified: 8
     unverified: 0
 cleanup_candidates: 0
@@ -183,9 +183,9 @@ Evidence: captures are in `/tmp/fmc-ref/out/w6-22/` (outside the repository): `f
 | F-03 | medium | scroll state | `src/ui/markdown.rs` (`rows`) | Rendered Markdown thumb and percentage wrong | verified | fixed (d9bd454) |
 | F-04 | medium | input | `src/explorer/browser.rs` (`set_height`, `keep_visible`) | Tree wheel scrolls back | verified | fixed (e3d6c73) |
 | F-05 | low | layout | `src/app/mod.rs` (unwrapped width) | Reader pan ends one column short | verified | fixed (23e) |
-| F-06 | medium | chrome | `src/diff/row.rs` (`header_counts`), `src/ui/diff.rs` | Folded diff header draws no stat bar | verified | open (owner question) |
-| F-07 | low | chrome | `src/app/reader.rs` (`footer_facts`) | Scouter's stale binary footer position | verified | open (owner question) |
-| F-08 | low | docs | `docs/parity.md`, `.agents/docs/architecture.md` | `--upgrade` drop is not recorded as a deviation | verified | open (owner question) |
+| F-06 | medium | chrome | `src/ui/diff.rs` (`apply_widths`), `src/diff/stack.rs` (`widens_stack`) | Folded diff header draws no stat bar | verified | fixed (phase 23f) |
+| F-07 | low | chrome | `src/app/reader.rs` (`footer_facts`) | Scouter's stale binary footer position | verified | wont_fix (approved deviation, 6cb4373; owner, 2026-11-26) |
+| F-08 | low | docs | `docs/parity.md`, `.agents/docs/architecture.md` | `--upgrade` drop is not recorded as a deviation | verified | wont_fix (approved deviation, 6cb4373; owner, 2026-11-26) |
 
 #### F-01 Welcome clipped at 80x24
 
@@ -332,3 +332,4 @@ Not checked against Scouter: the copied-path notice after `y` (not visible after
 
 - 2026-11-26T12:01:10+07:00: status draft -> in_review; eight findings (five defects for phase 23, three owner questions); live runs at 80x24 on d826786.
 - 2026-11-26T12:18:05+07:00: status in_review -> in_review; F-01 to F-05 fixed in plan-00001 phase 23 (498958c, 784caf4, d9bd454, e3d6c73, and 23e); F-06 to F-08 remain open for the owner.
+- 2026-11-26T12:29:18+07:00: status in_review -> completed. F-06 fixed in plan-00001 phase 23f (the stack's width, per Scouter's widest visible block); F-07 and F-08 are approved deviations recorded in 6cb4373 (owner, 2026-11-26), issues 00002 and 00010 archived.

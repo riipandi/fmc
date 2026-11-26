@@ -55,3 +55,12 @@ fn the_followed_block_is_the_last_whose_top_is_above_the_scroll_row() {
     assert_eq!(block_at(&[3, 8], 1), Some(0), "above every block, the first is followed");
     assert_eq!(block_at(&[], 1), None);
 }
+
+#[test]
+fn an_unfolded_diff_widens_the_stack_and_a_folded_diff_or_a_notice_does_not() {
+    assert!(widens_stack([(false, true)]));
+    assert!(widens_stack([(true, true), (false, true)]));
+    assert!(!widens_stack([(true, true), (false, false)]), "a notice is narrower than the pane");
+    assert!(!widens_stack([(true, true)]));
+    assert!(!widens_stack([]));
+}

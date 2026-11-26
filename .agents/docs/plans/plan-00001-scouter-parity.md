@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T12:18:59+07:00
+updated: 2026-11-26T12:29:18+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -94,8 +94,8 @@ phases:
       note: "audit-00001-scouter-parity.md: 80x24 live runs against Scouter 0.9.9 on d826786 for §3 rows 1 to 16 and the §4 keys; 8 findings: F-01 welcome clipped (issue-00004), F-02 Markdown two cells narrow (issue-00005), F-03 rendered thumb and percent (issue-00003), F-04 tree wheel (issue-00007), F-05 pan (issue-00008) for phase 23; F-06 folded bar, F-07 binary footer (issue-00002), F-08 --upgrade record for the owner. 216 tests green at d826786"
     - id: 23
       title: "W6: parity fixes"
-      status: partially-done
-      note: "partially-done: sub-phases 23a to 23e fixed F-01 to F-05 (498958c, 784caf4, d9bd454, e3d6c73, 10ced9a); F-06, F-07 (issue-00002), and F-08 are owner questions (issues 00009, 00002, 00010) and change nothing until the owner answers"
+      status: done
+      note: "done: sub-phases 23a to 23f fixed F-01 to F-06 (498958c, 784caf4, d9bd454, e3d6c73, 10ced9a, and 23f); F-07 and F-08 are approved deviations recorded in 6cb4373 (owner, 2026-11-26); issue-00006 stays open for the owner check"
     - id: 24
       title: "W6: docs sync, ledger close, handover"
       status: pending
@@ -192,7 +192,7 @@ The decisions are the records in `architecture.md` (all 2026-11-26): engine, vid
 
 22. **Parity audit** — run `parity-audit` over every screen in `research/scouter-inventory.md` §3 and every key table; report in `.agents/docs/audit/audit-00001-scouter-parity.md`. Validation: every row of §3 and §4 has a verdict with evidence. _Commit: `docs(audit): record the scouter parity audit`._
 23. **Parity fixes** — before this phase runs, the plan gains one sub-phase per finding group (23a, 23b, …) with its own validation and commit; a finding the owner accepts as a deviation becomes an `architecture.md` record instead. Validation: re-run `parity-audit` on each fixed screen. _Commit: one per sub-phase, `fix(<area>): <the finding>`._
-   Sub-phases, from `audit-00001-scouter-parity.md` (2026-11-26), one commit each with the `Scouter-Base` trailer: **23a** welcome fits at 80x24 (F-01, issue-00004); **23b** rendered Markdown width matches the preview's (F-02, issue-00005); **23c** rendered thumb and percentage (F-03, issue-00003); **23d** tree wheel keeps its scroll (F-04, issue-00007); **23e** reader pan (F-05, issue-00008). F-06 (folded stat bar), F-07 (binary footer, issue-00002), and F-08 (`--upgrade` record) are owner questions, not sub-phases; they change nothing until the owner answers.
+   Sub-phases, from `audit-00001-scouter-parity.md` (2026-11-26), one commit each with the `Scouter-Base` trailer: **23a** welcome fits at 80x24 (F-01, issue-00004); **23b** rendered Markdown width matches the preview's (F-02, issue-00005); **23c** rendered thumb and percentage (F-03, issue-00003); **23d** tree wheel keeps its scroll (F-04, issue-00007); **23e** reader pan (F-05, issue-00008). F-06 (folded stat bar) was added as **23f** on the owner's instruction (2026-11-26): match Scouter's visible states, with the fallback of a bar on every header if the cause was not found quickly (not needed). F-07 (binary footer, issue-00002) and F-08 (`--upgrade` record) were decided by the owner and recorded as approved deviations in 6cb4373; no code change.
 24. **Docs sync, ledger close, handover** — `README.md`, `PRODUCT.md`, `DESIGN.md`, `docs/` checked against the binary; agent docs synced; this plan archived; `index.md` rows moved; handover written. Validation: every key in `docs/keymaps.md` exists in the key table; `grep` finds no dangling ledger reference. _Commit: `docs: close the scouter parity plan`._
 25. **Final validation** — the full matrix over the tree as it stands. Validation: the matrix green end to end. _Commit: none if green._
 

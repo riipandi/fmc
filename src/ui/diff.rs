@@ -7,7 +7,7 @@ use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::sync::Arc;
 
-use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts};
+use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts, widens_stack};
 use fmc::theme::{Mode, Palette};
 use opentui::native::{TextView, Viewport};
 use opentui::prelude::*;
@@ -95,8 +95,22 @@ impl DiffBody {
         if self.pane.replace(columns) == columns {
             return;
         }
-        for block in self.blocks.borrow().iter() {
-            block.root.min_width(Length::Cells(self.block_width(block.digits.get())));
+        self.apply_widths();
+    }
+
+    /// Scouter's stack is as wide as its widest visible block (its scroll content stretches every block to it), and
+    /// each header is 100% of its block. An unfolded diff is the pane plus its gutter, so while one shows, every
+    /// header is that wide and a header's counts and stat bar fall past the pane's edge. A folded block and a notice
+    /// are pane-wide, so their counts and bar show (`src/diff/diff-blocks.ts` `createBlock`, `createHeader`).
+    fn apply_widths(&self) {
+        let blocks = self.blocks.borrow();
+        let wide = widens_stack(blocks.iter().map(|block| {
+            let folded = block.painted.get().is_none_or(|(_, folded)| folded);
+            (folded, matches!(block.body, Body::Diff(_)))
+        }));
+        for block in blocks.iter() {
+            let width = if wide { Length::Cells(self.block_width(block.digits.get())) } else { Length::percent(100.0) };
+            block.root.min_width(width);
         }
     }
 
@@ -172,6 +186,7 @@ impl DiffBody {
                 }
             }
         }
+        self.apply_widths();
     }
 
     /// Sets the view of every diff: side by side when `split`, else one column (Scouter `toggleView`). The blocks built
@@ -256,11 +271,11 @@ impl DiffBody {
         let shrink = if wrap { 1.0 } else { 0.0 };
         for block in self.blocks.borrow().iter() {
             block.root.shrink(shrink);
-            block.root.min_width(Length::Cells(self.block_width(block.digits.get())));
             if let Body::Diff(diff) = &block.body {
                 diff.wrap(if wrap { WrapMode::Word } else { WrapMode::None }).shrink(shrink);
             }
         }
+        self.apply_widths();
         self.scroller.set_wrap(wrap);
         self.scroller.scroll_to(0.0, self.scroller.position().1);
     }

@@ -91,6 +91,12 @@ fn range(text: &str) -> Option<(u64, u64, &str)> {
     Some((start, counted[..end].parse().ok()?, &counted[end..]))
 }
 
+/// Whether the stacked body is wider than the pane. Scouter's stack is as wide as its widest visible block, and only an
+/// unfolded diff is wider than the pane (by its gutter). `blocks` gives each block's `(folded, is a diff)`.
+pub fn widens_stack(blocks: impl IntoIterator<Item = (bool, bool)>) -> bool {
+    blocks.into_iter().any(|(folded, diff)| diff && !folded)
+}
+
 #[cfg(test)]
 #[path = "stack_tests.rs"]
 mod tests;

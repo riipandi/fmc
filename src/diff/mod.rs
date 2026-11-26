@@ -21,4 +21,4 @@ pub use nav::{Folds, Hunk, Jump, SPLIT_MIN_COLUMNS, can_split, context, line_at,
 pub use patch::utf16_len;
 pub use patch::{ALL_LIMIT, FilePatch, PATCH_LIMIT, Patch, binary, from_diff, from_file, not_shown, split, too_large};
 pub use row::{ListRow, empty_message, header_counts, header_title, index_mark, list_row, split_path, truncated_note};
-pub use stack::{Totals, active_hunk, block_at, gutter_digits, hunk_starts, totals};
+pub use stack::{Totals, active_hunk, block_at, gutter_digits, hunk_starts, totals, widens_stack};
