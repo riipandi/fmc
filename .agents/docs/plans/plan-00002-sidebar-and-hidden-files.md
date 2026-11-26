@@ -49,6 +49,8 @@ All picked by the owner on 2026-11-26.
 - **D4: `.` is the fallback for `Ctrl+.`.** `Ctrl+.` reaches fmc only from terminals with the Kitty keyboard protocol; Terminal.app cannot send it. `.` is free in the key table, and Yazi uses it for the same toggle. `Ctrl+/` needs no fallback: in the legacy encoding it arrives as `0x1F`, which fmc does not use for anything else (phase 1 confirms this).
 - **D5: dotfiles are shown by default, and the noise list stays hidden in both states.** This keeps Scouter's default.
 - **D6: no persistence in this plan.** The state resets on every start; RI-9 adds `settings.json`.
+- **D7 (2026-11-27): the welcome screen keeps the sidebar.** While no document is open, the sidebar stays shown at any width; D1 applies once a document opens, and `q` brings the list back. Rejected: hiding it and rewording the welcome; hiding it with the welcome unchanged (its copy names a list that is not on screen).
+- **D8 (2026-11-27): phase 2 details.** The mark sits on the top border row (`«` left of the sidebar's top-right corner, `»` at the reader's top-left corner). While hidden, the footer shows `^/ sidebar` and drops `Tab files`, and `Tab`, `Esc`, and `Ctrl+←`/`Ctrl+→` neither focus nor resize the sidebar. `Ctrl+_` is bound with `Ctrl+/` (legacy `0x1F`, phase 1 note).
 
 ### Shape and enforcement points
 
