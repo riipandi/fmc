@@ -27,8 +27,29 @@ fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
         .selectable(false)
 }
 
+/// The welcome screen: its key card, and the three lines that wrap below `NARROW_WELCOME` columns.
+pub struct Welcome {
+    pub root: View,
+    card: View,
+    lines: Vec<Text>,
+}
+
+impl Welcome {
+    /// Fits the welcome to `columns`. Below `NARROW_WELCOME` it drops the card and wraps its lines instead of cutting
+    /// them (plan-00004, P5); at 50 columns and wider each line keeps one row, as Scouter draws it.
+    pub fn fit(&self, columns: u16) {
+        let narrow = columns < fmc::layout::NARROW_WELCOME;
+        self.card.visible(!narrow);
+        let (wrap, height) = if narrow { (WrapMode::Word, Length::Auto) } else { (WrapMode::None, Length::Cells(1.0)) };
+        for line in &self.lines {
+            line.wrap(wrap);
+            line.height(height);
+        }
+    }
+}
+
 /// Builds the welcome view in the palette's colors; the app rebuilds it when the theme changes.
-pub fn welcome(app: &App, p: &Palette) -> View {
+pub fn welcome(app: &App, p: &Palette) -> Welcome {
     let view = View::new(app)
         .grow(1.0)
         .min_height(0)
@@ -44,8 +65,9 @@ pub fn welcome(app: &App, p: &Palette) -> View {
         Seg::new("a quiet, read-only file viewer", p.muted),
         Seg::new(format!("  v{}", env!("CARGO_PKG_VERSION")), p.dim),
     ];
-    view.add(&line(app, &tagline, p, 1));
-    view.add(&line(app, &[Seg::new("Select a file and press Enter.", p.accent_soft)], p, 1));
+    let tagline = line(app, &tagline, p, 1);
+    let prompt = line(app, &[Seg::new("Select a file and press Enter.", p.accent_soft)], p, 1);
+    view.add(&tagline).add(&prompt);
     let card = View::new(app)
         .column()
         .shrink(0.0)
@@ -67,6 +89,7 @@ pub fn welcome(app: &App, p: &Palette) -> View {
         Seg::new("  ·  ", p.ignored),
         Seg::new("No editing. Just reading.", p.dim),
     ];
-    view.add(&line(app, &closing, p, 1));
-    view
+    let closing = line(app, &closing, p, 1);
+    view.add(&closing);
+    Welcome { root: view, card, lines: vec![tagline, prompt, closing] }
 }

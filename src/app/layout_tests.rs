@@ -136,3 +136,19 @@ fn closing_a_drawer_leaves_a_sidebar_beside_the_reader_alone() {
     layout::close_drawer(&mut model.borrow_mut(), 60);
     assert!(layout::shown(&model.borrow(), 60));
 }
+
+/// The screen's rows as text, for a render test.
+fn screen(app: &TestApp) -> String {
+    let frame = app.render();
+    (0..24).map(|y| format!("{}\n", frame.row(y))).collect()
+}
+
+#[test]
+fn the_welcome_drops_its_card_below_50_columns_and_wraps_its_lines() {
+    for (columns, card) in [(40, false), (49, false), (50, true)] {
+        let (app, _, _) = panes(columns);
+        assert_eq!(screen(&app).contains("open file or folder"), card, "{columns}: the key card");
+    }
+    let (app, _, _) = panes(40);
+    assert!(screen(&app).contains("Just reading."), "the closing line wraps instead of cutting its last words");
+}

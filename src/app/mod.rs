@@ -61,7 +61,7 @@ struct Ui {
     mark: Mark,
     viewer_panel: View,
     viewer_header: PaneHeader,
-    welcome: View,
+    welcome: welcome::Welcome,
     /// The viewer body: the welcome, the code view, and the rendered view stacked (one shows at a time), beside the bar.
     stack: View,
     viewer: Viewer,
@@ -492,7 +492,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let narrow_bar = ScrollBar::new(app, 0);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
-    stack.add(&welcome).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget()).add(&diff.root);
+    stack.add(&welcome.root).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget()).add(&diff.root);
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
@@ -527,9 +527,9 @@ fn build(app: &App, p: &Palette) -> Ui {
 
 /// Rebuilds the parts that bake colors in (welcome), then repaints.
 fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
-    ui.welcome.detach();
+    ui.welcome.root.detach();
     ui.welcome = welcome::welcome(app, m.palette());
-    ui.stack.add(&ui.welcome);
+    ui.stack.add(&ui.welcome.root);
     ui.reader.restyle(m.palette());
     ui.markdown.restyle(m.palette());
     paint(app, m, ui);
@@ -548,6 +548,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 
     layout::sync(m, columns);
     let width = layout::lay_out(ui, m, columns, p);
+    ui.welcome.fit(columns);
     let focused = |pane: Focus| color(if m.focus == pane { p.accent } else { p.border });
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));
@@ -605,7 +606,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let shows_preview = previewed.is_some();
     // The preview's line count, copied out: the model is changed below, which the borrow of `previewed` forbids.
     let preview_lines = previewed.map(|shown| shown.document.lines);
-    ui.welcome.visible(!m.shown.is_some() && !shows_preview && !on_changes);
+    ui.welcome.root.visible(!m.shown.is_some() && !shows_preview && !on_changes);
     let previewing = m.shown.previewing();
     ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body);
     ui.markdown.visible(previewing && !shows_preview && !body);

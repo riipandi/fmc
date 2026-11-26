@@ -17,8 +17,8 @@ phases:
       note: "Taps press the hint key through the key path (D2); priority and Copy below 80 (P6, P8, D3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged; taps off)."
     - id: 4
       title: "Name-first rows and the narrow welcome (P4, P5)"
-      status: in-progress
-      note: "P4 done (finder rows). P5 held: below 60 the drawer covers the welcome, so a narrow welcome cannot show. Owner decision needed before phase 5."
+      status: done
+      note: "P4 finder rows (355957e). P5 welcome below 50 drops the card and wraps (after the owner's welcome decision, cc7ae66)."
     - id: 5
       title: "Docs sync, ledger close, handover, final validation"
       status: pending

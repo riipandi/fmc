@@ -10,6 +10,9 @@ pub const BREAKPOINT: u16 = 80;
 /// (approved phone rule, architecture.md, "a phone layout below 80 columns").
 pub const DRAWER: u16 = 60;
 
+/// Below this many columns the welcome screen drops its key card and wraps its lines (plan-00004, P5).
+pub const NARROW_WELCOME: u16 = 50;
+
 /// Whether a shown sidebar covers the whole terminal.
 pub fn is_drawer(columns: u16, shown: bool) -> bool {
     shown && columns < DRAWER
