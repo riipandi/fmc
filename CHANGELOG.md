@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
 - A diff file folds when you release the click on its header, not when you press, so a swipe that starts on a header does not fold it.
 - The line numbers stay in place when the reader pans sideways: only the text moves, and a wheel over the numbers scrolls the text beside them.
+- At 60 to 79 columns a tap on a chevron, the gap after it, or the title beside it shows or hides the list. Below 80 columns the first tap on a row acts, with the reader focused; at 80 columns and wider it only focuses the list.
 - Below 80 columns the `»` and `«` marks are not drawn. At 60 to 79 columns a `‹` at the start of the file list's title hides the list, and a `›` at the start of the reader's title shows it. The closing line of the welcome breaks at ` · ` instead of mid-phrase.
 
 ### Fixed

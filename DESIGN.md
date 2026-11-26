@@ -162,7 +162,7 @@ The width picks one of three layouts (`fmc::layout::tier`). The sketches are exc
 
 ### Panel header
 
-The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` while dotfiles are hidden), or `Changes` with a count. From 60 to 79 columns a chevron leads a header's title: `›` on the reader's header while the list is hidden, and `‹` on the list's header while the list shows and can hide. Each is plain accent text. Below 60 columns the top bar leads with the back text (`‹ Files`), and the bottom bar is one row of words. The reader shows a dim parent path and a bold file name, then badges: quiet (`read-only`, `rendered`, `image`, `binary`, `all files`, `one file`) or pills (`first 1 MiB`, `wrap`, `split`, `wide context`, `preview`). An error replaces the badges in `error`, bold, until the next key.
+The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` while dotfiles are hidden), or `Changes` with a count. From 60 to 79 columns a chevron leads a header's title: `›` on the reader's header while the list is hidden, and `‹` on the list's header while the list shows and can hide. A tap on the chevron, its gap, or the title beside it does the same. Each is plain accent text. Below 60 columns the top bar leads with the back text (`‹ Files`), and the bottom bar is one row of words. The reader shows a dim parent path and a bold file name, then badges: quiet (`read-only`, `rendered`, `image`, `binary`, `all files`, `one file`) or pills (`first 1 MiB`, `wrap`, `split`, `wide context`, `preview`). An error replaces the badges in `error`, bold, until the next key.
 
 ### Footer pills and hints
 

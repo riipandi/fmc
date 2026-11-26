@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 
 use fmc::explorer::{Entry, Kind};
@@ -5,7 +6,7 @@ use opentui::testing::TestApp;
 
 use super::mouse::Click;
 use super::*;
-use crate::ui::tree::LIST_TOP;
+use crate::ui::tree::{LIST_TOP, list_top};
 
 const DOWN: MouseEventKind = MouseEventKind::Down(MouseButton::Left);
 const DRAG: MouseEventKind = MouseEventKind::Drag(MouseButton::Left);
@@ -42,10 +43,15 @@ fn a_release_at_another_cell_is_not_a_click() {
     assert!(!click.feed(UP, 5, 4));
 }
 
-/// Two files listed under `/hogwarts` at 80x24, the first selected, with the list's mouse wired. The list's rows start
-/// at `LIST_TOP`, so the second file is on the row below the first.
+/// Two files listed under `/hogwarts` at 80x24, the first selected, with the list's mouse wired.
 fn listing() -> (TestApp, Rc<RefCell<Model>>) {
-    let app = TestApp::new(80, 24);
+    listing_at(80, 24)
+}
+
+/// Two files listed under `/hogwarts` on a `columns` by `rows` screen, the first selected, with the list's mouse wired.
+/// The list's rows start at `LIST_TOP`, so the second file is on the row below the first.
+fn listing_at(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>) {
+    let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
@@ -152,4 +158,92 @@ fn a_tap_after_a_logged_swipe_acts_on_the_row_under_it_once_scrolled() {
     app.feed(SWIPE_DOWN.as_bytes());
     app.feed(TAP.as_bytes());
     assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-23.txt"), "list line 16 after seven rows of scroll");
+}
+
+#[test]
+fn a_first_tap_on_a_row_acts_in_medium_with_the_reader_focused() {
+    for columns in [60, 70, 79] {
+        let (app, model) = listing_at(columns, 24);
+        model.borrow_mut().focus = Focus::Reader;
+        app.click(3, LIST_TOP + 1);
+        assert_eq!(selected(&model), Path::new("/hogwarts/hedwig.txt"), "{columns}: the first tap selects the row");
+        assert_eq!(model.borrow().focus, Focus::List, "{columns}: and the list has the focus");
+    }
+}
+
+#[test]
+fn a_first_tap_on_a_file_opens_it_in_compact_with_the_reader_focused() {
+    let (app, model) = phone();
+    model.borrow_mut().focus = Focus::Reader;
+    app.feed(TAP.as_bytes());
+    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-16.txt"));
+    assert!(model.borrow().loading, "compact: the first tap opens the file");
+}
+
+/// A git repository with two tracked files, both changed, on the changes screen at `columns` wide, with the mouse wired.
+fn changes_at(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>, tempfile::TempDir) {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    git(root, &["init", "-q"]);
+    git(root, &["config", "user.email", "dumbledore@hogwarts.test"]);
+    git(root, &["config", "user.name", "Albus Dumbledore"]);
+    for name in ["hedwig.txt", "owls.txt"] {
+        fs::write(root.join(name), "Hogwarts\n").unwrap();
+    }
+    git(root, &["add", "."]);
+    git(root, &["commit", "-q", "-m", "Hogwarts"]);
+    for name in ["hedwig.txt", "owls.txt"] {
+        fs::write(root.join(name), "Hogwarts, changed\n").unwrap();
+    }
+    let app = TestApp::new(columns, 24);
+    let model = Rc::new(RefCell::new(new_model(app.app(), root, root.to_path_buf(), None)));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    {
+        let mut m = model.borrow_mut();
+        m.changes_load = Some(1);
+        changes::listed(&mut m, 1, crate::services::changes::list(root));
+    }
+    wire_mouse(&model, &ui);
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    app.render();
+    (app, model, ui, dir)
+}
+
+fn git(dir: &Path, args: &[&str]) {
+    let status = std::process::Command::new("git").arg("-C").arg(dir).args(args).status().unwrap();
+    assert!(status.success(), "git {args:?}");
+}
+
+fn selected_change(model: &Rc<RefCell<Model>>) -> Option<String> {
+    model.borrow().change_list.selected().map(|change| change.path.clone())
+}
+
+#[test]
+fn a_first_tap_on_a_change_acts_below_80_columns_with_the_reader_focused() {
+    for columns in [49, 60, 70, 79] {
+        let (app, model, ui, _dir) = changes_at(columns);
+        if !layout::shown(&model.borrow(), columns) {
+            layout::toggle_key(&mut model.borrow_mut(), columns);
+            paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+            app.render();
+        }
+        let before = selected_change(&model);
+        model.borrow_mut().focus = Focus::Reader;
+        let row = list_top(model.borrow().compact()) + 1;
+        app.click(3, row);
+        assert_ne!(selected_change(&model), before, "{columns}: the first tap selects the change");
+        assert_eq!(model.borrow().focus, Focus::List, "{columns}: and the list has the focus");
+    }
+}
+
+#[test]
+fn at_80_columns_the_first_tap_on_a_change_only_focuses_the_list() {
+    let (app, model, _ui, _dir) = changes_at(80);
+    model.borrow_mut().focus = Focus::Reader;
+    let before = selected_change(&model);
+    app.click(3, LIST_TOP + 1);
+    assert_eq!(selected_change(&model), before, "the first press only focuses the list");
+    assert_eq!(model.borrow().focus, Focus::List);
+    app.click(3, LIST_TOP + 1);
+    assert_ne!(selected_change(&model), before, "the next click selects the row");
 }

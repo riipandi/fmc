@@ -17,12 +17,11 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             let done = click.feed(event.kind, event.x, event.y);
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
-                    // A press from another pane only focuses the list; the next click selects the row.
-                    let focused = m.focus == Focus::List;
+                    let acts = press_acts(&m, cx.app().size().0);
                     m.focus = Focus::List;
                     pressed = line_at(event.y, list_top(m.compact()), m.browser.height())
                         .and_then(|line| m.browser.row_at(line))
-                        .filter(|_| focused);
+                        .filter(|_| acts);
                 }
                 MouseEventKind::Up(MouseButton::Left) => {
                     if let Some(index) = pressed.take().filter(|_| done) {
@@ -52,10 +51,10 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 MouseEventKind::Down(MouseButton::Left) => {
                     // The row's action may move the focus to the body, so the list's press stops here (the pane's own
                     // focus handler is further up the path).
-                    let focused = m.focus == Focus::List;
+                    let acts = press_acts(&m, cx.app().size().0);
                     m.focus = Focus::List;
                     let line = line_at(event.y, list_top(m.compact()), m.change_list.height());
-                    pressed = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line));
+                    pressed = line.filter(|_| acts).and_then(|line| m.change_list.row_at(line));
                     cx.stop_propagation();
                 }
                 MouseEventKind::Up(MouseButton::Left) => {
@@ -175,6 +174,12 @@ fn wire_gutter(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, gutter: &View, 
             repaint_after_layout(cx.app(), &model, &ui);
         }
     });
+}
+
+/// Whether a press on a row acts, or only focuses its list. At 80 columns and wider a press from another pane only focuses
+/// the list (the next click selects); below 80 there is no hover or visible focus to aim with, so the first tap acts.
+fn press_acts(m: &Model, columns: u16) -> bool {
+    m.focus == Focus::List || tier(columns) != Tier::Wide
 }
 
 /// A row's action once its click completes: the finder picks it, a file under a drawer opens (P3), and anything else

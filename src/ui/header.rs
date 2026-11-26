@@ -95,6 +95,12 @@ impl PaneHeader {
         self.lead.on_mouse(handler);
     }
 
+    /// Runs `handler` on a press on the title. A one-cell chevron is hard to hit with a finger, so the title beside it
+    /// is a target too; the handler decides which tier it acts in.
+    pub fn on_title_press(&self, handler: impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static) {
+        self.title.on_mouse(handler);
+    }
+
     /// The compact tier's header is one row with no rule under it (plan-00005, architecture.md record 5).
     pub fn compact(&self, compact: bool) {
         self.root.height(if compact { 1 } else { 2 });

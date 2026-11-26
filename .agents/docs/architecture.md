@@ -761,3 +761,8 @@ Agent decisions after plan-00005 (2026-11-27, owner's delegation), answering the
 - The medium-tier chevron's tap target widens to the chevron, the gap, and the title text. Why: a one-cell target fails a finger in landscape, and the title is the next obvious thing to tap.
 - The focus-first click rule ("a click in the sidebar while another pane is focused only focuses it") applies only in the wide tier. In compact and medium, the first tap on a row acts. Why: on touch there is no hover or visible focus to aim with, so a tap that does nothing reads as broken; that rule is the likely cause of "touch does nothing" on the phone, since the probe showed taps arrive as clean press-release pairs.
 - The welcome card is dropped when the reader beside the list is narrower than the card, leaving the wordmark, the tagline, and the prompt. Why: at 60–79 columns the card wrapped into a ragged block.
+
+Follow-ups to the layout tiers (2026-11-27, the same delegation), decisions the executor took:
+
+- The medium chevron's target is the lead text and the title beside it, and the title's box runs from the chevron to the badges: a press on its blank end toggles the list too. Why: the framework hit-tests the box, not the words, and a box whose edge the finger must find is the trap the chevron had.
+- Below 80 columns the first press on a row acts (tree, finder, changes); at 80 and wider it only focuses the list, as the owner's rule says. In compact the page sets the focus on every paint, so the focus-first branch is reached only in medium and wide. Why: tests in compact set the focus by hand, so they pin the handler, not a reachable state.

@@ -212,3 +212,29 @@ fn the_chevron_glyphs_measure_one_cell() {
     assert_eq!(width("‹"), 1, "the list chevron");
     assert_eq!(width("›"), 1, "the reader chevron");
 }
+
+#[test]
+fn a_tap_on_a_medium_chevron_its_gap_or_its_title_toggles_the_list() {
+    for columns in [60, 79] {
+        let (app, model, ui) = panes(columns);
+        open_document(&app, &model, &ui);
+        // Offsets from the chevron: the chevron itself, the two gap columns after it, and the title's letters.
+        for offset in [0, 1, 2, 4] {
+            let x = column_of(&app, 1, '›').unwrap_or_else(|| panic!("{columns}: no reader chevron"));
+            app.click(x + offset, 1);
+            assert!(layout::shown(&model.borrow(), columns), "{columns}: offset {offset} shows the list");
+            let x = column_of(&app, 1, '‹').unwrap_or_else(|| panic!("{columns}: no list chevron"));
+            app.click(x + offset, 1);
+            assert!(!layout::shown(&model.borrow(), columns), "{columns}: offset {offset} hides the list");
+        }
+    }
+}
+
+#[test]
+fn a_compact_title_tap_does_not_go_back_a_page() {
+    let (app, model, ui) = panes(49);
+    open_document(&app, &model, &ui);
+    assert_eq!(model.borrow().pages.top(), Page::Keys);
+    app.click(8, 1);
+    assert_eq!(model.borrow().pages.top(), Page::Keys, "only the back text goes back");
+}

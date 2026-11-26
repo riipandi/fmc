@@ -129,6 +129,19 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     width
 }
 
+/// A press on a medium chevron, or on the title beside it, shows or hides the list. Without a chevron the press is left
+/// alone, so the header's pane still takes the focus.
+fn chevron_press(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
+    let mut m = model.borrow_mut();
+    let columns = cx.app().size().0;
+    if list_chevron(&m, columns).is_none() && reader_chevron(&m, columns).is_none() {
+        return;
+    }
+    cx.stop_propagation();
+    toggle_key(&mut m, columns);
+    paint(cx.app(), &mut m, &mut ui.borrow_mut());
+}
+
 /// The sidebar's edge (a drag resizes it) and its mark (a click shows or hides it).
 pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let mark = ui.borrow().mark.root.clone();
@@ -158,18 +171,21 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     if event.kind != MouseEventKind::Down(MouseButton::Left) {
                         return;
                     }
-                    let mut m = model.borrow_mut();
-                    let columns = cx.app().size().0;
-                    if pages::back_label(&m).is_some() {
-                        cx.stop_propagation();
-                        pages::back(&mut m, &ui.borrow());
-                    } else if list_chevron(&m, columns).is_some() || reader_chevron(&m, columns).is_some() {
-                        cx.stop_propagation();
-                        toggle_key(&mut m, columns);
-                    } else {
-                        return;
+                    if pages::back_label(&model.borrow()).is_none() {
+                        return chevron_press(cx, &model, &ui);
                     }
+                    cx.stop_propagation();
+                    let mut m = model.borrow_mut();
+                    pages::back(&mut m, &ui.borrow());
                     paint(cx.app(), &mut m, &mut ui.borrow_mut());
+                }
+            });
+            header.on_title_press({
+                let (model, ui) = (model.clone(), ui.clone());
+                move |cx, event| {
+                    if event.kind == MouseEventKind::Down(MouseButton::Left) {
+                        chevron_press(cx, &model, &ui);
+                    }
                 }
             });
         }
