@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T08:13:52+07:00
+updated: 2026-11-26T08:15:11+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -38,7 +38,7 @@ phases:
     - id: 9
       title: "W2: tree model and filesystem service"
       status: done
-      note: "core tree (explorer/tree.rs) takes listings as values; sort via icu_collator 2.4 root collation, checked against Bun Intl.Collator order; services/fs.rs lists with noise, folders first, loop refusal; 59 tests in verify, 16 new
+      note: "core tree (explorer/tree.rs) takes listings as values; sort via icu_collator 2.4 root collation, checked against Bun Intl.Collator order; services/fs.rs lists with noise, folders first, loop refusal; 59 tests in verify, 16 new"
     - id: 10
       title: "W2: tree view, git marks, sidebar resize"
       status: done
