@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T07:04:32+07:00
+updated: 2026-11-26T07:06:30+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -428,6 +428,24 @@ Consequences:
 Alternatives considered:
 
 - Keep Scouter's card and add the table under another key — rejected by the owner.
+
+### Approved deviation: `q` closes the open document or screen
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: in Scouter `q` quits from anywhere (`scouter:src/core/keys.ts:7-9`). fmc moved quitting to `Ctrl+q` (record above), which left `q` unbound. Scouter has no key that closes a document: the reader shows the welcome screen only before the first open.
+
+Decision: with focus in the tree or the reader, `q` closes the open document and shows the welcome screen; focus moves to the tree and the file's row stays selected. With no document open, `q` does nothing. On the Keys page, `q` acts as `?`/`Esc` and returns to the previous document. On the Changes screen, `q` goes back to browsing, as `d` does (lands with plan-00001 W5). In a prompt (finder, search), `q` is typed as text; `Esc` closes it, as in Scouter. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) A Neovim-like way to put a buffer away; the welcome hints come back.
+- (negative) `q` means different things on different screens; muscle memory from Scouter (`q` quits) now closes instead.
+
+Alternatives considered:
+
+- `q` returns to the previously opened document — rejected by the owner.
+- `q` only with reader focus — rejected by the owner.
 
 ## Pending decisions
 
