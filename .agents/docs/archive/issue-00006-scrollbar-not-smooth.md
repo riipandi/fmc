@@ -1,5 +1,5 @@
 ---
-status: open
+status: resolved
 created: 2026-11-26T07:45:00+07:00
 updated: 2026-11-26T12:03:31+07:00
 summary: "The owner reports that scrolling looks glitchy: the scrollbar does not move smoothly. Rex captures match Scouter 0.9.9 frame by frame for keys and the wheel; the cause is not found, so the owner checks the feel by hand."
@@ -10,7 +10,7 @@ count: 1
 
 ## The scrollbar glitches while scrolling
 
-- status: open
+- status: resolved
   area: scrollbar and scroll rendering (`src/ui/scrollbar.rs`, `src/ui/viewer.rs`, `src/app/scroll.rs`, the tree rows in `src/ui/tree.rs`)
   summary: Owner report, 2026-11-26, from a manual run: while scrolling, the scrollbar looks glitchy rather than smooth. Which pane and which input the owner used is not recorded; whether the thumb jumps, flickers, or lags the text is not recorded either.
   evidence: |
@@ -33,3 +33,5 @@ count: 1
   plan: investigated before plan-00001 W5 phase 18; no defect reproduced, so no fix commit
   trigger: the owner's report (2026-11-26)
   audit: audit-00001 (2026-11-26): no new reproduction of the feel. The tree and reader wheel thumbs agree with Scouter at the top (`32-tree-wheel-3down`, `37-readme-wheel-3down`); the rendered-view thumb differs at the end and mid-document (F-03, issue-00003), which is a separate defect. Still for the owner check.
+  resolution: |
+    Owner hand check, 2026-11-26: the wheel and the trackpad scroll smoothly. The remaining complaint was that dragging the thumb did nothing, a parity defect fixed in `0b7eeb8` and `0f0400a` (issue-00011). No change for the scroll feel itself.
