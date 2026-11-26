@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T06:57:20+07:00
+updated: 2026-11-26T07:03:44+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -418,7 +418,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter's `?` draws a centred help card over the panes and consumes the next key (`scouter:src/ui/help.ts`, `src/app/app.ts:746-750`).
 
-Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` grouped as Global, Files, Reader, Changes, Prompts, and Mouse, generated from the key table and drawn with the Markdown table renderer. The page scrolls with the reader keys and `/` searches it; `?` or `Esc` returns to the previous document. This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
+Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` grouped as Global, Files, Reader, Changes, Prompts, and Mouse, generated from the key table and drawn with the Markdown table renderer. `?` moves focus to the reader so the reader keys scroll the page; `?` or `Esc` restores the previous document, its scroll position, and the previous focus. Search follows rendered Markdown (Scouter refuses `/` there, `scouter:src/app/app.ts:999-1005`): `m` shows the generated source, where `/` works (owner, 2026-11-26). This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
 
 Consequences:
 
