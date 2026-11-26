@@ -13,7 +13,10 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 - `Ctrl+q` quits. Plain `q` does not quit; it closes the open document, so the welcome screen returns, or the key list. On the changes screen, `q` goes back to browsing, as `d` does. `Ctrl+c` still quits.
 - Because `^q quit` is one column wider than Scouter's `q quit`, the footer at 80 columns can drop one more hint (on the changes screen, `a one file`). The key list (`?`) always shows every key.
-- Opening a file from the tree keeps the focus in the tree, so you can keep browsing with `j` and `k`. Press `Tab` or click the reader to move there.
+- Moving through the file list previews each file in the reader while the list keeps the focus (auto-preview). Press `p` in the list to turn it off or on, or set `auto_preview` in the settings file. Scouter shows a file only when you open it.
+- Only Enter opens a file, and it moves the focus to the reader, as in Scouter. `l` and `→` only expand folders; in Scouter they also open files.
+- While another pane has the focus, a click on the file list only moves the focus there; the next click selects. Showing the hidden sidebar with `Ctrl+/` also focuses it.
+- `]` and `[` move the list selection by two rows and scroll the reader by five lines (both set in the settings file). Scouter uses them only on the changes screen.
 - A click anywhere in a pane (the file list, the reader, the changes list, or the diff) moves the focus there. In Scouter only a click on a row does something.
 - `Ctrl+/` shows or hides the sidebar. `Ctrl+.` shows or hides dotfiles in the tree and the finder, and `.` does the same for terminals that cannot send `Ctrl+.` (Terminal.app). Dotfiles are shown by default, as in Scouter. Scouter has none of these keys.
 

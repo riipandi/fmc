@@ -345,6 +345,8 @@ Alternatives considered:
 
 ### Approved deviation: Enter on a file keeps focus in the sidebar
 
+Superseded on 2026-11-27 by "Auto-preview in the sidebar" below: Enter on a file moves the focus to the reader again, as in Scouter, and `l`/`→` no longer open a file.
+
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: in browse mode, Enter, `l`, or `→` on a file opens it and moves focus to the reader (`scouter:src/app/app.ts:425`, `finishShowing`); a binary file already keeps focus on the list (`:417`).
@@ -591,3 +593,46 @@ Alternatives considered:
 
 - `Ctrl+.` alone — rejected by the owner: Terminal.app cannot send it.
 - Dotfiles hidden by default — rejected by the owner: Scouter shows them.
+
+### Approved deviation: auto-preview in the sidebar, and Enter alone opens
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: in Scouter a file shows in the reader only when it is opened: Enter, `l`, or `→` on a file opens it and focuses the reader (`scouter:src/app/app.ts:425`), and a click on a tree row opens it (`src/explorer/explorer.ts:190`). Moving the selection with `j`/`k` changes nothing in the reader. fmc's earlier record "Enter on a file keeps focus in the sidebar" is superseded by this one.
+
+Decision (owner, 2026-11-27):
+
+- Auto-preview: while the sidebar is focused, a file that becomes selected (by `j`/`k`, the arrows, `[`/`]`, `g`/`G`, or a click) shows in the reader after a short debounce, without moving the focus. A folder leaves the reader as it is. On by default; `p` in the sidebar toggles it for the session, and `auto_preview` in `settings.json` sets the default.
+- Enter on a file opens it and moves the focus to the reader, as in Scouter. Enter on a folder toggles it.
+- `l`/`→` expand a folder and do nothing on a file; `h`/`←` collapse. Only Enter opens.
+- A click in the sidebar while another pane is focused only focuses the sidebar: the selection and the reader do not change. Once the sidebar is focused, a click selects the row (and previews a file, or toggles a folder). This amends "a click focuses the pane under the pointer", whose row actions now need the sidebar focused first.
+- `Ctrl+/` that shows the sidebar also focuses it.
+
+Consequences:
+
+- (positive) Browsing shows each file without a key press; reading a file is one Enter away; a stray click on the list never replaces the document being read.
+- (negative) Moving through a folder of large files reads each one (bounded by the debounce); a click on the list from the reader needs a second click to act.
+
+Alternatives considered:
+
+- Enter keeps the focus in the sidebar (the superseded record) — rejected by the owner.
+- A first click that also moves the selection — rejected by the owner.
+
+### Approved deviation: `[` and `]` jump in the sidebar and the reader
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: in Scouter `[` and `]` step hunks on the changes screen (`scouter:src/app/app.ts`, diff keys) and do nothing while browsing.
+
+Decision: while browsing, `]` moves the sidebar selection down by `sidebar_jump` rows (default 2) and `[` up; in the reader `]` scrolls down by `reader_jump` lines (default 5) and `[` up. Both values come from `settings.json`. On the changes screen `[`/`]` keep stepping hunks. Approved by the owner on 2026-11-27.
+
+Consequences:
+
+- (positive) A middle step between one row and a page.
+- (negative) `[`/`]` mean different things on the two screens.
+
+### Decision: a read-only `settings.json` with three keys
+
+Context: auto-preview and the `[`/`]` steps must be configurable (owner, 2026-11-27); RI-9 planned `~/.config/fmc/settings.json`.
+
+Decision: fmc reads `~/.config/fmc/settings.json` (under `$XDG_CONFIG_HOME/fmc/` when set) once at start. Keys: `auto_preview` (bool, default `true`), `sidebar_jump` (positive integer, default 2), `reader_jump` (positive integer, default 5). A missing file means the defaults. A file that fails to parse, or a key with a wrong type or a value below 1, is not applied: fmc keeps the defaults for the bad keys and shows a notice once. Unknown keys are ignored. fmc never writes the file in this step; saving UI state and the theme override stay in RI-9. Crates: `serde` (derive) and `serde_json`, approved for after parity. Approved by the owner on 2026-11-27.

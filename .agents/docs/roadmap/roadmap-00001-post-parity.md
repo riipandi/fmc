@@ -141,3 +141,23 @@ The owner asked on 2026-11-26 for user keybindings in the style of Zed, persiste
 Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.`; RI-11, RI-12) need a per-terminal note; a user binding can shadow a prefix (`g`), so the parser's `More` state must follow the merged table.
 
 **Unlock:** plan-00001 done and RI-9 landed (shared config directory, load and error rules). **First move:** freeze the action names and context names as a public list, then write the schema with Zed's file as the model.
+
+## Opening with other apps
+
+### RI-14 — Open an unsupported file with the default app
+
+- status: parked (owner-deferred 2026-11-27) · updated 2026-11-27
+
+The owner asked on 2026-11-27 for a button or action that opens a file fmc cannot show (the binary notice) with the system's default app (`open <path>` on macOS). Open points: the key and the button on the binary notice; whether it also works for files fmc can show.
+
+### RI-15 — Open the project folder in Finder or an editor
+
+- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+
+The owner asked on 2026-11-27 for an action that opens the browsed folder in Finder or in a chosen editor or IDE (Zed, VS Code), with the editor set in `settings.json`. Open points: the key, the settings key and its shape (an app name or a command line), and quoting of the path.
+
+### RI-16 — Open With
+
+- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+
+The owner asked on 2026-11-27 for `Open With …` on text, code, and other supported files: a picker of relevant apps, or the ones set in `settings.json`. Open points: how relevant apps are found on macOS (Launch Services) versus a configured list per extension, and the picker's UI. Shares the launch code and the security rules (no shell interpolation of paths) with RI-14 and RI-15.
