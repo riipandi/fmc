@@ -20,6 +20,16 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             repaint_after_layout(cx.app(), &model, &ui);
             return;
         }
+        // While the command line is open, its plain keys edit it; Enter runs it and `:q` quits.
+        if m.command.is_some() && named.key().plain() {
+            cx.stop_propagation();
+            if command::prompt_key(&mut m, named.key()) {
+                return cx.quit();
+            }
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+            repaint_after_layout(cx.app(), &model, &ui);
+            return;
+        }
         // While the search prompt is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
         if m.search.as_ref().is_some_and(|search| search.editing) && named.key().plain() {
             cx.stop_propagation();
@@ -132,6 +142,7 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 tree::act(&mut m, action)
             }
             Action::TogglePreview if m.focus == Focus::List && m.changes.is_none() => preview::toggle(&mut m),
+            Action::OpenCommand => command::open(&mut m),
             Action::Jump(step) if m.focus == Focus::List && m.changes.is_none() => tree::jump(&mut m, step),
             Action::Jump(step) if m.focus == Focus::Reader && m.shown.has_document() => {
                 let lines = i32::try_from(m.reader_jump).unwrap_or(i32::MAX) * i32::from(step);

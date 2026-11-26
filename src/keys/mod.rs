@@ -61,6 +61,8 @@ pub enum Action {
     TogglePreview,
     /// `]` (+1) and `[` (-1) while browsing: the list moves, or the reader scrolls, by the settings' jump.
     Jump(i8),
+    /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
+    OpenCommand,
     Find,
     FocusDiff,
     Scroll(i32),
@@ -142,6 +144,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),
             ("Ctrl+. .", "show / hide dotfiles in the tree and the finder"),
+            (": q", "quit"),
             ("^q ^c", "quit"),
         ],
     ),

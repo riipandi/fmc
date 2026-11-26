@@ -151,6 +151,9 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
     if key.text == "?" && key.plain() {
         return Some(Action::Help);
     }
+    if key.text == ":" && key.plain() {
+        return Some(Action::OpenCommand);
+    }
     if key.ctrl && !key.alt {
         match key.name {
             "left" => return Some(Action::Resize(-1)),

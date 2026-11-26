@@ -3,6 +3,7 @@
 
 mod capture;
 mod changes;
+mod command;
 mod find;
 mod keys;
 mod layout;
@@ -160,6 +161,8 @@ struct Model {
     /// The rows `]` and `[` move the list by, and the lines they scroll the reader by (`settings.json`).
     sidebar_jump: u32,
     reader_jump: u32,
+    /// The text of the `:` command line while it is open (`app/command.rs`).
+    command: Option<String>,
 }
 
 impl Model {
@@ -183,7 +186,9 @@ impl Model {
             reader_ready: self.shown.has_document(),
             previewing: self.shown.previewing(),
             // Ctrl+o and Alt+i are left to a prompt (Scouter `commandFor`: the finder and the search).
-            typing: self.finder.is_some() || self.search.as_ref().is_some_and(|search| search.editing),
+            typing: self.finder.is_some()
+                || self.search.as_ref().is_some_and(|search| search.editing)
+                || self.command.is_some(),
         }
     }
 }
@@ -233,6 +238,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         preview_generation: 0,
         sidebar_jump: fmc::settings::SIDEBAR_JUMP,
         reader_jump: fmc::settings::READER_JUMP,
+        command: None,
     }
 }
 
@@ -802,8 +808,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         prompt: match (&m.finder, &m.search) {
             (Some(finder), _) => Some(find::prompt(finder).1),
             (None, Some(search)) if search.editing => Some(Prompt::Reader),
+            _ if m.command.is_some() => Some(Prompt::Command),
             _ => None,
         },
+        command: m.command.clone(),
         message: m.message.clone(),
         document,
         diff: if body { changes::footer(m, ui) } else { None },

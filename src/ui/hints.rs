@@ -22,6 +22,7 @@ pub enum Prompt {
     Files,
     Text,
     Reader,
+    Command,
 }
 
 pub type Hint = (&'static str, &'static str);
@@ -31,6 +32,7 @@ pub fn prompt_label(prompt: Prompt) -> &'static str {
         Prompt::Files => "FIND",
         Prompt::Text => "TEXT",
         Prompt::Reader => "SEARCH",
+        Prompt::Command => "COMMAND",
     }
 }
 
@@ -52,6 +54,7 @@ pub fn prompt_hints(prompt: Prompt) -> Vec<Hint> {
             vec![("type", "search"), ("↑ ↓", "move"), ("Enter", "open"), ("Tab", "files"), ("Esc", "cancel")]
         }
         Prompt::Reader => vec![("type", "search"), ("Enter", "next"), ("↑ ↓", "prev / next"), ("Esc", "close")],
+        Prompt::Command => vec![("type", "command"), ("Enter", "run"), ("Esc", "cancel")],
     }
 }
 

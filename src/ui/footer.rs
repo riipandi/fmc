@@ -6,6 +6,7 @@ use std::path::Path;
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
+use super::find::prompt_segments;
 use super::hints::{
     HINT_GAP, Mode, Pane, Prompt, Shown, fit_hint_list, hints_for, pill_label, prompt_hints, prompt_label,
 };
@@ -54,6 +55,8 @@ pub struct FooterState {
     pub pending: Option<u32>,
     /// The sidebar is hidden, which the hints name (`Shown::sidebar_hidden`).
     pub sidebar_hidden: bool,
+    /// The `:` command line's text while it is open; it takes the footer's left side (`Prompt::Command`).
+    pub command: Option<String>,
 }
 
 impl Default for FooterState {
@@ -70,6 +73,7 @@ impl Default for FooterState {
             wrap: false,
             pending: None,
             sidebar_hidden: false,
+            command: None,
         }
     }
 }
@@ -106,6 +110,9 @@ impl FooterState {
     }
 
     fn describe(&self, columns: usize, p: &Palette, measure: Measure<'_>) -> Vec<Seg> {
+        if let Some(text) = &self.command {
+            return prompt_segments(":", text, "", p);
+        }
         if let Some(message) = &self.message {
             let fg = if message.error { p.error } else { p.accent_soft };
             return vec![Seg::new(fit_start(&message.text, columns, measure), fg)];

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T09:00:00+07:00
-updated: 2026-11-27T02:30:00+07:00
+updated: 2026-11-27T03:00:00+07:00
 phases:
     - id: 1
       title: "Bug fixes: arrow keys pan the reader; Ctrl+/ focuses the shown sidebar"
@@ -25,8 +25,8 @@ phases:
       note: "277 tests; live: ] moves the list two rows and the reader five lines, [ goes back. Footer hint not added: the 160-column footer test pins Scouter's footer (open question)"
     - id: 6
       title: ":q command prompt"
-      status: pending
-      note: —
+      status: done
+      note: "281 tests; live: : opens COMMAND, an unknown word shows Not a command, Esc cancels, :q exits the app"
     - id: 7
       title: "Docs sync, ledger close, handover, final validation"
       status: pending

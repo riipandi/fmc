@@ -142,6 +142,8 @@ fn letter_commands_are_plain_and_lowercase() {
     assert_eq!(last(&["]"], READER), Step::Done(Action::Jump(1)));
     assert_eq!(last(&["["], READER), Step::Done(Action::Jump(-1)));
     assert_eq!(last(&["]"], CHANGES), Step::Done(Action::Hunk(1)), "the changes screen keeps its hunks");
+    assert_eq!(last(&[":"], TREE), Step::Done(Action::OpenCommand));
+    assert_eq!(last(&[":"], READER), Step::Done(Action::OpenCommand));
     assert_eq!(last(&["d"], READER), Step::Done(Action::ToggleChanges));
     assert_eq!(last(&["y"], CHANGES), Step::Done(Action::Copy));
     assert_eq!(last(&["M-y"], TREE), Step::Bad);
