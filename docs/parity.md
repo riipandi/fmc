@@ -7,6 +7,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 ## Name
 
 - fmc shows its own name and version where Scouter shows `scouter`: the welcome screen, `--help`, `--version`, and error messages.
+- There is no `--upgrade` option. Update fmc by installing a new build.
 
 ## Keys
 
@@ -32,3 +33,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 ## Help
 
 - `?` shows the key list as tables in the reader, with the mouse actions in their own table. `--help` describes the same key list, so the two always agree. `?` or `Esc` brings the document back where it was. The key list is Markdown, so `/` is refused there, as Scouter refuses it in a rendered Markdown file: press `m` to see the source, then `/` to search the list.
+
+## Footer
+
+- A binary file's footer shows only its size and `binary`. Scouter can keep the position of the document opened before it.

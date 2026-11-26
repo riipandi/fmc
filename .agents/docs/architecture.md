@@ -486,3 +486,37 @@ Consequences:
 Alternatives considered:
 
 - Reproduce Scouter's landing row — rejected by the owner.
+
+### Approved deviation: a binary file's footer shows no stale position
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's binary view does not update the footer position and `setDocument` does not clear it, so a binary opened after another document keeps that document's position (`scouter:src/app/app.ts:411-419`, `showBinary`). Live at 80x24: Scouter `4.0 KB · binary · All` for `assets/seal.bin` opened after `assets/marauder-map.png`; fmc `4.0 KB · binary` (audit-00001 F-07, issue-00002).
+
+Decision: fmc shows no position for a binary file. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The footer describes only what is on screen.
+- (negative) A binary footer differs from Scouter's after another document was open.
+
+Alternatives considered:
+
+- Copy the stale position — rejected by the owner.
+
+### Approved deviation: no `--upgrade` flag
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's `--help` lists `scouter --upgrade`, which runs its installer (`scouter:src/index.ts:11`, handled at `:26-28`). plan-00001 lists the installer and `--upgrade` as out of scope; fmc installs with `just install` (audit-00001 F-08, issue-00010).
+
+Decision: fmc has no `--upgrade` flag and its `--help` omits the line. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) No self-updating installer or release channel to maintain during parity.
+- (negative) Users update by rebuilding or reinstalling.
+
+Alternatives considered:
+
+- Implement `--upgrade` — rejected by the owner: it needs an installer and a release channel.
