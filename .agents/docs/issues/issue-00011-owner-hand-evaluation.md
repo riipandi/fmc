@@ -23,13 +23,14 @@ count: 4
 
 ## The changes screen opens in all-files
 
-- status: open
+- status: resolved (2026-11-26, `fix(changes): open the changes screen on one file`)
   area: the changes screen's default scope (`src/app/changes.rs` `Options`, `src/app/mod.rs` `run`)
   summary: The approved deviation (architecture.md, "the changes screen opens in one-file mode"; docs/parity.md) says the screen opens showing one file. The code does not: `Options` derives `Default`, so `one_file` is `false` and every changed file is stacked. Scouter's default is `scope = "all"` (`scouter:src/diff/diff-screen.ts:82`).
   evidence: |
   `src/app/changes.rs:40-47`: `#[derive(Debug, Default)] pub struct Options { split, one_file, wide }`. The badge (`changes.rs` `badges`, `one file` or `all files`) and the footer hint (`src/ui/hints.rs:71`) both follow `one_file`.
   plan: none; the owner asked for the fix (2026-11-26).
-  trigger: resolved by the commit `fix(changes): open the changes screen in one-file mode`.
+  resolution: `Options` has its own `Default` with `one_file: true` (`src/app/changes.rs`; test `src/app/changes_tests.rs`, `the_changes_screen_opens_on_one_file`). The badge and the footer hint follow the state: live in Rex at 80x24, the screen shows `one file` and `a all files`, and `a` shows `all files` and `a one file`. Test `the_diff_offers_the_other_scope_on_a` (`src/ui/footer_tests.rs`).
+  trigger: None — closed.
 
 ## The binary notice names Scouter
 

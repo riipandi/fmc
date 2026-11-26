@@ -132,3 +132,12 @@ fn q_is_offered_only_when_a_document_is_open() {
         assert!(offers_q(pane, true), "{pane:?}: q closes the open document");
     }
 }
+
+#[test]
+fn the_diff_offers_the_other_scope_on_a() {
+    use crate::ui::hints::{Mode, Pane, Shown, hints_for};
+    let one_file = hints_for(Mode::Diff, Pane::Reader, false, false, Shown::default());
+    assert!(one_file.contains(&("a", "all files")), "{one_file:?}");
+    let all_files = hints_for(Mode::Diff, Pane::Reader, false, true, Shown::default());
+    assert!(all_files.contains(&("a", "one file")), "{all_files:?}");
+}

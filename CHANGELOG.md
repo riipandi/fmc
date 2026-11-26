@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The changes screen: `d` lists the files git reports as changed, with their status letters, index marks, and counts. The stacked diff below shows every file under its own header, with the counts, a stat bar, and the file's lines. Moving the list selection scrolls the diff to that file, `Enter` moves to the diff, `Tab` switches between them, and `w` wraps the lines. `d` or `q` goes back to browsing.
 - The file tree, the open file, and the changes poll every 2 seconds (backing off to 30 seconds when a refresh is slow): a new or removed file appears, an open file re-reads when it changes, and a file that is gone says so. The changes list and diff follow edits without `r`.
 - `r` reloads the changes while the screen shows: the list keeps its selection, and the diff is read again.
-- The diff's keys: `s` shows side by side at 60 columns or more, `a` shows one file, `c` folds a file, `x` shows 12 lines of context, `n` `N` `]` `[` `p` move between hunks, and `o` opens the file at the hunk in the reader. A click on a file's header folds it.
+- The diff's keys: `s` shows side by side at 60 columns or more, `a` switches between one file and all files, `c` folds a file, `x` shows 12 lines of context, `n` `N` `]` `[` `p` move between hunks, and `o` opens the file at the hunk in the reader. A click on a file's header folds it.
 
 ### Changed
 
@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quit is `Ctrl+q` (or `Ctrl+c`); a plain `q` no longer quits. It closes the open document, and the welcome screen returns, or it closes the key list.
 - In-file search: `/` opens the prompt, and typing shows the lines that contain the query, ignoring case, with every match marked. Enter and `↓` go to the next match, Shift+Enter and `↑` to the previous, `n` and `N` step on, and Esc keeps the matches for `n` and `N` before it clears them.
 - Dragging across text selects it and keeps the selection on screen. `y` copies the selection and `Esc` clears it; Scouter copies as soon as the mouse is released.
+- The changes screen opens showing one file's diff, where Scouter stacks every file at first. `a` stacks all files, and `a` again goes back to one.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
 
 ### Fixed

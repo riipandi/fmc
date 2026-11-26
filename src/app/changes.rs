@@ -36,11 +36,19 @@ const SPLIT_NEEDS_COLUMNS: &str = "Split needs 60+ columns.";
 
 /// The options of the stacked body, kept for the session: Scouter's `DiffScreen` keeps its scope, view, and context from
 /// one visit to the next.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Options {
     pub split: bool,
     pub one_file: bool,
     pub wide: bool,
+}
+
+impl Default for Options {
+    /// One file, where Scouter opens every file (`scouter:src/diff/diff-screen.ts:82`): an approved deviation
+    /// (architecture.md, "the changes screen opens in one-file mode").
+    fn default() -> Self {
+        Self { split: false, one_file: true, wide: false }
+    }
 }
 
 /// The changes screen while it shows (Scouter `DiffScreen`): the listing's repository and the body's files.
@@ -587,3 +595,7 @@ pub fn sync(app: &App, m: &Model, ui: &Ui, p: &Palette, tint: &str) {
         if m.diff_options.one_file { None } else { m.change_list.selected().map(|change| change.path.as_str()) };
     ui.diff.paint_headers(&changes.files, active, &changes.folds, tint, p);
 }
+
+#[cfg(test)]
+#[path = "changes_tests.rs"]
+mod tests;
