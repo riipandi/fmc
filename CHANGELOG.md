@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command line: `fmc [file-or-directory]`, `--help` with every key, and `--version`, with the same checks and messages as Scouter.
 - Dark and light palettes that follow the terminal's background, checked at start, every 3 seconds, and when the terminal reports a change.
 - The two panes with their headers, the two-row footer with hints that fit the width, the welcome screen, and the `?` key list, which also lists the mouse.
-- The file tree: folders expand and collapse (`l` `h` Enter, a click), `-` opens the folder above, and a file argument opens its folder with the file selected. Folders come first, then names in Scouter's collation order.
+- The file tree: `l` and `→` expand a folder, `h` and `←` collapse it, Enter opens a file (with the focus in the reader) or toggles a folder, a click selects a row, and `-` opens the folder above, and a file argument opens its folder with the file selected. Folders come first, then names in Scouter's collation order.
 - Git marks in the tree: status letters, a dot on folders with changes, and ignored entries dimmed. A scrollbar appears on long lists.
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Sidebar visibility: below 80 columns the sidebar hides while a document is open, and the welcome screen keeps it. `Ctrl+/`, or the `«` or `»` on the border, shows and hides it.

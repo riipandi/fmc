@@ -53,7 +53,7 @@ pub enum Action {
     Bottom,
     /// Enter on a tree row: toggle a folder, open a file.
     Toggle,
-    /// `l` or Right on a tree row: expand a folder or step into it, open a file.
+    /// `l` or Right on a tree row: expand a folder or step into it; a file takes no key.
     Expand,
     Collapse,
     GoUp,
@@ -87,7 +87,8 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
         "Browse",
         &[
             ("j k ↑ ↓", "move"),
-            ("l → Enter", "open a file or folder"),
+            ("Enter", "open file, toggle folder"),
+            ("l →", "expand a folder"),
             ("h ← Backspace", "collapse a folder or go back"),
             ("/", "find a file by name; Tab: text in files"),
             ("-", "open the folder above"),
@@ -140,7 +141,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
 ];
 
 pub const MOUSE_ROWS: &[KeyRow] = &[
-    ("Left click", "open a file or toggle a folder"),
+    ("Left click", "select file, or toggle folder"),
     ("Click", "focus the pane under the pointer"),
     ("Drag text", "select; y copies it"),
     ("Wheel", "scroll the pane under the pointer"),

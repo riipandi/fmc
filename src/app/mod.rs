@@ -335,15 +335,19 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             let mut m = model.borrow_mut();
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
+                    // A press from another pane only focuses the list; the next press selects the row.
+                    let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
-                    let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
+                    let row = line_at(event.y, LIST_TOP, m.browser.height())
+                        .and_then(|line| m.browser.row_at(line))
+                        .filter(|_| focused);
                     if let Some(index) = row {
                         m.browser.select_index(index);
                         // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
                         if m.finder.is_some() {
                             find::pick(&mut m);
                         } else {
-                            tree::activate(&mut m);
+                            tree::click(&mut m);
                         }
                     }
                 }
@@ -365,9 +369,10 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 MouseEventKind::Down(MouseButton::Left) => {
                     // The row's action may move the focus to the body, so the list's press stops here (the pane's own
                     // focus handler is further up the path).
+                    let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
                     let line = line_at(event.y, LIST_TOP, m.change_list.height());
-                    if let Some(index) = line.and_then(|line| m.change_list.row_at(line)) {
+                    if let Some(index) = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line)) {
                         changes::click_row(&mut m, index);
                     }
                     cx.stop_propagation();

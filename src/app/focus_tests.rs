@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use fmc::explorer::{Entry, Kind};
 use opentui::testing::TestApp;
 
 use super::*;
@@ -39,4 +40,24 @@ fn a_press_on_a_pane_header_focuses_that_pane() {
     assert_eq!(model.borrow().focus, Focus::Reader);
     app.click(5, 1);
     assert_eq!(model.borrow().focus, Focus::List);
+}
+
+#[test]
+fn a_press_from_another_pane_only_focuses_the_list() {
+    let (app, model) = panes();
+    let root = PathBuf::from("/hogwarts");
+    {
+        let mut m = model.borrow_mut();
+        m.browser.listed(
+            &root,
+            vec![Entry::new(&root, "owls.txt", Kind::File), Entry::new(&root, "hedwig.txt", Kind::File)],
+        );
+        m.browser.select(&root.join("hedwig.txt"));
+        m.focus = Focus::Reader;
+    }
+    app.click(5, LIST_TOP);
+    assert_eq!(model.borrow().focus, Focus::List);
+    assert_eq!(model.borrow().browser.selected(), root.join("hedwig.txt"), "the selection does not move");
+    app.click(5, LIST_TOP);
+    assert_eq!(model.borrow().browser.selected(), root.join("owls.txt"), "the next press selects the row");
 }

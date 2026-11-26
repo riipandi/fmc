@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 
 use fmc::diff::Marks;
-use fmc::explorer::{Browser, Expand, Reveal, Tree};
+use fmc::explorer::{Browser, Expand, Kind, Reveal, Tree};
 use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
@@ -36,7 +36,8 @@ pub fn act(m: &mut Model, action: Action) {
     }
 }
 
-/// Enter, a click: collapse an expanded folder, or open the entry (Scouter `openSelected("toggle")`).
+/// Enter: collapse an expanded folder, or open the entry (Scouter `openSelected("toggle")`). A file opens with the
+/// reader focused, as Scouter's `finishShowing` does; a binary keeps the list (`reader::show_binary`).
 pub fn activate(m: &mut Model) {
     let path = m.browser.selected().to_path_buf();
     if m.browser.tree.is_expanded(&path) {
@@ -44,12 +45,31 @@ pub fn activate(m: &mut Model) {
         m.browser.select(&path);
         return;
     }
+    m.focus_reader_on_open = is_file(m, &path);
     open(m, path);
 }
 
-/// `l` and Right: expand a folder; on an expanded folder with children, step into the first one.
+/// A click on the focused list: a folder toggles as Enter does; a file is only selected, because only Enter opens one
+/// (architecture.md, "Auto-preview in the sidebar, and Enter alone opens").
+pub fn click(m: &mut Model) {
+    let file = is_file(m, m.browser.selected());
+    if !file {
+        activate(m);
+    }
+}
+
+/// A row in the tree that is a file, not a folder. A row the tree does not know (a finder's flat row) is not a file.
+fn is_file(m: &Model, path: &Path) -> bool {
+    m.browser.tree.entry(path).is_some_and(|entry| entry.kind != Kind::Directory)
+}
+
+/// `l` and Right: expand a folder; on an expanded folder with children, step into the first one. A file takes no key:
+/// only Enter opens one (architecture.md).
 fn expand(m: &mut Model) {
     let path = m.browser.selected().to_path_buf();
+    if is_file(m, &path) {
+        return;
+    }
     if m.browser.tree.is_expanded(&path) {
         let rows = m.browser.tree.rows();
         let at = m.browser.selected_index();
@@ -250,3 +270,7 @@ fn advance(m: &mut Model) {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "tree_tests.rs"]
+mod tests;

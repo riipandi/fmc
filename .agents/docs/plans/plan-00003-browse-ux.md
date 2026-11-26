@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T09:00:00+07:00
-updated: 2026-11-27T00:49:46+07:00
+updated: 2026-11-27T01:30:00+07:00
 phases:
     - id: 1
       title: "Bug fixes: arrow keys pan the reader; Ctrl+/ focuses the shown sidebar"
@@ -13,8 +13,8 @@ phases:
       note: "263 tests; serde not added (no derive needed, serde_json alone); live: bad file shows the notice in the footer, good file none"
     - id: 3
       title: "Enter opens and focuses; l/right only expand; click focuses first"
-      status: pending
-      note: —
+      status: done
+      note: "268 tests; live: Enter on README opens and focuses the reader, → on a file does nothing, first click only focuses the list, second click toggles a folder; a click on a file only selects it"
     - id: 4
       title: "Auto-preview with p toggle"
       status: pending

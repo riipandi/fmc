@@ -7,7 +7,8 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | Keys | Action |
 | --- | --- |
 | `j` `k` `↑` `↓` | move |
-| `l` `→` `Enter` | open a file or folder |
+| `Enter` | open file, toggle folder |
+| `l` `→` | expand a folder |
 | `h` `←` `Backspace` | collapse a folder or go back |
 | `/` | find a file by name; Tab: text in files |
 | `-` | open the folder above |
@@ -75,11 +76,13 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 
 | Keys | Action |
 | --- | --- |
-| `Left` `click` | open a file or toggle a folder |
+| `Left` `click` | select file, or toggle folder |
 | `Click` | focus the pane under the pointer |
 | `Drag` `text` | select; y copies it |
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
+
+A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. A click selects a file but does not open it: Enter does.
 
 Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.
