@@ -1,12 +1,12 @@
 ---
 status: in-progress
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T18:00:00+07:00
+updated: 2026-11-27T03:30:39+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
-      status: pending
-      note: —
+      status: done
+      note: "`layout::tier` (Compact, Medium, Wide) with tests at 39, 59, 60, 79, 80; every width caller asks it (`DRAWER` renamed `COMPACT`). Row presses act on release through the shared `Click` tracker (renamed from `HeaderClick`); tests drive the list through TestApp (click, drag, swipe back to its cell, release off the row). 328 tests. Agent decisions in architecture.md (plan-00005 list)."
     - id: 2
       title: "Compact navigation stack: Files and Reader pages, no border, start on Files"
       status: pending

@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use fmc::keys::Focus;
+use fmc::layout::{Tier, tier};
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
@@ -22,20 +23,20 @@ fn held(m: &Model) -> bool {
     m.finder.is_some()
 }
 
-/// The toggle works only where the list can hide: with a document, and on the welcome screen below `DRAWER` columns,
-/// where its list starts hidden (D7, amended).
+/// The toggle works only where the list can hide: with a document, and on the welcome screen below the compact tier's
+/// edge, where its list starts hidden (D7, amended).
 fn can_hide(m: &Model, columns: u16) -> bool {
-    !held(m) && (document(m) || columns < fmc::layout::DRAWER)
+    !held(m) && (document(m) || tier(columns) == Tier::Compact)
 }
 
 /// The reader's header shows the menu box: below 80 columns while the list is hidden (plan-00004, amended).
 pub fn menu_box(m: &Model, columns: u16) -> bool {
-    columns < fmc::layout::BREAKPOINT && !shown(m, columns)
+    tier(columns) != Tier::Wide && !shown(m, columns)
 }
 
 /// The list's header shows the close box: below 80 columns while the list shows and can hide.
 pub fn close_box(m: &Model, columns: u16) -> bool {
-    columns < fmc::layout::BREAKPOINT && shown(m, columns) && can_hide(m, columns)
+    tier(columns) != Tier::Wide && shown(m, columns) && can_hide(m, columns)
 }
 
 /// Whether the drawer covers the reader as of the last paint, so auto-preview waits (architecture.md, amended).
@@ -47,7 +48,7 @@ pub fn shown(m: &Model, columns: u16) -> bool {
     m.visibility.shown(columns, document(m), held(m))
 }
 
-/// The sidebar covers the reader below `DRAWER` columns (P3).
+/// The sidebar covers the reader below the compact tier's edge (P3).
 pub fn drawer(m: &Model, columns: u16) -> bool {
     fmc::layout::is_drawer(columns, shown(m, columns))
 }
@@ -127,7 +128,7 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     ui.handle.visible(visible && !covered);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
     // The marks are drawn at 80 columns and wider only; below that the header boxes are the touch targets.
-    ui.mark.root.visible(columns >= fmc::layout::BREAKPOINT && can_hide(m, columns));
+    ui.mark.root.visible(tier(columns) == Tier::Wide && can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
     width
 }

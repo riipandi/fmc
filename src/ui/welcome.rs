@@ -48,7 +48,7 @@ impl Welcome {
     /// list is hidden below 80 columns, which swaps the prompt for the menu's.
     pub fn fit(&self, columns: u16, menu: bool, p: &Palette) {
         let narrow = columns < fmc::layout::NARROW_WELCOME;
-        let phone = columns < fmc::layout::BREAKPOINT;
+        let phone = fmc::layout::tier(columns) != fmc::layout::Tier::Wide;
         self.card.visible(!narrow);
         self.closing.visible(!phone);
         for part in &self.closing_parts {

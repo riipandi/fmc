@@ -329,10 +329,10 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         });
     }
     {
-        // A click on a file's header folds the file, on its release (`HeaderClick`); the rows are the last frame's.
+        // A click on a file's header folds the file, on its release (`Click`); the rows are the last frame's.
         let (model, ui) = (model.clone(), ui.clone());
         let stacked = ui.borrow().diff.scroller.widget();
-        let mut click = mouse::HeaderClick::default();
+        let mut click = mouse::Click::default();
         stacked.on_mouse(move |cx, event| {
             if !click.feed(event.kind, event.x, event.y) {
                 return;

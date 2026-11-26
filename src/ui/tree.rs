@@ -6,7 +6,7 @@ use std::path::Path;
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Entry, Kind, Row, relative};
 use fmc::find::text::Snippet;
-use fmc::layout::BREAKPOINT;
+use fmc::layout::{Tier, tier};
 use fmc::text::display_label;
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -222,7 +222,7 @@ impl TreeView {
     pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) {
         // The finder's rows need no listed root; the tree does (Scouter draws nothing before the root lists).
         let lines = if browser.is_flat() || browser.tree.is_listed(root) {
-            self.lines(browser, marks, p, root, app.size().0 < BREAKPOINT)
+            self.lines(browser, marks, p, root, tier(app.size().0) != Tier::Wide)
         } else {
             Vec::new()
         };

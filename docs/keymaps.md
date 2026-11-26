@@ -90,6 +90,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
 | `Click` header | fold / unfold the file, on release; a drag does not |
+| `Click` row (file list, finder, changes) | open or select, on release; a drag or swipe over the row does nothing |
 | `Click` `≡` box, below 80 columns | show the hidden file list and focus it |
 | `Click` any cell of the reader header, below 80 columns | show the hidden file list and focus it |
 | `Click` `✕` box, below 80 columns | hide the file list |

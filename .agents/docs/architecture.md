@@ -726,3 +726,9 @@ Consequences:
 
 - (positive) A phone gets a familiar two-page browser with large targets and almost all of its rows for content; the desktop is unchanged at 80+.
 - (negative) Compact is a third layout to test; the welcome card and the path line are not shown below 60 columns.
+
+Agent decisions (plan-00005, taken under the owner's delegation; each is reversible and listed here with its reason):
+
+- Phase 1, `DRAWER` is renamed `COMPACT`: agent decision: the constant is the compact edge in the new design, and the drawer it named goes in phase 2 — why: one name per edge, and a name for a removed feature would mislead.
+- Phase 1, the row click reuses the header fold's tracker, renamed `Click`: agent decision: one rule for every click (a press and a release at one cell, no drag between) — why: a second tracker would drift from the fold rule and need its own tests.
+- Phase 1, the press still focuses the list at once; only the row's action waits for the release: agent decision: focus feedback stays immediate, and the release is what a swipe must not trigger — why: record 8 names the action, not the focus.

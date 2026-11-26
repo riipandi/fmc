@@ -19,6 +19,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - While another pane has the focus, a click on the file list only moves the focus there; the next click selects. Showing the hidden sidebar with `Ctrl+/` or the `»` mark also focuses it.
 - `]` and `[` move the list selection by two rows and scroll the reader by five lines (both set in the settings file). Scouter uses them only on the changes screen.
 - A click anywhere in a pane (the file list, the reader, the changes list, or the diff) moves the focus there. In Scouter only a click on a row does something.
+- A row in the file list, the finder, or the changes list acts when you release the click, not when you press it, so a drag or swipe over a row does nothing. Scouter acts on the press. Recorded in `architecture.md`, "three layout tiers", record 8 (plan-00005).
 - `Ctrl+/` shows or hides the sidebar. `Ctrl+.` shows or hides dotfiles in the tree and the finder, and `.` does the same for terminals that cannot send `Ctrl+.` (Terminal.app). Dotfiles are shown by default, as in Scouter. Scouter has none of these keys.
 
 ## Layout

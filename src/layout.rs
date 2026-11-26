@@ -1,21 +1,39 @@
-//! Whether the sidebar shows (plan-00002, D1, D2, D7). With a document open, the sidebar hides below 80 columns; a
-//! manual choice holds until the width crosses 80 again, or a document opens or closes. The welcome screen keeps the
-//! sidebar from 60 columns up, and below 60 starts it hidden. An open finder always holds it, since the list is what it
-//! shows. Scouter always draws the sidebar.
+//! Whether the sidebar shows (plan-00002, D1, D2, D7) and the layout tiers (architecture.md, "three layout tiers").
+//! With a document open, the sidebar hides below 80 columns; a manual choice holds until the width crosses 80 again, or
+//! a document opens or closes. The welcome screen keeps the sidebar from 60 columns up, and below 60 starts it hidden.
+//! An open finder always holds it, since the list is what it shows. Scouter always draws the sidebar.
 
-/// Below this many columns a document hides the sidebar (D1): at 80 or more the layout is Scouter's.
+/// The wide tier starts here: at 80 or more the layout is Scouter's, and a document hides the sidebar below it (D1).
 pub const BREAKPOINT: u16 = 80;
 
-/// Below this many columns a shown sidebar is a drawer over the reader, and a focus that moves to the reader closes it
-/// (approved phone rule, architecture.md, "a phone layout below 80 columns").
-pub const DRAWER: u16 = 60;
+/// The compact tier is below this many columns; the medium tier is from here up to `BREAKPOINT`.
+pub const COMPACT: u16 = 60;
 
 /// Below this many columns the welcome screen drops its key card and wraps its lines (plan-00004, P5).
 pub const NARROW_WELCOME: u16 = 50;
 
+/// The three layout tiers by width: each range has its own binding constraint (architecture.md, record 1).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Tier {
+    Compact,
+    Medium,
+    Wide,
+}
+
+/// The tier of a terminal `columns` wide. Every caller asks this rather than comparing widths (plan-00005, D1).
+pub fn tier(columns: u16) -> Tier {
+    if columns < COMPACT {
+        Tier::Compact
+    } else if columns < BREAKPOINT {
+        Tier::Medium
+    } else {
+        Tier::Wide
+    }
+}
+
 /// Whether a shown sidebar covers the whole terminal.
 pub fn is_drawer(columns: u16, shown: bool) -> bool {
-    shown && columns < DRAWER
+    shown && tier(columns) == Tier::Compact
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -44,12 +62,12 @@ impl Visibility {
     }
 
     pub fn shown(&self, columns: u16, document: bool, held: bool) -> bool {
-        if held || (!document && columns >= DRAWER) {
+        if held || (!document && tier(columns) != Tier::Compact) {
             return true;
         }
-        // Below `DRAWER` the welcome screen starts with its list hidden (amended, architecture.md); a document keeps
-        // the 80-column rule.
-        self.manual.unwrap_or(document && columns >= BREAKPOINT)
+        // Below the compact tier the welcome screen starts with its list hidden (amended, architecture.md); a document
+        // keeps the 80-column rule.
+        self.manual.unwrap_or(document && tier(columns) == Tier::Wide)
     }
 
     /// Whether the drawer covers the reader, as of the last width observed.
@@ -64,7 +82,7 @@ impl Visibility {
 }
 
 fn crosses(last: u16, now: u16) -> bool {
-    (last >= BREAKPOINT) != (now >= BREAKPOINT)
+    (tier(last) == Tier::Wide) != (tier(now) == Tier::Wide)
 }
 
 #[cfg(test)]

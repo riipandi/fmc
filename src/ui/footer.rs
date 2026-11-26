@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::ops::Range;
 use std::path::Path;
 
-use fmc::layout::BREAKPOINT;
+use fmc::layout::{Tier, tier};
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
@@ -247,7 +247,7 @@ impl FooterState {
         };
         // Below 80 columns a short row keeps the hints that leave the state first, and `Copy` leads while a selection
         // exists (plan-00004, P6, P8, D3). At 80 columns and wider the order is Scouter's.
-        if columns < usize::from(BREAKPOINT) {
+        if tier(u16::try_from(columns).unwrap_or(u16::MAX)) != Tier::Wide {
             if self.selection && self.prompt.is_none() {
                 hints.retain(|hint| hint.0 != "y");
                 hints.push(("y", "Copy"));

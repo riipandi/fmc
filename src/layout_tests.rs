@@ -1,6 +1,20 @@
 use super::*;
 
 #[test]
+fn the_tier_splits_at_60_and_80_columns() {
+    assert_eq!(tier(39), Tier::Compact);
+    assert_eq!(tier(59), Tier::Compact);
+    assert_eq!(tier(60), Tier::Medium);
+    assert_eq!(tier(79), Tier::Medium);
+    assert_eq!(tier(80), Tier::Wide);
+}
+
+#[test]
+fn a_tier_is_ordered_from_compact_to_wide() {
+    assert!(Tier::Compact < Tier::Medium && Tier::Medium < Tier::Wide);
+}
+
+#[test]
 fn a_document_hides_the_sidebar_below_the_breakpoint_and_shows_it_at_the_breakpoint() {
     let mut v = Visibility::default();
     v.observe(79, true);

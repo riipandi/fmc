@@ -9,28 +9,24 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let list = ui.borrow().tree.root.clone();
     list.on_mouse({
         let (model, ui) = (model.clone(), ui.clone());
+        // The row a press took while the list had the focus; its release acts on it (plan-00005, record 8).
+        let mut click = Click::default();
+        let mut pressed: Option<usize> = None;
         move |cx, event| {
             let mut m = model.borrow_mut();
+            let done = click.feed(event.kind, event.x, event.y);
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
-                    // A press from another pane only focuses the list; the next press selects the row.
+                    // A press from another pane only focuses the list; the next click selects the row.
                     let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
-                    let row = line_at(event.y, LIST_TOP, m.browser.height())
+                    pressed = line_at(event.y, LIST_TOP, m.browser.height())
                         .and_then(|line| m.browser.row_at(line))
                         .filter(|_| focused);
-                    if let Some(index) = row {
-                        m.browser.select_index(index);
-                        // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
-                        if m.finder.is_some() {
-                            find::pick(&mut m);
-                        } else if tree::is_file(&m, m.browser.selected()) && layout::drawer(&m, cx.app().size().0) {
-                            // Under a drawer a tap on a file opens it, as Enter does: the reader takes the focus, and
-                            // the drawer closes (P3). A preview would not show it, since the focus leaves the list.
-                            tree::activate(&mut m);
-                        } else {
-                            tree::click(&mut m);
-                        }
+                }
+                MouseEventKind::Up(MouseButton::Left) => {
+                    if let Some(index) = pressed.take().filter(|_| done) {
+                        act_on_row(&mut m, index, cx.app().size().0);
                     }
                 }
                 MouseEventKind::ScrollUp => m.browser.scroll(-1),
@@ -47,8 +43,11 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let changes_list = ui.borrow().changes.root.clone();
     changes_list.on_mouse({
         let (model, ui) = (model.clone(), ui.clone());
+        let mut click = Click::default();
+        let mut pressed: Option<usize> = None;
         move |cx, event| {
             let mut m = model.borrow_mut();
+            let done = click.feed(event.kind, event.x, event.y);
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
                     // The row's action may move the focus to the body, so the list's press stops here (the pane's own
@@ -56,7 +55,11 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
                     let line = line_at(event.y, LIST_TOP, m.change_list.height());
-                    if let Some(index) = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line)) {
+                    pressed = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line));
+                    cx.stop_propagation();
+                }
+                MouseEventKind::Up(MouseButton::Left) => {
+                    if let Some(index) = pressed.take().filter(|_| done) {
                         changes::click_row(&mut m, index);
                         layout::close_drawer(&mut m, cx.app().size().0);
                     }
@@ -133,7 +136,9 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event| {
             // A phone rule: at 80 columns and wider the hints are not buttons (plan-00004, P2).
-            if event.kind != MouseEventKind::Down(MouseButton::Left) || cx.app().size().0 >= fmc::layout::BREAKPOINT {
+            if event.kind != MouseEventKind::Down(MouseButton::Left)
+                || fmc::layout::tier(cx.app().size().0) == fmc::layout::Tier::Wide
+            {
                 return;
             }
             let Some(key) = ui.borrow().footer.key_at(usize::from(event.x)) else { return };
@@ -173,12 +178,29 @@ fn wire_gutter(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, gutter: &View, 
     });
 }
 
-/// A header folds on the release that ends a click: a press and a release at one cell, with no drag between (approved
-/// deviation, architecture.md). A swipe that starts on a header is a drag, so it folds nothing.
-#[derive(Default)]
-pub struct HeaderClick(Option<(u16, u16)>);
+/// A row's action once its click completes: the finder picks it, a file under a drawer opens (P3), and anything else
+/// is a click on the tree (a folder toggles, a file is selected).
+fn act_on_row(m: &mut Model, index: usize, columns: u16) {
+    m.browser.select_index(index);
+    // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
+    if m.finder.is_some() {
+        find::pick(m);
+    } else if tree::is_file(m, m.browser.selected()) && layout::drawer(m, columns) {
+        // Under a drawer a tap on a file opens it, as Enter does: the reader takes the focus, and the drawer closes. A
+        // preview would not show it, since the focus leaves the list.
+        tree::activate(m);
+    } else {
+        tree::click(m);
+    }
+}
 
-impl HeaderClick {
+/// A click completes on the release that ends a press at one cell, with no drag between (architecture.md, record 8).
+/// A header folds on it (approved deviation), and so does a list row. A swipe that starts on a row is a drag, so it
+/// acts on nothing.
+#[derive(Default)]
+pub struct Click(Option<(u16, u16)>);
+
+impl Click {
     /// Feeds one mouse event; `true` when it is the release that completes a click.
     pub fn feed(&mut self, kind: MouseEventKind, x: u16, y: u16) -> bool {
         match kind {
