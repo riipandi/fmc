@@ -781,8 +781,11 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         Some(_) => ui.preview_viewer.position().1.floor() as usize,
         None => m.top.floor() as usize,
     };
-    ui.bar.paint(app, total, viewport, top, fill, p);
-    ui.narrow_bar.paint(app, total, viewport, top, !fill, p);
+    // The rendered view's bar takes one column, as Scouter's scroll box does: the blank before the thumb is wrapped
+    // text's and a picture's, not the rendered view's (`scouter:src/app/reader-pane.ts:31-48`).
+    let gapped = fill && !previewing;
+    ui.bar.paint(app, total, viewport, top, gapped, p);
+    ui.narrow_bar.paint(app, total, viewport, top, !gapped, p);
     let has_blocks = m.changes.as_ref().is_some_and(|changes| !changes.files.is_empty());
     let (document, position) = if body {
         (None, has_blocks.then(|| scroll_label(ui.diff.height(), viewport, m.top)))

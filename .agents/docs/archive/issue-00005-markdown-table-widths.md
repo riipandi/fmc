@@ -1,7 +1,7 @@
 ---
-status: open
+status: resolved
 created: 2026-11-26T07:29:50+07:00
-updated: 2026-11-26T12:03:20+07:00
+updated: 2026-11-26T12:11:30+07:00
 summary: "On the demo README at 80x24 the Markdown table's Language and Owner columns are one cell narrower in fmc than in Scouter 0.9.9. Both HEAD and the W3 tip draw the narrower table, so the gap is not from plan-00001 phase 16."
 count: 1
 ---
@@ -10,9 +10,11 @@ count: 1
 
 ## The rendered table is one cell narrower in two columns
 
-- status: open
+- status: resolved
   area: reader, rendered Markdown tables (`src/ui/markdown.rs`, OpenTUI's Markdown)
   summary: The table at `## Modules` of the demo README (`/tmp/fmc-ref/demo-fmc/README.md`, line 13) renders with the Language column 9 cells wide and the Owner column 17 in fmc, against 10 and 18 in Scouter 0.9.9. The cell text and the Module column match. The W3 captures (`/tmp/fmc-ref/out/w3-11/`) recorded equal widths, and the Markdown renderer has not changed since W3, so the cause is not yet established (a change in the demo file or in the table layout of OpenTUI are both open). Evidence: `/tmp/fmc-ref/out/w4-16/readme-head.txt` and `sco-e6-03.txt`.
   plan: plan-00001 phase 22 records it in the audit; phase 23 fixes it with the rendered view
   trigger: plan-00001 phase 22, or a reproduction that shows which side changed
   audit: audit-00001 F-02 (2026-11-26): the reader's Markdown is two cells narrower in fmc, so the paragraph wrap (`A small ledger and symbology toolkit for the`) and the horizontal rule differ as well as the table (`02-readme-open`, `10-readme-rendered-bottom`); one cause for all three, fixed in plan-00001 phase 23.
+
+Resolved by plan-00001 phase 23b. The cause was the reader's bar: the rendered view reserved three columns (two blanks and the thumb) where Scouter's scroll box takes one, so the Markdown box was 47 cells against Scouter's 49. The rendered view now takes one column (`src/app/mod.rs` paint, `gapped`). At 80x24 the `## Modules` table is 45 cells with Language 10 and Owner 18, the paragraph wraps as Scouter's does (`toolkit for the`), and the rule is 45 cells (`71-md-width-fix`, rendered README in both apps, identical body rows). The wrapped text and the picture keep their two-column bar (`72-main-wrap`, `73-png-regress`).

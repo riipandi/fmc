@@ -1,7 +1,8 @@
 //! The viewer's scrollbar (Scouter `renderScrollbar`, `src/ui/styled.ts:28-51`): a column at the viewer's right edge,
 //! drawn only while the text is taller than the viewport. The thumb is the tree's (`ui/tree.rs` `thumb`), since
 //! Scouter draws both with the same routine. The columns it takes depend on what fills the pane: plain text leaves
-//! one blank before the thumb, filled content (wrapped text, the rendered view, a picture) leaves two.
+//! one blank before the thumb, filled content (wrapped text, a picture) leaves two, and the rendered view leaves none
+//! (its bar is the one-column bar of Scouter's scroll box, `app/mod.rs` paint).
 
 use std::cell::RefCell;
 

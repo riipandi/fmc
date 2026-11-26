@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T12:08:05+07:00
+updated: 2026-11-26T12:11:30+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -95,7 +95,7 @@ phases:
     - id: 23
       title: "W6: parity fixes"
       status: in_progress
-      note: "sub-phases 23a to 23e from audit-00001 (F-01 to F-05); 23a welcome in progress; F-06 to F-08 wait for the owner"
+      note: "sub-phases 23a to 23e from audit-00001 (F-01 to F-05); 23a welcome (498958c) and 23b Markdown width done; 23c to 23e next; F-06 to F-08 wait for the owner"
     - id: 24
       title: "W6: docs sync, ledger close, handover"
       status: pending
