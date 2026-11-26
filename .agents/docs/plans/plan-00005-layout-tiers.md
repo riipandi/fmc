@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T03:51:33+07:00
+updated: 2026-11-27T03:53:11+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
@@ -21,8 +21,8 @@ phases:
       note: "At 60 to 79 columns `‹` starts the list's title (it hides the list, when a document is open) and `›` starts the reader's title (it shows the list, when hidden); one press handler per header acts by tier. The `≡`/`✕` boxes, the header-row tap, and the drawer code are gone (the drawer went in phase 2); the `«`/`»` marks were already not drawn below 80. `rust.md`, `keymaps.md`, `parity.md`, `README.md`, `DESIGN.md`, and CHANGELOG describe the chevrons. 80x24 captures identical to 166051c (10 steps). Live at 70 columns: `›` showed the list and `‹` hid it, both by SGR press. 347 tests."
     - id: 5
       title: "Touch delivery from the phone probe"
-      status: pending
-      note: —
+      status: done
+      note: "The probe log had data at 03:39 (747 chunks, 1087 mouse events, the log not cleared). A tap is a press and its release at one cell (43 taps, none unpaired). A swipe is a run of wheel codes 64 and 65 (five runs, 1001 events), with no drag or motion events; no long press appears. The handler already matches those bytes, so no handler changed; `app/mouse_tests.rs` `a_logged_*` feeds the logged bytes through TestApp (tap, swipe, tap after swipe). The commit keeps the phase's message; its body says no handler changed. Agent decision in architecture.md (plan-00005 list)."
     - id: 6
       title: "Docs, ledger close, handover, final validation"
       status: pending
