@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Below 60 columns fmc is a two-page browser: the file list fills the screen, a file opens full screen, and `q` or `Esc` goes back. There is no panel border and no welcome card below 60 columns, and auto-preview does not run there.
+- A row in the file list, the finder, or the changes list opens or selects on release, so a swipe over a row does nothing.
 - `?` shows the key list as tables in the reader instead of a card over the panes. `?` or `Esc` puts the document back, with its scroll position and search.
 - The file tree has no root row: the folder's files and folders start at the top, with no indent. `h` on a top-level row does nothing; `-` still opens the folder above.
 - Enter on a file opens it and moves focus to the reader, as in Scouter; Tab moves it back. `l` and `→` only expand a folder, and a click on a file only selects it.

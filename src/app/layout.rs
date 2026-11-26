@@ -5,11 +5,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use fmc::keys::Focus;
-use fmc::layout::{Tier, tier};
+use fmc::layout::{Page, Tier, tier};
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
-use super::{Model, Ui, paint};
+use super::{Model, Ui, pages, paint};
 use crate::ui::sidebar;
 use crate::ui::styled::color;
 
@@ -23,61 +23,46 @@ fn held(m: &Model) -> bool {
     m.finder.is_some()
 }
 
-/// The toggle works only where the list can hide: with a document, and on the welcome screen below the compact tier's
-/// edge, where its list starts hidden (D7, amended).
+/// The toggle works where the list can hide: with a document, in the medium and wide tiers (D7).
 fn can_hide(m: &Model, columns: u16) -> bool {
-    !held(m) && (document(m) || tier(columns) == Tier::Compact)
+    !held(m) && document(m) && tier(columns) != Tier::Compact
 }
 
-/// The reader's header shows the menu box: below 80 columns while the list is hidden (plan-00004, amended).
+/// The reader's header shows the menu box in the medium tier while the list is hidden (plan-00004, amended).
 pub fn menu_box(m: &Model, columns: u16) -> bool {
-    tier(columns) != Tier::Wide && !shown(m, columns)
+    tier(columns) == Tier::Medium && !shown(m, columns)
 }
 
-/// The list's header shows the close box: below 80 columns while the list shows and can hide.
+/// The list's header shows the close box in the medium tier while the list shows and can hide.
 pub fn close_box(m: &Model, columns: u16) -> bool {
-    tier(columns) != Tier::Wide && shown(m, columns) && can_hide(m, columns)
+    tier(columns) == Tier::Medium && shown(m, columns) && can_hide(m, columns)
 }
 
-/// Whether the drawer covers the reader as of the last paint, so auto-preview waits (architecture.md, amended).
-pub fn covered(m: &Model) -> bool {
-    m.visibility.covers(document(m), held(m))
-}
-
+/// Whether the list shows. In compact the top page decides (the list pages show it); otherwise the sidebar rule does.
 pub fn shown(m: &Model, columns: u16) -> bool {
-    m.visibility.shown(columns, document(m), held(m))
+    if tier(columns) == Tier::Compact {
+        matches!(m.pages.top(), Page::Files | Page::Changes | Page::Find)
+    } else {
+        m.visibility.shown(columns, document(m), held(m))
+    }
 }
 
-/// The sidebar covers the reader below the compact tier's edge (P3).
-pub fn drawer(m: &Model, columns: u16) -> bool {
-    fmc::layout::is_drawer(columns, shown(m, columns))
-}
-
-/// The width the sidebar takes: none while it is hidden, the whole terminal as a drawer.
+/// The width the sidebar takes: none while it is hidden, the whole terminal in compact.
 pub fn width(m: &Model, columns: u16) -> u16 {
     if !shown(m, columns) {
         0
-    } else if drawer(m, columns) {
+    } else if tier(columns) == Tier::Compact {
         columns
     } else {
         sidebar::fit(columns, m.sidebar)
     }
 }
 
-/// Closes a drawer when a file opens from it (P3). A sidebar beside the reader is left as it is.
-pub fn close_drawer(m: &mut Model, columns: u16) {
-    if drawer(m, columns) {
-        m.visibility.close();
-    }
-}
-
-/// Runs at each paint: records the width and document for the next crossing, closes a drawer the reader's focus has
-/// reached, and moves focus off a hidden sidebar.
+/// Runs at each paint: the page stack follows the screens, records the width and document for the next crossing, and
+/// moves focus off a hidden sidebar.
 pub fn sync(m: &mut Model, columns: u16) {
     m.visibility.observe(columns, document(m));
-    if m.focus == Focus::Reader {
-        close_drawer(m, columns);
-    }
+    pages::sync(m);
     if m.focus == Focus::List && !shown(m, columns) {
         m.focus = Focus::Reader;
     }
@@ -86,6 +71,9 @@ pub fn sync(m: &mut Model, columns: u16) {
 /// `Ctrl+/`, `Ctrl+_`, or a click on the mark: showing the sidebar also focuses it (architecture.md, "Auto-preview in
 /// the sidebar").
 pub fn toggle_key(m: &mut Model, columns: u16) {
+    if tier(columns) == Tier::Compact {
+        return pages::switch(m);
+    }
     if !can_hide(m, columns) {
         return;
     }
@@ -98,7 +86,7 @@ pub fn toggle_key(m: &mut Model, columns: u16) {
 
 /// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`). A hidden sidebar takes no key.
 pub fn resize(m: &mut Model, columns: u16, step: i8) {
-    if !shown(m, columns) || drawer(m, columns) {
+    if !shown(m, columns) || tier(columns) == Tier::Compact {
         return;
     }
     let width = i64::from(sidebar::fit(columns, m.sidebar)) + 2 * i64::from(step);
@@ -120,13 +108,20 @@ pub fn handle(app: &App) -> View {
 /// Lays out the sidebar, its edge, and its mark for this frame, and returns the width the sidebar takes.
 pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     let visible = shown(m, columns);
-    let covered = drawer(m, columns);
+    let compact = tier(columns) == Tier::Compact;
     let width = width(m, columns);
     ui.browser_panel.visible(visible);
     ui.browser_panel.width(width);
-    ui.viewer_panel.visible(!covered);
-    ui.handle.visible(visible && !covered);
+    // In compact the reader is the page when the list is not (plan-00005, D2); the panels are then full width.
+    ui.viewer_panel.visible(!compact || !visible);
+    ui.handle.visible(visible && !compact);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
+    // Compact draws no panel border and one-row headers (architecture.md, record 5).
+    let sides = if compact { Sides::NONE } else { Sides::ALL };
+    ui.browser_panel.border_sides(sides);
+    ui.viewer_panel.border_sides(sides);
+    ui.browser_header.compact(compact);
+    ui.viewer_header.compact(compact);
     // The marks are drawn at 80 columns and wider only; below that the header boxes are the touch targets.
     ui.mark.root.visible(tier(columns) == Tier::Wide && can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);

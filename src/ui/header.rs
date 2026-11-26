@@ -95,6 +95,12 @@ impl PaneHeader {
         Self { root, button, title, badges }
     }
 
+    /// The compact tier's header is one row with no rule under it (plan-00005, architecture.md record 5).
+    pub fn compact(&self, compact: bool) {
+        self.root.height(if compact { 1 } else { 2 });
+        self.root.border_sides(if compact { Sides::NONE } else { Sides::BOTTOM });
+    }
+
     pub fn paint(&self, state: &HeaderState, p: &Palette) {
         self.root.border_color(color(p.border));
         self.button.visible(state.button.is_some());

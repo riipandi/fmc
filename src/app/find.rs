@@ -400,7 +400,7 @@ pub fn pick(m: &mut Model) {
 
 /// Ends the finder and shows the tree again: the row `select` names, else the row the finder opened on (Scouter
 /// `end`). A running text search is stopped; the preview goes with the finder.
-fn end(m: &mut Model, select: Option<PathBuf>) {
+pub(super) fn end(m: &mut Model, select: Option<PathBuf>) {
     let Some(finder) = m.finder.take() else { return };
     if let Some(flag) = finder.cancelled {
         flag.store(true, Ordering::Relaxed);

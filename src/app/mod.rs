@@ -8,6 +8,7 @@ mod find;
 mod keys;
 mod layout;
 mod mouse;
+mod pages;
 mod poll;
 mod preview;
 mod reader;
@@ -23,6 +24,7 @@ use std::rc::Rc;
 use fmc::diff::{ChangeList, Marks};
 use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
+use fmc::layout::{Page, Tier, tier};
 use fmc::reader::markdown::{PARAGRAPH_REFUSED, SEARCH_REFUSED};
 use fmc::reader::position::scroll_label;
 use fmc::settings::Parsed;
@@ -44,12 +46,14 @@ use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
 use crate::ui::sidebar::Mark;
 use crate::ui::styled::color;
-use crate::ui::tree::{LIST_TOP, TreeView, line_at};
+use crate::ui::tree::{TreeView, line_at, list_top};
 use crate::ui::viewer::Viewer;
 use crate::ui::{syntax, welcome};
 
-/// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2).
+/// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2). The compact tier has
+/// no borders and a one-row header (plan-00005, record 5).
 const LIST_CHROME_ROWS: usize = 6;
+const COMPACT_CHROME_ROWS: usize = 3;
 
 struct Ui {
     browser_panel: View,
@@ -165,6 +169,10 @@ struct Model {
     reader_jump: u32,
     /// The text of the `:` command line while it is open (`app/command.rs`).
     command: Option<String>,
+    /// The terminal's width at the last paint: the tier reads it (`app/pages.rs`).
+    columns: u16,
+    /// The page stack the compact tier draws (plan-00005, D2).
+    pages: fmc::layout::Pages,
 }
 
 impl Model {
@@ -241,6 +249,8 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         sidebar_jump: fmc::settings::SIDEBAR_JUMP,
         reader_jump: fmc::settings::READER_JUMP,
         command: None,
+        columns: app.size().0,
+        pages: Default::default(),
     }
 }
 
@@ -540,7 +550,9 @@ fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
 fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let p = m.palette();
     let (columns, rows) = app.size();
-    let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
+    m.columns = columns;
+    let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
+    let viewport = usize::from(rows).saturating_sub(chrome);
     m.browser.set_height(viewport);
     m.change_list.set_height(viewport);
     let measure = |text: &str| {
@@ -550,7 +562,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 
     layout::sync(m, columns);
     let width = layout::lay_out(ui, m, columns, p);
-    ui.welcome.fit(columns, layout::menu_box(m, columns), p);
+    ui.welcome.fit(columns, p);
     let focused = |pane: Focus| color(if m.focus == pane { p.accent } else { p.border });
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));
@@ -611,7 +623,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let shows_preview = previewed.is_some();
     // The preview's line count, copied out: the model is changed below, which the borrow of `previewed` forbids.
     let preview_lines = previewed.map(|shown| shown.document.lines);
-    ui.welcome.root.visible(!m.shown.is_some() && !shows_preview && !on_changes);
+    // The compact tier has no welcome screen: its list is the first page (plan-00005, record 4).
+    ui.welcome.root.visible(!m.compact() && !m.shown.is_some() && !shows_preview && !on_changes);
     let previewing = m.shown.previewing();
     ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body);
     ui.markdown.visible(previewing && !shows_preview && !body);

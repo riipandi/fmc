@@ -118,23 +118,11 @@ fn p_turns_auto_preview_off_and_on_and_says_so() {
 }
 
 #[test]
-fn a_drawer_over_the_reader_holds_the_preview_until_it_hides() {
+fn compact_schedules_no_preview_because_the_reader_is_a_page() {
     let (app, model, ui) = browsing_at(40);
-    {
-        let mut m = model.borrow_mut();
-        layout::toggle_key(&mut m, 40);
-    }
+    model.borrow_mut().focus = Focus::List;
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
-    {
-        let mut m = model.borrow_mut();
-        m.preview_generation = 1;
-        m.focus = Focus::List;
-        assert_eq!(due(&m, 1), None, "the list is a drawer over the reader");
-    }
-    {
-        let mut m = model.borrow_mut();
-        layout::toggle_key(&mut m, 40);
-    }
-    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
-    assert_eq!(model.borrow().focus, Focus::Reader, "a hidden list cannot keep the focus, so nothing previews");
+    let mut m = model.borrow_mut();
+    m.preview_generation = 1;
+    assert_eq!(due(&m, 1), None, "the reader page is not on screen while the list is");
 }

@@ -188,12 +188,13 @@ pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes:
     reset_scroll(m, ui, path);
 }
 
-/// Shows a binary file's notice. Focus stays on the list, as in Scouter.
+/// Shows a binary file's notice. Focus stays on the list, as in Scouter; the compact tier opens the reader page for the
+/// notice instead, since a list tap there would otherwise show nothing (plan-00005, D2).
 pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
     if !reveal(m, path, false) {
         return;
     }
-    m.focus = Focus::List;
+    m.focus = if m.compact() { Focus::Reader } else { Focus::List };
     m.shown = Shown::Binary { path: path.to_path_buf(), size };
     m.restore = None;
     m.search = None;

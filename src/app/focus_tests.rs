@@ -4,6 +4,7 @@ use fmc::explorer::{Entry, Kind};
 use opentui::testing::TestApp;
 
 use super::*;
+use crate::ui::tree::LIST_TOP;
 
 /// The panes, wired and painted, on a headless 80x24 screen with nothing open.
 fn panes() -> (TestApp, Rc<RefCell<Model>>) {

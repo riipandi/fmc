@@ -5,6 +5,7 @@ use opentui::testing::TestApp;
 
 use super::mouse::Click;
 use super::*;
+use crate::ui::tree::LIST_TOP;
 
 const DOWN: MouseEventKind = MouseEventKind::Down(MouseButton::Left);
 const DRAG: MouseEventKind = MouseEventKind::Drag(MouseButton::Left);

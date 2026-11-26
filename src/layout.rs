@@ -1,16 +1,13 @@
-//! Whether the sidebar shows (plan-00002, D1, D2, D7) and the layout tiers (architecture.md, "three layout tiers").
-//! With a document open, the sidebar hides below 80 columns; a manual choice holds until the width crosses 80 again, or
-//! a document opens or closes. The welcome screen keeps the sidebar from 60 columns up, and below 60 starts it hidden.
-//! An open finder always holds it, since the list is what it shows. Scouter always draws the sidebar.
+//! The layout tiers (architecture.md, "three layout tiers"), the sidebar's visibility in the medium and wide tiers
+//! (plan-00002, D1, D2, D7), and the compact tier's page stack (plan-00005, D2). With a document open, the sidebar hides
+//! below 80 columns; a manual choice holds until the width crosses 80 again, or a document opens or closes. The welcome
+//! screen and an open finder hold the sidebar. Scouter always draws the sidebar.
 
 /// The wide tier starts here: at 80 or more the layout is Scouter's, and a document hides the sidebar below it (D1).
 pub const BREAKPOINT: u16 = 80;
 
 /// The compact tier is below this many columns; the medium tier is from here up to `BREAKPOINT`.
 pub const COMPACT: u16 = 60;
-
-/// Below this many columns the welcome screen drops its key card and wraps its lines (plan-00004, P5).
-pub const NARROW_WELCOME: u16 = 50;
 
 /// The three layout tiers by width: each range has its own binding constraint (architecture.md, record 1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -31,9 +28,44 @@ pub fn tier(columns: u16) -> Tier {
     }
 }
 
-/// Whether a shown sidebar covers the whole terminal.
-pub fn is_drawer(columns: u16, shown: bool) -> bool {
-    shown && tier(columns) == Tier::Compact
+/// A screen of the compact tier (plan-00005, D2). `Files` is the bottom page and is never removed; the top page is the
+/// one on screen.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Page {
+    Files,
+    Reader,
+    Changes,
+    Keys,
+    Find,
+}
+
+/// The pages open, bottom first. Each page is kept while its screen is open, so a repaint never reorders the stack.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Pages(Vec<Page>);
+
+impl Default for Pages {
+    fn default() -> Self {
+        Self(vec![Page::Files])
+    }
+}
+
+impl Pages {
+    /// The page on screen.
+    pub fn top(&self) -> Page {
+        self.0.last().copied().unwrap_or(Page::Files)
+    }
+
+    /// Opens `page` on top when `open` holds and it is not open yet, and removes it when `open` does not hold.
+    pub fn sync(&mut self, page: Page, open: bool) {
+        if page == Page::Files {
+            return;
+        }
+        match (open, self.0.contains(&page)) {
+            (true, false) => self.0.push(page),
+            (false, true) => self.0.retain(|open| *open != page),
+            _ => {}
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -56,23 +88,12 @@ impl Visibility {
         self.last = Some((columns, document));
     }
 
-    /// Hides a shown sidebar until the width crosses the breakpoint or a document opens or closes.
-    pub fn close(&mut self) {
-        self.manual = Some(false);
-    }
-
+    /// Whether the sidebar shows in the medium and wide tiers. The welcome screen and an open finder keep it.
     pub fn shown(&self, columns: u16, document: bool, held: bool) -> bool {
-        if held || (!document && tier(columns) != Tier::Compact) {
+        if held || !document {
             return true;
         }
-        // Below the compact tier the welcome screen starts with its list hidden (amended, architecture.md); a document
-        // keeps the 80-column rule.
-        self.manual.unwrap_or(document && tier(columns) == Tier::Wide)
-    }
-
-    /// Whether the drawer covers the reader, as of the last width observed.
-    pub fn covers(&self, document: bool, held: bool) -> bool {
-        self.last.is_some_and(|(columns, _)| is_drawer(columns, self.shown(columns, document, held)))
+        self.manual.unwrap_or(tier(columns) == Tier::Wide)
     }
 
     /// Flips what shows now.

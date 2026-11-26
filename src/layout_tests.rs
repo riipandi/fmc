@@ -24,35 +24,11 @@ fn a_document_hides_the_sidebar_below_the_breakpoint_and_shows_it_at_the_breakpo
 }
 
 #[test]
-fn the_welcome_screen_keeps_the_sidebar_from_60_columns_and_starts_it_hidden_below() {
+fn the_welcome_screen_and_an_open_finder_hold_the_sidebar() {
     let mut v = Visibility::default();
-    v.observe(60, false);
-    assert!(v.shown(60, false, false));
-    v.observe(40, false);
-    assert!(!v.shown(40, false, false), "below 60 the welcome's list starts hidden");
-    assert!(v.shown(40, true, true), "a finder holds the sidebar with a document open");
-    assert!(v.shown(40, false, true), "and a finder holds it on the welcome screen");
-}
-
-#[test]
-fn a_manual_choice_shows_the_welcome_list_below_60_until_the_width_crosses() {
-    let mut v = Visibility::default();
-    v.observe(40, false);
-    v.toggle(40, false, false);
-    assert!(v.shown(40, false, false));
-    v.toggle(40, false, false);
-    assert!(!v.shown(40, false, false), "a second toggle hides it again");
-}
-
-#[test]
-fn the_drawer_covers_the_reader_only_while_the_list_shows_below_60() {
-    let mut v = Visibility::default();
-    v.observe(40, false);
-    assert!(!v.covers(false, false), "the welcome's list starts hidden");
-    v.toggle(40, false, false);
-    assert!(v.covers(false, false));
-    v.observe(60, false);
-    assert!(!v.covers(false, false), "at 60 columns the list sits beside the reader");
+    v.observe(70, false);
+    assert!(v.shown(70, false, false));
+    assert!(v.shown(70, true, true), "a finder holds the sidebar with a document open");
 }
 
 #[test]
@@ -78,16 +54,14 @@ fn crossing_the_breakpoint_returns_to_automatic() {
 #[test]
 fn opening_and_closing_a_document_returns_to_automatic() {
     let mut v = Visibility::default();
-    v.observe(60, false);
-    v.toggle(60, false, false);
-    v.observe(60, true);
-    assert!(!v.shown(60, true, false), "a document opening applies the 80-column rule");
-    v.toggle(60, true, false);
-    assert!(v.shown(60, true, false));
-    v.observe(60, false);
-    assert!(v.shown(60, false, false), "closing the document brings the list back");
-    v.observe(60, true);
-    assert!(!v.shown(60, true, false));
+    v.observe(70, false);
+    v.toggle(70, false, false);
+    v.observe(70, true);
+    assert!(!v.shown(70, true, false), "a document opening applies the 80-column rule");
+    v.toggle(70, true, false);
+    assert!(v.shown(70, true, false));
+    v.observe(70, false);
+    assert!(v.shown(70, false, false), "closing the document brings the list back");
 }
 
 #[test]
@@ -100,19 +74,28 @@ fn a_manual_show_below_the_breakpoint_holds_while_the_width_stays_under_it() {
 }
 
 #[test]
-fn a_shown_sidebar_covers_the_reader_only_below_the_drawer_breakpoint() {
-    assert!(is_drawer(59, true));
-    assert!(!is_drawer(60, true));
-    assert!(!is_drawer(40, false), "a hidden sidebar covers nothing");
+fn a_page_opens_on_top_and_closes_out_of_the_stack() {
+    let mut pages = Pages::default();
+    assert_eq!(pages.top(), Page::Files);
+    pages.sync(Page::Changes, true);
+    pages.sync(Page::Reader, true);
+    assert_eq!(pages.top(), Page::Reader);
+    pages.sync(Page::Reader, false);
+    assert_eq!(pages.top(), Page::Changes, "Back returns to the page below");
 }
 
 #[test]
-fn closing_a_drawer_holds_until_the_next_crossing() {
-    let mut v = Visibility::default();
-    v.observe(40, true);
-    v.toggle(40, true, false);
-    v.close();
-    assert!(!v.shown(40, true, false));
-    v.observe(41, true);
-    assert!(!v.shown(41, true, false), "a resize that does not cross keeps it closed");
+fn a_page_already_open_keeps_its_place() {
+    let mut pages = Pages::default();
+    pages.sync(Page::Find, true);
+    pages.sync(Page::Keys, true);
+    pages.sync(Page::Find, true);
+    assert_eq!(pages.top(), Page::Keys, "a repaint does not reorder the stack");
+}
+
+#[test]
+fn files_is_the_bottom_page_and_is_never_removed() {
+    let mut pages = Pages::default();
+    pages.sync(Page::Files, false);
+    assert_eq!(pages.top(), Page::Files);
 }

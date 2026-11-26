@@ -11,7 +11,7 @@ use fmc::keys::Focus;
 use opentui::prelude::*;
 
 use super::reader::{self, Shown};
-use super::{Model, Ui, layout, tree};
+use super::{Model, Ui, tree};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -37,7 +37,7 @@ pub fn moved(app: &App, model: &Rc<RefCell<Model>>) {
 
 /// The file a preview of `generation` should read now: it is still the newest move, the list still has the focus, the
 /// selection is a file, and the reader does not show it yet.
-fn due(m: &Model, generation: u64) -> Option<std::path::PathBuf> {
+pub(super) fn due(m: &Model, generation: u64) -> Option<std::path::PathBuf> {
     if generation != m.preview_generation || !wanted(m) {
         return None;
     }
@@ -50,7 +50,7 @@ fn due(m: &Model, generation: u64) -> Option<std::path::PathBuf> {
 /// screen is open (the finder previews its own hits, and the changes screen shows its diffs), and the drawer does not
 /// cover the reader (a preview would close the drawer, and the reader is not visible).
 fn wanted(m: &Model) -> bool {
-    m.auto_preview && m.focus == Focus::List && m.finder.is_none() && m.changes.is_none() && !layout::covered(m)
+    m.auto_preview && m.focus == Focus::List && m.finder.is_none() && m.changes.is_none() && !m.compact()
 }
 
 fn shown_path(m: &Model) -> Option<&Path> {

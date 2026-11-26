@@ -20,7 +20,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     // A press from another pane only focuses the list; the next click selects the row.
                     let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
-                    pressed = line_at(event.y, LIST_TOP, m.browser.height())
+                    pressed = line_at(event.y, list_top(m.compact()), m.browser.height())
                         .and_then(|line| m.browser.row_at(line))
                         .filter(|_| focused);
                 }
@@ -54,14 +54,13 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     // focus handler is further up the path).
                     let focused = m.focus == Focus::List;
                     m.focus = Focus::List;
-                    let line = line_at(event.y, LIST_TOP, m.change_list.height());
+                    let line = line_at(event.y, list_top(m.compact()), m.change_list.height());
                     pressed = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line));
                     cx.stop_propagation();
                 }
                 MouseEventKind::Up(MouseButton::Left) => {
                     if let Some(index) = pressed.take().filter(|_| done) {
                         changes::click_row(&mut m, index);
-                        layout::close_drawer(&mut m, cx.app().size().0);
                     }
                     cx.stop_propagation();
                 }
@@ -185,9 +184,9 @@ fn act_on_row(m: &mut Model, index: usize, columns: u16) {
     // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
     if m.finder.is_some() {
         find::pick(m);
-    } else if tree::is_file(m, m.browser.selected()) && layout::drawer(m, columns) {
-        // Under a drawer a tap on a file opens it, as Enter does: the reader takes the focus, and the drawer closes. A
-        // preview would not show it, since the focus leaves the list.
+    } else if tree::is_file(m, m.browser.selected()) && tier(columns) == Tier::Compact {
+        // In compact a tap on a file opens it, as Enter does: the reader page takes the focus. A preview would not show
+        // it, since the list is not on screen once the reader is.
         tree::activate(m);
     } else {
         tree::click(m);

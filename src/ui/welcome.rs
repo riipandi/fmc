@@ -28,40 +28,25 @@ fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
 }
 
 const PROMPT: &str = "Select a file and press Enter.";
-/// The prompt while the list is hidden below 80 columns: it names the menu button (plan-00004, amended).
-const MENU_PROMPT: &str = "Tap ≡ to browse files.";
 
-/// The welcome screen: its key card, and its lines, which wrap below `NARROW_WELCOME` columns.
+/// The welcome screen: its key card, its prompt, and its closing lines. The compact tier has no welcome screen.
 pub struct Welcome {
     pub root: View,
-    card: View,
     prompt: Text,
     /// The closing line in one row, and the same line broken at its ` · ` below 80 columns (plan-00004, P5, amended).
     closing: Text,
     closing_parts: [Text; 2],
-    tagline: Text,
 }
 
 impl Welcome {
-    /// Fits the welcome to `columns`. Below `NARROW_WELCOME` it drops the card and wraps its lines instead of cutting
-    /// them (plan-00004, P5); at 50 columns and wider each line keeps one row, as Scouter draws it. `menu` is whether the
-    /// list is hidden below 80 columns, which swaps the prompt for the menu's.
-    pub fn fit(&self, columns: u16, menu: bool, p: &Palette) {
-        let narrow = columns < fmc::layout::NARROW_WELCOME;
+    /// Fits the welcome to `columns`: below 80 the closing line breaks at its separator.
+    pub fn fit(&self, columns: u16, p: &Palette) {
         let phone = fmc::layout::tier(columns) != fmc::layout::Tier::Wide;
-        self.card.visible(!narrow);
         self.closing.visible(!phone);
         for part in &self.closing_parts {
             part.visible(phone);
         }
-        let prompt = if menu { MENU_PROMPT } else { PROMPT };
-        self.prompt.set_text(content(&[Seg::new(prompt, p.accent_soft)], p.text));
-        let (wrap, height) = if narrow { (WrapMode::Word, Length::Auto) } else { (WrapMode::None, Length::Cells(1.0)) };
-        let lines = [&self.tagline, &self.prompt, &self.closing].into_iter().chain(&self.closing_parts);
-        for line in lines {
-            line.wrap(wrap);
-            line.height(height);
-        }
+        self.prompt.set_text(content(&[Seg::new(PROMPT, p.accent_soft)], p.text));
     }
 }
 
@@ -112,5 +97,5 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
         line(app, &[Seg::new("No editing. Just reading.", p.dim)], p, 0),
     ];
     view.add(&closing).add(&parts[0]).add(&parts[1]);
-    Welcome { root: view, card, prompt, closing, closing_parts: parts, tagline }
+    Welcome { root: view, prompt, closing, closing_parts: parts }
 }

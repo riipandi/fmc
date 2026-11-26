@@ -57,6 +57,8 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
     match action {
         Action::Quit => return cx.quit(),
         Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
+        // In compact `q` goes back a page; the list page at the root has nothing to go back to (plan-00005, record 11).
+        Action::Close if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
         // `q` on the changes screen goes back to browsing, as `d` does (architecture.md, approved deviation).
         Action::Close if body => changes::leave(&mut m),
         Action::Close => reader::close(&mut m, &ui.borrow()),
@@ -81,6 +83,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
         Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
         Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
+        Action::Escape if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
         Action::SwitchPane | Action::Escape => m.focus = Focus::List,
         Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
         Action::ToggleSidebar => layout::toggle_key(&mut m, cx.app().size().0),

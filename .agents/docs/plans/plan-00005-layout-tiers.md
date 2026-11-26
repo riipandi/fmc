@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T03:30:39+07:00
+updated: 2026-11-27T03:43:04+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
@@ -9,8 +9,8 @@ phases:
       note: "`layout::tier` (Compact, Medium, Wide) with tests at 39, 59, 60, 79, 80; every width caller asks it (`DRAWER` renamed `COMPACT`). Row presses act on release through the shared `Click` tracker (renamed from `HeaderClick`); tests drive the list through TestApp (click, drag, swipe back to its cell, release off the row). 328 tests. Agent decisions in architecture.md (plan-00005 list)."
     - id: 2
       title: "Compact navigation stack: Files and Reader pages, no border, start on Files"
-      status: pending
-      note: —
+      status: done
+      note: "`fmc::layout::Pages` (Files, Reader, Changes, Keys, Find) in the core, kept by `app/pages.rs` `sync` at each paint; compact draws the top page full width, has no panel border, one-row headers, no welcome, no preview. `q`, `Esc`, and Back (`pages::back`) pop; Tab and Ctrl+/ switch list and reader. Drawer code removed. Captures at 60, 70, and 80 columns are byte-identical to 166051c (10 steps each); 40 columns checked live (Files, Reader, q, Esc, Find, Keys, Changes, diff). 331 tests. Agent decisions in architecture.md (plan-00005 list)."
     - id: 3
       title: "Compact top bar and bottom bar"
       status: pending
