@@ -11,7 +11,7 @@ use fmc::keys::Focus;
 use opentui::prelude::*;
 
 use super::reader::{self, Shown};
-use super::{Model, Ui, tree};
+use super::{Model, Ui, layout, tree};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -46,10 +46,11 @@ fn due(m: &Model, generation: u64) -> Option<std::path::PathBuf> {
     (file && shown_path(m) != Some(path)).then(|| path.to_path_buf())
 }
 
-/// Whether a preview may change the reader now: auto-preview is on, the list has the focus, and no finder or changes
-/// screen is open (the finder previews its own hits, and the changes screen shows its diffs).
+/// Whether a preview may change the reader now: auto-preview is on, the list has the focus, no finder or changes
+/// screen is open (the finder previews its own hits, and the changes screen shows its diffs), and the drawer does not
+/// cover the reader (a preview would close the drawer, and the reader is not visible).
 fn wanted(m: &Model) -> bool {
-    m.auto_preview && m.focus == Focus::List && m.finder.is_none() && m.changes.is_none()
+    m.auto_preview && m.focus == Focus::List && m.finder.is_none() && m.changes.is_none() && !layout::covered(m)
 }
 
 fn shown_path(m: &Model) -> Option<&Path> {

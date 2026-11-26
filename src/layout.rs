@@ -1,6 +1,7 @@
 //! Whether the sidebar shows (plan-00002, D1, D2, D7). With a document open, the sidebar hides below 80 columns; a
-//! manual choice holds until the width crosses 80 again, or a document opens or closes. The welcome screen and an open
-//! finder always hold it, since the list is what they show. Scouter always draws the sidebar.
+//! manual choice holds until the width crosses 80 again, or a document opens or closes. The welcome screen keeps the
+//! sidebar from 60 columns up, and below 60 starts it hidden. An open finder always holds it, since the list is what it
+//! shows. Scouter always draws the sidebar.
 
 /// Below this many columns a document hides the sidebar (D1): at 80 or more the layout is Scouter's.
 pub const BREAKPOINT: u16 = 80;
@@ -40,10 +41,17 @@ impl Visibility {
     }
 
     pub fn shown(&self, columns: u16, document: bool, held: bool) -> bool {
-        if !document || held {
+        if held || (!document && columns >= DRAWER) {
             return true;
         }
-        self.manual.unwrap_or(columns >= BREAKPOINT)
+        // Below `DRAWER` the welcome screen starts with its list hidden (amended, architecture.md); a document keeps
+        // the 80-column rule.
+        self.manual.unwrap_or(document && columns >= BREAKPOINT)
+    }
+
+    /// Whether the drawer covers the reader, as of the last width observed.
+    pub fn covers(&self, document: bool, held: bool) -> bool {
+        self.last.is_some_and(|(columns, _)| is_drawer(columns, self.shown(columns, document, held)))
     }
 
     /// Flips what shows now.

@@ -9,9 +9,14 @@ use opentui::testing::TestApp;
 use super::super::{Model, Ui, build, new_model, paint};
 use super::*;
 
-/// A model browsing `/hogwarts`: two files and a folder, with `owls.txt` selected.
+/// A model browsing `/hogwarts`: two files and a folder, with `owls.txt` selected, on an 80-column screen.
 fn browsing() -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
-    let app = TestApp::new(80, 24);
+    browsing_at(80)
+}
+
+/// The same browsing on a screen `columns` wide.
+fn browsing_at(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
+    let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
@@ -110,4 +115,26 @@ fn p_turns_auto_preview_off_and_on_and_says_so() {
     }
     toggle(&mut model.borrow_mut());
     assert!(model.borrow().auto_preview);
+}
+
+#[test]
+fn a_drawer_over_the_reader_holds_the_preview_until_it_hides() {
+    let (app, model, ui) = browsing_at(40);
+    {
+        let mut m = model.borrow_mut();
+        layout::toggle_key(&mut m, 40);
+    }
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    {
+        let mut m = model.borrow_mut();
+        m.preview_generation = 1;
+        m.focus = Focus::List;
+        assert_eq!(due(&m, 1), None, "the list is a drawer over the reader");
+    }
+    {
+        let mut m = model.borrow_mut();
+        layout::toggle_key(&mut m, 40);
+    }
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    assert_eq!(model.borrow().focus, Focus::Reader, "a hidden list cannot keep the focus, so nothing previews");
 }

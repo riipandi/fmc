@@ -118,13 +118,14 @@ fn a_drawer_covers_the_reader_until_the_focus_reaches_the_reader() {
 }
 
 #[test]
-fn the_welcome_screen_is_a_full_width_drawer_below_60_columns() {
-    let (_narrow_app, narrow, _) = panes(40);
-    assert!(layout::drawer(&narrow.borrow(), 40));
-    assert_eq!(layout::width(&narrow.borrow(), 40), 40);
-    let (_wide_app, wide, _) = panes(60);
-    assert!(!layout::drawer(&wide.borrow(), 60));
-    assert_eq!(layout::width(&wide.borrow(), 60), 28);
+fn the_welcome_shows_its_text_full_width_and_its_list_as_a_drawer_below_60() {
+    let (app, model, _) = panes(40);
+    assert!(!layout::drawer(&model.borrow(), 40), "the list starts hidden");
+    assert_eq!(layout::width(&model.borrow(), 40), 0);
+    app.click(20, 1);
+    assert!(layout::drawer(&model.borrow(), 40), "a header tap opens the list as the drawer");
+    app.click(5, 1);
+    assert!(!layout::drawer(&model.borrow(), 40), "a second tap hides it");
 }
 
 #[test]

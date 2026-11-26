@@ -96,7 +96,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
 | `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 
-A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it.
+A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it. While the drawer covers the reader, moving through the list does not preview a file; Enter or a tap on a file opens it. On the welcome screen below 60 columns the text shows full width and the list starts hidden: a tap on the reader's header row opens the list as the drawer, and a second tap on the list's header row hides it.
 
 Below 80 columns the footer keeps the keys that leave the current state first (`Copy` while text is selected, `Esc`, `^/`, `q`), then `?`, `/`, `d`, `Enter`, and `Tab`, and a row that is too short drops the rest from its end. At 80 columns and wider the footer keeps Scouter's order.
 

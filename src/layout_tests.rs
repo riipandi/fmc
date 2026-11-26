@@ -10,11 +10,35 @@ fn a_document_hides_the_sidebar_below_the_breakpoint_and_shows_it_at_the_breakpo
 }
 
 #[test]
-fn the_welcome_screen_and_an_open_finder_hold_the_sidebar_at_any_width() {
+fn the_welcome_screen_keeps_the_sidebar_from_60_columns_and_starts_it_hidden_below() {
+    let mut v = Visibility::default();
+    v.observe(60, false);
+    assert!(v.shown(60, false, false));
+    v.observe(40, false);
+    assert!(!v.shown(40, false, false), "below 60 the welcome's list starts hidden");
+    assert!(v.shown(40, true, true), "a finder holds the sidebar with a document open");
+    assert!(v.shown(40, false, true), "and a finder holds it on the welcome screen");
+}
+
+#[test]
+fn a_manual_choice_shows_the_welcome_list_below_60_until_the_width_crosses() {
     let mut v = Visibility::default();
     v.observe(40, false);
+    v.toggle(40, false, false);
     assert!(v.shown(40, false, false));
-    assert!(v.shown(40, true, true), "a finder holds the sidebar with a document open");
+    v.toggle(40, false, false);
+    assert!(!v.shown(40, false, false), "a second toggle hides it again");
+}
+
+#[test]
+fn the_drawer_covers_the_reader_only_while_the_list_shows_below_60() {
+    let mut v = Visibility::default();
+    v.observe(40, false);
+    assert!(!v.covers(false, false), "the welcome's list starts hidden");
+    v.toggle(40, false, false);
+    assert!(v.covers(false, false));
+    v.observe(60, false);
+    assert!(!v.covers(false, false), "at 60 columns the list sits beside the reader");
 }
 
 #[test]

@@ -22,9 +22,15 @@ fn held(m: &Model) -> bool {
     m.finder.is_some()
 }
 
-/// The mark is drawn and the toggle works only where the list can hide (D7).
-fn can_hide(m: &Model) -> bool {
-    document(m) && !held(m)
+/// The mark is drawn and the toggle works only where the list can hide: with a document, and on the welcome screen
+/// below `DRAWER` columns, where its list starts hidden (D7, amended).
+fn can_hide(m: &Model, columns: u16) -> bool {
+    !held(m) && (document(m) || columns < fmc::layout::DRAWER)
+}
+
+/// Whether the drawer covers the reader as of the last paint, so auto-preview waits (architecture.md, amended).
+pub fn covered(m: &Model) -> bool {
+    m.visibility.covers(document(m), held(m))
 }
 
 pub fn shown(m: &Model, columns: u16) -> bool {
@@ -69,7 +75,7 @@ pub fn sync(m: &mut Model, columns: u16) {
 /// `Ctrl+/`, `Ctrl+_`, or a click on the mark: showing the sidebar also focuses it (architecture.md, "Auto-preview in
 /// the sidebar").
 pub fn toggle_key(m: &mut Model, columns: u16) {
-    if !can_hide(m) {
+    if !can_hide(m, columns) {
         return;
     }
     let hidden = !shown(m, columns);
@@ -110,7 +116,7 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     ui.viewer_panel.visible(!covered);
     ui.handle.visible(visible && !covered);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
-    ui.mark.root.visible(can_hide(m));
+    ui.mark.root.visible(can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
     width
 }
