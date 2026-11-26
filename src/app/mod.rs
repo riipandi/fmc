@@ -4,6 +4,7 @@
 mod changes;
 mod find;
 mod keys;
+mod layout;
 mod poll;
 mod reader;
 mod scroll;
@@ -35,10 +36,11 @@ use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
+use crate::ui::sidebar::Mark;
 use crate::ui::styled::color;
 use crate::ui::tree::{LIST_TOP, TreeView, line_at};
 use crate::ui::viewer::Viewer;
-use crate::ui::{sidebar, syntax, welcome};
+use crate::ui::{syntax, welcome};
 
 /// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2).
 const LIST_CHROME_ROWS: usize = 6;
@@ -50,6 +52,7 @@ struct Ui {
     changes: ChangesView,
     find: FindBar,
     handle: View,
+    mark: Mark,
     viewer_panel: View,
     viewer_header: PaneHeader,
     welcome: View,
@@ -122,6 +125,8 @@ struct Model {
     find_session: u64,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
     sidebar: Option<i64>,
+    /// Whether the sidebar shows: the 80-column rule and the user's choice (`fmc::layout`).
+    visibility: fmc::layout::Visibility,
     /// The changes list, kept between visits (Scouter's `ChangeList`).
     change_list: ChangeList,
     /// The changes screen, while it shows.
@@ -201,6 +206,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         notice: None,
         message: None,
         sidebar: None,
+        visibility: Default::default(),
         drag: None,
         change_list: ChangeList::default(),
         changes: None,
@@ -332,7 +338,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
                 Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
-                Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
+                Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
+                Action::ToggleSidebar => layout::toggle(&mut m, cx.app().size().0),
                 // The changes body has no Markdown view of its own: `m` is for the reader's document.
                 Action::ToggleMarkdown if !body => {
                     reader::toggle_markdown(&mut m);
@@ -543,34 +550,7 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         );
     }
 
-    let handle = ui.borrow().handle.clone();
-    handle.on_hover({
-        let (model, ui) = (model.clone(), ui.clone());
-        move |_, hovered| {
-            let p = model.borrow().palette();
-            let edge = if hovered { color(p.accent_soft) } else { Color::TRANSPARENT };
-            ui.borrow().handle.border_color(edge);
-        }
-    });
-    handle.on_mouse({
-        let (model, ui) = (model.clone(), ui.clone());
-        move |cx, event| {
-            let mut m = model.borrow_mut();
-            match event.kind {
-                MouseEventKind::Down(MouseButton::Left) => {
-                    let width = sidebar::fit(cx.app().size().0, m.sidebar);
-                    m.drag = Some((event.x, width));
-                }
-                MouseEventKind::Drag(MouseButton::Left) => {
-                    let Some((start_x, start_width)) = m.drag else { return };
-                    m.sidebar = Some(sidebar::dragged(start_width, start_x, event.x));
-                }
-                MouseEventKind::Up(MouseButton::Left) => m.drag = None,
-                _ => return,
-            }
-            paint(cx.app(), &mut m, &mut ui.borrow_mut());
-        }
-    });
+    layout::wire(model, ui);
 }
 
 /// Focuses `pane` on a left press anywhere in `panel`.
@@ -678,14 +658,7 @@ fn clear_message_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
 /// The columns the reader's pane takes, which the stacked body fills and `s` measures (Scouter `this.body.width`).
 fn pane_columns(app: &App, m: &Model) -> u32 {
     let columns = app.size().0;
-    u32::from(columns.saturating_sub(sidebar::fit(columns, m.sidebar) + 3))
-}
-
-/// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`).
-fn resize_sidebar(m: &mut Model, app: &App, step: i8) {
-    let columns = app.size().0;
-    let width = i64::from(sidebar::fit(columns, m.sidebar)) + 2 * i64::from(step);
-    m.sidebar = Some(i64::from(sidebar::constrain(columns, width)));
+    u32::from(columns.saturating_sub(layout::width(m, columns) + 3))
 }
 
 fn build(app: &App, p: &Palette) -> Ui {
@@ -696,15 +669,8 @@ fn build(app: &App, p: &Palette) -> Ui {
     let tree = TreeView::new(app);
     let changes_list = ChangesView::new(app);
     let finder_bar = FindBar::new(app);
-    // The sidebar's right edge: a one-column strip over the panel's border, between its top and bottom rows.
-    let handle = View::new(app)
-        .absolute()
-        .width(1)
-        .position(Edge::Top, 1)
-        .position(Edge::Bottom, 1)
-        .border_sides(Sides::LEFT)
-        .border_color(Color::TRANSPARENT)
-        .mouse_pointer(MousePointer::EW_RESIZE);
+    let handle = layout::handle(app);
+    let mark = Mark::new(app);
     let viewer_panel = View::new(app).grow(1.0).min_width(0).column().border(BorderStyle::Rounded);
     let viewer_header = PaneHeader::new(app);
     let welcome = welcome::welcome(app, p);
@@ -728,7 +694,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     stack.add(&welcome).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget()).add(&diff.root);
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
-    panes.add(&browser_panel).add(&viewer_panel).add(&handle);
+    panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
     layout.add(&panes).add(&footer.root);
     app.root().add(&layout);
     Ui {
@@ -738,6 +704,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         changes: changes_list,
         find: finder_bar,
         handle,
+        mark,
         viewer_panel,
         viewer_header,
         welcome,
@@ -778,9 +745,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     let tint = m.tint();
 
-    let width = sidebar::fit(columns, m.sidebar);
-    ui.browser_panel.width(width);
-    ui.handle.position(Edge::Left, width.saturating_sub(1));
+    layout::sync(m, columns);
+    let width = layout::lay_out(ui, m, columns, p);
     let focused = |pane: Focus| color(if m.focus == pane { p.accent } else { p.border });
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));
@@ -941,6 +907,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         positions: if body { [None, position] } else { [position, None] },
         wrap: m.wrap,
         pending: m.parser.pending_count(),
+        sidebar_hidden: !layout::shown(m, columns),
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
@@ -949,3 +916,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 #[cfg(test)]
 #[path = "focus_tests.rs"]
 mod focus_tests;
+
+#[cfg(test)]
+#[path = "layout_tests.rs"]
+mod layout_tests;

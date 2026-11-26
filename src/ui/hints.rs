@@ -63,6 +63,14 @@ pub struct Shown {
     pub image: bool,
     /// Something is open, so `q` closes it; the welcome screen has nothing to close.
     pub open: bool,
+    /// The sidebar is hidden: `Tab` cannot reach it, and `Ctrl+/` shows it (plan-00002, D8).
+    pub sidebar_hidden: bool,
+}
+
+/// The pane-switch hint: `Tab` moves to the sidebar while it shows. While it is hidden, `Tab` cannot reach it, so the
+/// slot names the key that shows it. The slot sits early in the list, where it fits at 80 columns.
+fn switch_hint(shown: Shown) -> Hint {
+    if shown.sidebar_hidden { ("^/", "sidebar") } else { ("Tab", "files") }
 }
 
 pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Shown) -> Vec<Hint> {
@@ -89,19 +97,19 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
                 ("o", "open file"),
                 ("s", "split"),
                 other,
-                ("Tab", "files"),
                 ("c", "fold"),
                 ("x", "context"),
                 ("y", "copy"),
                 ("w", "wrap"),
             ];
+            hints.push(switch_hint(shown));
             hints.extend_from_slice(pan);
             hints.extend([("gg G", "top/bottom"), ("^d ^u", "page"), ("d", "back"), ("?", "help"), ("^q", "quit")]);
             hints
         };
     }
     if shown.image && pane != Pane::Files {
-        return vec![("Tab", "files"), ("d", "changes"), ("^q", "quit")];
+        return vec![switch_hint(shown), ("d", "changes"), ("^q", "quit")];
     }
     if pane == Pane::Files {
         return vec![
@@ -132,7 +140,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     if !rendered {
         hints.push(("{ }", "paragraph"));
     }
-    hints.extend([("z z", "centre"), ("^d ^u", "page"), ("Tab", "files")]);
+    hints.extend([("z z", "centre"), ("^d ^u", "page"), switch_hint(shown)]);
     if let Some(rendered) = shown.markdown {
         hints.push(("m", if rendered { "source" } else { "preview" }));
     }

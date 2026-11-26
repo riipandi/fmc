@@ -141,3 +141,17 @@ fn the_diff_offers_the_other_scope_on_a() {
     let all_files = hints_for(Mode::Diff, Pane::Reader, false, true, Shown::default());
     assert!(all_files.contains(&("a", "one file")), "{all_files:?}");
 }
+
+#[test]
+fn a_hidden_sidebar_names_its_key_and_drops_tab_to_the_files() {
+    use crate::ui::hints::{Mode, Pane, Shown, hints_for};
+    let hidden = Shown { sidebar_hidden: true, open: true, ..Shown::default() };
+    for mode in [Mode::Browse, Mode::Diff] {
+        let hints = hints_for(mode, Pane::Reader, false, true, hidden);
+        assert!(hints.contains(&("^/", "sidebar")), "{mode:?}: {hints:?}");
+        assert!(!hints.contains(&("Tab", "files")), "{mode:?}: Tab cannot reach a hidden sidebar: {hints:?}");
+        let shown = hints_for(mode, Pane::Reader, false, true, Shown { sidebar_hidden: false, ..hidden });
+        assert!(!shown.contains(&("^/", "sidebar")), "{mode:?}: the footer at 80 columns keeps its hints: {shown:?}");
+        assert!(shown.contains(&("Tab", "files")), "{mode:?}: {shown:?}");
+    }
+}

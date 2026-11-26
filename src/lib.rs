@@ -5,6 +5,7 @@ pub mod diff;
 pub mod explorer;
 pub mod find;
 pub mod keys;
+pub mod layout;
 pub mod reader;
 pub mod text;
 pub mod theme;

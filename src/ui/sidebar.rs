@@ -1,8 +1,34 @@
 //! The sidebar width (Scouter `src/explorer/sidebar-resizer.ts`): a quarter of the terminal within 28..=40
-//! columns, never below 24 or so wide that the reader gets fewer than 28.
+//! columns, never below 24 or so wide that the reader gets fewer than 28. The mark that shows and hides it (plan-00002).
+
+use fmc::theme::Palette;
+use opentui::prelude::*;
+
+use super::styled::{Seg, content};
 
 const MIN_SIDEBAR_COLUMNS: i64 = 24;
 const MIN_READER_COLUMNS: i64 = 28;
+
+/// The one-cell mark on the top border row: `«` on the sidebar's border while it shows, `»` on the reader's corner
+/// while it is hidden (plan-00002, D8). It is a child of the row, above the borders, so its press is its own.
+pub struct Mark {
+    pub root: View,
+    glyph: Text,
+}
+
+impl Mark {
+    pub fn new(app: &App) -> Self {
+        let root = View::new(app).absolute().width(1).height(1).position(Edge::Top, 0);
+        let glyph = Text::new(app, "").height(1).wrap(WrapMode::None).selectable(false);
+        root.add(&glyph);
+        Self { root, glyph }
+    }
+
+    pub fn paint(&self, shown: bool, column: u16, p: &Palette) {
+        self.root.position(Edge::Left, column);
+        self.glyph.set_text(content(&[Seg::new(if shown { "«" } else { "»" }, p.dim)], p.text));
+    }
+}
 
 pub fn constrain(terminal: u16, width: i64) -> u16 {
     let maximum = (i64::from(terminal) - MIN_READER_COLUMNS).max(1);

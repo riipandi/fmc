@@ -31,6 +31,8 @@ pub enum Action {
     Help,
     /// `q`: closes the open document or the key page (architecture.md, approved deviation).
     Close,
+    /// `Ctrl+/` (and `Ctrl+_`, the legacy `0x1F`): shows or hides the sidebar (plan-00002).
+    ToggleSidebar,
     SwitchPane,
     Escape,
     /// Narrower (-1) or wider (1) list, by two columns.
@@ -128,6 +130,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Esc", "clear selection or search, or back to the file list"),
             ("q", "close the open document or key list; back from the changes"),
             ("?", "this key list; ? or Esc closes it"),
+            ("Ctrl+/", "show / hide the sidebar"),
             ("^q ^c", "quit"),
         ],
     ),
@@ -139,6 +142,7 @@ pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Drag text", "select; y copies it"),
     ("Wheel", "scroll the pane under the pointer"),
     ("Drag edge", "resize the list"),
+    ("Click «»", "show / hide the sidebar, from its mark"),
 ];
 
 /// The Keys page (`?`): a Markdown table per section, Mouse last, from the same rows as `--help`.

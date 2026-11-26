@@ -108,7 +108,7 @@ The terminal font is the user's. Emphasis is bold and colour; comments are itali
 
 A column: a row of two panels that fills the screen, then the footer.
 
-- **Sidebar** (left): the file tree, or the change list on the changes screen. Width `min(40, max(28, 25% of the terminal))`; at least 24 columns, and the reader keeps at least 28. A width the user sets is kept for the session.
+- **Sidebar** (left): the file tree, or the change list on the changes screen. Width `min(40, max(28, 25% of the terminal))`; at least 24 columns, and the reader keeps at least 28. A width the user sets is kept for the session. Below 80 columns it hides while a document is open, and `Ctrl+/` or the mark on its border shows it (`docs/parity.md`, Layout).
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
 - **Panels**: rounded borders; the focused panel border is accent, the other is `border`.
 - **Header**: two rows at the top of each panel, with a hairline under it.

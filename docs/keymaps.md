@@ -67,6 +67,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Esc` | clear selection or search, or back to the file list |
 | `q` | close the open document or key list; back from the changes |
 | `?` | this key list; ? or Esc closes it |
+| `Ctrl+/` | show / hide the sidebar |
 | `^q` `^c` | quit |
 
 ## Mouse
@@ -78,5 +79,6 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Drag` `text` | select; y copies it |
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |
+| `Click` `«»` | show / hide the sidebar, from its mark |
 
 Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.

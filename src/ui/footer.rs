@@ -52,6 +52,8 @@ pub struct FooterState {
     pub positions: [Option<String>; 2],
     pub wrap: bool,
     pub pending: Option<u32>,
+    /// The sidebar is hidden, which the hints name (`Shown::sidebar_hidden`).
+    pub sidebar_hidden: bool,
 }
 
 impl Default for FooterState {
@@ -67,6 +69,7 @@ impl Default for FooterState {
             positions: [None, None],
             wrap: false,
             pending: None,
+            sidebar_hidden: false,
         }
     }
 }
@@ -215,10 +218,13 @@ impl FooterState {
             None => {
                 let all_files = self.diff.as_ref().is_none_or(|d| d.all_files);
                 let open = self.document.is_some();
+                let sidebar_hidden = self.sidebar_hidden;
                 let shown = match &self.document {
-                    Some(DocumentInfo::Text { rendered, .. }) => Shown { markdown: *rendered, image: false, open },
-                    Some(DocumentInfo::Image { .. }) => Shown { markdown: None, image: true, open },
-                    _ => Shown { open, ..Shown::default() },
+                    Some(DocumentInfo::Text { rendered, .. }) => {
+                        Shown { markdown: *rendered, image: false, open, sidebar_hidden }
+                    }
+                    Some(DocumentInfo::Image { .. }) => Shown { markdown: None, image: true, open, sidebar_hidden },
+                    _ => Shown { open, sidebar_hidden, ..Shown::default() },
                 };
                 hints_for(self.mode, self.pane, self.wrap, all_files, shown)
             }

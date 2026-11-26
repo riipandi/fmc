@@ -154,6 +154,8 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
             "left" => return Some(Action::Resize(-1)),
             "right" => return Some(Action::Resize(1)),
             "o" if !state.typing => return Some(Action::JumpBack),
+            // `Ctrl+_` is the legacy `0x1F` (phase 1 note); a prompt takes the key as nothing (plan-00002).
+            "/" | "_" if !state.typing => return Some(Action::ToggleSidebar),
             _ => {}
         }
     }

@@ -21,7 +21,7 @@ fn help_prints_usage_and_every_key() {
     let text = String::from_utf8(out).unwrap();
     assert!(text.starts_with("fmc — a minimal read-only terminal file viewer\n\nUsage: fmc [file-or-directory]\n"));
     assert!(text.contains("\nBrowse\n  j k ↑ ↓        move\n"));
-    assert!(text.ends_with("Mouse\n  Left click     open a file or toggle a folder\n  Click          focus the pane under the pointer\n  Drag text      select; y copies it\n  Wheel          scroll the pane under the pointer\n  Drag edge      resize the list\n\n"));
+    assert!(text.ends_with("Mouse\n  Left click     open a file or toggle a folder\n  Click          focus the pane under the pointer\n  Drag text      select; y copies it\n  Wheel          scroll the pane under the pointer\n  Drag edge      resize the list\n  Click «»       show / hide the sidebar, from its mark\n\n"));
 }
 
 #[test]
