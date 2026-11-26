@@ -35,6 +35,10 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - After a change that moves the diff (folding with `c`, reloading with `r`), the footer and the scrollbar show the new position at once. Scouter can show the old values until you scroll.
 - After switching between one file and all files (`a`) or changing the context (`x`), the selected file stays at the top. Scouter can land elsewhere.
 
+## Reader
+
+- Line numbers stay in place when you scroll sideways. In Scouter they scroll away with the text.
+
 ## Copying text
 
 - Dragging the mouse across text selects it and keeps the selection on screen. Nothing is copied until you press `y`. Press `Esc` to clear the selection. With no selection, `y` copies the path, as in Scouter.

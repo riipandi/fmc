@@ -683,3 +683,16 @@ Consequences:
 
 - (positive) Scrolling by touch no longer folds files by accident.
 - (negative) A click folds on release instead of on press, a small timing difference from Scouter.
+
+### Approved deviation: the line-number gutter stays put when the reader pans
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's code view wraps the text in a `LineNumberRenderable` (`scouter:src/reader/code-view.ts:121`) inside the reader's `ScrollBoxRenderable` with `scrollX: true` (`src/app/reader-pane.ts:31-48`), so a horizontal pan (`h`/`l`, a sideways wheel) moves the line numbers out of view with the text. fmc matched that.
+
+Decision: the gutter is sticky: a horizontal pan moves only the text, and the line numbers stay in their column, as in common editors. Vertical scrolling is unchanged. Applies to every view with a line-number gutter (the code view, Markdown source, the finder preview if it shows numbers). Approved by the owner on 2026-11-27.
+
+Consequences:
+
+- (positive) The line number of every visible row stays readable while panning long lines.
+- (negative) The pan range no longer includes the gutter; a capture after `l` differs from Scouter's.
