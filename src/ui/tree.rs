@@ -10,6 +10,7 @@ use fmc::text::display_label;
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
+use super::scrollbar;
 use super::styled::{Seg, color, content};
 
 /// Screen rows above the list: the panel's top border and the two header rows.
@@ -185,6 +186,7 @@ pub struct TreeView {
     pub root: View,
     rows: View,
     bar: View,
+    track: Slider,
     views: Vec<RowView>,
     thumbs: Vec<Text>,
 }
@@ -195,9 +197,16 @@ impl TreeView {
         let body = View::new(app).width(Length::percent(100.0)).grow(1.0).min_height(0).row();
         let rows = View::new(app).grow(1.0).min_width(0).column();
         let bar = View::new(app).width(1).shrink(0.0).column();
+        let track = scrollbar::track(app, 1);
+        bar.add(&track);
         body.add(&rows).add(&bar);
         root.add(&body);
-        Self { root, rows, bar, views: Vec::new(), thumbs: Vec::new() }
+        Self { root, rows, bar, track, views: Vec::new(), thumbs: Vec::new() }
+    }
+
+    /// The drag over the list's bar, for the app to wire its moves.
+    pub fn track(&self) -> Slider {
+        self.track.clone()
     }
 
     /// Paints the visible rows. Before the root is listed the list is empty (no flash of a collapsed root).
@@ -210,6 +219,7 @@ impl TreeView {
         };
         // The thumb column exists only while the list scrolls; a hidden widget takes no space (Scouter's scrollbar).
         self.bar.visible(browser.row_count() > browser.height());
+        scrollbar::sync(&self.track, browser.row_count(), browser.height(), browser.top());
         while self.views.len() < lines.len() {
             self.views.push(RowView::new(app, &self.rows));
             let thumb = Text::new(app, "").height(1).width(1).wrap(WrapMode::None).selectable(false);

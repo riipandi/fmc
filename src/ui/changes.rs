@@ -5,6 +5,7 @@ use fmc::diff::{ChangeList, list_row, truncated_note};
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
+use super::scrollbar;
 use super::styled::{Seg, color, content};
 use super::tree::thumb;
 
@@ -40,6 +41,7 @@ pub struct ChangesView {
     pub root: View,
     rows: View,
     bar: View,
+    track: Slider,
     note: Text,
     views: Vec<RowView>,
     thumbs: Vec<Text>,
@@ -51,11 +53,18 @@ impl ChangesView {
         let body = View::new(app).width(Length::percent(100.0)).grow(1.0).min_height(0).row();
         let rows = View::new(app).grow(1.0).min_width(0).column();
         let bar = View::new(app).width(1).shrink(0.0).column();
+        let track = scrollbar::track(app, 1);
+        bar.add(&track);
         let note = Text::new(app, "").height(1).shrink(0.0).wrap(WrapMode::None).selectable(false).visible(false);
         rows.add(&note);
         body.add(&rows).add(&bar);
         root.add(&body);
-        Self { root, rows, bar, note, views: Vec::new(), thumbs: Vec::new() }
+        Self { root, rows, bar, track, note, views: Vec::new(), thumbs: Vec::new() }
+    }
+
+    /// The drag over the list's bar, for the app to wire its moves.
+    pub fn track(&self) -> Slider {
+        self.track.clone()
     }
 
     /// Paints the lines the list's scroll position shows. The note is the first line of a cut list.
@@ -65,6 +74,7 @@ impl ChangesView {
         let rows = lines.len() - usize::from(shows_note);
         let first = if list.truncated() { lines.start.max(1) - 1 } else { lines.start };
         self.bar.visible(list.lines() > list.height());
+        scrollbar::sync(&self.track, list.lines(), list.height(), list.top());
         self.note.visible(shows_note);
         if shows_note {
             self.note.set_text(content(&[Seg::new(truncated_note(list.changes().len()), p.modified)], p.text));

@@ -78,4 +78,4 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |
 
-Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen.
+Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.

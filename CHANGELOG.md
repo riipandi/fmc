@@ -41,5 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `j` and `k` in a folder with nothing to show no longer crash the app.
+- Dragging a scrollbar's thumb scrolls its pane, and a click on the track jumps there, in the file list, the reader, the changes list, and the diff. The wheel over a bar scrolls one row, as Scouter's scroll boxes do.
 
 [Unreleased]: https://github.com/riipandi/fmc/commits/main

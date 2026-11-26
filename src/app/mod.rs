@@ -485,6 +485,44 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
+    // The bars: a drag, a track click, and a wheel step move the pane each bar belongs to (Scouter's scroll box bars).
+    let tree_track = ui.borrow().tree.track();
+    wire_bar(
+        model,
+        ui,
+        &tree_track,
+        Focus::List,
+        |m, _, rows| m.browser.scroll(rows),
+        |m, _, row| m.browser.scroll(row as isize - m.browser.top() as isize),
+    );
+    let changes_track = ui.borrow().changes.track();
+    wire_bar(
+        model,
+        ui,
+        &changes_track,
+        Focus::List,
+        |m, _, rows| m.change_list.scroll(rows),
+        |m, _, row| m.change_list.scroll(row as isize - m.change_list.top() as isize),
+    );
+    let (text_track, rendered_track) = {
+        let u = ui.borrow();
+        (u.bar.track(), u.narrow_bar.track())
+    };
+    for track in [&text_track, &rendered_track] {
+        wire_bar(
+            model,
+            ui,
+            track,
+            Focus::Reader,
+            |m, u, rows| {
+                bar_box(m, u).scroll_by(0.0, rows as f64);
+            },
+            |m, u, row| {
+                bar_box(m, u).scroll_to(0.0, row as f64);
+            },
+        );
+    }
+
     let handle = ui.borrow().handle.clone();
     handle.on_hover({
         let (model, ui) = (model.clone(), ui.clone());
@@ -513,6 +551,55 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });
+}
+
+/// Wires a bar's drag (the slider's press, drag, and track click), its wheel, and the press that focuses its pane. A
+/// wheel step scrolls the pane by one row and stops there, as the wheel does over the text (Scouter's scroll box).
+fn wire_bar(
+    model: &Rc<RefCell<Model>>,
+    ui: &Rc<RefCell<Ui>>,
+    track: &Slider,
+    pane: Focus,
+    step: fn(&mut Model, &Ui, isize),
+    to: fn(&mut Model, &Ui, usize),
+) {
+    track.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            let mut m = model.borrow_mut();
+            match event.kind {
+                MouseEventKind::Down(MouseButton::Left) => m.focus = pane,
+                MouseEventKind::ScrollUp | MouseEventKind::ScrollDown => {
+                    let rows = if event.kind == MouseEventKind::ScrollUp { -1 } else { 1 };
+                    step(&mut m, &ui.borrow(), rows);
+                    cx.stop_propagation();
+                }
+                _ => return,
+            }
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+    track.on_change({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, value| {
+            let mut m = model.borrow_mut();
+            to(&mut m, &ui.borrow(), value.round() as usize);
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+}
+
+/// The scroll box the reader's bar moves: the preview while the finder shows one, the stacked body on the changes
+/// screen, and the viewer otherwise. Each is the box whose rows the bar's thumb counts.
+fn bar_box(m: &Model, ui: &Ui) -> ScrollBox {
+    let previewing = m.finder.as_ref().and_then(|finder| finder.preview.as_ref()).is_some_and(|p| p.shown.is_some());
+    if previewing {
+        ui.preview_viewer.widget()
+    } else if changes::body_shows(m) {
+        ui.diff.scroller.widget()
+    } else {
+        ui.viewer.widget()
+    }
 }
 
 /// Paints again once the frame has laid out the new text: a rendered Markdown document's rows, which the scrollbar

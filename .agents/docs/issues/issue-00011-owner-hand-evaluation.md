@@ -10,7 +10,7 @@ count: 4
 
 ## The scrollbar thumb does not drag, and a track click does nothing
 
-- status: open
+- status: resolved (2026-11-26, `fix(scrollbar): drag the bar's thumb and jump on a track click`)
   area: every scrollbar: the reader and its rendered and preview views (`src/ui/scrollbar.rs`, `src/app/mod.rs` paint), the file tree (`src/ui/tree.rs` `TreeView::paint`), the changes list (`src/ui/changes.rs`), and the stacked diff body (the reader's `narrow_bar`)
   summary: The owner holds a click on the thumb and drags; nothing scrolls. The wheel and the trackpad are smooth. The cause: fmc paints each bar from `Text` cells with no mouse handler, so a press on the bar reaches the pane's row handler (the tree and changes list select a row under the bar) or nothing.
   evidence: |
@@ -18,7 +18,8 @@ count: 4
   Scouter's mechanism: each bar is the `ScrollBoxRenderable`'s vertical `ScrollBarRenderable`, whose `SliderRenderable` is interactive and has a transparent track (`scouter:src/ui/styled.ts:24-26`); the custom thumb is painted over it (`:28-51`). `@opentui/core` 0.9.9 `chunk-bun-qkerj9a2.js:12249-12286` (`setupMouseHandling`: a press on the thumb keeps the grab offset, a press on the track jumps to the pointer and then drags, a release ends the drag), `:12287` and `:12298` (`updateValueFromMouseDirect`, `updateValueFromMouseWithOffset`).
   The locked `opentui` 0.9.9 crate offers the same drag as `widget::Slider` (`src/widget/slider.rs:61` `set_and_notify`, `:81` `value_at`, `:129` `mouse`): a press outside the thumb jumps, a press on it grabs with the offset, and a drag or release moves the value. Its `range` and `thumb_size` set the native thumb as `ScrollBox` sets its own bars (`src/widget/scroll.rs:384-391`).
   plan: none; the owner asked for the fix (2026-11-26). Related and still open: issue-00006 (the bar's feel while scrolling).
-  trigger: resolved by the commit that wires a transparent `Slider` over each bar (`fix(scrollbar): ...`), with the wheel over a bar scrolling one row as Scouter's does.
+  resolution: A transparent `Slider` lays over each bar (`src/ui/scrollbar.rs` `track`, `sync`), and `wire_bar` (`src/app/mod.rs`) moves the pane it belongs to. Live in Rex at 80x24 against Scouter 0.9.9 on the demo repository: the rendered README drag to row 14 reads `57%` in both apps and the frames match; a track press at row 8 reads `22%` in both; the diff body's drag reads `56%` in both with the same rows; the wheel over the bar moves one row per notch in both. Tests: `src/ui/scrollbar_tests.rs` (a track click, a drag on the thumb, the text height in the range, a press on the thumb).
+  trigger: None — closed.
 
 ## The changes screen opens in all-files
 
