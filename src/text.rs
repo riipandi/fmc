@@ -18,6 +18,38 @@ pub fn display_label(text: &str) -> String {
     display_text(text).replace(['\n', '\t'], " ")
 }
 
+/// A run of text in one palette color (`#rrggbb`), bold or not. The core builds runs so row text is testable without a
+/// terminal; the views turn them into styled spans (`ui/styled.rs`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Seg {
+    pub text: String,
+    /// `None` is the view's default text color.
+    pub fg: Option<&'static str>,
+    pub bg: Option<&'static str>,
+    pub bold: bool,
+}
+
+impl Seg {
+    pub fn new(text: impl Into<String>, fg: &'static str) -> Self {
+        Self { text: text.into(), fg: Some(fg), bg: None, bold: false }
+    }
+
+    /// Text in the default color (Scouter's `theme.text`).
+    pub fn plain(text: impl Into<String>) -> Self {
+        Self { text: text.into(), fg: None, bg: None, bold: false }
+    }
+
+    pub fn bold(mut self) -> Self {
+        self.bold = true;
+        self
+    }
+
+    pub fn on(mut self, bg: &'static str) -> Self {
+        self.bg = Some(bg);
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -41,7 +73,8 @@ pub fn copied_summary(text: &str) -> String {
     format!("Copied {} {noun}.", grouped(characters))
 }
 
-fn grouped(number: usize) -> String {
+/// `number` with a comma every three digits, as `en-US` writes it.
+pub fn grouped(number: usize) -> String {
     let digits = number.to_string();
     let mut out = String::new();
     for (index, digit) in digits.chars().enumerate() {

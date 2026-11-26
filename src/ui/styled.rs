@@ -3,35 +3,7 @@
 
 use opentui::prelude::*;
 
-/// A run of text with colors from the palette (`#rrggbb`).
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Seg {
-    pub text: String,
-    pub fg: Option<&'static str>,
-    pub bg: Option<&'static str>,
-    pub bold: bool,
-}
-
-impl Seg {
-    pub fn new(text: impl Into<String>, fg: &'static str) -> Self {
-        Self { text: text.into(), fg: Some(fg), bg: None, bold: false }
-    }
-
-    /// Text in the default color (Scouter's `theme.text`).
-    pub fn plain(text: impl Into<String>) -> Self {
-        Self { text: text.into(), fg: None, bg: None, bold: false }
-    }
-
-    pub fn bold(mut self) -> Self {
-        self.bold = true;
-        self
-    }
-
-    pub fn on(mut self, bg: &'static str) -> Self {
-        self.bg = Some(bg);
-        self
-    }
-}
+pub use fmc::text::Seg;
 
 /// Display width of a string in cells.
 pub type Measure<'a> = &'a dyn Fn(&str) -> usize;

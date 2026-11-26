@@ -65,7 +65,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `y` | copy selection, or the current path |
 | `Ctrl+o` `Alt+i` | jump back / forward through opened places |
 | `Esc` | clear selection or search, or back to the file list |
-| `q` | close the open document, or the key list |
+| `q` | close the open document or key list; back from the changes |
 | `?` | this key list; ? or Esc closes it |
 | `^q` `^c` | quit |
 

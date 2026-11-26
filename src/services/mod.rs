@@ -1,13 +1,14 @@
 //! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy
 //! (`rust.md`, "Layout rules").
 
+pub mod changes;
 pub mod find;
 pub mod fs;
 pub mod git;
 
 use std::path::PathBuf;
 
-use fmc::diff::Listing;
+use fmc::diff::{FilePatch, Listing};
 use fmc::explorer::Entry;
 use fmc::find::Index;
 use fmc::find::text::Progress;
@@ -31,6 +32,10 @@ pub enum Event {
     Searched { session: u64, scan: u64, progress: Progress },
     /// A file read for the finder's preview; a `request` older than the latest one is dropped.
     Previewed { session: u64, request: u64, result: Result<Document, String> },
+    /// The changes screen's listing, for the `session` that asked for it; a cancelled session is dropped.
+    ChangesListed { session: u64, result: Result<changes::Listed, String> },
+    /// The stacked patches of the listing of `session`; a reply for a listing that is no longer shown is dropped.
+    ChangesPatched { session: u64, result: Result<Vec<FilePatch>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

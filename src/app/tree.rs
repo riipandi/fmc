@@ -8,7 +8,7 @@ use fmc::explorer::{Browser, Expand, Reveal, Tree};
 use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
-use super::{Model, Pending, Ui, find, reader};
+use super::{Model, Pending, Ui, changes, find, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -146,6 +146,8 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::ScanDue { session, scan } => find::scan_due(m, *session, *scan),
         Event::Searched { session, scan, progress } => find::searched(m, *session, *scan, progress.clone()),
         Event::Previewed { session, request, result } => find::previewed(m, *session, *request, result.clone()),
+        Event::ChangesListed { session, result } => changes::listed(m, *session, result.clone()),
+        Event::ChangesPatched { session, result } => changes::patched(m, *session, result.clone()),
         Event::Listed { path, result } => match result {
             Ok(entries) => {
                 m.browser.listed(path, entries.clone());

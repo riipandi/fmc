@@ -100,9 +100,17 @@ impl Repository {
         })
     }
 
+    /// The repository's root folder, which Scouter names in the empty state's footer.
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
+    /// Whether the base is `HEAD`, not the empty tree of a repository without commits (Scouter's `base`).
+    pub fn on_head(&self) -> bool {
+        self.queue().base == "HEAD"
+    }
+
     /// The change list against the base of this call (`src/diff/git.ts:204-236`).
-    // shortcut: the changes screen (plan-00001 phase 19) is the first caller; the allows on this group go with it.
-    #[allow(dead_code)]
     pub fn changes(&self) -> Result<ChangeSet, String> {
         let mut queue = self.queue();
         queue.base = resolve_base(&self.root)?;
@@ -137,8 +145,6 @@ impl Repository {
 
     /// One change's patch against the base of the last listing (`src/diff/patch.ts:13-20`). The copy is the one that
     /// listing made; a patch does not refresh it.
-    // shortcut: see `changes`; the allow goes with the first caller.
-    #[allow(dead_code)]
     pub fn patch(&self, change: &Change, context: usize) -> Result<Patch, String> {
         if change.binary {
             return Ok(binary());
@@ -160,8 +166,6 @@ impl Repository {
 
     /// Every change's patch (`src/diff/patch.ts:22-73`). One whole-tree diff of at most 4 MiB is split by file; the
     /// untracked files share a budget of the same size. A file past the budget, or past the cut, is `not_shown`.
-    // shortcut: see `changes`; the allow goes with the first caller.
-    #[allow(dead_code)]
     pub fn patches(&self, changes: &[Change], context: usize) -> Result<Vec<FilePatch>, String> {
         let whole = if changes.iter().any(|change| change.kind != ChangeKind::Untracked && !change.binary) {
             let queue = self.queue();
@@ -205,8 +209,6 @@ impl Repository {
         Ok(result)
     }
 
-    // shortcut: see `changes`; the allow goes with the first caller.
-    #[allow(dead_code)]
     fn new_file(&self, change: &Change) -> Patch {
         from_file(&change.path, read_new_file(&self.root.join(&change.path)))
     }
@@ -304,8 +306,6 @@ fn reusable(stamp: Option<Stamp>, source: Key, modified: SystemTime, copy: Optio
 
 /// An untracked file as Scouter's `readDocument` reads it: a regular file, at most 1 MiB, and text only
 /// (`src/core/files.ts:90-113`).
-// shortcut: see `changes`; the allow goes with the first caller.
-#[allow(dead_code)]
 fn read_new_file(path: &Path) -> Result<Document, String> {
     let metadata = fs::metadata(path).map_err(|error| describe(&error, "open", Some(path)))?;
     if !metadata.is_file() {

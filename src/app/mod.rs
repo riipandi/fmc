@@ -1,6 +1,7 @@
 //! The `opentui` app loop: the two panes and the footer, key and mouse dispatch, the tree's worker events, and theme
 //! changes. Terminal restore on exit and on panic is OpenTUI's (`rust.md`, "Contracts and traps").
 
+mod changes;
 mod find;
 mod keys;
 mod reader;
@@ -13,19 +14,22 @@ use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use fmc::diff::Marks;
+use fmc::diff::{ChangeList, Marks};
 use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
 use fmc::reader::markdown::{PARAGRAPH_REFUSED, SEARCH_REFUSED};
+use fmc::reader::position::scroll_label;
 use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
 use opentui::prelude::*;
 
 use crate::services::Event;
 use crate::ui::binary::BinaryView;
+use crate::ui::changes::ChangesView;
+use crate::ui::diff::DiffBody;
 use crate::ui::find::{FindBar, prompt_segments};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
-use crate::ui::hints::{Pane, Prompt};
+use crate::ui::hints::{self, Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
@@ -42,6 +46,7 @@ struct Ui {
     browser_panel: View,
     browser_header: PaneHeader,
     tree: TreeView,
+    changes: ChangesView,
     find: FindBar,
     handle: View,
     viewer_panel: View,
@@ -50,6 +55,8 @@ struct Ui {
     /// The viewer body: the welcome, the code view, and the rendered view stacked (one shows at a time), beside the bar.
     stack: View,
     viewer: Viewer,
+    /// The changes screen's stacked body, in the same stack as the viewer.
+    diff: DiffBody,
     reader: CodeView,
     markdown: MarkdownView,
     picture: Picture,
@@ -114,6 +121,16 @@ struct Model {
     find_session: u64,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
     sidebar: Option<i64>,
+    /// The changes list, kept between visits (Scouter's `ChangeList`).
+    change_list: ChangeList,
+    /// The changes screen, while it shows.
+    changes: Option<changes::Changes>,
+    /// The listing in flight, by its session (Scouter `loading === "diff"`).
+    changes_load: Option<u64>,
+    /// The last session of a listing; each `d` takes the next.
+    changes_session: u64,
+    /// The file the body scrolls to once it is laid out, and the paints left to lay it out.
+    diff_jump: Option<(String, u8)>,
     /// An edge drag in progress: the pointer's start column and the sidebar's width then.
     drag: Option<(u16, u16)>,
 }
@@ -129,7 +146,12 @@ impl Model {
 
     fn key_state(&self) -> State {
         State {
-            screen: Screen::Browse,
+            // The changes keys hold while the body shows, and while the list has focus over a key page.
+            screen: if self.changes.is_some() && (self.focus == Focus::List || !self.shown.shows_keys()) {
+                Screen::Changes
+            } else {
+                Screen::Browse
+            },
             focus: self.focus,
             reader_ready: self.shown.has_document(),
             previewing: self.shown.previewing(),
@@ -188,6 +210,11 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         message: None,
         sidebar: None,
         drag: None,
+        change_list: ChangeList::default(),
+        changes: None,
+        changes_load: None,
+        changes_session: 0,
+        diff_jump: None,
     }));
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
@@ -248,10 +275,16 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             };
             // A keypress can move the reader; the position it moves to is laid out by the next frame.
             repaint_after_layout(cx.app(), &model, &ui);
+            let body = changes::body_shows(&m);
             match action {
                 Action::Quit => return cx.quit(),
                 Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
+                // `q` on the changes screen goes back to browsing, as `d` does (architecture.md, approved deviation).
+                Action::Close if body => changes::leave(&mut m),
                 Action::Close => reader::close(&mut m, &ui.borrow()),
+                Action::ToggleChanges => changes::toggle(&mut m),
+                Action::SwitchPane if body => changes::switch_pane(&mut m),
+                Action::FocusDiff => changes::activate(&mut m),
                 Action::Escape if cx.app().selected_text().is_some() || cx.app().is_selecting() => {
                     cx.app().clear_selection();
                 }
@@ -261,12 +294,13 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => resize_sidebar(&mut m, cx.app(), step),
-                Action::ToggleMarkdown => {
+                // The changes body has no Markdown view of its own: `m` is for the reader's document.
+                Action::ToggleMarkdown if !body => {
                     reader::toggle_markdown(&mut m);
                     ui.borrow().viewer.scroll_to(0.0, 0.0);
                 }
-                Action::ToggleWrap if m.shown.has_document() => m.wrap = !m.wrap,
-                Action::Copy if m.shown.is_some() || m.focus == Focus::List => {
+                Action::ToggleWrap if m.shown.has_document() || m.changes.is_some() => m.wrap = !m.wrap,
+                Action::Copy if m.shown.is_some() || m.focus == Focus::List || m.changes.is_some() => {
                     if scroll::yank(&mut m, cx.app()) {
                         clear_message_later(cx.app(), &model, &ui);
                     }
@@ -277,6 +311,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 }
                 Action::JumpBack | Action::JumpForward => {
                     if let Some(target) = scroll::jump(&mut m, action == Action::JumpBack) {
+                        // Leaving the changes screen comes first, as Scouter's `jump` does.
+                        changes::leave(&mut m);
                         m.restore = Some((target.path.clone(), target.top));
                         tree::open_entry(&mut m, target.path);
                     }
@@ -290,9 +326,10 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 | Action::GoToLine(_)
                 | Action::Centre
                 | Action::Paragraph(_)
-                    if m.focus == Focus::Reader && m.shown.has_document() =>
+                    if m.focus == Focus::Reader && (m.shown.has_document() || body) =>
                 {
-                    scroll::motion(&m, &ui.borrow(), action)
+                    let ui = ui.borrow();
+                    scroll::motion(&m, if body { &ui.diff.scroller } else { &ui.viewer }, action)
                 }
                 // The rendered view has no search or paragraph motion: the footer says which key shows the source.
                 Action::Search | Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
@@ -304,6 +341,11 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
                     search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
                 }
+                Action::Move(_) | Action::MovePage(_) | Action::Top | Action::Bottom
+                    if m.focus == Focus::List && m.changes.is_some() =>
+                {
+                    changes::move_list(&mut m, action)
+                }
                 Action::Move(_)
                 | Action::MovePage(_)
                 | Action::Top
@@ -312,7 +354,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 | Action::Expand
                 | Action::Collapse
                 | Action::GoUp
-                    if m.focus == Focus::List =>
+                    if m.focus == Focus::List && m.changes.is_none() =>
                 {
                     tree::act(&mut m, action)
                 }
@@ -325,6 +367,16 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         let (model, ui) = (model.clone(), ui.clone());
         let viewer = ui.borrow().viewer.widget();
         viewer.on_scroll(move |cx, _| paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut()));
+    }
+    {
+        // The list follows the body only when the body scrolls, as Scouter's `layoutChanged` does; a repaint alone
+        // (a focus change, say) leaves the selection where it is.
+        let (model, ui) = (model.clone(), ui.clone());
+        let stacked = ui.borrow().diff.scroller.widget();
+        stacked.on_scroll(move |cx, _| {
+            changes::follow(&mut model.borrow_mut(), &ui.borrow());
+            paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
+        });
     }
     wire_mouse(&model, &ui);
 
@@ -357,6 +409,26 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 }
                 MouseEventKind::ScrollUp => m.browser.scroll(-1),
                 MouseEventKind::ScrollDown => m.browser.scroll(1),
+                _ => return,
+            }
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+
+    // The changes list: a click selects its row and opens it (Scouter `ChangeList`), and the wheel scrolls it.
+    let changes_list = ui.borrow().changes.root.clone();
+    changes_list.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            let mut m = model.borrow_mut();
+            match event.kind {
+                MouseEventKind::Down(MouseButton::Left) => {
+                    let line = line_at(event.y, LIST_TOP, m.change_list.height());
+                    let Some(index) = line.and_then(|line| m.change_list.row_at(line)) else { return };
+                    changes::click_row(&mut m, index);
+                }
+                MouseEventKind::ScrollUp => m.change_list.scroll(-1),
+                MouseEventKind::ScrollDown => m.change_list.scroll(1),
                 _ => return,
             }
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
@@ -425,6 +497,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let browser_panel = View::new(app).shrink(0.0).column().border(BorderStyle::Rounded);
     let browser_header = PaneHeader::new(app);
     let tree = TreeView::new(app);
+    let changes_list = ChangesView::new(app);
     let finder_bar = FindBar::new(app);
     // The sidebar's right edge: a one-column strip over the panel's border, between its top and bottom rows.
     let handle = View::new(app)
@@ -447,14 +520,15 @@ fn build(app: &App, p: &Palette) -> Ui {
     let preview_viewer = Viewer::new(app);
     preview_viewer.visible(false);
     preview_viewer.widget().add(&preview.widget());
+    let diff = DiffBody::new(app);
     let footer = Footer::new(app);
-    browser_panel.add(&browser_header.root).add(&finder_bar.root).add(&tree.root);
+    browser_panel.add(&browser_header.root).add(&finder_bar.root).add(&tree.root).add(&changes_list.root);
     let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
     let bar = ScrollBar::new(app, 2);
     let narrow_bar = ScrollBar::new(app, 0);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
-    stack.add(&welcome).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget());
+    stack.add(&welcome).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget()).add(&diff.root);
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
@@ -464,6 +538,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         browser_panel,
         browser_header,
         tree,
+        changes: changes_list,
         find: finder_bar,
         handle,
         viewer_panel,
@@ -471,6 +546,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         welcome,
         stack,
         viewer,
+        diff,
         reader,
         markdown,
         picture,
@@ -497,7 +573,9 @@ fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
 fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let p = m.palette();
     let (columns, rows) = app.size();
-    m.browser.set_height(usize::from(rows).saturating_sub(LIST_CHROME_ROWS));
+    let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
+    m.browser.set_height(viewport);
+    m.change_list.set_height(viewport);
     let measure = |text: &str| {
         app.session().context().text_width(text, app.width_method()).map_or(text.chars().count(), |w| w as usize)
     };
@@ -510,48 +588,74 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));
 
+    // The changes screen replaces the tree in the sidebar and the reader in the viewer, unless a key page is open.
+    let on_changes = m.changes.is_some();
+    let body = changes::body_shows(m);
     let root = m.browser.tree.root().to_path_buf();
     let name = root.file_name().map_or(String::new(), |n| fmc::text::display_label(&n.to_string_lossy()));
-    let sidebar = HeaderState {
-        title: name,
-        badges: vec![Badge::quiet("files")],
-        focused: m.focus == Focus::List,
-        ..Default::default()
+    let sidebar = if on_changes {
+        changes::sidebar_header(m)
+    } else {
+        HeaderState {
+            title: name,
+            badges: vec![Badge::quiet("files")],
+            focused: m.focus == Focus::List,
+            ..Default::default()
+        }
     };
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
     let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
     ui.find.paint(bar, p);
-    ui.tree.paint(app, &m.browser, &m.marks, p, &root);
+    ui.tree.root.visible(!on_changes);
+    ui.changes.root.visible(on_changes);
+    if on_changes {
+        ui.changes.paint(app, &m.change_list, p);
+    } else {
+        ui.tree.paint(app, &m.browser, &m.marks, p, &root);
+    }
     // A preview names its file, with a `preview` pill in place of the reader's badges (Scouter `viewerHeaderFor`).
     let previewed =
         m.finder.as_ref().and_then(|finder| finder.preview.as_ref()).and_then(|preview| preview.shown.as_ref());
-    let (title, parent) = match (previewed, &m.shown) {
-        (Some(shown), _) => reader::title_parts(&root, &shown.path),
-        (None, reader::Shown::None) => ("Reader".into(), None),
-        (None, reader::Shown::Keys { .. }) => ("Keys".into(), None),
+    let diff_header = body.then(|| changes::viewer_header(m));
+    let (title, parent) = match (previewed, &diff_header, &m.shown) {
+        (Some(shown), _, _) => reader::title_parts(&root, &shown.path),
+        (None, Some((title, parent, _)), _) => (title.clone(), parent.clone()),
+        (None, None, reader::Shown::None) => ("Reader".into(), None),
+        (None, None, reader::Shown::Keys { .. }) => ("Keys".into(), None),
         (
+            None,
             None,
             reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. },
         ) => reader::title_parts(&root, path),
     };
-    let badges = match previewed {
-        Some(_) => vec![Badge { text: "preview".into(), kind: BadgeKind::Pill }],
-        None => reader::badges(&m.shown, m.wrap),
+    let badges = match (previewed, diff_header) {
+        (Some(_), _) => vec![Badge { text: "preview".into(), kind: BadgeKind::Pill }],
+        (None, Some((_, _, badges))) => badges,
+        (None, None) => reader::badges(&m.shown, m.wrap),
     };
     let viewer = HeaderState { title, parent, badges, focused: m.focus == Focus::Reader, notice: m.notice.clone() };
     ui.viewer_header.paint(&viewer, p);
     // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).
     let shows_preview = previewed.is_some();
-    ui.welcome.visible(!m.shown.is_some() && !shows_preview);
+    // The preview's line count, copied out: the model is changed below, which the borrow of `previewed` forbids.
+    let preview_lines = previewed.map(|shown| shown.document.lines);
+    ui.welcome.visible(!m.shown.is_some() && !shows_preview && !on_changes);
     let previewing = m.shown.previewing();
-    ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview);
-    ui.markdown.visible(previewing && !shows_preview);
-    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview);
-    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview);
+    ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body);
+    ui.markdown.visible(previewing && !shows_preview && !body);
+    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview && !body);
+    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview && !body);
     // The reader's pane takes no space beside the preview, which is the pane the stack shows then.
-    ui.viewer.visible(!shows_preview);
+    ui.viewer.visible(!shows_preview && !body);
+    ui.diff.root.visible(body);
+    if on_changes {
+        changes::sync(app, m, ui, p, &tint);
+        ui.diff.set_wrap(m.wrap);
+        ui.diff.set_pane(u32::from(columns.saturating_sub(width + 3)));
+        changes::jump(m, ui);
+    }
     if let Some((top, tries)) = m.pending_top.take() {
         ui.viewer.scroll_to(0.0, top as f64);
         if (ui.viewer.position().1 - top as f64).abs() >= 0.5 && tries > 0 {
@@ -566,13 +670,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let home = std::env::var_os("HOME").map(PathBuf::from);
     let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
-    let viewport = usize::from(rows).saturating_sub(LIST_CHROME_ROWS);
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
-    m.top = ui.viewer.position().1;
+    m.top = if body { ui.diff.scroller.position().1 } else { ui.viewer.position().1 };
     find::paint_preview(m, ui, p);
-    // A preview is unwrapped, as Scouter's is; it takes the same width as the reader.
-    let fill = !shows_preview && (m.wrap || m.shown.text().is_none() || previewing);
+    // A preview is unwrapped, as Scouter's is; it takes the same width as the reader. The stacked diff's bar overlays
+    // its last column, as Scouter's diff scroller does (no blank before the thumb).
+    let fill = !body && !shows_preview && (m.wrap || m.shown.text().is_none() || previewing);
     ui.viewer.set_wrap(fill);
     ui.reader.set_wrap(m.wrap);
     ui.preview.set_wrap(false);
@@ -581,21 +685,27 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.preview.set_width(u32::from(columns.saturating_sub(width + 3)));
     ui.picture.fill(viewport as u32);
     let lines = m.shown.text().map_or(0, |(document, ..)| document.lines);
-    let total = match previewed {
-        Some(shown) => shown.document.lines,
+    let total = match preview_lines {
+        _ if body => ui.diff.height(),
+        Some(lines) => lines,
         None => reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines)),
     };
     // A preview has its own position, as Scouter's preview scroll box does.
-    let top = match previewed {
+    let top = match preview_lines {
         Some(_) => ui.preview_viewer.position().1.floor() as usize,
         None => m.top.floor() as usize,
     };
     ui.bar.paint(app, total, viewport, top, fill, p);
     ui.narrow_bar.paint(app, total, viewport, top, !fill, p);
-    let (document, position) = match previewed {
-        Some(_) => (None, None),
-        None => reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
-            .map_or((None, None), |(info, label)| (Some(info), label)),
+    let has_blocks = m.changes.as_ref().is_some_and(|changes| !changes.files.is_empty());
+    let (document, position) = if body {
+        (None, has_blocks.then(|| scroll_label(ui.diff.height(), viewport, m.top)))
+    } else {
+        match preview_lines {
+            Some(_) => (None, None),
+            None => reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
+                .map_or((None, None), |(info, label)| (Some(info), label)),
+        }
     };
     let search_text = m.shown.text().map_or_else(String::new, |(document, ..)| document.content().to_owned());
     ui.reader.sync_search(
@@ -606,6 +716,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     );
     let footer = FooterState {
         location,
+        mode: if body { hints::Mode::Diff } else { hints::Mode::Browse },
         pane,
         prompt: match (&m.finder, &m.search) {
             (Some(finder), _) => Some(find::prompt(finder).1),
@@ -614,10 +725,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         },
         message: m.message.clone(),
         document,
-        positions: [position, None],
+        diff: if body { changes::footer(m, ui) } else { None },
+        positions: if body { [None, position] } else { [position, None] },
         wrap: m.wrap,
         pending: m.parser.pending_count(),
-        ..FooterState::default()
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);

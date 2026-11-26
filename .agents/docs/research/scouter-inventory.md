@@ -281,7 +281,7 @@ Mouse is enabled (`src/index.ts:54` `useMouse: true`). These are the behaviours 
 | Left click on a diff file header | Fold or unfold that file | `src/diff/diff-blocks.ts:468-473` |
 | Left drag on the sidebar edge | Resize the sidebar; cursor becomes `col-resize`, edge is lit in `theme.accentSoft` on hover | `src/explorer/sidebar-resizer.ts:28-102` |
 | Left drag across text (reader, diff, rendered Markdown, preview) | Selects. On release the text is copied (OSC 52 plus the local clipboard) and the selection cleared. Shows `Copied N characters.` / `Copied N lines.` | `src/app/app.ts:801-812`, `src/core/clipboard.ts:39-52`, `docs/decision/0033-...` |
-| Wheel | Scroll the pane under the pointer. No handler in Scouter. Assumed from OpenTUI's `ScrollBoxRenderable` default (not verified). | `src/reader/reader-pane.ts:31-48` |
+| Wheel | Scroll the pane under the pointer. No handler in Scouter. Observed live on 2026-11-26 (plan-00001 phase 19, 80x24, SGR wheel reports): one row per notch on the tree, the change list, and the diff body, in both directions. | `src/reader/reader-pane.ts:31-48` |
 | Scrollbar | Thumb is drawn in half-block glyphs (`▐ ▝ ▗`) in `theme.muted` on the right edge, and updates scroll position | `src/ui/styled.ts:28-51`, `src/reader/reader-pane.ts:43` |
 
 Focus rule: clicking a row never moves focus between panes (`AGENTS.md`, `docs/decision/0003-...`). Only the drag-to-copy path changes the selection.
@@ -626,7 +626,8 @@ Git is never asked for `status`, and no write command is run.
 - Hunk header lines (`@@ -a,b +c,d @@`) are **not drawn**. Confirmed: zero `@@` in any capture. The hunk index is still computed from them (`src/diff/diff-blocks.ts:47-53`, `:552-591`).
 - Folded file: body hidden (`content.visible = false`, `:242-252`).
 - Notice body (no diff text): single line, `theme.muted`, left padding 2 (`src/diff/diff-blocks.ts:523-532`).
-- Scroll follows selection in all-files scope (`src/diff/diff-blocks.ts:373-389`, `src/diff/diff-screen.ts:552-565`).
+- Scroll follows selection in all-files scope (`src/diff/diff-blocks.ts:373-389`, `src/diff/diff-screen.ts:552-565`). Observed live (phase 19): the selection changes only when the body itself scrolls. `Tab` into the body leaves the selection where it was, even when the file at the top is another one.
+- Observed geometry (phase 19, 80x24, `minDigits` 2): the stack is the pane plus the diff gutter (6 cells), so the headers' counts and the stat bar sit past the pane edge and show only after a pan of about 6 columns. `g` and `G` keep the pan (`scrollTo(0)` and `scrollTo(Infinity)` set only the vertical position).
 
 Notice texts (`src/diff/patch.ts:9-11`, `:167-169`, `:188-194`; `src/diff/diff-blocks.ts:523`):
 

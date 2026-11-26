@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T08:19:50+07:00
+updated: 2026-11-26T08:57:16+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -78,8 +78,8 @@ phases:
       note: "verify 188 tests (19 services/git, 20 diff). Scouter: git.ts:8-12, :24-148, :156-198, :204-260, :303-370; patch.ts:5-206. Demo repo: Scouter 0.9.9's listChanges, readAllPatches, listMarks and fmc's Repository give the same 10 changes, 10 patch texts byte for byte, 3 marks, 3 ignored. A conflicted file lists as M in both (inventory §21). 80x24 capture: fmc at HEAD and in the tree are identical; Scouter differs only as approved, plus the welcome card gap that HEAD already has (wordmark, hint line, q row)"
     - id: 19
       title: "W5: changes screen, change list, and stacked diff body"
-      status: pending
-      note: "Scope moved on 2026-11-26 (owner): the stacked diff body joins this phase so the screen matches Scouter's screens 35 and 36; phase 20 keeps split, fold, context, hunks, and `o`. Lands the Changes-screen part of `q` (closes the changes screen, as `d` does), approved in architecture.md (`q` closes the open document or screen)."
+      status: done
+      note: "verify 206 tests (18 new: diff row, list, stack). Scouter: diff-screen.ts:318-322, :379-417, :552-565; app.ts:291-315, :869-907; diff-blocks.ts:55-96, :425-521, :552-591; changes.ts:226-278; footer-hints.ts:47-79. Live 80x24 on the demo repository (/tmp/fmc-ref/out/w5-19/final, text and HTML): both key sequences match Scouter 0.9.9 cell for cell on rows 1 to 23 except the approved tree root row (steps 07, 11, b15) and the approved ^q label, which also drops `a one file` from the list-focus hint line. Empty state (clean and unborn repositories) matches. Wheel: list and body move one row per notch both ways. Found and fixed while validating: a wheel scroll undone by repaint, g and G losing the pan, the diff text colour, the stack width (gutter overflow), and a second visit reusing the first visit's blocks. Pre-existing, in HEAD too, recorded as issue-00007 (tree wheel) and issue-00008 (reader pan one column short)."
     - id: 20
       title: "W5: split, fold, context, hunks, open"
       status: pending

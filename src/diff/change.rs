@@ -29,6 +29,19 @@ impl ChangeKind {
         }
     }
 
+    /// The kind's name as the header's badge shows it (Scouter `ChangeKind`, `src/diff/types.ts`).
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Modified => "modified",
+            Self::Added => "added",
+            Self::Deleted => "deleted",
+            Self::Renamed => "renamed",
+            Self::Typechange => "typechange",
+            Self::Conflict => "conflict",
+            Self::Untracked => "untracked",
+        }
+    }
+
     pub fn letter(self) -> &'static str {
         match self {
             Self::Modified => "M",

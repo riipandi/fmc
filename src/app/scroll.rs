@@ -9,8 +9,9 @@ use fmc::text::copied_summary;
 use opentui::prelude::App;
 
 use super::reader::{Shown, here};
-use super::{Model, Ui};
+use super::{Model, changes};
 use crate::ui::footer::Message;
+use crate::ui::viewer::Viewer;
 
 /// What `y` copies with nothing selected is the current path (Scouter `currentPath`).
 pub const COPIED_PATH: &str = "Copied path.";
@@ -18,45 +19,50 @@ pub const COPY_FAILED: &str = "Could not copy to clipboard.";
 pub const NO_EARLIER: &str = "No earlier place to go back to.";
 pub const NO_LATER: &str = "No later place to go to.";
 
-/// Scroll and paragraph motions in the reader. A paragraph in the rendered view is refused by the app before this.
-pub fn motion(m: &Model, ui: &Ui, action: Action) {
+/// Scroll and paragraph motions in the reader, or in the changes body (`scroller`). A paragraph in the rendered view is
+/// refused by the app before this.
+pub fn motion(m: &Model, scroller: &Viewer, action: Action) {
     let viewport = m.viewport;
     match action {
-        Action::Scroll(rows) => ui.viewer.scroll_by(0.0, f64::from(rows)),
-        Action::Pan(columns) => ui.viewer.scroll_by(f64::from(columns), 0.0),
-        Action::Page(direction) => ui.viewer.scroll_by(0.0, f64::from(direction) * PAGE * viewport as f64),
-        Action::HalfPage(direction) => ui.viewer.scroll_by(0.0, f64::from(direction) * HALF_PAGE * viewport as f64),
-        Action::Top => ui.viewer.scroll_to(0.0, 0.0),
-        Action::Bottom => ui.viewer.scroll_to_bottom(),
-        Action::GoToLine(line) => ui.viewer.scroll_to(0.0, motion::line_top(line as usize - 1, viewport) as f64),
+        Action::Scroll(rows) => scroller.scroll_by(0.0, f64::from(rows)),
+        Action::Pan(columns) => scroller.scroll_by(f64::from(columns), 0.0),
+        Action::Page(direction) => scroller.scroll_by(0.0, f64::from(direction) * PAGE * viewport as f64),
+        Action::HalfPage(direction) => scroller.scroll_by(0.0, f64::from(direction) * HALF_PAGE * viewport as f64),
+        // `g` and `G` move only down or up: the pan stays, as Scouter's `scrollTo(0)` and `scrollTo(Infinity)` do.
+        Action::Top => scroller.scroll_to(scroller.position().0, 0.0),
+        Action::Bottom => scroller.scroll_to(scroller.position().0, f64::INFINITY),
+        Action::GoToLine(line) => scroller.scroll_to(0.0, motion::line_top(line as usize - 1, viewport) as f64),
         Action::Centre => {
             // `zz` centres the hit the search is on, else the middle of the view (Scouter `centre`).
             let hit =
                 if m.shown.previewing() { None } else { m.search.as_ref().and_then(|search| search.current_line()) };
             let line = hit.unwrap_or_else(|| motion::centre_line(m.top.floor() as usize, viewport));
-            ui.viewer.scroll_to(0.0, motion::line_top(line, viewport) as f64);
+            scroller.scroll_to(0.0, motion::line_top(line, viewport) as f64);
         }
         Action::Paragraph(direction) => {
             let Some((document, ..)) = m.shown.text() else { return };
             let blanks = motion::blank_lines(&document.text);
             let forward = direction > 0;
             match motion::paragraph_target(&blanks, m.top.floor() as usize, forward) {
-                Some(line) => ui.viewer.scroll_to(0.0, line as f64),
-                None if forward => ui.viewer.scroll_to_bottom(),
-                None => ui.viewer.scroll_to(0.0, 0.0),
+                Some(line) => scroller.scroll_to(0.0, line as f64),
+                None if forward => scroller.scroll_to_bottom(),
+                None => scroller.scroll_to(0.0, 0.0),
             }
         }
         _ => {}
     }
 }
 
-/// The path `y` copies when nothing is selected: the document the reader shows, or else the list's entry (Scouter
-/// `currentPath`).
-pub fn current_path(m: &Model) -> PathBuf {
-    if let (Focus::Reader, Shown::Text { path, .. } | Shown::Image { path, .. }) = (m.focus, &m.shown) {
-        return path.clone();
+/// The path `y` copies when nothing is selected: the changes screen's selected file, else the document the reader
+/// shows, or else the list's entry (Scouter `currentPath`).
+pub fn current_path(m: &Model) -> Option<PathBuf> {
+    if changes::body_shows(m) || (m.changes.is_some() && m.focus == Focus::List) {
+        return changes::selected_path(m);
     }
-    m.browser.selected().to_path_buf()
+    if let (Focus::Reader, Shown::Text { path, .. } | Shown::Image { path, .. }) = (m.focus, &m.shown) {
+        return Some(path.clone());
+    }
+    Some(m.browser.selected().to_path_buf())
 }
 
 /// What `y` copies and the notice it shows: the selection, with Scouter's count, or else the path, as Scouter's `yank`.
@@ -71,7 +77,11 @@ pub fn copy_plan(selected: Option<&str>, path: &Path) -> (String, String) {
 /// selection is cleared once copied. The notice is Scouter's; the caller clears a successful one after two seconds.
 pub fn yank(m: &mut Model, app: &App) -> bool {
     let selected = app.selected_text();
-    let (text, summary) = copy_plan(selected.as_deref(), &current_path(m));
+    let path = current_path(m);
+    if selected.is_none() && path.is_none() {
+        return false;
+    }
+    let (text, summary) = copy_plan(selected.as_deref(), path.as_deref().unwrap_or(Path::new("")));
     if selected.is_some() {
         app.clear_selection();
     }

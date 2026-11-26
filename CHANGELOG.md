@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
 - The file finder: `/` in the file list finds a file or folder by name. Every word must appear in its path, the matches come in Scouter's order, and up to 200 are listed with the total. Enter opens a file or reveals a folder, and Esc returns the tree to where it was.
 - Text search in the finder: `Tab` searches the lines of the files, from two characters, with up to 200 hits. The highlighted hit shows in the reader as a preview, and Enter opens the file at its line with the search kept for `n` and `N`.
+- The changes screen: `d` lists the files git reports as changed, with their status letters, index marks, and counts. The stacked diff below shows every file under its own header, with the counts, a stat bar, and the file's lines. Moving the list selection scrolls the diff to that file, `Enter` moves to the diff, `Tab` switches between them, and `w` wraps the lines. `d` or `q` goes back to browsing. Split, folds, context, hunks, and opening a file from the diff come next.
 
 ### Changed
 
