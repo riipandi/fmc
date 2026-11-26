@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | None live. `plan-00001-scouter-parity.md` is archived (done: W0 to W6, phases 1 to 25). |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00002-sidebar-and-hidden-files.md` (awaiting approval: RI-11 and RI-12). `plan-00001-scouter-parity.md` is archived (done: W0 to W6, phases 1 to 25). |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00002-scouter-parity-closed.md` (done: plan-00001 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
