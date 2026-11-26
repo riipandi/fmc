@@ -43,6 +43,15 @@ fn a_document_under_80_columns_hides_the_sidebar_and_the_mark_brings_it_back() {
 }
 
 #[test]
+fn the_mark_that_shows_the_sidebar_focuses_it() {
+    let (app, model, ui) = panes(79);
+    open_document(&app, &model, &ui);
+    model.borrow_mut().focus = Focus::Reader;
+    app.click(0, 0);
+    assert_eq!(model.borrow().focus, Focus::List);
+}
+
+#[test]
 fn a_hidden_sidebar_does_not_keep_the_focus() {
     let (app, model, ui) = panes(79);
     open_document(&app, &model, &ui);

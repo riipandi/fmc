@@ -44,17 +44,14 @@ pub fn sync(m: &mut Model, columns: u16) {
     }
 }
 
-/// The mark on the border.
-pub fn toggle(m: &mut Model, columns: u16) {
-    if can_hide(m) {
-        m.visibility.toggle(columns, true, false);
-    }
-}
-
-/// `Ctrl+/`, `Ctrl+_`: showing the sidebar also focuses it (architecture.md, "Auto-preview in the sidebar").
+/// `Ctrl+/`, `Ctrl+_`, or a click on the mark: showing the sidebar also focuses it (architecture.md, "Auto-preview in
+/// the sidebar").
 pub fn toggle_key(m: &mut Model, columns: u16) {
+    if !can_hide(m) {
+        return;
+    }
     let hidden = !shown(m, columns);
-    toggle(m, columns);
+    m.visibility.toggle(columns, true, false);
     if hidden && shown(m, columns) {
         m.focus = Focus::List;
     }
@@ -103,8 +100,10 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             if event.kind != MouseEventKind::Down(MouseButton::Left) {
                 return;
             }
+            // The `»` mark sits on the reader's corner; the reader's press would take the focus back.
+            cx.stop_propagation();
             let mut m = model.borrow_mut();
-            toggle(&mut m, cx.app().size().0);
+            toggle_key(&mut m, cx.app().size().0);
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });

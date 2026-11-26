@@ -606,7 +606,7 @@ Decision (owner, 2026-11-27):
 - Enter on a file opens it and moves the focus to the reader, as in Scouter. Enter on a folder toggles it.
 - `l`/`→` expand a folder and do nothing on a file; `h`/`←` collapse. Only Enter opens.
 - A click in the sidebar while another pane is focused only focuses the sidebar: the selection and the reader do not change. Once the sidebar is focused, a click selects the row (and previews a file, or toggles a folder). This amends "a click focuses the pane under the pointer", whose row actions now need the sidebar focused first.
-- `Ctrl+/` that shows the sidebar also focuses it.
+- `Ctrl+/` or a click on the `»` mark that shows the sidebar also focuses it (the mark click added by the owner on 2026-11-27).
 
 Consequences:
 
