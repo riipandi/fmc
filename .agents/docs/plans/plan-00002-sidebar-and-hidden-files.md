@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T16:00:00+07:00
-updated: 2026-11-27T00:05:00+07:00
+updated: 2026-11-27T00:40:00+07:00
 phases:
     - id: 1
       title: "Key check and deviation records"
@@ -13,8 +13,8 @@ phases:
       note: "Rex at 80x24 and 70x24 on the demo repo: the welcome keeps the list with no mark, 80x24 README shows the mark at column 26, Ctrl+/ and the legacy 0x1F byte hide and show it, a Ctrl+/ in the finder does nothing, and at 70 columns README hides the list with the mark at column 0 while Tab does not reach it. The footer shows ^/ sidebar in place of Tab files: it fits at 80 columns, and at 70 it is cut, so the mark is the only cue there. 242 tests pass."
     - id: 3
       title: "Hidden files: Ctrl+. and . in the tree and the finder"
-      status: pending
-      note: —
+      status: done
+      note: "Rex at 80x24 on the demo repo (.gitignore is the dotfile; no demo change needed): the sidebar shows the header badge no dotfiles and drops .gitignore when hidden; the selected dotfile falls to the first row; in the finder a .gitignore query finds it while shown, and Ctrl+. rebuilds the index so it finds nothing. The badge is the header's files badge swapped for no dotfiles, which fits beside a 24-column title. Tests cover the row filter, a dot folder's children, the selection fallback, and the finder index skip. 246 tests pass."
     - id: 4
       title: "Docs sync, ledger close, handover"
       status: pending

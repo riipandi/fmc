@@ -68,6 +68,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `q` | close the open document or key list; back from the changes |
 | `?` | this key list; ? or Esc closes it |
 | `Ctrl+/` | show / hide the sidebar |
+| `Ctrl+.` `.` | show / hide dotfiles in the tree and the finder |
 | `^q` `^c` | quit |
 
 ## Mouse

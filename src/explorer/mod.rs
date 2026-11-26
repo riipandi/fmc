@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 
 pub use browser::{Browser, Flat, relative};
 pub use sort::{is_noise, sort_entries};
-pub use tree::{Expand, Reveal, Row, Tree};
+pub use tree::{Expand, Reveal, Row, Tree, is_dotfile};
 
 /// What a directory entry is, as `readdir` reports it without following links (Scouter `DirectoryEntry.kind`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

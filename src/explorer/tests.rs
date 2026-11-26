@@ -461,3 +461,53 @@ fn a_refresh_keeps_a_surviving_child_open_and_forgets_a_gone_one() {
     assert!(!tree.refreshed(root, vec![chamber, owl]), "the same listing changes no row");
     assert!(!tree.refreshed(Path::new("/azkaban"), Vec::new()), "a folder not in the tree is left alone");
 }
+
+/// A root with `.gitignore`, `Notes.md`, the folder `hogwarts`, and the dot folder `.owls` (expanded, with `owl.md`).
+fn with_dotfiles() -> Tree {
+    let root = PathBuf::from("/vault");
+    let owls = root.join(".owls");
+    let mut tree = Tree::new(root.clone());
+    tree.listed(
+        &root,
+        vec![
+            Entry::new(&root, ".gitignore", Kind::File),
+            Entry::new(&root, ".owls", Kind::Directory),
+            Entry::new(&root, "hogwarts", Kind::Directory),
+            Entry::new(&root, "Notes.md", Kind::File),
+        ],
+    );
+    tree.listed(&owls, vec![Entry::new(&owls, "owl.md", Kind::File)]);
+    assert_eq!(tree.expand(&owls), Expand::Ready);
+    tree
+}
+
+fn row_names(tree: &Tree) -> Vec<String> {
+    tree.rows().iter().map(|row| row.entry.name.clone()).collect()
+}
+
+#[test]
+fn a_dotfile_and_a_dot_folder_with_its_children_have_no_rows_while_hidden() {
+    let mut tree = with_dotfiles();
+    assert!(tree.dotfiles());
+    assert!(row_names(&tree).contains(&".gitignore".to_string()));
+    assert!(row_names(&tree).contains(&"owl.md".to_string()));
+
+    tree.set_dotfiles(false);
+    assert_eq!(row_names(&tree), ["hogwarts", "Notes.md"]);
+
+    tree.set_dotfiles(true);
+    assert!(row_names(&tree).contains(&"owl.md".to_string()), "the listing kept the dot folder's children");
+}
+
+#[test]
+fn hiding_dotfiles_moves_a_selected_dotfile_to_the_first_row() {
+    let root = PathBuf::from("/vault");
+    let mut browser = Browser::new(Tree::new(root.clone()));
+    browser.listed(&root, vec![Entry::new(&root, "Notes.md", Kind::File), Entry::new(&root, ".gitignore", Kind::File)]);
+    browser.select(Path::new("/vault/.gitignore"));
+    assert_eq!(selected_name(&browser), ".gitignore");
+
+    browser.set_dotfiles(false);
+    assert_eq!(selected_name(&browser), "Notes.md", "the selection falls back as for a removed row");
+    assert!(!browser.dotfiles());
+}

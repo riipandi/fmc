@@ -68,3 +68,22 @@ fn the_walk_stops_at_the_limit_and_says_so() {
     assert!(!exact.truncated);
     assert_eq!(exact.entries.len(), 8);
 }
+
+#[test]
+fn a_dotfile_and_its_folder_are_left_out_of_the_index_while_hidden() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    fs::create_dir_all(root.join(".owls")).unwrap();
+    fs::write(root.join(".owls/owl.md"), "Hedwig\n").unwrap();
+    fs::write(root.join(".gitignore"), "target\n").unwrap();
+    fs::write(root.join("Notes.md"), "Dumbledore\n").unwrap();
+    let hidden = |path: &Path| path.file_name().is_some_and(|name| fmc::explorer::is_dotfile(&name.to_string_lossy()));
+
+    let shown = index(root, |_| false, 100);
+    let names = relatives(&shown);
+    for name in [".owls", ".owls/owl.md", ".gitignore", "Notes.md"] {
+        assert!(names.contains(&name), "{name} is listed while dotfiles show: {names:?}");
+    }
+    let left = index(root, hidden, 100);
+    assert_eq!(relatives(&left), ["Notes.md"]);
+}

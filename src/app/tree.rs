@@ -13,6 +13,14 @@ use super::{Model, Pending, Ui, changes, find, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
+/// `Ctrl+.` and `.`: shows or hides dotfiles. The selection falls back as for a removed row, and an open finder walks
+/// the folder again (plan-00002, D5).
+pub fn toggle_dotfiles(m: &mut Model) {
+    let shown = !m.browser.dotfiles();
+    m.browser.set_dotfiles(shown);
+    find::reindex(m);
+}
+
 /// Runs a list key on the selected row.
 pub fn act(m: &mut Model, action: Action) {
     match action {

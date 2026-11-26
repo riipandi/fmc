@@ -33,6 +33,8 @@ pub enum Action {
     Close,
     /// `Ctrl+/` (and `Ctrl+_`, the legacy `0x1F`): shows or hides the sidebar (plan-00002).
     ToggleSidebar,
+    /// `Ctrl+.` and `.`: shows or hides dotfiles in the tree and the finder (plan-00002).
+    ToggleDotfiles,
     SwitchPane,
     Escape,
     /// Narrower (-1) or wider (1) list, by two columns.
@@ -131,6 +133,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("q", "close the open document or key list; back from the changes"),
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),
+            ("Ctrl+. .", "show / hide dotfiles in the tree and the finder"),
             ("^q ^c", "quit"),
         ],
     ),

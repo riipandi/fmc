@@ -340,6 +340,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::SwitchPane | Action::Escape => m.focus = Focus::List,
                 Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
                 Action::ToggleSidebar => layout::toggle(&mut m, cx.app().size().0),
+                Action::ToggleDotfiles => tree::toggle_dotfiles(&mut m),
                 // The changes body has no Markdown view of its own: `m` is for the reader's document.
                 Action::ToggleMarkdown if !body => {
                     reader::toggle_markdown(&mut m);
@@ -761,7 +762,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     } else {
         HeaderState {
             title: name,
-            badges: vec![Badge::quiet("files")],
+            badges: vec![Badge::quiet(if m.browser.dotfiles() { "files" } else { "no dotfiles" })],
             focused: m.focus == Focus::List,
             ..Default::default()
         }

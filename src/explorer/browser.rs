@@ -141,6 +141,20 @@ impl Browser {
         changed
     }
 
+    pub fn dotfiles(&self) -> bool {
+        self.tree.dotfiles()
+    }
+
+    /// Shows or hides dotfiles. A selection that has no row after the change falls back to the first row, as it does
+    /// for any removed row. The finder's rows are not the tree's, so the caller walks the folder again for them.
+    pub fn set_dotfiles(&mut self, shown: bool) {
+        self.tree.set_dotfiles(shown);
+        if !self.is_flat() {
+            let selected = self.selected.clone();
+            self.select(&selected);
+        }
+    }
+
     /// Selects `path` if it has a row, else the first row (Scouter `show`, which renders after each change).
     pub fn select(&mut self, path: &Path) {
         let index = self.rows().iter().position(|row| row.entry.path == path).unwrap_or(0);

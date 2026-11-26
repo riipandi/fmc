@@ -156,6 +156,8 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
             "o" if !state.typing => return Some(Action::JumpBack),
             // `Ctrl+_` is the legacy `0x1F` (phase 1 note); a prompt takes the key as nothing (plan-00002).
             "/" | "_" if !state.typing => return Some(Action::ToggleSidebar),
+            // A prompt takes a plain `.` as text; `Ctrl+.` is not text, so the finder rebuilds its index with it.
+            "." => return Some(Action::ToggleDotfiles),
             _ => {}
         }
     }
@@ -166,6 +168,7 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
         return None;
     }
     match key.name {
+        "." if !state.typing => Some(Action::ToggleDotfiles),
         "w" => Some(Action::ToggleWrap),
         "q" => Some(Action::Close),
         "m" => Some(Action::ToggleMarkdown),

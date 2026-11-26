@@ -73,6 +73,15 @@ fn ctrl_slash_and_its_legacy_byte_show_the_sidebar_but_not_in_a_prompt() {
 }
 
 #[test]
+fn a_period_and_ctrl_period_toggle_dotfiles_but_a_prompt_types_the_period() {
+    assert_eq!(last(&["."], TREE), Step::Done(Action::ToggleDotfiles));
+    assert_eq!(last(&["."], READER), Step::Done(Action::ToggleDotfiles));
+    assert_eq!(last(&["^."], TREE), Step::Done(Action::ToggleDotfiles));
+    assert_eq!(last(&["."], State { typing: true, ..TREE }), Step::Bad);
+    assert_eq!(last(&["^."], State { typing: true, ..TREE }), Step::Done(Action::ToggleDotfiles));
+}
+
+#[test]
 fn g_and_gg_go_to_the_top() {
     assert_eq!(run(&["g", "g"], TREE), [Step::Done(Action::Top), Step::Done(Action::Top)]);
     assert_eq!(last(&["G"], READER), Step::Done(Action::Bottom));
@@ -188,6 +197,7 @@ fn every_documented_key_is_bound() {
                     "Ctrl+o" => vec!["^o".into()],
                     "Alt+i" => vec!["M-i".into()],
                     "Ctrl+/" => vec!["^/".into()],
+                    "Ctrl+." => vec!["^.".into()],
                     "Enter" => vec!["enter".into()],
                     "Backspace" => vec!["backspace".into()],
                     "Tab" => vec!["tab".into()],

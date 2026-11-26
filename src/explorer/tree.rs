@@ -49,6 +49,14 @@ pub enum Reveal {
 pub struct Tree {
     root: PathBuf,
     nodes: HashMap<PathBuf, Node>,
+    /// Whether dotfiles and the folders named with a dot show (plan-00002, D5). Hidden, they and their children have no
+    /// rows; the listing keeps them, so showing them again needs no read.
+    dotfiles: bool,
+}
+
+/// A dotfile or a dot folder: a name that starts with `.`.
+pub fn is_dotfile(name: &str) -> bool {
+    name.starts_with('.')
 }
 
 impl Tree {
@@ -56,7 +64,7 @@ impl Tree {
         let name = root.file_name().map_or_else(|| root.display().to_string(), |n| n.to_string_lossy().into_owned());
         let entry = Entry { name, path: root.clone(), kind: Kind::Directory };
         let node = Node { entry, parent: None, expanded: false, children: None };
-        Self { nodes: HashMap::from([(root.clone(), node)]), root }
+        Self { nodes: HashMap::from([(root.clone(), node)]), root, dotfiles: true }
     }
 
     pub fn root(&self) -> &Path {
@@ -166,15 +174,28 @@ impl Tree {
         self.nodes.get(path).map(|node| &node.entry)
     }
 
+    pub fn dotfiles(&self) -> bool {
+        self.dotfiles
+    }
+
+    pub fn set_dotfiles(&mut self, shown: bool) {
+        self.dotfiles = shown;
+    }
+
     /// The visible rows, depth first. The root is not a row: its children are the top level, at depth 0.
     pub fn rows(&self) -> Vec<Row<'_>> {
         let mut rows = Vec::new();
         if let Some(children) = self.nodes.get(&self.root).and_then(|node| node.children.as_ref()) {
-            for child in children {
+            for child in children.iter().filter(|child| self.shows(child)) {
                 self.visit(child, 0, &mut rows);
             }
         }
         rows
+    }
+
+    /// Whether a child has a row: a dotfile does only while dotfiles show.
+    fn shows(&self, path: &Path) -> bool {
+        self.dotfiles || !self.nodes.get(path).is_some_and(|node| is_dotfile(&node.entry.name))
     }
 
     fn visit<'a>(&'a self, path: &Path, depth: usize, rows: &mut Vec<Row<'a>>) {
@@ -189,7 +210,7 @@ impl Tree {
         if node.expanded
             && let Some(children) = &node.children
         {
-            for child in children {
+            for child in children.iter().filter(|child| self.shows(child)) {
                 self.visit(child, depth + 1, rows);
             }
         }

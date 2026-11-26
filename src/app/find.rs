@@ -111,6 +111,7 @@ pub fn start(m: &mut Model) {
     }
     m.find_session += 1;
     let session = m.find_session;
+    spawn_index(m, session);
     m.finder = Some(Finder {
         session,
         mode: Mode::Files,
@@ -124,12 +125,37 @@ pub fn start(m: &mut Model) {
         request: 0,
         preview: None,
     });
+    update(m);
+}
+
+/// Walks the folder for the finder's index. Dotfiles are left out while the tree hides them (plan-00002).
+fn spawn_index(m: &Model, session: u64) {
     let root = m.browser.tree.root().to_path_buf();
     let marks = m.marks.clone();
+    let dotfiles = m.browser.dotfiles();
     services::spawn(&m.proxy, move || {
-        let skip = |path: &Path| marks.is_ignored(&fmc::explorer::relative(&root, path));
+        let skip = |path: &Path| {
+            let dot = path.file_name().is_some_and(|name| fmc::explorer::is_dotfile(&name.to_string_lossy()));
+            (!dotfiles && dot) || marks.is_ignored(&fmc::explorer::relative(&root, path))
+        };
         Event::Indexed { session, index: services::find::index(&root, skip, find::MAX_INDEXED) }
     });
+}
+
+/// Walks the folder again after a dotfile toggle, with the open finder's query kept. The old index answers nothing
+/// once the session moves on, and its text search stops.
+pub fn reindex(m: &mut Model) {
+    if m.finder.is_none() {
+        return;
+    }
+    m.find_session += 1;
+    let session = m.find_session;
+    if let Some(finder) = m.finder.as_mut() {
+        finder.session = session;
+        finder.index = None;
+    }
+    restart_scan(m);
+    spawn_index(m, session);
     update(m);
 }
 
