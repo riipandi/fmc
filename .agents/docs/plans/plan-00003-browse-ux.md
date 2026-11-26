@@ -1,12 +1,12 @@
 ---
 status: in-progress
 created: 2026-11-27T09:00:00+07:00
-updated: 2026-11-27T09:00:00+07:00
+updated: 2026-11-27T00:49:46+07:00
 phases:
     - id: 1
       title: "Bug fixes: arrow keys pan the reader; Ctrl+/ focuses the shown sidebar"
-      status: pending
-      note: —
+      status: done
+      note: "248 tests; live run at 80x24: arrow on a folder leaves the reader column unchanged; Ctrl+/ focuses the list"
     - id: 2
       title: "settings.json reader (three keys)"
       status: pending

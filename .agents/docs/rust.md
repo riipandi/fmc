@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-27T00:30:00+07:00
+updated: 2026-11-27T00:49:46+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -33,7 +33,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 - **Terminal restore is OpenTUI's.** `App::run` enters the alternate screen and leaves it on return; the host installs a panic hook that restores the terminal before the panic message prints (`opentui-0.9.9/src/host.rs`, `install_panic_hook`). fmc adds no hook of its own. `tests/cli.rs` checks both paths; the panic path uses the debug-only `FMC_PANIC_AFTER_START` variable (`src/app/mod.rs`), compiled out of release builds.
 - **The root keeps the terminal's background.** OpenTUI's themes fill the root with a color (`#12161c` dark); Scouter draws on the default background, so `app::run` sets both themes' `background` to `Color::DEFAULT_BACKGROUND`.
-- **Keys are read in capture.** `on_key_capture` sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab.
+- **Keys are read in capture.** `on_key_capture` (`app/capture.rs`) sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab. A key the parser hands to fmc calls `stop_propagation`: OpenTUI's keyboard focus follows the last click, not fmc's `Focus`, so the reader's scroll box would otherwise pan on a tree arrow (`app/capture_tests.rs`).
 - **A poll is one job per chain, and its answer schedules the next.** `app/poll.rs` starts one worker job per tick, and the back-off is three times the job's duration, within 2 s and 30 s (`src/explorer/browse-watcher.ts`). A browse refresh that is not a tick (leaving the changes screen) sets `chain` false, so it cannot start a second chain; a changes tick ends when its session has left the screen.
 - **A rebuilt stacked body holds its end after the frame measures it.** A rebuild that found the body at its end sets `bottom_pending`, and the repaint 20 ms later scrolls to the new end once the blocks have rows (`app/mod.rs`). A scroll before that moves the selection to the last file, because the block tops are not laid out yet.
 - **Workers answer through events.** `services::spawn` runs a job on its own thread and sends the `services::Event` it returns through the app's `AppProxy`; `app/` applies each event on the UI thread. A reply may arrive after the tree changed, so `apply` checks that the path is still in the tree.

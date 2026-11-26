@@ -44,10 +44,19 @@ pub fn sync(m: &mut Model, columns: u16) {
     }
 }
 
-/// `Ctrl+/`, `Ctrl+_`, and the mark.
+/// The mark on the border.
 pub fn toggle(m: &mut Model, columns: u16) {
     if can_hide(m) {
         m.visibility.toggle(columns, true, false);
+    }
+}
+
+/// `Ctrl+/`, `Ctrl+_`: showing the sidebar also focuses it (architecture.md, "Auto-preview in the sidebar").
+pub fn toggle_key(m: &mut Model, columns: u16) {
+    let hidden = !shown(m, columns);
+    toggle(m, columns);
+    if hidden && shown(m, columns) {
+        m.focus = Focus::List;
     }
 }
 
