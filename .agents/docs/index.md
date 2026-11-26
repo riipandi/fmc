@@ -1,6 +1,6 @@
 # Agents Documentation Index
 
-updated: 2026-11-26T16:07:05+07:00
+updated: 2026-11-26T17:10:00+07:00
 
 Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), then the core documents below. Everything else is reference, history, or contract; navigate from here.
 
@@ -46,8 +46,8 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 | Path | Holds | Now |
 | --- | --- | --- |
 | `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | None live. `plan-00001-scouter-parity.md` is archived (done: W0 to W6, phases 1 to 25). |
-| `issues/` | Findings that outlive a turn. | `issue-00006-scrollbar-not-smooth.md` (open; owner check: the scrollbar's feel, keys and wheel match Scouter in Rex); `issue-00011-owner-hand-evaluation.md` (open: the owner's 2026-11-26 evaluation, four items, one commit each: the thumb drag, the one-file default, the binary notice, click-to-focus) |
+| `issues/` | Findings that outlive a turn. | `issue-00006-scrollbar-not-smooth.md` (open; owner check: the scrollbar's feel, keys and wheel match Scouter in Rex) |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00002-scouter-parity-closed.md` (done: plan-00001 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
 | `audit/` | Point-in-time audit reports. | `audit-00001-scouter-parity.md` (completed: the plan-00001 phase 22 parity audit; F-01 to F-06 fixed in phase 23, F-07 and F-08 approved deviations in 6cb4373) |
-| `archive/` | Completed ledger files. | `issue-00001-w3-reader-parity-gaps.md` (resolved: the Core highlight queries and the reader focus and startup deviations); `issue-00003-rendered-markdown-scroll-end.md` (resolved by plan-00001 phase 23c); `issue-00004-welcome-clipped-at-80x24.md` (resolved by plan-00001 phase 23a); `issue-00005-markdown-table-widths.md` (resolved by plan-00001 phase 23b); `issue-00007-tree-wheel-scrolls-back.md` (resolved by plan-00001 phase 23d); `issue-00008-reader-pan-one-column-short.md` (resolved by plan-00001 phase 23e); `issue-00002-binary-footer-position.md` (resolved: owner decision, approved deviation in 6cb4373); `issue-00009-folded-header-stat-bar.md` (resolved by plan-00001 phase 23f); `issue-00010-upgrade-not-recorded.md` (resolved: owner decision, approved deviation in 6cb4373); `plan-00001-scouter-parity.md` (done: W0 to W6, closed by plan-00001 phase 24) |
+| `archive/` | Completed ledger files. | `issue-00001-w3-reader-parity-gaps.md` (resolved: the Core highlight queries and the reader focus and startup deviations); `issue-00003-rendered-markdown-scroll-end.md` (resolved by plan-00001 phase 23c); `issue-00004-welcome-clipped-at-80x24.md` (resolved by plan-00001 phase 23a); `issue-00005-markdown-table-widths.md` (resolved by plan-00001 phase 23b); `issue-00007-tree-wheel-scrolls-back.md` (resolved by plan-00001 phase 23d); `issue-00008-reader-pan-one-column-short.md` (resolved by plan-00001 phase 23e); `issue-00002-binary-footer-position.md` (resolved: owner decision, approved deviation in 6cb4373); `issue-00009-folded-header-stat-bar.md` (resolved by plan-00001 phase 23f); `issue-00010-upgrade-not-recorded.md` (resolved: owner decision, approved deviation in 6cb4373); `issue-00011-owner-hand-evaluation.md` (resolved: the owner's 2026-11-26 evaluation, four items fixed in 0b7eeb8, 91c39fd, 3aca636, 0796828, and 0f0400a); `plan-00001-scouter-parity.md` (done: W0 to W6, closed by plan-00001 phase 24) |

@@ -1,7 +1,7 @@
 ---
-status: open
+status: resolved
 created: 2026-11-26T16:07:05+07:00
-updated: 2026-11-26T16:45:00+07:00
+updated: 2026-11-26T17:10:00+07:00
 summary: "The owner's hand evaluation of fmc (2026-11-26) found four items: the scrollbar thumb does not drag and a track click does nothing; the changes screen opens in all-files; the binary notice names Scouter; a click does not move the focus. The owner asked for all four to be fixed, one commit each."
 count: 4
 ---
