@@ -74,6 +74,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | Keys | Action |
 | --- | --- |
 | `Left` `click` | open a file or toggle a folder |
+| `Click` | focus the pane under the pointer |
 | `Drag` `text` | select; y copies it |
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |

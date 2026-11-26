@@ -1,7 +1,7 @@
 ---
 status: open
 created: 2026-11-26T16:07:05+07:00
-updated: 2026-11-26T16:30:00+07:00
+updated: 2026-11-26T16:45:00+07:00
 summary: "The owner's hand evaluation of fmc (2026-11-26) found four items: the scrollbar thumb does not drag and a track click does nothing; the changes screen opens in all-files; the binary notice names Scouter; a click does not move the focus. The owner asked for all four to be fixed, one commit each."
 count: 4
 ---
@@ -43,8 +43,9 @@ count: 4
 
 ## A click does not move the focus
 
-- status: open
+- status: resolved (2026-11-26, `feat(focus): a click focuses the pane under the pointer`)
   area: the focus of the tree, the reader, the changes list, and the diff body (`src/app/mod.rs` `wire_mouse` and the viewer and sidebar panels, `src/app/changes.rs`)
   summary: Approved deviation (architecture.md, "a click focuses the pane under the pointer", commit a91844c): a left click anywhere in a pane focuses it, including its scrollbar. Today only a click on a tree or changes row sets the focus, so a click in the reader text, its header, or the diff header leaves the focus where it was. Row clicks keep their actions; in the reader a press still starts a drag-select.
   plan: none; the owner asked for the change (2026-11-26) and approved it in a91844c.
-  trigger: resolved by the commit `feat(focus): a click focuses the pane under the pointer`; the thumb press also focuses its pane (item 1).
+  resolution: `src/app/mod.rs` `focus_on_press` sets the focus on a press in the sidebar panel and the viewer panel; the changes list's row handler sets the list's focus first and stops the press there, so a row that opens the body keeps the body's focus. A bar's press focuses its pane (`wire_bar`). The `?` key list and `docs/keymaps.md` gain a `Click` row (`MOUSE_ROWS`, `tests/cli.rs` help). Tests: `src/app/focus_tests.rs`. Live at 80x24 (new tab): the footer reads `READER` after a press in the text, the rendered view's bar, and its header, and `FILES` after a press in the tree's header, the tree's bar, and a row that opens a file; in the changes screen a row opens the body (`DIFF`), and the list's header reads `CHANGES`. The focus colour moved: the reader's top-left corner is the accent colour and the tree's the border colour (`rgb(129, 140, 248)` and `rgb(42, 47, 58)` in the HTML capture).
+  trigger: None — closed.

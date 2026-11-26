@@ -173,29 +173,9 @@ impl Model {
     }
 }
 
-/// Runs the app on `target` until the user quits.
-pub fn run(target: &Path) -> opentui::Result<()> {
-    // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
-    let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
-    let options = AppOptions {
-        palette_size: theme::PALETTE_SIZE,
-        tab_focus: false,
-        // A drag selects and keeps the selection; `y` copies it (architecture.md, approved deviation).
-        copy_on_select: false,
-        theme: dark,
-        light_theme: Some(light),
-        ..AppOptions::default()
-    };
-    let app = App::new(options)?;
-    syntax::register();
-    // A file opens its folder, with the file revealed (Scouter `reveal`, `src/app/app.ts:344-356`).
-    let (root, pending) = if target.is_dir() {
-        (target.to_path_buf(), None)
-    } else {
-        let parent = target.parent().unwrap_or(target).to_path_buf();
-        (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
-    };
-    let model = Rc::new(RefCell::new(Model {
+/// The state a fresh app starts with: the browse root, the startup `pending` reveal, and the empty reader.
+fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) -> Model {
+    Model {
         location: target.to_string_lossy().into_owned(),
         focus: Focus::List,
         mode: Mode::Dark,
@@ -233,7 +213,32 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         diff_started: None,
         diff_options: changes::Options::default(),
         diff_jump: None,
-    }));
+    }
+}
+
+/// Runs the app on `target` until the user quits.
+pub fn run(target: &Path) -> opentui::Result<()> {
+    // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
+    let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
+    let options = AppOptions {
+        palette_size: theme::PALETTE_SIZE,
+        tab_focus: false,
+        // A drag selects and keeps the selection; `y` copies it (architecture.md, approved deviation).
+        copy_on_select: false,
+        theme: dark,
+        light_theme: Some(light),
+        ..AppOptions::default()
+    };
+    let app = App::new(options)?;
+    syntax::register();
+    // A file opens its folder, with the file revealed (Scouter `reveal`, `src/app/app.ts:344-356`).
+    let (root, pending) = if target.is_dir() {
+        (target.to_path_buf(), None)
+    } else {
+        let parent = target.parent().unwrap_or(target).to_path_buf();
+        (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
+    };
+    let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
     tree::list(&mut model.borrow_mut(), root);
@@ -448,13 +453,14 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 MouseEventKind::Down(MouseButton::Left) => {
                     m.focus = Focus::List;
                     let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
-                    let Some(index) = row else { return };
-                    m.browser.select_index(index);
-                    // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
-                    if m.finder.is_some() {
-                        find::pick(&mut m);
-                    } else {
-                        tree::activate(&mut m);
+                    if let Some(index) = row {
+                        m.browser.select_index(index);
+                        // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
+                        if m.finder.is_some() {
+                            find::pick(&mut m);
+                        } else {
+                            tree::activate(&mut m);
+                        }
                     }
                 }
                 MouseEventKind::ScrollUp => m.browser.scroll(-1),
@@ -473,9 +479,14 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             let mut m = model.borrow_mut();
             match event.kind {
                 MouseEventKind::Down(MouseButton::Left) => {
+                    // The row's action may move the focus to the body, so the list's press stops here (the pane's own
+                    // focus handler is further up the path).
+                    m.focus = Focus::List;
                     let line = line_at(event.y, LIST_TOP, m.change_list.height());
-                    let Some(index) = line.and_then(|line| m.change_list.row_at(line)) else { return };
-                    changes::click_row(&mut m, index);
+                    if let Some(index) = line.and_then(|line| m.change_list.row_at(line)) {
+                        changes::click_row(&mut m, index);
+                    }
+                    cx.stop_propagation();
                 }
                 MouseEventKind::ScrollUp => m.change_list.scroll(-1),
                 MouseEventKind::ScrollDown => m.change_list.scroll(1),
@@ -484,6 +495,15 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });
+
+    // A press anywhere in a pane focuses it, its header and its bar included (approved deviation, architecture.md). A row
+    // press has already set the focus and stopped here, so the row's own action is what the focus ends on.
+    let (sidebar, viewer) = {
+        let u = ui.borrow();
+        (u.browser_panel.clone(), u.viewer_panel.clone())
+    };
+    focus_on_press(model, ui, &sidebar, Focus::List);
+    focus_on_press(model, ui, &viewer, Focus::Reader);
 
     // The bars: a drag, a track click, and a wheel step move the pane each bar belongs to (Scouter's scroll box bars).
     let tree_track = ui.borrow().tree.track();
@@ -548,6 +568,21 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 MouseEventKind::Up(MouseButton::Left) => m.drag = None,
                 _ => return,
             }
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+}
+
+/// Focuses `pane` on a left press anywhere in `panel`.
+fn focus_on_press(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, panel: &View, pane: Focus) {
+    panel.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                return;
+            }
+            let mut m = model.borrow_mut();
+            m.focus = pane;
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });
@@ -910,3 +945,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
 }
+
+#[cfg(test)]
+#[path = "focus_tests.rs"]
+mod focus_tests;
