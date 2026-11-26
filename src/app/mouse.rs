@@ -113,3 +113,26 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
 
     layout::wire(model, ui);
 }
+
+/// A header folds on the release that ends a click: a press and a release at one cell, with no drag between (approved
+/// deviation, architecture.md). A swipe that starts on a header is a drag, so it folds nothing.
+#[derive(Default)]
+pub struct HeaderClick(Option<(u16, u16)>);
+
+impl HeaderClick {
+    /// Feeds one mouse event; `true` when it is the release that completes a click.
+    pub fn feed(&mut self, kind: MouseEventKind, x: u16, y: u16) -> bool {
+        match kind {
+            MouseEventKind::Down(MouseButton::Left) => {
+                self.0 = Some((x, y));
+                false
+            }
+            MouseEventKind::Drag(MouseButton::Left) => {
+                self.0 = None;
+                false
+            }
+            MouseEventKind::Up(MouseButton::Left) => self.0.take() == Some((x, y)),
+            _ => false,
+        }
+    }
+}

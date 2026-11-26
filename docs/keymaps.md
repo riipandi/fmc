@@ -89,6 +89,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
+| `Click` header | fold / unfold the file, on release; a drag does not |
 
 A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. A click selects a file but does not open it: Enter does.
 

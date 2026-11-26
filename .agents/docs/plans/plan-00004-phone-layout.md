@@ -5,8 +5,8 @@ updated: 2026-11-27T14:00:00+07:00
 phases:
     - id: 1
       title: "Key list duplicate and fold on release (P7)"
-      status: pending
-      note: —
+      status: done
+      note: "Fold on release done (P7). Duplicate [ ] row held: it changes the 80x24 ? page, and the audit's open question 4 is unanswered (owner)."
     - id: 2
       title: "Header-row tap and the full-width drawer (P1, P3)"
       status: pending

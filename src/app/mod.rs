@@ -329,11 +329,12 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         });
     }
     {
-        // A left click on a file's header folds the file (Scouter `createHeader`); the rows are the last frame's.
+        // A click on a file's header folds the file, on its release (`HeaderClick`); the rows are the last frame's.
         let (model, ui) = (model.clone(), ui.clone());
         let stacked = ui.borrow().diff.scroller.widget();
+        let mut click = mouse::HeaderClick::default();
         stacked.on_mouse(move |cx, event| {
-            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+            if !click.feed(event.kind, event.x, event.y) {
                 return;
             }
             let mut m = model.borrow_mut();
@@ -722,3 +723,5 @@ mod focus_tests;
 #[cfg(test)]
 #[path = "layout_tests.rs"]
 mod layout_tests;
+#[cfg(test)]
+mod mouse_tests;
