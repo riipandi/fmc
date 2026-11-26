@@ -25,7 +25,17 @@ fn main() -> ExitCode {
     }
 }
 
+/// Removes the index copies when `run` returns, on an error and on a panic too (`services::git::remove_copies`).
+struct RemoveCopies;
+
+impl Drop for RemoveCopies {
+    fn drop(&mut self) {
+        services::git::remove_copies();
+    }
+}
+
 fn run() -> Result<(), String> {
+    let _copies = RemoveCopies;
     match args::parse(std::env::args_os().skip(1))? {
         Command::Help => println!("{}", args::help_text()),
         Command::Version => println!("{}", args::version_text()),

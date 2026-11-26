@@ -241,6 +241,23 @@ impl Repository {
 impl Drop for Repository {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.copy_dir);
+        copies().retain(|dir| dir != &self.copy_dir);
+    }
+}
+
+/// The copy directories that stand now. A quit can leave one behind, when a git call is still running on a worker
+/// thread and its `Repository` never drops (Scouter's `process.once("exit")`, `src/diff/git.ts:372-375`).
+static COPIES: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+
+fn copies() -> MutexGuard<'static, Vec<PathBuf>> {
+    COPIES.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+/// Removes every copy directory still standing. The app calls it once it has left the terminal, so it also runs when
+/// a call is still in flight.
+pub fn remove_copies() {
+    for dir in std::mem::take(&mut *copies()) {
+        let _ = fs::remove_dir_all(dir);
     }
 }
 
@@ -272,6 +289,7 @@ fn create_copy_dir() -> Result<PathBuf, String> {
     let dir =
         std::env::temp_dir().join(format!("fmc-index-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
     fs::create_dir(&dir).map_err(|error| error.to_string())?;
+    copies().push(dir.clone());
     Ok(dir)
 }
 

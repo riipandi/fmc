@@ -28,6 +28,8 @@ const JUMP_TRIES: u8 = 8;
 /// Scouter's words for the footer (`src/app/app.ts`, `src/diff/diff-blocks.ts`).
 const FIRST_HUNK: &str = "First hunk.";
 const LAST_HUNK: &str = "Last hunk.";
+const LOADING: &str = "Loading changes…";
+const BUSY: &str = "Still loading. Try again when it finishes.";
 const NO_FILE_TO_OPEN: &str = "This file was deleted, so there is nothing to open.";
 const SPLIT_NEEDS_COLUMNS: &str = "Split needs 60+ columns.";
 
@@ -84,20 +86,68 @@ pub fn toggle(m: &mut Model) {
         return;
     }
     if m.loading {
-        m.message = Some(Message { text: "Still loading. Try again when it finishes.".into(), error: false });
+        m.message = Some(Message { text: BUSY.into(), error: false });
         return;
     }
     m.changes_session += 1;
     let session = m.changes_session;
     m.changes_load = Some(session);
-    m.message = Some(Message { text: "Loading changes…".into(), error: false });
+    m.message = Some(Message { text: LOADING.into(), error: false });
     m.notice = None;
     let dir: PathBuf = m.browser.tree.root().to_path_buf();
     services::spawn(&m.proxy, move || Event::ChangesListed { session, result: services::changes::list(&dir) });
 }
 
+/// `r` (Scouter `loadDiff` with `onDiffChange`): lists the changes again while the screen shows. The selection keeps its
+/// path, and the body reads its patches again.
+pub fn reload(m: &mut Model) {
+    if m.changes.is_none() {
+        return;
+    }
+    if m.changes_reload.is_some() {
+        m.message = Some(Message { text: BUSY.into(), error: false });
+        return;
+    }
+    m.changes_session += 1;
+    let session = m.changes_session;
+    m.changes_reload = Some(session);
+    m.notice = None;
+    m.message = Some(Message { text: LOADING.into(), error: false });
+    let dir: PathBuf = m.browser.tree.root().to_path_buf();
+    services::spawn(&m.proxy, move || Event::ChangesListed { session, result: services::changes::list(&dir) });
+}
+
+/// A reload's listing arrives (Scouter `load` resolves, then `apply`). The body keeps its folds; a listing that
+/// leaves no changes shows the empty state.
+fn reloaded(m: &mut Model, result: Result<Listed, String>) {
+    if m.message.as_ref().is_some_and(|message| message.text == LOADING) {
+        m.message = None;
+    }
+    let Listed { repository, set, within } = match result {
+        Ok(listed) => listed,
+        Err(text) => return show_error(m, &text),
+    };
+    let keep = m.change_list.selected().map(|change| change.path.clone());
+    m.change_list.show(set.changes, set.truncated, keep.as_deref());
+    let empty = m.change_list.changes().is_empty();
+    let Some(changes) = m.changes.as_mut() else { return };
+    changes.repository = repository;
+    changes.within = within;
+    if empty {
+        changes.files.clear();
+        changes.generation += 1;
+        changes.patched = true;
+    } else {
+        read(m, false);
+    }
+}
+
 /// The listing arrives (Scouter `load` resolves, then `enterDiff`). A listing the user cancelled is dropped.
 pub fn listed(m: &mut Model, session: u64, result: Result<Listed, String>) {
+    if m.changes_reload == Some(session) {
+        m.changes_reload = None;
+        return reloaded(m, result);
+    }
     if m.changes_load != Some(session) {
         return;
     }
@@ -203,6 +253,8 @@ pub fn patched(m: &mut Model, session: u64, request: u64, result: Result<Vec<Fil
 /// (Scouter `leaveDiff`). The file's document, if any, is still open.
 pub fn leave(m: &mut Model) {
     let Some(changes) = m.changes.take() else { return };
+    // A reload still in flight is dropped when it arrives: the screen it was for has gone.
+    m.changes_reload = None;
     m.diff_jump = None;
     m.focus = if changes.return_focus == Focus::Reader && m.shown.has_document() { Focus::Reader } else { Focus::List };
 }

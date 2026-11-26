@@ -129,6 +129,8 @@ struct Model {
     diff_options: changes::Options,
     /// The listing in flight, by its session (Scouter `loading === "diff"`).
     changes_load: Option<u64>,
+    /// The listing of a reload in flight, by its session (`r`); a reply for it refreshes the open screen.
+    changes_reload: Option<u64>,
     /// The last session of a listing; each `d` takes the next.
     changes_session: u64,
     /// The file the body scrolls to once it is laid out, and the paints left to lay it out.
@@ -215,6 +217,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         change_list: ChangeList::default(),
         changes: None,
         changes_load: None,
+        changes_reload: None,
         changes_session: 0,
         diff_options: changes::Options::default(),
         diff_jump: None,
@@ -295,6 +298,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::ToggleFold if body => changes::toggle_fold(&mut m),
                 Action::ToggleContext if body => changes::toggle_context(&mut m),
                 Action::OpenChanged if body => changes::open_changed(&mut m, &ui.borrow()),
+                Action::Reload if body => changes::reload(&mut m),
                 Action::Hunk(step) if body => changes::step_hunk(&mut m, &ui.borrow(), step > 0),
                 Action::SwitchPane if body => changes::switch_pane(&mut m),
                 Action::FocusDiff => changes::activate(&mut m),

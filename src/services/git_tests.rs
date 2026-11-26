@@ -352,6 +352,16 @@ fn dropping_the_repository_removes_its_copy() {
 }
 
 #[test]
+fn a_copy_is_listed_for_the_quit_until_its_repository_drops() {
+    let dir = repository();
+    let repository = Repository::open(dir.path()).unwrap();
+    let copy = repository.copy_dir.clone();
+    assert!(copies().contains(&copy));
+    drop(repository);
+    assert!(!copies().contains(&copy));
+}
+
+#[test]
 fn calls_on_one_repository_from_two_threads_both_answer() {
     let dir = repository();
     let repository = Arc::new(Repository::open(dir.path()).unwrap());
