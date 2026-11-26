@@ -224,7 +224,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
 }
 
 /// Runs the app on `target` until the user quits.
-pub fn run(target: &Path) -> opentui::Result<()> {
+pub fn run(target: &Path, notices: Vec<String>) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
     let options = AppOptions {
@@ -246,6 +246,9 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
     };
     let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
+    if !notices.is_empty() {
+        model.borrow_mut().message = Some(Message { text: notices.join(" "), error: true });
+    }
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
     tree::list(&mut model.borrow_mut(), root);

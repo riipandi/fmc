@@ -9,8 +9,8 @@ phases:
       note: "248 tests; live run at 80x24: arrow on a folder leaves the reader column unchanged; Ctrl+/ focuses the list"
     - id: 2
       title: "settings.json reader (three keys)"
-      status: pending
-      note: —
+      status: done
+      note: "263 tests; serde not added (no derive needed, serde_json alone); live: bad file shows the notice in the footer, good file none"
     - id: 3
       title: "Enter opens and focuses; l/right only expand; click focuses first"
       status: pending

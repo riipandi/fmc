@@ -6,6 +6,7 @@ pub mod find;
 pub mod fs;
 pub mod git;
 pub mod poll;
+pub mod settings;
 
 use std::path::PathBuf;
 

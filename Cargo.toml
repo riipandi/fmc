@@ -34,6 +34,7 @@ tree-sitter-javascript = "=0.25.0"
 tree-sitter-typescript = "=0.23.2"
 tree-sitter-md = "=0.5.4"
 tree-sitter-zig = "=1.1.2"
+serde_json = "1.0.154"
 
 [dev-dependencies]
 assert_cmd = "2.2"

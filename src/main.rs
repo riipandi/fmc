@@ -45,7 +45,11 @@ fn run() -> Result<(), String> {
             }
             let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
             let target = args::open_target(path, &cwd)?;
-            app::run(&target).map_err(|e| e.to_string())?;
+            // Read before the first frame, so a bad value's notice is the first thing the footer shows.
+            let settings = services::settings::path(std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"))
+                .map(|path| services::settings::load(&path))
+                .unwrap_or_default();
+            app::run(&target, settings.notices).map_err(|e| e.to_string())?;
         }
     }
     Ok(())
