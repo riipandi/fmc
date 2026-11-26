@@ -46,7 +46,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 | Path | Holds | Now |
 | --- | --- | --- |
 | `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00003-browse-ux.md` (in progress: auto-preview, Enter, brackets, `:q`, settings.json). `plan-00002-sidebar-and-hidden-files.md` is archived (done: RI-11 and RI-12 landed, phases 1 to 5). `plan-00001-scouter-parity.md` is archived (done: W0 to W6, phases 1 to 25). |
-| `issues/` | Findings that outlive a turn. | none open |
+| `issues/` | Findings that outlive a turn. | `issue-00012-finder-gitignore-double-dot.md` (open: a finder row read `..gitignore` in a wide tab; not reproduced at 80x24 or headless at 160 columns) |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00003-sidebar-and-hidden-files.md` (done: plan-00002 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
 | `audit/` | Point-in-time audit reports. | `audit-00001-scouter-parity.md` (completed: the plan-00001 phase 22 parity audit; F-01 to F-06 fixed in phase 23, F-07 and F-08 approved deviations in 6cb4373) |
