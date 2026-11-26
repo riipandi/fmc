@@ -34,4 +34,4 @@ count: 1
   trigger: the owner's report (2026-11-26)
   audit: audit-00001 (2026-11-26): no new reproduction of the feel. The tree and reader wheel thumbs agree with Scouter at the top (`32-tree-wheel-3down`, `37-readme-wheel-3down`); the rendered-view thumb differs at the end and mid-document (F-03, issue-00003), which is a separate defect. Still for the owner check.
   resolution: |
-    Owner hand check, 2026-11-26: the wheel and the trackpad scroll smoothly. The remaining complaint was that dragging the thumb did nothing, a parity defect fixed in `0b7eeb8` and `0f0400a` (issue-00011). No change for the scroll feel itself.
+  Owner hand check, 2026-11-26: the wheel and the trackpad scroll smoothly. The remaining complaint was that dragging the thumb did nothing, a parity defect fixed in `0b7eeb8` and `0f0400a` (issue-00011). No change for the scroll feel itself.
