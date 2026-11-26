@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T08:57:16+07:00
+updated: 2026-11-26T12:03:08+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -90,8 +90,8 @@ phases:
       note: "r reloads (d9e7e46); polls: the tree every 2 s with back-off, the open file by stamp (\"is no longer on disk.\"), the changes list and patches by stamp; live 80x24 against Scouter 0.9.9: a new root file appears in both, an edit to the open file shows in both, a deleted open file shows the same notice, the changes list and body follow an edit without r, a body at its end stays at its end, mid-body holds. Index copies: 1 while the changes screen is open, 0 after quit."
     - id: 22
       title: "W6: parity audit"
-      status: pending
-      note: —
+      status: done
+      note: "audit-00001-scouter-parity.md: 80x24 live runs against Scouter 0.9.9 on d826786 for §3 rows 1 to 16 and the §4 keys; 8 findings: F-01 welcome clipped (issue-00004), F-02 Markdown two cells narrow (issue-00005), F-03 rendered thumb and percent (issue-00003), F-04 tree wheel (issue-00007), F-05 pan (issue-00008) for phase 23; F-06 folded bar, F-07 binary footer (issue-00002), F-08 --upgrade record for the owner. 216 tests green at d826786"
     - id: 23
       title: "W6: parity fixes"
       status: pending

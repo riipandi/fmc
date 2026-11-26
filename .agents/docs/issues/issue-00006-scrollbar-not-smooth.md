@@ -1,7 +1,7 @@
 ---
 status: open
 created: 2026-11-26T07:45:00+07:00
-updated: 2026-11-26T09:30:00+07:00
+updated: 2026-11-26T12:03:31+07:00
 summary: "The owner reports that scrolling looks glitchy: the scrollbar does not move smoothly. Rex captures match Scouter 0.9.9 frame by frame for keys and the wheel; the cause is not found, so the owner checks the feel by hand."
 count: 1
 ---
@@ -32,3 +32,4 @@ count: 1
     4. Note the terminal app, its font, and whether the thumb glyphs (`▐ ▝ ▗`) render as half cells in both apps. If fmc stutters only under a flick, the candidate is the redraw volume above; if the thumb alone lags, reply with the terminal and the file.
   plan: investigated before plan-00001 W5 phase 18; no defect reproduced, so no fix commit
   trigger: the owner's report (2026-11-26)
+  audit: audit-00001 (2026-11-26): no new reproduction of the feel. The tree and reader wheel thumbs agree with Scouter at the top (`32-tree-wheel-3down`, `37-readme-wheel-3down`); the rendered-view thumb differs at the end and mid-document (F-03, issue-00003), which is a separate defect. Still for the owner check.
