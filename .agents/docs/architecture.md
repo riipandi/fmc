@@ -700,3 +700,29 @@ Consequences:
 
 - (positive) The line number of every visible row stays readable while panning long lines.
 - (negative) The pan range no longer includes the gutter; a capture after `l` differs from Scouter's.
+
+### Decision: three layout tiers, and a phone-native compact tier
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context (2026-11-27): on a real phone (about 49 columns) touch navigation did not work, and the drawer, the filled `≡`/`✕` boxes glued to the title, the two-row footer, the panel borders, and three overlapping ways to toggle the list made the UI clunky (owner screenshots). The owner delegated the redesign ("go wild, no confirmation needed; document every decision and why"). This record supersedes, below 60 columns, the drawer, the header-row tap, the menu and close boxes, the full-width welcome, and the tappable footer hints of "a phone layout below 80 columns" and its amendments; the parts not named here stay.
+
+Decision (agent, on the owner's delegation, 2026-11-27):
+
+1. **Three tiers by terminal width:** compact below 60, medium 60–79, wide 80 and over. Why: each range has a different binding constraint (finger and thumb below 60, column budget at 60–79, Scouter parity at 80+); one set of rules stretched across all three is what made the phone UI clunky.
+2. **Wide (80+) stays Scouter plus the earlier records.** Why: parity is the product's base; the owner's desktop complaints were about behaviour already fixed (auto-preview, Enter), not layout.
+3. **Compact is a navigation stack, not a drawer.** Two full-screen pages: Files and Reader (plus the existing Changes, Keys, and Find pages). Opening a file pushes Reader; Back returns to Files with the selection and scroll kept. Why: this is how every phone file browser works (iOS Files, Android Files); a drawer over a reader only makes sense when the reader is visible beside it, which it is not at 40–59 columns.
+4. **Compact starts on Files, with no welcome card.** Why: on a phone the first useful screen is the list; the welcome card was telling the user to tap something to get to it.
+5. **Compact drops the panel border and the header rule.** Chrome becomes one top bar and one bottom bar (2 rows instead of 6, 0 border columns instead of 2). Why: at 49x40 the border, the header rule, and the two-row footer took 6 of 40 rows and 2 of 49 columns; content is what a phone screen is for.
+6. **Top bar:** left, a text back button `‹ Files` on Reader-like pages (the folder name on Files); centre-left, the page title (the file name); right, the existing quiet tag (`files`, `read-only`). Plain text in the accent colour with a space after it, no filled box. Why: the filled box glued to the title read as a rendering glitch; a text back button is the platform idiom and needs no glyph-width tricks.
+7. **Bottom bar:** one row of equal-width segments, each a word, no key glyphs: Files page `Find · Changes · Keys`; Reader page `Back · Search · Keys`; Changes page `Back · All/One · Split`; a prompt (find, search, `:`) replaces the bar while open, with `Cancel` as the first segment. Why: equal segments make every target at least 12 columns wide at 40 columns, thumbs live at the bottom, and words beat `^/` and `?` glyphs for people who are not using a keyboard. The mode pill and the path line go; the top bar carries the location.
+8. **Touch rules in every tier:** a row acts on release when the pointer did not move (as the fold rule already does), so a swipe never opens or toggles; a tap on a file opens it (compact: pushes Reader; medium and wide: as today); swipes scroll the pane under them; the whole row is the target. Why: a finger lands, drifts, and lifts; acting on press turns every scroll attempt into an accidental open.
+9. **Compact turns auto-preview off.** Why: the reader is not on screen while the list is; a preview there is wasted work.
+10. **Medium (60–79) keeps the sidebar-plus-reader split with auto-hide once a document opens (plan-00002 D1), but the toggle becomes a text chevron in the header:** `‹` at the start of the list's title hides it, `›` at the start of the reader's title shows it, each followed by a space. The filled boxes and the border marks are not drawn there. Why: the same idea as the back button, at a size that fits a column budget instead of a thumb.
+11. **Keys keep working everywhere** (`Ctrl+/`, `q`, `Esc`, `Tab`, `?`, `/`, `:q`), and in compact `q`/`Esc` mean Back. Why: Rex on a phone has a key bar; touch and keys must reach the same actions.
+12. **Touch delivery is verified, not assumed.** A raw-input probe ran in a tab on the phone to see what Rex's phone client sends for a tap, a swipe, and a long-press; whatever it shows decides the event handling (for example, a tap that arrives only as a press without a release). Why: the owner reported that touch did nothing, and SGR clicks from the Mac never showed it.
+
+Consequences:
+
+- (positive) A phone gets a familiar two-page browser with large targets and almost all of its rows for content; the desktop is unchanged at 80+.
+- (negative) Compact is a third layout to test; the welcome card and the path line are not shown below 60 columns.
