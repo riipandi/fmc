@@ -1,28 +1,28 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T14:00:00+07:00
-updated: 2026-11-27T14:00:00+07:00
+updated: 2026-11-27T02:49:25+07:00
 phases:
     - id: 1
       title: "Key list duplicate and fold on release (P7)"
-      status: done
-      note: "Fold on release done (P7). Duplicate [ ] row held: it changes the 80x24 ? page, and the audit's open question 4 is unanswered (owner)."
+      status: committed (f46692d, 18b623f)
+      note: "Fold on release (f46692d). The duplicate [ ] row was removed later, in 18b623f, on the owner's answer."
     - id: 2
       title: "Header-row tap and the full-width drawer (P1, P3)"
-      status: done
-      note: "Header tap (P1) and the drawer below 60 (P3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged). A tap on a file under the drawer opens it, as Enter does."
+      status: committed (f4f46bd, 6be0b8e)
+      note: "Header tap and the drawer below 60. The welcome below 60 then started with its list hidden (6be0b8e, the owner's amendment cc7ae66)."
     - id: 3
       title: "Tappable footer hints, priority order, Copy hint (P2, P6, P8)"
-      status: done
-      note: "Taps press the hint key through the key path (D2); priority and Copy below 80 (P6, P8, D3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged; taps off)."
+      status: committed (14b7078)
+      note: "Taps press the hint's key through the key path (D2); priority and Copy below 80 (P6, P8, D3)."
     - id: 4
       title: "Name-first rows and the narrow welcome (P4, P5)"
-      status: done
-      note: "P4 finder rows (355957e). P5 welcome below 50 drops the card and wraps (after the owner's welcome decision, cc7ae66)."
+      status: committed (355957e, 5ec24e4)
+      note: "P4 finder rows (355957e). P5 welcome below 50 drops the card and wraps (5ec24e4)."
     - id: 5
       title: "Docs sync, ledger close, handover, final validation"
-      status: pending
-      note: —
+      status: done
+      note: "Docs, audit verdicts, this archive, and handover-00005-phone-layout.md. The closing commit is the one that moves this file."
 ---
 
 ## Make fmc usable on a phone: the audit-00002 proposals the owner approved

@@ -19,7 +19,7 @@ Press `?` inside fmc for every key, and `Ctrl+q` or `:q` to quit. A [Nerd Font](
 
 With the file list focused, the file it selects shows in the reader. Enter opens a file and moves to the reader. `p` turns that preview off or on. `[` and `]` jump; their steps and the preview's start are set in `settings.json` (see [docs/configuration.md](docs/configuration.md)).
 
-Below 80 columns the file list hides while a file is open: `Ctrl+/`, or the mark on the border, shows it. `Ctrl+.` shows or hides dotfiles.
+Below 80 columns the file list hides while a file is open: `Ctrl+/`, or the mark on the border, shows it, and so does a tap on the reader's header row. Below 60 columns the list covers the reader as a drawer, and the footer hints can be tapped. `Ctrl+.` shows or hides dotfiles.
 
 ## Build
 

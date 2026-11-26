@@ -2,7 +2,7 @@
 title: "Audit: fmc on a phone (narrow terminals, touch input)"
 status: completed
 created_at: 2026-11-27T02:00:00+07:00
-updated_at: 2026-11-27T02:00:00+07:00
+updated_at: 2026-11-27T02:49:13+07:00
 scope:
     type: feature
     feature: mobile use (portrait 40 to 50 columns, landscape 90x20)
@@ -294,3 +294,22 @@ Live check after the fix: `fx40-hidden-main-after-fix` shows `j k scroll   ^/ si
 2. P2: approve tappable footer hints under 80 columns?
 3. P3: approve a full-width drawer below about 60 columns, which amends the 80-column record?
 4. The `[ ]` duplicate row: remove it (changes the `?` card at 80x24)?
+
+## Verdicts
+
+The owner approved P1 to P8 on 2026-11-27. Plan-00004 landed them; the answers to the open questions are in `architecture.md` ("a phone layout below 80 columns") and the welcome amendment in `cc7ae66`.
+
+| Proposal | Verdict | Where |
+| --- | --- | --- |
+| P1 header tap (option 2) | Landed | `f4f46bd`; the welcome below 60 in `6be0b8e` |
+| P2 tappable footer hints (option 1) | Landed under 80 columns; `^q` stays keyboard-only | `14b7078` |
+| P3 full-width drawer below 60 (option 1) | Landed; amends the 80-column rule below 60 | `f4f46bd`, `6be0b8e` |
+| P4 name first, folder dimmed (option 1) | Landed for finder rows under 80; the change list already drew the name first | `355957e` |
+| P5 narrow welcome (option 1) | Landed below 50: card dropped, lines wrapped. The short-height rule (drop the closing line under 24 rows) is not implemented | `5ec24e4` |
+| P6 footer priority (option 1) | Landed under 80; the order is the agent's pick, in `ui/hints.rs` `phone_rank` | `14b7078` |
+| P7 fold on release (option 1) | Landed at every width | `f46692d` |
+| P8 Copy hint (option 1) | Landed under 80; leads the hints while text is selected | `14b7078` |
+
+Open questions: 1, option 2 (the header tap). 2, yes: footer taps under 80 columns. 3, yes: the drawer below 60. 4, the duplicate `[ ]` row is removed (`18b623f`).
+
+Owner checks (real touch on a phone) are not run here; they are listed in `handover-00005-phone-layout.md`.

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Sidebar visibility: below 80 columns the sidebar hides while a document is open, and the welcome screen keeps it. `Ctrl+/`, or the `«` or `»` on the border, shows and hides it.
 - Dotfiles: `Ctrl+.` or `.` shows and hides them in the tree and the finder. They are shown by default, and the noise names stay hidden.
+- Phone layout below 80 columns: a tap on the reader's header row shows the hidden file list. Below 60 columns the list covers the screen as a drawer and closes when you open a file. Footer hints can be tapped, a `Copy` hint appears while text is selected, and finder rows show the file name before its folder. Below 50 columns the welcome drops its key card and wraps its text.
 - Project workspace: agent instructions, agent docs, and project skills.
 - The just tasks build through the kache compiler cache; `KACHE=false` turns it off. CI runs `just verify` on macOS for pushes and pull requests.
 - A read-only settings file, `settings.json` under `XDG_CONFIG_HOME/fmc` (or `~/.config/fmc`), with three keys: `auto_preview`, `sidebar_jump`, and `reader_jump` (`docs/configuration.md`).
@@ -46,11 +47,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dragging across text selects it and keeps the selection on screen. `y` copies the selection and `Esc` clears it; Scouter copies as soon as the mouse is released.
 - The changes screen opens showing one file's diff, where Scouter stacks every file at first. `a` stacks all files, and `a` again goes back to one.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
+- A diff file folds when you release the click on its header, not when you press, so a swipe that starts on a header does not fold it.
+- Below 60 columns the welcome screen shows its text full width and its list starts hidden; a tap on the reader's header row opens the list. While the drawer covers the reader, moving through the list does not preview a file.
 
 ### Fixed
 
 - `→` and `←` on a folder no longer also pan the reader, and `Ctrl+/` that shows the sidebar focuses it.
 - `j` and `k` in a folder with nothing to show no longer crash the app.
 - Dragging a scrollbar's thumb scrolls its pane, and a click on the track jumps there, in the file list, the reader, the changes list, and the diff. The wheel over a bar scrolls one row, as Scouter's scroll boxes do.
+- The `?` key list no longer lists `[ ]` twice.
+- The hidden-sidebar hint `^/ sidebar` stays in the footer at phone widths.
 
 [Unreleased]: https://github.com/riipandi/fmc/commits/main
