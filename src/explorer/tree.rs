@@ -6,6 +6,7 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 use super::{Entry, Kind};
+use crate::find::text::Snippet;
 
 struct Node {
     entry: Entry,
@@ -16,11 +17,13 @@ struct Node {
 }
 
 /// One visible row. `folder` is true for a directory and for any entry that has been listed (Scouter `paintRow`).
+/// `hit` is a text hit's line and snippet, which only the finder's rows carry.
 pub struct Row<'a> {
     pub entry: &'a Entry,
     pub depth: usize,
     pub folder: bool,
     pub expanded: bool,
+    pub hit: Option<(usize, &'a Snippet)>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -134,6 +137,7 @@ impl Tree {
             depth,
             folder: node.entry.kind == Kind::Directory || node.children.is_some(),
             expanded: node.expanded,
+            hit: None,
         });
         if node.expanded
             && let Some(children) = &node.children

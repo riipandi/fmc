@@ -55,6 +55,13 @@ impl Search {
         self.current_line()
     }
 
+    /// The search a kept hit starts with (Scouter `seed`): the query's hits in `text`, with the view on the hit at `line`.
+    pub fn seed(text: &str, query: &str, line: usize) -> Self {
+        let lines = matching_lines(text, query);
+        let at = lines.iter().position(|&hit| hit == line).unwrap_or(0);
+        Self { query: query.to_owned(), lines, at, editing: false }
+    }
+
     /// Recomputes the hits for a text that changed or was shown (Scouter `refresh`), keeping the hit in range.
     pub fn refresh(&mut self, text: &str) {
         self.lines = matching_lines(text, &self.query);

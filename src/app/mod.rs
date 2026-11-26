@@ -24,7 +24,7 @@ use crate::services::Event;
 use crate::ui::binary::BinaryView;
 use crate::ui::find::{FindBar, prompt_segments};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
-use crate::ui::header::{Badge, HeaderState, PaneHeader};
+use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
 use crate::ui::hints::{Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
@@ -53,6 +53,11 @@ struct Ui {
     reader: CodeView,
     markdown: MarkdownView,
     picture: Picture,
+    /// The preview of a text hit, in its own view beside the reader while the finder shows (Scouter `HitPreview`).
+    preview: CodeView,
+    preview_viewer: Viewer,
+    /// What the preview shows, as the paint last drew it.
+    preview_at: Option<find::PreviewAt>,
     binary: BinaryView,
     /// Two bars: beside plain text the bar is the thumb's column alone; beside filled content it has two blanks before it.
     bar: ScrollBar,
@@ -101,6 +106,10 @@ struct Model {
     search: Option<fmc::reader::search::Search>,
     /// The file finder, while it is open (Scouter `FileFinder`).
     finder: Option<find::Finder>,
+    /// The text hit Enter opened, to show at its line once its file is read (Scouter `openAt`).
+    open_at: Option<find::OpenAt>,
+    /// The row the reader scrolls to once its file shows, and the paints left to set it in (`find::OPEN_SCROLL_TRIES`).
+    pending_top: Option<(usize, u8)>,
     /// The last finder's number; its index worker answers to it.
     find_session: u64,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
@@ -170,6 +179,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         restore: None,
         search: None,
         finder: None,
+        open_at: None,
+        pending_top: None,
         find_session: 0,
         loading: false,
         focus_reader_on_open: false,
@@ -432,6 +443,10 @@ fn build(app: &App, p: &Palette) -> Ui {
     let viewer = Viewer::new(app);
     let picture = Picture::new(app);
     let binary = BinaryView::new(app);
+    let preview = CodeView::new(app, p);
+    let preview_viewer = Viewer::new(app);
+    preview_viewer.visible(false);
+    preview_viewer.widget().add(&preview.widget());
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&finder_bar.root).add(&tree.root);
     let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
@@ -439,7 +454,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let narrow_bar = ScrollBar::new(app, 0);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
-    stack.add(&welcome).add(&binary.root()).add(&viewer.widget());
+    stack.add(&welcome).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget());
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle);
@@ -459,6 +474,9 @@ fn build(app: &App, p: &Palette) -> Ui {
         reader,
         markdown,
         picture,
+        preview,
+        preview_viewer,
+        preview_at: None,
         binary,
         bar,
         narrow_bar,
@@ -503,30 +521,43 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
-    let bar = m.finder.as_ref().map(|finder| prompt_segments("/", &finder.query, &finder.status, p));
+    let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
     ui.find.paint(bar, p);
     ui.tree.paint(app, &m.browser, &m.marks, p, &root);
-    let (title, parent) = match &m.shown {
-        reader::Shown::None => ("Reader".into(), None),
-        reader::Shown::Keys { .. } => ("Keys".into(), None),
-        reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. } => {
-            reader::title_parts(&root, path)
-        }
+    // A preview names its file, with a `preview` pill in place of the reader's badges (Scouter `viewerHeaderFor`).
+    let previewed =
+        m.finder.as_ref().and_then(|finder| finder.preview.as_ref()).and_then(|preview| preview.shown.as_ref());
+    let (title, parent) = match (previewed, &m.shown) {
+        (Some(shown), _) => reader::title_parts(&root, &shown.path),
+        (None, reader::Shown::None) => ("Reader".into(), None),
+        (None, reader::Shown::Keys { .. }) => ("Keys".into(), None),
+        (
+            None,
+            reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. },
+        ) => reader::title_parts(&root, path),
     };
-    let viewer = HeaderState {
-        title,
-        parent,
-        badges: reader::badges(&m.shown, m.wrap),
-        focused: m.focus == Focus::Reader,
-        notice: m.notice.clone(),
+    let badges = match previewed {
+        Some(_) => vec![Badge { text: "preview".into(), kind: BadgeKind::Pill }],
+        None => reader::badges(&m.shown, m.wrap),
     };
+    let viewer = HeaderState { title, parent, badges, focused: m.focus == Focus::Reader, notice: m.notice.clone() };
     ui.viewer_header.paint(&viewer, p);
-    ui.welcome.visible(!m.shown.is_some());
+    // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).
+    let shows_preview = previewed.is_some();
+    ui.welcome.visible(!m.shown.is_some() && !shows_preview);
     let previewing = m.shown.previewing();
-    ui.reader.visible(m.shown.text().is_some() && !previewing);
-    ui.markdown.visible(previewing);
-    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }));
-    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }));
+    ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview);
+    ui.markdown.visible(previewing && !shows_preview);
+    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview);
+    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview);
+    // The reader's pane takes no space beside the preview, which is the pane the stack shows then.
+    ui.viewer.visible(!shows_preview);
+    if let Some((top, tries)) = m.pending_top.take() {
+        ui.viewer.scroll_to(0.0, top as f64);
+        if (ui.viewer.position().1 - top as f64).abs() >= 0.5 && tries > 0 {
+            m.pending_top = Some((top, tries - 1));
+        }
+    }
     if let reader::Shown::Binary { path, size } = &m.shown {
         let name = fmc::text::display_label(&path.file_name().unwrap_or_default().to_string_lossy());
         ui.binary.paint(&name, &fmc::reader::binary::format_size(*size), p);
@@ -539,20 +570,33 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
     m.top = ui.viewer.position().1;
-    let fill = m.wrap || m.shown.text().is_none() || previewing;
+    find::paint_preview(m, ui, p);
+    // A preview is unwrapped, as Scouter's is; it takes the same width as the reader.
+    let fill = !shows_preview && (m.wrap || m.shown.text().is_none() || previewing);
     ui.viewer.set_wrap(fill);
     ui.reader.set_wrap(m.wrap);
+    ui.preview.set_wrap(false);
     // The pane is the viewer less its one-column bar; unwrapped text takes that width.
     ui.reader.set_width(u32::from(columns.saturating_sub(width + 3)));
+    ui.preview.set_width(u32::from(columns.saturating_sub(width + 3)));
     ui.picture.fill(viewport as u32);
     let lines = m.shown.text().map_or(0, |(document, ..)| document.lines);
-    let total = reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines));
-    let top = m.top.floor() as usize;
+    let total = match previewed {
+        Some(shown) => shown.document.lines,
+        None => reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines)),
+    };
+    // A preview has its own position, as Scouter's preview scroll box does.
+    let top = match previewed {
+        Some(_) => ui.preview_viewer.position().1.floor() as usize,
+        None => m.top.floor() as usize,
+    };
     ui.bar.paint(app, total, viewport, top, fill, p);
     ui.narrow_bar.paint(app, total, viewport, top, !fill, p);
-    let (document, position) =
-        reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
-            .map_or((None, None), |(info, label)| (Some(info), label));
+    let (document, position) = match previewed {
+        Some(_) => (None, None),
+        None => reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
+            .map_or((None, None), |(info, label)| (Some(info), label)),
+    };
     let search_text = m.shown.text().map_or_else(String::new, |(document, ..)| document.content().to_owned());
     ui.reader.sync_search(
         p,
@@ -564,7 +608,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         location,
         pane,
         prompt: match (&m.finder, &m.search) {
-            (Some(_), _) => Some(Prompt::Files),
+            (Some(finder), _) => Some(find::prompt(finder).1),
             (None, Some(search)) if search.editing => Some(Prompt::Reader),
             _ => None,
         },

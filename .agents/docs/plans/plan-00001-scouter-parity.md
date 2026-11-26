@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T07:30:13+07:00
+updated: 2026-11-26T07:46:41+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -70,8 +70,8 @@ phases:
 
     - id: 17
       title: "W4: text search and preview"
-      status: pending
-      note: —
+      status: done
+      note: "Tab in the finder searches the lines of the files: 2+ UTF-16 units, 150 ms debounce, 200 hits and 10 a file, 64 MiB budget (core find/text.rs with 11 tests; services/find.rs streams progress every 120 ms). Rows are name:line with the match in accent; the highlighted hit shows in its own preview view with the preview pill and a third-line scroll; Enter opens the file at the line with the query kept for n and N; Esc ends. Live at 80x24 against Scouter 0.9.9 on the chapters fixture and the demo repository: the text state, the preview (text and colours identical), Enter (line 43 at the top, search seeded 1 of 1), Tab back to names, type 2+ characters, Esc, and a deep hit (line 150); differences only the approved root row, reveal, and quit label, plus the welcome clipping (issue-00004). Found and fixed while validating: one selected row for each hit of a file (selection by row index), the open-at scroll (applied once the reader shows), and the preview sharing the reader scroll box (its own view now). Owner check: a click on a text row (picks it as Enter does)."
     - id: 18
       title: "W5: git service"
       status: pending

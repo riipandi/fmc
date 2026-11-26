@@ -7,7 +7,7 @@ mod tree;
 
 use std::path::{Path, PathBuf};
 
-pub use browser::{Browser, relative};
+pub use browser::{Browser, Flat, relative};
 pub use sort::{is_noise, sort_entries};
 pub use tree::{Expand, Reveal, Row, Tree};
 

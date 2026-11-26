@@ -31,6 +31,11 @@ impl Viewer {
         self.root.scroll_position()
     }
 
+    /// Shows or hides the whole pane; a hidden pane takes no space (the preview view uses it).
+    pub fn visible(&self, visible: bool) {
+        self.root.visible(visible);
+    }
+
     pub fn scroll_by(&self, columns: f64, rows: f64) {
         self.root.scroll_by(columns, rows);
     }

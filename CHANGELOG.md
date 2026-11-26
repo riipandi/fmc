@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Markdown files open rendered: headings, emphasis, links, lists, task boxes, quotes, tables, and highlighted code blocks. `m` shows the source with line numbers, and `/` and `{ }` say which key shows the source while the document is rendered.
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
 - The file finder: `/` in the file list finds a file or folder by name. Every word must appear in its path, the matches come in Scouter's order, and up to 200 are listed with the total. Enter opens a file or reveals a folder, and Esc returns the tree to where it was.
+- Text search in the finder: `Tab` searches the lines of the files, from two characters, with up to 200 hits. The highlighted hit shows in the reader as a preview, and Enter opens the file at its line with the search kept for `n` and `N`.
 
 ### Changed
 

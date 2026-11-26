@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use super::*;
+use crate::find::text::Snippet;
 
 fn folder(path: &str) -> Entry {
     Entry::new(
@@ -358,7 +359,10 @@ fn flat_rows_replace_the_tree_and_the_tree_comes_back_with_its_selection() {
     let mut browser = browser(4, 5);
     browser.move_by(2);
     let root = PathBuf::from("/vault");
-    let hits = vec![Entry::new(&root, "notes", Kind::Directory), Entry::new(&root, "ledger.md", Kind::File)];
+    let hits = vec![
+        Flat::name(Entry::new(&root, "notes", Kind::Directory)),
+        Flat::name(Entry::new(&root, "ledger.md", Kind::File)),
+    ];
     browser.show(hits, Path::new("/vault/notes"));
     assert!(browser.is_flat());
     assert_eq!(browser.row_count(), 2);
@@ -384,7 +388,7 @@ fn a_flat_list_without_a_match_selects_nothing_and_a_missing_path_takes_the_firs
     browser.show(Vec::new(), Path::new("/vault/f01.md"));
     assert_eq!(browser.row_count(), 0);
     assert!(browser.selected_entry().is_none());
-    browser.show(vec![Entry::new(Path::new("/vault"), "f02.md", Kind::File)], Path::new("/vault/gone.md"));
+    browser.show(vec![Flat::name(Entry::new(Path::new("/vault"), "f02.md", Kind::File))], Path::new("/vault/gone.md"));
     assert_eq!(selected_name(&browser), "f02.md");
     assert_eq!(browser.selected_entry().map(|entry| entry.name), Some("f02.md".into()));
 }
@@ -392,8 +396,32 @@ fn a_flat_list_without_a_match_selects_nothing_and_a_missing_path_takes_the_firs
 #[test]
 fn a_listing_that_lands_while_the_flat_list_shows_keeps_its_selection() {
     let mut browser = browser(0, 5);
-    browser.show(vec![Entry::new(Path::new("/vault"), "ledger.md", Kind::File)], Path::new("/vault/ledger.md"));
+    browser.show(
+        vec![Flat::name(Entry::new(Path::new("/vault"), "ledger.md", Kind::File))],
+        Path::new("/vault/ledger.md"),
+    );
     let root = PathBuf::from("/vault");
     browser.listed(&root, vec![Entry::new(&root, "a.md", Kind::File)]);
     assert_eq!(selected_name(&browser), "ledger.md");
+}
+
+#[test]
+fn a_text_hit_list_selects_by_row_when_one_file_has_several_hits() {
+    let mut browser = browser(0, 5);
+    let a = Path::new("/vault/a.txt");
+    let snippet = |text: &str| Snippet { before: String::new(), matched: text.into(), after: String::new() };
+    let rows = vec![
+        Flat { entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File), hit: Some((3, snippet("one"))) },
+        Flat { entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File), hit: Some((9, snippet("two"))) },
+        Flat { entry: Entry::new(Path::new("/vault"), "b.txt", Kind::File), hit: Some((1, snippet("three"))) },
+    ];
+    browser.show(rows, a);
+    assert_eq!(browser.selected_index(), 0);
+    browser.move_by(1);
+    assert_eq!(browser.selected_index(), 1);
+    assert_eq!(browser.selected_flat().and_then(|flat| flat.hit.map(|(line, _)| line)), Some(9));
+    browser.move_by(1);
+    assert_eq!(browser.selected(), Path::new("/vault/b.txt"));
+    browser.move_by(-2);
+    assert_eq!(browser.selected_index(), 0);
 }

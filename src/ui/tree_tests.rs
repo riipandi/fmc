@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use fmc::explorer::{Entry, Kind, Row};
+use fmc::find::text::Snippet;
 use fmc::theme::DARK;
 
 use super::*;
@@ -10,7 +11,12 @@ fn entry(name: &str, kind: Kind) -> Entry {
 }
 
 fn row<'a>(entry: &'a Entry, depth: usize, folder: bool, expanded: bool) -> Row<'a> {
-    Row { entry, depth, folder, expanded }
+    Row { entry, depth, folder, expanded, hit: None }
+}
+
+/// A text hit's row on Scouter's line: the name and line, the snippet, and the folder dimmed at the end.
+fn hit_row<'a>(entry: &'a Entry, line: usize, snippet: &'a Snippet) -> Row<'a> {
+    Row { entry, depth: 0, folder: false, expanded: false, hit: Some((line, snippet)) }
 }
 
 fn text(segments: &[Seg]) -> String {
@@ -81,4 +87,17 @@ fn a_click_maps_a_screen_row_to_a_list_line() {
     assert_eq!(line_at(LIST_TOP + 4, LIST_TOP, 5), Some(4));
     assert_eq!(line_at(LIST_TOP + 5, LIST_TOP, 5), None, "below the list");
     assert_eq!(line_at(LIST_TOP - 1, LIST_TOP, 5), None, "the header");
+}
+
+#[test]
+fn a_text_hit_row_reads_name_line_snippet_and_folder_like_scouter() {
+    // The finder's rows carry the path relative to the folder, as Scouter's `relative` does.
+    let chapters =
+        Entry { name: "notes/chapters.txt".into(), path: "/vault/notes/chapters.txt".into(), kind: Kind::File };
+    let snippet = Snippet { before: "Line ".into(), matched: "043".into(), after: ": Teabing".into() };
+    let segments = row_segments(&hit_row(&chapters, 43, &snippet), false, false, &DARK);
+    assert_eq!(text(&segments), " \u{f016} chapters.txt:43  Line 043: Teabing  notes/");
+    let matched = segments.iter().find(|seg| seg.text == "043").unwrap();
+    assert_eq!(matched.fg, Some(DARK.accent_soft));
+    assert!(matched.bold);
 }

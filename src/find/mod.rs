@@ -1,6 +1,8 @@
 //! The file finder's index, matching, and result order (Scouter `src/find/search.ts`, `matchEntries`, `compareRelative`).
 //! Pure: the index is built by `services/find.rs`, and the app shows what this module returns.
 
+pub mod text;
+
 #[cfg(test)]
 mod tests;
 

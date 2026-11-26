@@ -126,6 +126,7 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     m.shown = shown;
     search::follow(m);
     reset_scroll(m, ui, path);
+    super::find::arrive(m, path);
 }
 
 /// A shown file starts at its top, as Scouter's `revealViewer` does; a jump opens at the row it was left at.

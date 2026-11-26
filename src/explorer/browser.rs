@@ -1,25 +1,42 @@
 //! The browsed tree with its selection and scroll position (Scouter `src/explorer/explorer.ts`, `handleListKey`).
 //! The list is drawn from `top` as rows; scrolling keeps the selected row in view from the nearest edge, as
-//! OpenTUI's `scrollChildIntoView` does for Scouter.
+//! OpenTUI's `scrollChildIntoView` does for Scouter. While the finder shows, the rows are its flat list, and the
+//! selection is the row's index: a text search lists one file once per line, so a path does not name a row.
 
 use std::path::{Path, PathBuf};
 
 use super::{Entry, Kind, Row, Tree};
+use crate::find::text::Snippet;
+
+/// One row of the finder's list: a path, and for a text hit the line it matched and the snippet to show.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Flat {
+    pub entry: Entry,
+    pub hit: Option<(usize, Snippet)>,
+}
+
+impl Flat {
+    pub fn name(entry: Entry) -> Self {
+        Self { entry, hit: None }
+    }
+}
 
 pub struct Browser {
     pub tree: Tree,
     selected: PathBuf,
     top: usize,
     height: usize,
-    /// The rows the finder shows in place of the tree (Scouter `browser.show` with flat entries); `None` shows the tree.
-    flat: Option<Vec<Entry>>,
+    /// The finder's rows, in place of the tree; `None` shows the tree.
+    flat: Option<Vec<Flat>>,
+    /// The selected index among the flat rows.
+    flat_at: usize,
 }
 
 impl Browser {
     /// A browser with the root selected, which has no row: the first row is selected once the root is listed.
     pub fn new(tree: Tree) -> Self {
         let selected = tree.root().to_path_buf();
-        Self { tree, selected, top: 0, height: 0, flat: None }
+        Self { tree, selected, top: 0, height: 0, flat: None, flat_at: 0 }
     }
 
     pub fn selected(&self) -> &Path {
@@ -28,7 +45,13 @@ impl Browser {
 
     /// The selected row's entry, if there is a row.
     pub fn selected_entry(&self) -> Option<Entry> {
-        self.rows().iter().find(|row| row.entry.path == self.selected).map(|row| row.entry.clone())
+        self.rows().get(self.selected_index()).map(|row| row.entry.clone())
+    }
+
+    /// The selected flat row, while the finder shows.
+    pub fn selected_flat(&self) -> Option<Flat> {
+        let rows = self.flat.as_ref()?;
+        rows.get(self.selected_index()).cloned()
     }
 
     /// How many rows the list shows: the flat rows while the finder is shown, else the tree's visible rows.
@@ -40,10 +63,11 @@ impl Browser {
         self.flat.is_some()
     }
 
-    /// Shows `entries` as flat rows in place of the tree, selecting `selected` if it is one of them and the first
-    /// row otherwise (Scouter `show`).
-    pub fn show(&mut self, entries: Vec<Entry>, selected: &Path) {
+    /// Shows `entries` as flat rows in place of the tree, selecting the first row whose path is `selected`, else the
+    /// first row (Scouter `show`).
+    pub fn show(&mut self, entries: Vec<Flat>, selected: &Path) {
         self.flat = Some(entries);
+        self.flat_at = 0;
         self.select(selected);
     }
 
@@ -57,7 +81,13 @@ impl Browser {
         match &self.flat {
             Some(entries) => entries
                 .iter()
-                .map(|entry| Row { entry, depth: 0, folder: entry.kind == Kind::Directory, expanded: false })
+                .map(|flat| Row {
+                    entry: &flat.entry,
+                    depth: 0,
+                    folder: flat.entry.kind == Kind::Directory,
+                    expanded: false,
+                    hit: flat.hit.as_ref().map(|(line, snippet)| (*line, snippet)),
+                })
                 .collect(),
             None => self.tree.rows(),
         }
@@ -71,8 +101,11 @@ impl Browser {
         self.height
     }
 
-    /// Index of the selected row; the first row when the selected path has none (Scouter `show`).
+    /// Index of the selected row; the first row when there is none (Scouter `show`).
     pub fn selected_index(&self) -> usize {
+        if self.flat.is_some() {
+            return self.flat_at.min(self.row_count().saturating_sub(1));
+        }
         self.rows().iter().position(|row| row.entry.path == self.selected).unwrap_or(0)
     }
 
@@ -83,7 +116,7 @@ impl Browser {
     }
 
     /// Lists a folder into the tree; a selection without a row (the root, before its listing) moves to the first row.
-    /// The finder's rows are not the tree, so a listing that lands while the finder is shown leaves its selection alone.
+    /// While the finder's rows show, a listing that lands leaves the selection alone.
     pub fn listed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
         let listed = self.tree.listed(path, entries);
         if !self.is_flat() {
@@ -95,49 +128,51 @@ impl Browser {
 
     /// Selects `path` if it has a row, else the first row (Scouter `show`, which renders after each change).
     pub fn select(&mut self, path: &Path) {
-        let rows = self.rows();
-        let selected = rows.iter().find(|row| row.entry.path == path).map_or_else(
-            || rows.first().map_or_else(|| self.tree.root().to_path_buf(), |row| row.entry.path.clone()),
-            |row| row.entry.path.clone(),
-        );
-        drop(rows);
-        self.selected = selected;
-        self.keep_visible();
+        let index = self.rows().iter().position(|row| row.entry.path == path).unwrap_or(0);
+        self.set_index(index);
     }
 
     /// Selects `path` if it has a row, and reports whether it did (Scouter `selectPath`).
     pub fn select_row(&mut self, path: &Path) -> bool {
-        if !self.rows().iter().any(|row| row.entry.path == path) {
-            return false;
+        let index = self.rows().iter().position(|row| row.entry.path == path);
+        match index {
+            Some(index) => {
+                self.set_index(index);
+                true
+            }
+            None => false,
         }
-        self.select(path);
-        true
+    }
+
+    /// Makes the row at `index` the selection, clamped to the list. With no rows the selection is the tree's root.
+    fn set_index(&mut self, index: usize) {
+        let rows = self.rows();
+        let selected = match rows.get(index.min(rows.len().saturating_sub(1))) {
+            Some(row) => row.entry.path.clone(),
+            None => self.tree.root().to_path_buf(),
+        };
+        drop(rows);
+        self.selected = selected;
+        self.flat_at = index;
+        self.keep_visible();
     }
 
     /// Moves the selection by `delta` rows, clamped to the list.
     pub fn move_by(&mut self, delta: isize) {
-        let index = self.selected_index() as isize;
-        let rows = self.rows();
-        if rows.is_empty() {
+        let rows = self.row_count();
+        if rows == 0 {
             return;
         }
-        let to = (index + delta).clamp(0, rows.len() as isize - 1) as usize;
-        let selected = rows[to].entry.path.clone();
-        drop(rows);
-        self.selected = selected;
-        self.keep_visible();
+        let index = (self.selected_index() as isize + delta).clamp(0, rows as isize - 1);
+        self.set_index(index as usize);
     }
 
     /// Moves the selection to the first row, or the last row.
     pub fn move_to_edge(&mut self, last: bool) {
-        let rows = self.rows();
-        let row = if last { rows.last() } else { rows.first() };
-        let selected = row.map(|row| row.entry.path.clone());
-        drop(rows);
-        if let Some(selected) = selected {
-            self.selected = selected;
+        let rows = self.row_count();
+        if rows > 0 {
+            self.set_index(if last { rows - 1 } else { 0 });
         }
-        self.keep_visible();
     }
 
     /// Moves the selection a screen up or down: one row less than the viewport (Scouter `handleListKey`).
@@ -159,10 +194,9 @@ impl Browser {
 
     /// Selects the row at `index` (a click on it).
     pub fn select_index(&mut self, index: usize) {
-        if let Some(row) = self.rows().get(index) {
-            self.selected = row.entry.path.clone();
+        if index < self.row_count() {
+            self.set_index(index);
         }
-        self.keep_visible();
     }
 
     /// Re-clamps the scroll position and keeps the selection visible after the tree changed.

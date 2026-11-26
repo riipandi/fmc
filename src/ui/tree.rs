@@ -5,6 +5,7 @@ use std::path::Path;
 
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Entry, Kind, Row, relative};
+use fmc::find::text::Snippet;
 use fmc::text::display_label;
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -16,6 +17,9 @@ pub const LIST_TOP: u16 = 3;
 
 /// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`).
 pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, p: &Palette) -> Vec<Seg> {
+    if let Some((line, snippet)) = row.hit {
+        return hit_segments(row.entry, line, snippet, selected, p);
+    }
     let folder = row.folder;
     let marker = match (folder, row.expanded) {
         (true, true) => "▾ ",
@@ -44,6 +48,27 @@ pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, p: &Palette) -
     segments.push(Seg::new(format!("{} ", icon(row.entry, folder, row.expanded)), glyph_fg));
     let name = Seg::new(format!("{}{}", display_label(&row.entry.name), if folder { "/" } else { "" }), name_fg);
     segments.push(if selected { name.bold() } else { name });
+    segments
+}
+
+/// A text hit's row: the file's name and line, the snippet with the match in accent, and the folder dimmed at the end
+/// (Scouter `matchContent`).
+fn hit_segments(entry: &Entry, line: usize, snippet: &Snippet, selected: bool, p: &Palette) -> Vec<Seg> {
+    let (folder, name) = match entry.name.rsplit_once('/') {
+        Some((folder, name)) => (Some(folder), name),
+        None => (None, entry.name.as_str()),
+    };
+    let name_fg = if selected { p.accent } else { p.text };
+    let name = Seg::new(format!("{} {}", icon(entry, false, false), display_label(name)), name_fg);
+    let mut segments =
+        vec![Seg::new(if selected { "▎" } else { " " }, p.accent), if selected { name.bold() } else { name }];
+    segments.push(Seg::new(format!(":{line}  "), p.dim));
+    segments.push(Seg::new(display_label(&snippet.before), p.muted));
+    segments.push(Seg::new(display_label(&snippet.matched), p.accent_soft).bold());
+    segments.push(Seg::new(display_label(&snippet.after), p.muted));
+    if let Some(folder) = folder {
+        segments.push(Seg::new(format!("  {}/", display_label(folder)), p.dim));
+    }
     segments
 }
 
@@ -211,11 +236,14 @@ impl TreeView {
     fn lines(&self, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) -> Vec<Line> {
         let visible = browser.visible_rows();
         let thumbs = thumb(browser.row_count(), browser.height(), browser.top(), visible.len());
+        // The selection is a row, not a path: a file with several text hits has a row for each (Browser `flat_at`).
+        let selected_row = browser.selected_index();
         visible
             .iter()
             .zip(thumbs)
-            .map(|(row, thumb)| {
-                let selected = row.entry.path == browser.selected();
+            .enumerate()
+            .map(|(line, (row, thumb))| {
+                let selected = browser.top() + line == selected_row;
                 let key = relative(root, &row.entry.path);
                 Line {
                     segments: row_segments(row, selected, marks.is_ignored(&key), p),

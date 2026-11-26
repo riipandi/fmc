@@ -143,6 +143,9 @@ pub fn refresh_marks(m: &mut Model) {
 pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
     match event {
         Event::Indexed { session, index } => find::indexed(m, *session, index.clone()),
+        Event::ScanDue { session, scan } => find::scan_due(m, *session, *scan),
+        Event::Searched { session, scan, progress } => find::searched(m, *session, *scan, progress.clone()),
+        Event::Previewed { session, request, result } => find::previewed(m, *session, *request, result.clone()),
         Event::Listed { path, result } => match result {
             Ok(entries) => {
                 m.browser.listed(path, entries.clone());

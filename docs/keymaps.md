@@ -20,13 +20,14 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 
 | Keys | Action |
 | --- | --- |
-| type | filter by name: every word must appear in the path |
+| type | filter by name: every word must appear in the path; in text search, the lines that contain the text |
 | `Backspace` | delete a character |
-| `↑` `↓` | move the highlight |
-| `Enter` | open the file, or reveal the folder the query found; with no text, open or toggle the row |
+| `Tab` | switch between file names and text in files |
+| `↑` `↓` | move the highlight; on a text hit the reader shows its line in a preview |
+| `Enter` | open the file, at the line for a text hit; reveal the folder the query found; with no text, open or toggle the row |
 | `Esc` | close the finder; the tree is back where it was |
 
-Tab, which searches inside files, is not in fmc yet.
+Text search starts at two characters and lists at most 200 hits, ten from one file.
 
 ## Reader
 
