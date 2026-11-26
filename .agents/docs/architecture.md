@@ -537,3 +537,20 @@ Consequences:
 Alternatives considered:
 
 - Keep Scouter's all-files default — rejected by the owner.
+
+### Approved deviation: a click focuses the pane under the pointer
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: in Scouter only rows take a click: a tree row (`scouter:src/explorer/explorer.ts:190`), a change row (`src/diff/changes.ts:188`), and a diff header (`src/diff/diff-blocks.ts:468`). A click elsewhere in a pane, for example in the reader text, does not move the focus; `Tab` does.
+
+Decision: a left click anywhere in a pane (the tree, the reader, the changes list, the diff body), including its scrollbar, focuses that pane. A click on a row keeps its action (open, toggle, select, fold) as before; in the reader a press still starts a drag-select. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The mouse can move the focus without `Tab`.
+- (negative) A click in the reader now changes the focus and the footer hints, where Scouter changes nothing.
+
+Alternatives considered:
+
+- Keep Scouter's row-only clicks — rejected by the owner.
