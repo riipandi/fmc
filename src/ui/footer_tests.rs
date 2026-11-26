@@ -118,3 +118,17 @@ fn header_pill_and_notice() {
     header.notice = Some("Only UTF-8 text files are supported.".into());
     assert_eq!(header.badge_segments(&DARK), [Seg::new("Only UTF-8 text files are supported.", DARK.error).bold()]);
 }
+
+#[test]
+fn q_is_offered_only_when_a_document_is_open() {
+    use crate::ui::hints::{Mode, Pane, Shown, hints_for};
+    let offers_q = |pane, open| {
+        hints_for(Mode::Browse, pane, false, true, Shown { open, ..Shown::default() })
+            .iter()
+            .any(|(key, _)| *key == "q")
+    };
+    for pane in [Pane::Files, Pane::Reader] {
+        assert!(!offers_q(pane, false), "{pane:?}: nothing to close on the welcome screen");
+        assert!(offers_q(pane, true), "{pane:?}: q closes the open document");
+    }
+}

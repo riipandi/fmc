@@ -223,6 +223,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             match action {
                 Action::Quit => return cx.quit(),
                 Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
+                Action::Close => reader::close(&mut m, &ui.borrow()),
                 Action::Escape if cx.app().selected_text().is_some() || cx.app().is_selecting() => {
                     cx.app().clear_selection();
                 }

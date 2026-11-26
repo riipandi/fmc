@@ -78,7 +78,7 @@ phases:
     - id: 19
       title: "W5: changes screen and change list"
       status: pending
-      note: —
+      note: "Lands the Changes-screen part of `q` (closes the changes screen, as `d` does), approved in architecture.md (`q` closes the open document or screen)."
     - id: 20
       title: "W5: stacked diff, split, fold, context, hunks"
       status: pending

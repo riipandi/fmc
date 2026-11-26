@@ -10,7 +10,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 ## Keys
 
-- `Ctrl+q` quits. Plain `q` does not quit. `Ctrl+c` still quits.
+- `Ctrl+q` quits. Plain `q` does not quit; it closes the open document, so the welcome screen returns, or the key list. `Ctrl+c` still quits.
 - Opening a file from the tree keeps the focus in the tree, so you can keep browsing with `j` and `k`. Press `Tab` or click the reader to move there.
 
 ## Copying text

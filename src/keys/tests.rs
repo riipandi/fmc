@@ -52,8 +52,10 @@ fn last(keys: &[&str], state: State) -> Step {
 fn quit_and_the_key_page_keys() {
     assert_eq!(last(&["^q"], READER), Step::Done(Action::Quit));
     assert_eq!(last(&["^c"], TREE), Step::Done(Action::Quit));
-    // A plain `q` quits nowhere; `?` toggles the key page from either pane, and Esc leaves it.
+    // A plain `q` quits nowhere: it closes the open document from either pane; `?` toggles the key page, and Esc leaves it.
     assert_ne!(last(&["q"], TREE), Step::Done(Action::Quit));
+    assert_eq!(last(&["q"], TREE), Step::Done(Action::Close));
+    assert_eq!(last(&["q"], READER), Step::Done(Action::Close));
     assert_eq!(last(&["?"], TREE), Step::Done(Action::Help));
     assert_eq!(last(&["?"], READER), Step::Done(Action::Help));
     assert_eq!(last(&["esc"], READER), Step::Done(Action::Escape));

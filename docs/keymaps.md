@@ -50,6 +50,7 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | `y` | copy selection, or the current path |
 | `Ctrl+o` `Alt+i` | jump back / forward through opened places |
 | `Esc` | clear selection or search, or back to the file list |
+| `q` | close the open document, or the key list |
 | `?` | this key list; ? or Esc closes it |
 | `^q` `^c` | quit |
 

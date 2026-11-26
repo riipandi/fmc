@@ -200,6 +200,23 @@ pub fn toggle_keys(m: &mut Model, ui: &Ui) {
     ui.viewer.scroll_to(0.0, 0.0);
 }
 
+/// `q`: closes the document, so the welcome screen returns and focus goes to the tree; the file's row stays selected
+/// (architecture.md, approved deviation). On the key page it puts back what the page replaced, as `?` does.
+pub fn close(m: &mut Model, ui: &Ui) {
+    if m.shown.shows_keys() {
+        return close_keys(m, ui);
+    }
+    if !m.shown.is_some() {
+        return;
+    }
+    m.shown = Shown::None;
+    m.focus = Focus::List;
+    m.search = None;
+    m.restore = None;
+    m.notice = None;
+    m.message = None;
+}
+
 /// Puts the document back that the key page replaced. Only called while the key page shows.
 pub fn close_keys(m: &mut Model, ui: &Ui) {
     let Shown::Keys { back, .. } = std::mem::take(&mut m.shown) else { return };

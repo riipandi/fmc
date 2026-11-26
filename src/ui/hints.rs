@@ -62,6 +62,8 @@ pub struct Shown {
     /// `Some(rendered)` for a Markdown document, `None` for anything else.
     pub markdown: Option<bool>,
     pub image: bool,
+    /// Something is open, so `q` closes it; the welcome screen has nothing to close.
+    pub open: bool,
 }
 
 pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Shown) -> Vec<Hint> {
@@ -110,13 +112,17 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
             ("-", "up"),
             ("h", "back"),
             ("Tab", "reader"),
+            ("q", "close"),
             ("d", "changes"),
             ("w", "wrap"),
             ("^←→", "resize"),
             ("^o alt+i", "jump"),
             ("?", "help"),
             ("^q", "quit"),
-        ];
+        ]
+        .into_iter()
+        .filter(|(key, _)| *key != "q" || shown.open)
+        .collect();
     }
     let rendered = shown.markdown == Some(true);
     let mut hints = vec![("j k", "scroll")];
@@ -137,6 +143,9 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     hints.extend([("y", "copy"), ("d", "changes"), ("^o alt+i", "jump")]);
     if !rendered {
         hints.push(("w", "wrap"));
+    }
+    if shown.open {
+        hints.push(("q", "close"));
     }
     hints.extend([("?", "help"), ("^q", "quit")]);
     hints

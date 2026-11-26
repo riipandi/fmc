@@ -165,6 +165,7 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
     }
     match key.name {
         "w" => Some(Action::ToggleWrap),
+        "q" => Some(Action::Close),
         "m" => Some(Action::ToggleMarkdown),
         "d" => Some(Action::ToggleChanges),
         "y" => Some(Action::Copy),

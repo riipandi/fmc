@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `?` shows the key list as tables in the reader instead of a card over the panes. `?` or `Esc` puts the document back, with its scroll position and search.
 - The file tree has no root row: the folder's files and folders start at the top, with no indent. `h` on a top-level row does nothing; `-` still opens the folder above.
 - Enter on a file opens it in the reader and keeps focus in the file list; Tab, or a click on the reader, moves focus there.
-- Quit is `Ctrl+q` (or `Ctrl+c`); a plain `q` no longer quits.
+- Quit is `Ctrl+q` (or `Ctrl+c`); a plain `q` no longer quits. It closes the open document, and the welcome screen returns, or it closes the key list.
 - In-file search: `/` opens the prompt, and typing shows the lines that contain the query, ignoring case, with every match marked. Enter and `↓` go to the next match, Shift+Enter and `↑` to the previous, `n` and `N` step on, and Esc keeps the matches for `n` and `N` before it clears them.
 - Dragging across text selects it and keeps the selection on screen. `y` copies the selection and `Esc` clears it; Scouter copies as soon as the mouse is released.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.

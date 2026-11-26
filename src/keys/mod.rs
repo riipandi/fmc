@@ -29,6 +29,8 @@ pub enum Action {
     Quit,
     /// `?`: shows the key page, or puts the document back when it is shown.
     Help,
+    /// `q`: closes the open document or the key page (architecture.md, approved deviation).
+    Close,
     SwitchPane,
     Escape,
     /// Narrower (-1) or wider (1) list, by two columns.
@@ -124,6 +126,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
             ("Esc", "clear selection or search, or back to the file list"),
+            ("q", "close the open document, or the key list"),
             ("?", "this key list; ? or Esc closes it"),
             ("^q ^c", "quit"),
         ],

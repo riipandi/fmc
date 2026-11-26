@@ -214,10 +214,11 @@ impl FooterState {
             Some(prompt) => prompt_hints(prompt),
             None => {
                 let all_files = self.diff.as_ref().is_none_or(|d| d.all_files);
+                let open = self.document.is_some();
                 let shown = match &self.document {
-                    Some(DocumentInfo::Text { rendered, .. }) => Shown { markdown: *rendered, image: false },
-                    Some(DocumentInfo::Image { .. }) => Shown { markdown: None, image: true },
-                    _ => Shown::default(),
+                    Some(DocumentInfo::Text { rendered, .. }) => Shown { markdown: *rendered, image: false, open },
+                    Some(DocumentInfo::Image { .. }) => Shown { markdown: None, image: true, open },
+                    _ => Shown { open, ..Shown::default() },
                 };
                 hints_for(self.mode, self.pane, self.wrap, all_files, shown)
             }
