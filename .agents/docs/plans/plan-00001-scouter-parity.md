@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T12:17:57+07:00
+updated: 2026-11-26T12:18:59+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -94,8 +94,8 @@ phases:
       note: "audit-00001-scouter-parity.md: 80x24 live runs against Scouter 0.9.9 on d826786 for §3 rows 1 to 16 and the §4 keys; 8 findings: F-01 welcome clipped (issue-00004), F-02 Markdown two cells narrow (issue-00005), F-03 rendered thumb and percent (issue-00003), F-04 tree wheel (issue-00007), F-05 pan (issue-00008) for phase 23; F-06 folded bar, F-07 binary footer (issue-00002), F-08 --upgrade record for the owner. 216 tests green at d826786"
     - id: 23
       title: "W6: parity fixes"
-      status: in_progress
-      note: "sub-phases 23a to 23e from audit-00001 (F-01 to F-05): 23a welcome (498958c), 23b Markdown width (784caf4), 23c rendered thumb (d9bd454), 23d tree wheel (e3d6c73), 23e reader pan done; F-06 to F-08 are owner questions in audit-00001 and wait for the owner"
+      status: partially-done
+      note: "partially-done: sub-phases 23a to 23e fixed F-01 to F-05 (498958c, 784caf4, d9bd454, e3d6c73, 10ced9a); F-06, F-07 (issue-00002), and F-08 are owner questions (issues 00009, 00002, 00010) and change nothing until the owner answers"
     - id: 24
       title: "W6: docs sync, ledger close, handover"
       status: pending
