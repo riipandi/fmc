@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T08:15:11+07:00
+updated: 2026-11-26T08:19:50+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -77,11 +77,11 @@ phases:
       status: done
       note: "verify 188 tests (19 services/git, 20 diff). Scouter: git.ts:8-12, :24-148, :156-198, :204-260, :303-370; patch.ts:5-206. Demo repo: Scouter 0.9.9's listChanges, readAllPatches, listMarks and fmc's Repository give the same 10 changes, 10 patch texts byte for byte, 3 marks, 3 ignored. A conflicted file lists as M in both (inventory §21). 80x24 capture: fmc at HEAD and in the tree are identical; Scouter differs only as approved, plus the welcome card gap that HEAD already has (wordmark, hint line, q row)"
     - id: 19
-      title: "W5: changes screen and change list"
+      title: "W5: changes screen, change list, and stacked diff body"
       status: pending
-      note: "Lands the Changes-screen part of `q` (closes the changes screen, as `d` does), approved in architecture.md (`q` closes the open document or screen)."
+      note: "Scope moved on 2026-11-26 (owner): the stacked diff body joins this phase so the screen matches Scouter's screens 35 and 36; phase 20 keeps split, fold, context, hunks, and `o`. Lands the Changes-screen part of `q` (closes the changes screen, as `d` does), approved in architecture.md (`q` closes the open document or screen)."
     - id: 20
-      title: "W5: stacked diff, split, fold, context, hunks"
+      title: "W5: split, fold, context, hunks, open"
       status: pending
       note: —
     - id: 21
@@ -184,8 +184,8 @@ The decisions are the records in `architecture.md` (all 2026-11-26): engine, vid
 #### W5 — Git changes
 
 18. **Git service** — `services/git.rs`: `rev-parse`, the private index copy with a `Drop` guard, `diff --name-status/--numstat -z --no-ext-diff --no-textconv -M` against `HEAD` or the empty tree, `--no-optional-locks`, untracked synthesis, the per-repository queue, the 2 s racy window, the 1000-change cap, the 1 MiB and 4 MiB limits (§11.1, §11.4). Validation: integration tests on `tempfile` repositories for each change kind (M, A, D, R, T, U, ?), an empty repository, and a non-repository; the user's `.git/index` is byte-identical before and after. _Commit: `feat(git): add the git reader service`._
-19. **Changes screen and change list** — `d` enters and leaves (with `Loading changes…` and cancel), the `Changes N` header, list rows with letters and marks, the empty state, keys of §4.4 for the list. Validation: Rex captures of screens 35, 36, and the empty state match. _Commit: `feat(diff): add the changes screen and the change list`._
-20. **Stacked diff, split, fold, context, hunks** — one `Diff` widget per file with band headers, 5-cell stat bars, shared gutter width, notices, no `@@` lines (§11.3); `s` split at 60+ columns, `a` one file, `c` fold, `x` context 3 or 12, `n`/`]` and `N`/`p`/`[` hunks across files, `o` opens in the reader, click on a header folds. Validation: core tests for the stat bar and hunk index; Rex captures of screens 37 to 45, 75, 77 match. _Commit: `feat(diff): add the stacked diff with split, fold, context and hunk navigation`._
+19. **Changes screen, change list, and stacked diff body** — `d` enters and leaves (with `Loading changes…` and cancel), the `Changes N` header, list rows with letters and marks, the empty state, keys of §4.4 for the list; the stacked diff body: one `Diff` widget per file with band headers, 5-cell stat bars, shared gutter width, notices, no `@@` lines (§11.3) (moved here from phase 20 by the owner on 2026-11-26). Validation: core tests for the stat bar; Validation: Rex captures of screens 35, 36, and the empty state match. _Commit: `feat(diff): add the changes screen, the change list, and the stacked diff`._
+20. **Split, fold, context, hunks, open** — `s` split at 60+ columns, `a` one file, `c` fold, `x` context 3 or 12, `n`/`]` and `N`/`p`/`[` hunks across files, `o` opens in the reader, click on a header folds. Validation: core tests for the hunk index; Rex captures of screens 37 to 45, 75, 77 match. _Commit: `feat(diff): add split, fold, context, and hunk navigation to the diff`._
 21. **Polling refresh** — `services/poll.rs`: browse polling every 2 s with back-off, re-listing expanded folders, refreshing marks, re-reading the open file by `mtime:size` stamp, the `no longer on disk` notice, paused on the changes screen; diff polling with per-file stamps (§11.7, §12). Validation: an integration test edits a file and sees one refresh event; a Rex run edits a demo file and captures screen 67's state. _Commit: `feat(services): add polling refresh for the tree, reader and changes`._
 
 #### W6 — Parity and close
