@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T12:29:18+07:00
+updated: 2026-11-26T12:30:53+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -98,12 +98,12 @@ phases:
       note: "done: sub-phases 23a to 23f fixed F-01 to F-06 (498958c, 784caf4, d9bd454, e3d6c73, 10ced9a, and 23f); F-07 and F-08 are approved deviations recorded in 6cb4373 (owner, 2026-11-26); issue-00006 stays open for the owner check"
     - id: 24
       title: "W6: docs sync, ledger close, handover"
-      status: pending
-      note: —
+      status: done
+      note: "docs checked against the binary: every key of docs/keymaps.md is in the key table (50 tokens); no dangling ledger reference; docs/parity.md and architecture.md carry the owner's 6cb4373 deviations; plan archived; handover-00002 written; commit `docs: close the scouter parity plan`"
     - id: 25
       title: "W6: final validation"
-      status: pending
-      note: —
+      status: done
+      note: "green on the tree as it stands: fmt, clippy -D warnings (0), 219 tests, build and release build, otool -L system libraries only, cargo deny licenses ok, 0 FFmpeg symbols; live 80x24 re-run of every changed screen against Scouter 0.9.9 (differences only the approved FMC wordmark, version, ^q label, root row, focus). 160x48 not possible: Rex tabs stay 80x24 even zoomed (owner check). No commit (green)"
 ---
 
 ## Port Scouter to Rust — fmc reaches 100% read-only parity with Scouter on macOS aarch64
