@@ -14,6 +14,7 @@ use fmc::reader::search::Search;
 use fmc::text::display_label;
 
 use super::{Model, Ui, search};
+use crate::services::fs::Reread;
 use crate::ui::footer::{DocumentInfo, Message};
 use crate::ui::header::{Badge, BadgeKind};
 use crate::ui::syntax::language_for;
@@ -28,6 +29,8 @@ pub enum Shown {
         document: Document,
         language: Option<&'static str>,
         markdown: Option<View>,
+        /// The file's stamp when it was read, which the poll compares (`None` once the file is gone).
+        stamp: Option<String>,
     },
     /// The key page (`?`): generated Markdown, shown as a Markdown document. `back` is what it replaced.
     Keys {
@@ -121,13 +124,13 @@ fn present(ui: &Ui, shown: &Shown) {
 }
 
 /// Shows a text document the worker read. A key page's search does not carry over to the file.
-pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
+pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp: String) {
     if !reveal(m, path, true) {
         return;
     }
     let language = language_for(path);
     let markdown = language.filter(|filetype| is_markdown(filetype)).map(|_| View::default());
-    let shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+    let shown = Shown::Text { path: path.to_path_buf(), document, language, markdown, stamp: Some(stamp) };
     present(ui, &shown);
     if m.shown.shows_keys() {
         m.search = None;
@@ -136,6 +139,33 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     search::follow(m);
     reset_scroll(m, ui, path);
     super::find::arrive(m, path);
+}
+
+/// A poll's answer for the open text document at `path` (Scouter `refreshDocument`): a changed file replaces the text
+/// in place and keeps the scroll; a missing one keeps its text and says so, and is not polled again.
+pub fn reread(m: &mut Model, ui: &Ui, path: &Path, result: Reread) {
+    let Shown::Text { path: shown, document, stamp, .. } = &mut m.shown else { return };
+    if shown.as_path() != path {
+        return;
+    }
+    match result {
+        Reread::Unchanged => {}
+        Reread::Missing => {
+            *stamp = None;
+            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            let text = format!("{} is no longer on disk.", display_label(&name));
+            super::tree::show_error(m, &text);
+        }
+        Reread::Changed { document: next, stamp: now } => {
+            *stamp = Some(now);
+            if next.text == document.text && next.truncated == document.truncated {
+                return;
+            }
+            *document = next;
+            present(ui, &m.shown);
+            search::follow(m);
+        }
+    }
 }
 
 /// A shown file starts at its top, as Scouter's `revealViewer` does; a jump opens at the row it was left at.
@@ -355,6 +385,7 @@ mod tests {
             document: document.clone(),
             language: Some("markdown"),
             markdown,
+            stamp: None,
         };
         assert!(shown(Some(View::Rendered)).previewing());
         assert!(!shown(Some(View::Source)).previewing());

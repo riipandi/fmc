@@ -99,6 +99,53 @@ impl Tree {
         true
     }
 
+    /// A fresh listing of an expanded folder (Scouter `FileTree.refresh`): a child that stays keeps its expansion and
+    /// its own children, a child that is gone is forgotten, and a new one starts collapsed. Returns whether the rows
+    /// changed; a folder that is not expanded and listed is left alone.
+    pub fn refreshed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
+        let Some(node) = self.nodes.get(path) else { return false };
+        if !node.expanded {
+            return false;
+        }
+        let Some(old) = node.children.clone() else { return false };
+        let before: Vec<(PathBuf, Kind)> =
+            old.iter().map(|child| (child.clone(), self.nodes[child].entry.kind)).collect();
+        let mut previous: HashMap<PathBuf, Node> =
+            old.iter().filter_map(|child| self.nodes.remove(child).map(|node| (child.clone(), node))).collect();
+        let mut children = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let child = entry.path.clone();
+            let node = match previous.remove(&child) {
+                Some(existing) if existing.entry.kind == entry.kind => Node { entry, ..existing },
+                Some(existing) => {
+                    self.forget_children(&existing);
+                    Node { entry, parent: Some(path.to_path_buf()), expanded: false, children: None }
+                }
+                None => Node { entry, parent: Some(path.to_path_buf()), expanded: false, children: None },
+            };
+            self.nodes.insert(child.clone(), node);
+            children.push(child);
+        }
+        for gone in previous.values() {
+            self.forget_children(gone);
+        }
+        let after: Vec<(PathBuf, Kind)> =
+            children.iter().map(|child| (child.clone(), self.nodes[child].entry.kind)).collect();
+        if let Some(node) = self.nodes.get_mut(path) {
+            node.children = Some(children);
+        }
+        before != after
+    }
+
+    /// The folders that are expanded, root included (Scouter `expandedPaths`).
+    pub fn expanded(&self) -> Vec<PathBuf> {
+        self.nodes
+            .values()
+            .filter(|node| node.expanded && node.children.is_some())
+            .map(|node| node.entry.path.clone())
+            .collect()
+    }
+
     pub fn collapse(&mut self, path: &Path) {
         if let Some(node) = self.nodes.get_mut(path) {
             node.expanded = false;
@@ -183,6 +230,11 @@ impl Tree {
             folder.push(part);
         }
         Reveal::Done
+    }
+
+    /// Drops a node that left the listing, with the nodes below it.
+    fn forget_children(&mut self, node: &Node) {
+        node.children.iter().flatten().for_each(|child| self.forget(child));
     }
 
     fn forget(&mut self, path: &Path) {

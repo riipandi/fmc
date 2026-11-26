@@ -5,10 +5,11 @@ pub mod changes;
 pub mod find;
 pub mod fs;
 pub mod git;
+pub mod poll;
 
 use std::path::PathBuf;
 
-use fmc::diff::{FilePatch, Listing};
+use fmc::diff::{ChangeSet, FilePatch, Listing};
 use fmc::explorer::Entry;
 use fmc::find::Index;
 use fmc::find::text::Progress;
@@ -36,7 +37,18 @@ pub enum Event {
     ChangesListed { session: u64, result: Result<changes::Listed, String> },
     /// The patches the body shows for the listing of `session`: all files, or the one selected. A `request` older than
     /// the latest one, or a listing no longer shown, is dropped.
-    ChangesPatched { session: u64, request: u64, result: Result<Vec<FilePatch>, String> },
+    ChangesPatched { session: u64, request: u64, stamp: String, result: Result<Vec<FilePatch>, String> },
+    /// A browse poll's answer (Scouter `refreshBrowse`): the fresh listings of the expanded folders that could be
+    /// listed, the marks, and the check of the open document. `chain` is set for a timed poll, which schedules the next.
+    BrowsePolled {
+        root: PathBuf,
+        chain: bool,
+        folders: Vec<(PathBuf, Vec<Entry>)>,
+        marks: Result<Option<Listing>, String>,
+        document: Option<(PathBuf, fs::Reread)>,
+    },
+    /// The changes poll's answer for the listing of `session`: the listing and the stamp of the files the body shows.
+    DiffPolled { session: u64, result: Result<(ChangeSet, String), String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

@@ -8,8 +8,10 @@ use std::path::Path;
 use std::sync::Arc;
 
 use fmc::diff::{Change, ChangeSet, FilePatch, Patch};
+use opentui::prelude::AppProxy;
 
 use super::git::Repository;
+use super::{Event, spawn};
 
 /// A repository the listing and its patches share.
 #[derive(Clone)]
@@ -45,6 +47,23 @@ pub fn list(dir: &Path) -> Result<Listed, String> {
 /// The patches of `changes` with `context` lines, read from the listing's copy of the index (Scouter `readAllPatches`).
 pub fn patches(repository: &Shared, changes: &[Change], context: usize) -> Result<Vec<FilePatch>, String> {
     repository.0.patches(changes, context)
+}
+
+/// The changes poll (Scouter `refresh`, `src/diff/diff-screen.ts:352-377`): lists the changes again on the listing's
+/// repository, and stamps the files the body shows: all of them, or the one at `selected`.
+pub fn poll(proxy: &AppProxy, session: u64, repository: Shared, all: bool, selected: Option<String>) {
+    spawn(proxy, move || {
+        let result = repository.0.changes().map(|set| {
+            let targets: Vec<Change> = if all {
+                set.changes.clone()
+            } else {
+                set.changes.iter().filter(|change| Some(change.path.as_str()) == selected.as_deref()).cloned().collect()
+            };
+            let stamp = repository.0.stamp(&targets);
+            (set, stamp)
+        });
+        Event::DiffPolled { session, result }
+    });
 }
 
 /// One file's patch with `context` lines (Scouter `readPatch`). A failed read is a notice, which the body shows in

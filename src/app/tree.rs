@@ -8,6 +8,7 @@ use fmc::explorer::{Browser, Expand, Reveal, Tree};
 use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
+use super::poll::{self, Chain, POLL, Tick};
 use super::{Model, Pending, Ui, changes, find, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
@@ -119,7 +120,7 @@ fn folder_opened(m: &mut Model, path: &Path) {
 }
 
 /// An error goes to the footer and to the reader's header notice (Scouter `showError`).
-fn show_error(m: &mut Model, text: &str) {
+pub fn show_error(m: &mut Model, text: &str) {
     let text = display_label(text);
     m.message = Some(Message { text: text.clone(), error: true });
     m.notice = Some(text);
@@ -147,7 +148,30 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::Searched { session, scan, progress } => find::searched(m, *session, *scan, progress.clone()),
         Event::Previewed { session, request, result } => find::previewed(m, *session, *request, result.clone()),
         Event::ChangesListed { session, result } => changes::listed(m, *session, result.clone()),
-        Event::ChangesPatched { session, request, result } => changes::patched(m, *session, *request, result.clone()),
+        Event::ChangesPatched { session, request, stamp, result } => {
+            changes::patched(m, *session, *request, stamp.clone(), result.clone())
+        }
+        Event::DiffPolled { session, result } => changes::polled(m, *session, result.clone()),
+        Event::BrowsePolled { root, chain, folders, marks, document } => {
+            if *chain {
+                let elapsed = m.browse_started.take().map_or(POLL, |started| started.elapsed());
+                m.ticks.push(Tick { chain: Chain::Browse, delay: poll::backoff(elapsed) });
+            }
+            if root == m.browser.tree.root() {
+                for (path, entries) in folders {
+                    m.browser.refreshed(path, entries.clone());
+                }
+                if let Ok(listing) = marks {
+                    let next = listing.clone().map_or_else(Default::default, Marks::new);
+                    if next != m.marks {
+                        m.marks = next;
+                    }
+                }
+            }
+            if let Some((path, reread)) = document {
+                reader::reread(m, ui, path, reread.clone());
+            }
+        }
         Event::Listed { path, result } => match result {
             Ok(entries) => {
                 m.browser.listed(path, entries.clone());
@@ -166,7 +190,9 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                     m.browser.select(path);
                     folder_opened(m, path);
                 }
-                Ok(fs::Opened::Text(document)) => reader::show_text(m, ui, path, document.clone()),
+                Ok(fs::Opened::Text { document, stamp }) => {
+                    reader::show_text(m, ui, path, document.clone(), stamp.clone())
+                }
                 Ok(fs::Opened::Image { info, bytes }) => reader::show_image(m, ui, path, info.clone(), bytes),
                 Ok(fs::Opened::Binary { size }) => reader::show_binary(m, path, *size),
                 Err(text) => {

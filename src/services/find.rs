@@ -67,7 +67,7 @@ pub fn search(index: &Index, query: &str, cancelled: &AtomicBool, report: &dyn F
         let text = match image::is_image_path(path) {
             true => None,
             false => match fs::open(path, &[]) {
-                Ok(fs::Opened::Text(document)) => Some(document),
+                Ok(fs::Opened::Text { document, .. }) => Some(document),
                 _ => None,
             },
         };
@@ -88,7 +88,7 @@ pub fn search(index: &Index, query: &str, cancelled: &AtomicBool, report: &dyn F
 /// The text of a file for the finder's preview; a file that is not text is an error, which the preview ignores.
 pub fn preview(path: &Path) -> Result<Document, String> {
     match fs::open(path, &[])? {
-        fs::Opened::Text(document) => Ok(document),
+        fs::Opened::Text { document, .. } => Ok(document),
         _ => Err("Only UTF-8 text files are previewed.".into()),
     }
 }

@@ -143,6 +143,21 @@ impl Repository {
         Ok(Listing { within, changes, ignored })
     }
 
+    /// What the listing shows, as a stamp (Scouter `changesStamp`, `src/diff/git.ts:271-289`): the base, the index's stat,
+    /// and each listed file's stat. An edit to any of them changes the stamp. A deleted file has no stat; an untracked
+    /// file's stat follows a link, as Scouter's does.
+    pub fn stamp(&self, changes: &[Change]) -> String {
+        let mut parts = vec![self.queue().base.clone(), stat_of(&self.index, true)];
+        for change in changes {
+            let stat = match change.kind {
+                ChangeKind::Deleted => "deleted".to_string(),
+                kind => stat_of(&self.root.join(&change.path), kind == ChangeKind::Untracked),
+            };
+            parts.push(format!("{}\0{stat}", change.path));
+        }
+        parts.join("\n")
+    }
+
     /// One change's patch against the base of the last listing (`src/diff/patch.ts:13-20`). The copy is the one that
     /// listing made; a patch does not refresh it.
     pub fn patch(&self, change: &Change, context: usize) -> Result<Patch, String> {
@@ -291,6 +306,23 @@ fn create_copy_dir() -> Result<PathBuf, String> {
     fs::create_dir(&dir).map_err(|error| error.to_string())?;
     copies().push(dir.clone());
     Ok(dir)
+}
+
+/// A path's stat as a stamp part: `missing` when it cannot be stat'ed.
+fn stat_of(path: &Path, follow: bool) -> String {
+    let metadata = if follow { fs::metadata(path) } else { fs::symlink_metadata(path) };
+    match metadata {
+        Ok(stat) => format!(
+            "{}:{}:{}:{}:{}:{}",
+            stat.ino(),
+            stat.size(),
+            stat.mtime(),
+            stat.mtime_nsec(),
+            stat.ctime(),
+            stat.ctime_nsec()
+        ),
+        Err(_) => "missing".to_string(),
+    }
 }
 
 /// The arguments followed by Scouter's diff options.

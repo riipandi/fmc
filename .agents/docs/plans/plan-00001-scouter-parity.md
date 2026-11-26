@@ -86,8 +86,8 @@ phases:
       note: "live 80x24 on the demo repo: keys d n N ] c c x x s a a o match Scouter except the approved deviations (settled fold values, a/x landing) and the footer hint dropped by ^q (accepted); one-file header column fixed (stack reserves its bar column only while it overflows). Split at 60+ columns: owner check, not verifiable at 80x24."
     - id: 21
       title: "W5: polling refresh"
-      status: pending
-      note: —
+      status: done
+      note: "r reloads (d9e7e46); polls: the tree every 2 s with back-off, the open file by stamp (\"is no longer on disk.\"), the changes list and patches by stamp; live 80x24 against Scouter 0.9.9: a new root file appears in both, an edit to the open file shows in both, a deleted open file shows the same notice, the changes list and body follow an edit without r, a body at its end stays at its end, mid-body holds. Index copies: 1 while the changes screen is open, 0 after quit."
     - id: 22
       title: "W6: parity audit"
       status: pending

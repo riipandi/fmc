@@ -4,6 +4,7 @@
 mod changes;
 mod find;
 mod keys;
+mod poll;
 mod reader;
 mod scroll;
 mod search;
@@ -131,6 +132,13 @@ struct Model {
     changes_load: Option<u64>,
     /// The listing of a reload in flight, by its session (`r`); a reply for it refreshes the open screen.
     changes_reload: Option<u64>,
+    /// A rebuilt stacked body was at its end: it scrolls to its new end once the frame has measured it.
+    bottom_pending: bool,
+    /// The next polls to schedule, which `poll::schedule` runs after each event.
+    ticks: Vec<poll::Tick>,
+    /// When the browse poll in flight started, and the changes poll's, for the back-off.
+    browse_started: Option<std::time::Instant>,
+    diff_started: Option<std::time::Instant>,
     /// The last session of a listing; each `d` takes the next.
     changes_session: u64,
     /// The file the body scrolls to once it is laid out, and the paints left to lay it out.
@@ -219,6 +227,10 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         changes_load: None,
         changes_reload: None,
         changes_session: 0,
+        ticks: Vec::new(),
+        bottom_pending: false,
+        browse_started: None,
+        diff_started: None,
         diff_options: changes::Options::default(),
         diff_jump: None,
     }));
@@ -226,6 +238,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
     tree::list(&mut model.borrow_mut(), root);
     tree::refresh_marks(&mut model.borrow_mut());
+    model.borrow_mut().ticks.push(poll::Tick { chain: poll::Chain::Browse, delay: poll::POLL });
+    poll::schedule(&app, &model, &ui);
 
     theme::watch(&app, {
         let (model, ui) = (model.clone(), ui.clone());
@@ -246,11 +260,14 @@ pub fn run(target: &Path) -> opentui::Result<()> {
     app.on_message({
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event: &Event| {
-            let mut m = model.borrow_mut();
-            let mut u = ui.borrow_mut();
-            tree::apply(&mut m, &u, event);
-            paint(cx.app(), &mut m, &mut u);
+            {
+                let mut m = model.borrow_mut();
+                let mut u = ui.borrow_mut();
+                tree::apply(&mut m, &u, event);
+                paint(cx.app(), &mut m, &mut u);
+            }
             repaint_after_layout(cx.app(), &model, &ui);
+            poll::schedule(cx.app(), &model, &ui);
         }
     });
     app.on_key_capture({
@@ -513,6 +530,10 @@ fn repaint_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, tr
     app.set_timeout(std::time::Duration::from_millis(20), move |cx| {
         let (mut m, mut u) = (model.borrow_mut(), ui.borrow_mut());
         paint(cx.app(), &mut m, &mut u);
+        if m.bottom_pending && u.diff.tops().is_some() {
+            m.bottom_pending = false;
+            u.diff.scroller.scroll_to_bottom();
+        }
         let unmeasured = changes::body_shows(&m) && !m.change_list.changes().is_empty() && u.diff.tops().is_none();
         drop((m, u));
         if tries > 0 && unmeasured {
@@ -706,12 +727,18 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.diff.root.visible(body);
     if on_changes {
         ui.diff.set_split(m.diff_options.split);
+        // A body at its end stays at the end when a rebuild changes its rows (Scouter's stack does the same).
+        let (at_bottom, built) = (ui.diff.at_bottom(viewport), ui.diff.built_key());
         changes::sync(app, m, ui, p, &tint);
         ui.diff.set_wrap(m.wrap);
         // The stack gives its bar's column back only while the text overflows (the bar takes no space when hidden), as
         // Scouter's diff scroller does; a fixed pane would leave that column empty.
         let overflow = ui.diff.height() > viewport;
         ui.diff.set_pane(u32::from(columns.saturating_sub(width + 3)) + u32::from(!overflow));
+        // The end is held once the frame has measured the rebuilt blocks: a scroll before that picks the wrong file.
+        if at_bottom && ui.diff.built_key() != built {
+            m.bottom_pending = true;
+        }
         changes::jump(m, ui);
     }
     if let Some((top, tries)) = m.pending_top.take() {

@@ -11,5 +11,5 @@ fn open_lists_a_folder_and_names_a_file() {
         Opened::Folder(entries) => assert!(entries.is_empty()),
         _ => panic!("a folder opened as something else"),
     }
-    assert!(matches!(open(&dir.path().join("vault-713.md"), &[]).unwrap(), Opened::Text(_)));
+    assert!(matches!(open(&dir.path().join("vault-713.md"), &[]).unwrap(), Opened::Text { .. }));
 }

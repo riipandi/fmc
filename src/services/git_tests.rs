@@ -375,3 +375,14 @@ fn calls_on_one_repository_from_two_threads_both_answer() {
         assert_eq!(thread.join().unwrap(), Ok(3));
     }
 }
+
+#[test]
+fn the_stamp_changes_when_a_listed_file_or_the_index_changes() {
+    let dir = repository();
+    let repository = Repository::open(dir.path()).unwrap();
+    let set = repository.changes().unwrap();
+    let before = repository.stamp(&set.changes);
+    assert_eq!(before, repository.stamp(&set.changes), "nothing changed, so the stamp holds");
+    fs::write(dir.path().join("notes.txt"), "Azkaban and Hogsmeade\n").unwrap();
+    assert_ne!(repository.stamp(&set.changes), before);
+}

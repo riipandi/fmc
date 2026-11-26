@@ -126,6 +126,16 @@ impl Browser {
         listed
     }
 
+    /// A poll's fresh listing of an expanded folder (`Tree::refreshed`). Returns whether the rows changed.
+    pub fn refreshed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
+        let changed = self.tree.refreshed(path, entries);
+        if changed && !self.is_flat() {
+            let selected = self.selected.clone();
+            self.select(&selected);
+        }
+        changed
+    }
+
     /// Selects `path` if it has a row, else the first row (Scouter `show`, which renders after each change).
     pub fn select(&mut self, path: &Path) {
         let index = self.rows().iter().position(|row| row.entry.path == path).unwrap_or(0);

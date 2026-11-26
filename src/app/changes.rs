@@ -7,8 +7,8 @@
 use std::path::PathBuf;
 
 use fmc::diff::{
-    ChangeKind, FilePatch, Folds, Jump, Patch, active_hunk, block_at, can_split, gutter_digits, hunk_starts, line_at,
-    split_path, step, totals, within_folder,
+    ChangeKind, ChangeSet, FilePatch, Folds, Jump, Patch, active_hunk, block_at, can_split, gutter_digits, hunk_starts,
+    line_at, split_path, step, totals, within_folder,
 };
 use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
@@ -16,6 +16,7 @@ use fmc::theme::Palette;
 use opentui::prelude::*;
 
 use super::find::OpenAt;
+use super::poll::{self, Chain, POLL, Tick};
 use super::{Model, Ui, tree};
 use crate::services::changes::{Listed, Shared};
 use crate::services::{self, Event};
@@ -52,6 +53,8 @@ pub struct Changes {
     pub within: String,
     /// Whether the patches of the latest read have arrived; until then the body has no blocks.
     pub patched: bool,
+    /// The stamp of the files the body shows, taken before they were read; a poll reads them again when it changes.
+    pub stamp: String,
     /// The body's files: every listed change, or the selected one in one-file scope, with their patch text.
     pub files: Vec<FilePatch>,
     /// The line-number width the blocks share (`fmc::diff::gutter_digits`).
@@ -127,17 +130,42 @@ fn reloaded(m: &mut Model, result: Result<Listed, String>) {
         Ok(listed) => listed,
         Err(text) => return show_error(m, &text),
     };
+    let Some(changes) = m.changes.as_mut() else { return };
+    changes.repository = repository;
+    changes.within = within;
+    show_listing(m, set);
+}
+
+/// Shows a listing of the open screen's repository: the selection keeps its path, and the body reads its patches again,
+/// or clears them when no change is left (Scouter `apply`).
+fn show_listing(m: &mut Model, set: ChangeSet) {
     let keep = m.change_list.selected().map(|change| change.path.clone());
     m.change_list.show(set.changes, set.truncated, keep.as_deref());
     let empty = m.change_list.changes().is_empty();
     let Some(changes) = m.changes.as_mut() else { return };
-    changes.repository = repository;
-    changes.within = within;
     if empty {
         changes.files.clear();
         changes.generation += 1;
         changes.patched = true;
+        changes.stamp.clear();
     } else {
+        read(m, false);
+    }
+}
+
+/// A changes poll's answer (Scouter `refresh`, `src/diff/diff-screen.ts:352-377`). A listing that differs is shown; else
+/// the body reads its patches again when a file it shows has a new stamp. The next tick follows while the screen shows
+/// the same session.
+pub fn polled(m: &mut Model, session: u64, result: Result<(ChangeSet, String), String>) {
+    let elapsed = m.diff_started.take().map_or(POLL, |started| started.elapsed());
+    let Some(changes) = m.changes.as_ref().filter(|changes| changes.session == session) else { return };
+    // A read in flight is left to finish: its stamp is checked on the next poll.
+    let stale = changes.patched && result.as_ref().is_ok_and(|(_, stamp)| *stamp != changes.stamp);
+    m.ticks.push(Tick { chain: Chain::Diff(session), delay: poll::backoff(elapsed) });
+    let Ok((set, _)) = result else { return };
+    if set.changes != m.change_list.changes() || set.truncated != m.change_list.truncated() {
+        show_listing(m, set);
+    } else if stale {
         read(m, false);
     }
 }
@@ -161,6 +189,7 @@ pub fn listed(m: &mut Model, session: u64, result: Result<Listed, String>) {
 fn enter(m: &mut Model, session: u64, listed: Listed) {
     let Listed { repository, set, within } = listed;
     m.change_list.show(set.changes, set.truncated, None);
+    m.ticks.push(Tick { chain: Chain::Diff(session), delay: POLL });
     let return_focus = m.focus;
     m.focus = Focus::List;
     m.message = None;
@@ -172,6 +201,7 @@ fn enter(m: &mut Model, session: u64, listed: Listed) {
         browsed: m.browser.tree.root().to_path_buf(),
         within,
         patched: empty,
+        stamp: String::new(),
         files: Vec::new(),
         digits: 2,
         generation: 0,
@@ -206,12 +236,14 @@ fn read(m: &mut Model, jump: bool) {
         services::spawn(&m.proxy, move || Event::ChangesPatched {
             session,
             request,
+            stamp: repository.0.stamp(std::slice::from_ref(&change)),
             result: Ok(vec![services::changes::patch(&repository, &change, context)]),
         });
     } else {
         services::spawn(&m.proxy, move || Event::ChangesPatched {
             session,
             request,
+            stamp: repository.0.stamp(&all),
             result: services::changes::patches(&repository, &all, context),
         });
     }
@@ -220,7 +252,7 @@ fn read(m: &mut Model, jump: bool) {
 /// The patches arrive. A reply for a read that is no longer the latest, or for a screen that has left, is dropped
 /// (Scouter `loadAll` and `select`). A file that the one-file body moves to scrolls to its top, as Scouter's `presentOne`
 /// does; the same file keeps its place.
-pub fn patched(m: &mut Model, session: u64, request: u64, result: Result<Vec<FilePatch>, String>) {
+pub fn patched(m: &mut Model, session: u64, request: u64, stamp: String, result: Result<Vec<FilePatch>, String>) {
     let one_file = m.diff_options.one_file;
     let selected = m.change_list.selected().map(|change| change.path.clone());
     let Some(changes) = m.changes.as_mut() else { return };
@@ -239,6 +271,7 @@ pub fn patched(m: &mut Model, session: u64, request: u64, result: Result<Vec<Fil
         }
         changes.digits = gutter_digits(&files);
         changes.files = files;
+        changes.stamp = stamp;
         changes.generation += 1;
     }
     if let Some(path) = target {
@@ -257,6 +290,8 @@ pub fn leave(m: &mut Model) {
     m.changes_reload = None;
     m.diff_jump = None;
     m.focus = if changes.return_focus == Focus::Reader && m.shown.has_document() { Focus::Reader } else { Focus::List };
+    // Scouter refreshes the tree and the marks as it leaves (`src/app/app.ts` `leaveDiff`); the timed chain goes on.
+    poll::browse_now(m, false);
 }
 
 fn show_error(m: &mut Model, text: &str) {

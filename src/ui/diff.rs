@@ -116,6 +116,11 @@ impl DiffBody {
 
     /// Builds the blocks of `files` when `key` differs from the blocks shown (Scouter `show`, which reuses them when
     /// the files stay the same).
+    /// The key the blocks were last built for; a change of it means the blocks were rebuilt.
+    pub fn built_key(&self) -> Option<Key> {
+        self.built.get()
+    }
+
     pub fn sync(&self, app: &App, key: Key, files: &[FilePatch], p: &Palette) {
         if self.built.get() == Some(key) {
             return;
@@ -268,6 +273,14 @@ impl DiffBody {
             return None;
         }
         Some(blocks.iter().map(|block| block.root.rect().top.max(0.0) as usize).collect())
+    }
+
+    /// Whether the stack shows its last row, as the frame laid it out for a view of `viewport` rows. A stack the frame
+    /// has not laid out yet, or one that fits, is not at its end: it has nothing to keep there.
+    pub fn at_bottom(&self, viewport: usize) -> bool {
+        let (_, top) = self.scroller.position();
+        let height = self.height() as f64;
+        height > viewport as f64 && top + viewport as f64 >= height - 0.5
     }
 
     /// The rows the stack takes, as the frame laid them out.

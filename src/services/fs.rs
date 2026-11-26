@@ -4,6 +4,7 @@
 use std::fs::{self, File};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 
 use fmc::explorer::{Entry, Kind, is_noise, sort_entries};
 use fmc::reader::document::{self, Document};
@@ -15,9 +16,18 @@ use imagesize::ImageType;
 #[derive(Clone, Debug)]
 pub enum Opened {
     Folder(Vec<Entry>),
-    Text(Document),
-    Image { info: image::Info, bytes: Vec<u8> },
-    Binary { size: u64 },
+    /// A text document and its stamp (`stamp`), which a poll compares with the file's stamp now.
+    Text {
+        document: Document,
+        stamp: String,
+    },
+    Image {
+        info: image::Info,
+        bytes: Vec<u8>,
+    },
+    Binary {
+        size: u64,
+    },
 }
 
 /// Opens an entry as Scouter's `openPath` does: it follows a link and asks whether the target is a folder
@@ -35,20 +45,50 @@ pub fn open(path: &Path, loop_parents: &[PathBuf]) -> Result<Opened, String> {
     if !metadata.is_file() {
         return Err("Only regular text files can be viewed.".into());
     }
-    read(path, metadata.len())
+    read(path, &metadata)
+}
+
+/// A file's stamp: its modification time and size, which change when its text does (Scouter `formatFileStamp`).
+pub fn stamp(metadata: &fs::Metadata) -> String {
+    let modified = metadata.modified().ok().and_then(|time| time.duration_since(SystemTime::UNIX_EPOCH).ok());
+    format!("{}:{}", modified.map_or(0, |time| time.as_nanos()), metadata.len())
+}
+
+/// What a poll found of an open text document (Scouter `refreshDocument`).
+#[derive(Clone, Debug)]
+pub enum Reread {
+    /// The file is gone (or cannot be stat'ed): the reader keeps its content and says so.
+    Missing,
+    /// The file changed and reads again: its new document and stamp.
+    Changed { document: Document, stamp: String },
+    /// The stamp is the one shown, or the file no longer reads as text; the reader keeps what it shows.
+    Unchanged,
+}
+
+/// Checks the open text document shown with `shown` as its stamp: a changed file is read again (Scouter
+/// `refreshDocument`, `src/app/reader-pane.ts:173-201`).
+pub fn reread(path: &Path, shown: &str) -> Reread {
+    let Ok(metadata) = fs::metadata(path) else { return Reread::Missing };
+    if stamp(&metadata) == shown {
+        return Reread::Unchanged;
+    }
+    match open(path, &[]) {
+        Ok(Opened::Text { document, stamp }) => Reread::Changed { document, stamp },
+        _ => Reread::Unchanged,
+    }
 }
 
 /// Reads a text document. Like Scouter, it reads one byte past the cap, so the cut can be told from a file that
 /// ends at it.
-fn read(path: &Path, size: u64) -> Result<Opened, String> {
+fn read(path: &Path, metadata: &fs::Metadata) -> Result<Opened, String> {
     let file = File::open(path).map_err(|error| describe(&error, "open", Some(path)))?;
     let mut bytes = Vec::new();
     file.take(document::MAX_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
         .map_err(|error| describe(&error, "read", None))?;
     match document::decode(&bytes) {
-        Ok(document) => Ok(Opened::Text(document)),
-        Err(document::Refusal::Binary) => Ok(Opened::Binary { size }),
+        Ok(document) => Ok(Opened::Text { document, stamp: stamp(metadata) }),
+        Err(document::Refusal::Binary) => Ok(Opened::Binary { size: metadata.len() }),
         Err(refusal) => Err(refusal.message().to_string()),
     }
 }

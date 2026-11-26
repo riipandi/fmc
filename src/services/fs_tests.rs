@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use fmc::explorer::Kind;
 use tempfile::TempDir;
 
-use super::{Opened, describe, list, open};
+use super::{Opened, Reread, describe, list, open, reread};
 
 /// A vault with the Harry Potter and Dan Brown names Scouter's fixtures use, plus the noise files it drops.
 fn vault() -> TempDir {
@@ -103,7 +103,7 @@ fn a_text_file_opens_as_a_document() {
     let dir = vault();
     let path = dir.path().join("README.md");
     fs::write(&path, "Hermione\r\nGranger\n").unwrap();
-    let Opened::Text(document) = open(&path, &[]).unwrap() else { panic!("a text file") };
+    let Opened::Text { document, .. } = open(&path, &[]).unwrap() else { panic!("a text file") };
     assert_eq!(document.text, "Hermione\nGranger\n");
     assert_eq!(document.lines, 2);
 }
@@ -152,4 +152,19 @@ fn a_missing_file_is_an_error_with_the_stat_call() {
     let dir = vault();
     let path = dir.path().join("azkaban.txt");
     assert_eq!(open(&path, &[]).unwrap_err(), format!("ENOENT: no such file or directory, stat '{}'", path.display()));
+}
+
+#[test]
+fn a_poll_rereads_a_changed_file_and_reports_a_missing_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("vault-713.md");
+    fs::write(&path, "Gringotts\n").unwrap();
+    let Opened::Text { stamp, .. } = open(&path, &[]).unwrap() else { panic!("a text file") };
+    assert!(matches!(reread(&path, &stamp), Reread::Unchanged));
+    fs::write(&path, "Gringotts and the Louvre\n").unwrap();
+    let Reread::Changed { document, stamp: next } = reread(&path, &stamp) else { panic!("a changed file") };
+    assert_eq!(document.text, "Gringotts and the Louvre\n");
+    assert_ne!(next, stamp);
+    fs::remove_file(&path).unwrap();
+    assert!(matches!(reread(&path, &next), Reread::Missing));
 }

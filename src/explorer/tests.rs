@@ -425,3 +425,20 @@ fn a_text_hit_list_selects_by_row_when_one_file_has_several_hits() {
     browser.move_by(-2);
     assert_eq!(browser.selected_index(), 0);
 }
+
+#[test]
+fn a_refresh_keeps_a_surviving_child_open_and_forgets_a_gone_one() {
+    let root = Path::new("/hogwarts");
+    let mut tree = Tree::new(root.to_path_buf());
+    let chamber = Entry::new(root, "chamber", Kind::Directory);
+    let notes = Entry::new(root, "notes.md", Kind::File);
+    tree.listed(root, vec![chamber.clone(), notes.clone()]);
+    tree.listed(&chamber.path, vec![Entry::new(&chamber.path, "key.rs", Kind::File)]);
+    let owl = Entry::new(root, "owl.txt", Kind::File);
+    assert!(tree.refreshed(root, vec![chamber.clone(), owl.clone()]), "a file came and went");
+    assert!(tree.is_expanded(&chamber.path) && tree.is_listed(&chamber.path), "a surviving folder keeps its children");
+    assert!(tree.entry(&notes.path).is_none(), "a file that is gone leaves the tree");
+    assert!(tree.entry(&owl.path).is_some());
+    assert!(!tree.refreshed(root, vec![chamber, owl]), "the same listing changes no row");
+    assert!(!tree.refreshed(Path::new("/azkaban"), Vec::new()), "a folder not in the tree is left alone");
+}
