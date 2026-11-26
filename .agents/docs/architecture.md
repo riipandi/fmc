@@ -649,3 +649,37 @@ Consequences:
 
 - (positive) Neovim muscle memory quits fmc.
 - (negative) A new prompt mode; `:` is no longer free for another binding.
+
+### Approved deviation: a phone layout below 80 columns
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: the owner runs fmc in Rex on a phone (narrow terminal, touch: a tap is a left click, a swipe is the wheel, keys like Esc and Ctrl are hard to type). The phone audit (`audit/audit-00002-mobile.md`, proposals P1 to P8) found a one-cell `»` target, a 12–17 cell sidebar below 56 columns, keyboard-only actions, cut names, and a clipped welcome. Scouter has no narrow-terminal layout.
+
+Decision (owner, 2026-11-27). Everything here applies only below 80 columns, so the layout at 80 columns and wider stays Scouter's (plus the earlier records), except P7:
+
+- P1: while the sidebar is hidden, a tap anywhere on the reader's header row shows it (and focuses it, as the `»` mark does). The `»` mark stays.
+- P3: below 60 columns the shown sidebar is a full-width drawer over the reader. Opening a file (Enter or a tap on a file) closes the drawer and shows the reader; `Ctrl+/` or a tap on the header row toggles it. This amends "the sidebar hides below 80 columns" for widths below 60.
+- P2: footer hints are tappable: a tap runs the hint's action (`Esc close`, `? help`, `/ find`, `Tab`, `d changes`, `q close`, …). `Ctrl+q` stays keyboard-only.
+- P4: rows that show a path (finder results, change list) show the file name first and the folder dimmed after it.
+- P6: footer hints are fitted in a fixed priority order per screen, so the hint that leaves the current state (`Esc`, `^/ sidebar`, `q`) stays.
+- P5: below about 50 columns the welcome drops its card and wraps its lines instead of cutting them.
+- P8: while a text selection exists, the footer shows a tappable `Copy` hint that does what `y` does.
+
+Consequences:
+
+- (positive) fmc is usable by touch on a phone; no action needs a hard-to-type key except quitting.
+- (negative) Narrow layouts have their own rules and tests; the footer gains click handling.
+
+### Approved deviation: a diff header folds on release, not on press
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter folds a diff file on a press on its header (`scouter:src/diff/diff-blocks.ts:468`). On a phone a swipe that starts on a header folds it.
+
+Decision: a header folds when the button is released over the same header without the pointer having moved; a drag or swipe that starts on a header does not fold. Applies at every width. Approved by the owner on 2026-11-27 (audit-00002 P7).
+
+Consequences:
+
+- (positive) Scrolling by touch no longer folds files by accident.
+- (negative) A click folds on release instead of on press, a small timing difference from Scouter.

@@ -27,8 +27,11 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - A mark on the border shows or hides the sidebar with a click: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again.
 - Nothing about the sidebar or the dotfiles is saved across runs.
 
+- Below 80 columns fmc adapts to a phone: tap the reader's header row to show the hidden file list; below 60 columns the list opens over the whole screen and closes when you open a file; footer hints can be tapped; file names come before their folders in finder and change rows; the welcome screen wraps instead of cutting; and a `Copy` hint appears while text is selected.
+
 ## Changes screen
 
+- A diff file folds when you release the click or tap on its header, so a swipe that starts on a header does not fold it. Scouter folds on the press.
 - The changes screen opens showing one file's diff. Press `a` to see all files stacked, as Scouter shows them at first.
 - After a change that moves the diff (folding with `c`, reloading with `r`), the footer and the scrollbar show the new position at once. Scouter can show the old values until you scroll.
 - After switching between one file and all files (`a`) or changing the context (`x`), the selected file stays at the top. Scouter can land elsewhere.
