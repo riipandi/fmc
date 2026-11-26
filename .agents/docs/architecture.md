@@ -636,3 +636,16 @@ Consequences:
 Context: auto-preview and the `[`/`]` steps must be configurable (owner, 2026-11-27); RI-9 planned `~/.config/fmc/settings.json`.
 
 Decision: fmc reads `~/.config/fmc/settings.json` (under `$XDG_CONFIG_HOME/fmc/` when set) once at start. Keys: `auto_preview` (bool, default `true`), `sidebar_jump` (positive integer, default 2), `reader_jump` (positive integer, default 5). A missing file means the defaults. A file that fails to parse, or a key with a wrong type or a value below 1, is not applied: fmc keeps the defaults for the bad keys and shows a notice once. Unknown keys are ignored. fmc never writes the file in this step; saving UI state and the theme override stay in RI-9. Crates: `serde` (derive) and `serde_json`, approved for after parity. Approved by the owner on 2026-11-27.
+
+### Approved deviation: `:q` quits, as in Neovim
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter quits with `q` or `Ctrl+c`; fmc moved quitting to `Ctrl+q` (record above). `:` is unbound in both.
+
+Decision: `:` outside a prompt opens a one-line command prompt in the footer, Neovim style. `q`, `q!`, `qa`, `qa!`, and `quit` quit on Enter; `Esc` or an empty Enter cancels; anything else shows `Not a command: <text>`. No other commands in this step. `Ctrl+q` and `Ctrl+c` still quit. Approved by the owner on 2026-11-27 (the prompt shape is the agent's pick, open to change).
+
+Consequences:
+
+- (positive) Neovim muscle memory quits fmc.
+- (negative) A new prompt mode; `:` is no longer free for another binding.

@@ -12,6 +12,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 ## Keys
 
 - `Ctrl+q` quits. Plain `q` does not quit; it closes the open document, so the welcome screen returns, or the key list. On the changes screen, `q` goes back to browsing, as `d` does. `Ctrl+c` still quits.
+- `:q` then Enter quits too, as in Neovim (`:q!`, `:qa`, and `:quit` work as well). `Esc` cancels the `:` prompt.
 - Because `^q quit` is one column wider than Scouter's `q quit`, the footer at 80 columns can drop one more hint (on the changes screen, `a one file`). The key list (`?`) always shows every key.
 - Moving through the file list previews each file in the reader while the list keeps the focus (auto-preview). Press `p` in the list to turn it off or on, or set `auto_preview` in the settings file. Scouter shows a file only when you open it.
 - Only Enter opens a file, and it moves the focus to the reader, as in Scouter. `l` and `→` only expand folders; in Scouter they also open files.
