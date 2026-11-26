@@ -132,6 +132,12 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 tree::act(&mut m, action)
             }
             Action::TogglePreview if m.focus == Focus::List && m.changes.is_none() => preview::toggle(&mut m),
+            Action::Jump(step) if m.focus == Focus::List && m.changes.is_none() => tree::jump(&mut m, step),
+            Action::Jump(step) if m.focus == Focus::Reader && m.shown.has_document() => {
+                let lines = i32::try_from(m.reader_jump).unwrap_or(i32::MAX) * i32::from(step);
+                let ui = ui.borrow();
+                scroll::motion(&m, &ui.viewer, Action::Scroll(lines))
+            }
             _ => {}
         }
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
@@ -148,6 +154,7 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     | Action::Expand
                     | Action::Collapse
                     | Action::GoUp
+                    | Action::Jump(_)
                     | Action::TogglePreview
             );
         drop(m);

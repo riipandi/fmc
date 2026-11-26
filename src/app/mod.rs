@@ -157,6 +157,9 @@ struct Model {
     auto_preview: bool,
     /// Counts the list's moves, so a preview is read only for the newest move (`app/preview.rs`).
     preview_generation: u64,
+    /// The rows `]` and `[` move the list by, and the lines they scroll the reader by (`settings.json`).
+    sidebar_jump: u32,
+    reader_jump: u32,
 }
 
 impl Model {
@@ -228,6 +231,8 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         diff_jump: None,
         auto_preview: fmc::settings::AUTO_PREVIEW,
         preview_generation: 0,
+        sidebar_jump: fmc::settings::SIDEBAR_JUMP,
+        reader_jump: fmc::settings::READER_JUMP,
     }
 }
 
@@ -257,6 +262,8 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
     {
         let mut m = model.borrow_mut();
         m.auto_preview = settings.settings.auto_preview;
+        m.sidebar_jump = settings.settings.sidebar_jump;
+        m.reader_jump = settings.settings.reader_jump;
         if !settings.notices.is_empty() {
             m.message = Some(Message { text: settings.notices.join(" "), error: true });
         }

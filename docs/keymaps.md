@@ -13,10 +13,11 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | `/` | find a file by name; Tab: text in files |
 | `-` | open the folder above |
 | `p` | auto-preview on or off |
+| `[` `]` | jump the list or reader |
 | `gg` `G` | top / bottom |
 | `Ctrl+←` `→` | resize the list, or drag its edge |
 
-With the list focused, the file it selects shows in the reader after a short pause, without moving the focus (auto-preview). A folder selection leaves the reader as it is. `p` turns auto-preview off or on for this session, and `auto_preview` in the settings file sets the start (`configuration.md`).
+With the list focused, the file it selects shows in the reader after a short pause, without moving the focus (auto-preview). A folder selection leaves the reader as it is. `p` turns auto-preview off or on for this session, and `auto_preview` in the settings file sets the start (`configuration.md`). `]` and `[` move the list by `sidebar_jump` rows, and scroll the reader by `reader_jump` lines; on the changes screen they step through the hunks.
 
 ## Find a file
 

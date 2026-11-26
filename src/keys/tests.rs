@@ -137,7 +137,11 @@ fn alt_i_arrives_as_escape_i() {
 fn letter_commands_are_plain_and_lowercase() {
     assert_eq!(last(&["w"], TREE), Step::Done(Action::ToggleWrap));
     assert_eq!(last(&["p"], TREE), Step::Done(Action::TogglePreview));
-    assert_eq!(last(&["p"], READER), Step::Done(Action::PreviousMatch));
+    assert_eq!(last(&["]"], TREE), Step::Done(Action::Jump(1)));
+    assert_eq!(last(&["["], TREE), Step::Done(Action::Jump(-1)));
+    assert_eq!(last(&["]"], READER), Step::Done(Action::Jump(1)));
+    assert_eq!(last(&["["], READER), Step::Done(Action::Jump(-1)));
+    assert_eq!(last(&["]"], CHANGES), Step::Done(Action::Hunk(1)), "the changes screen keeps its hunks");
     assert_eq!(last(&["d"], READER), Step::Done(Action::ToggleChanges));
     assert_eq!(last(&["y"], CHANGES), Step::Done(Action::Copy));
     assert_eq!(last(&["M-y"], TREE), Step::Bad);

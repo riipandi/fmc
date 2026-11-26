@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T09:00:00+07:00
-updated: 2026-11-27T02:00:00+07:00
+updated: 2026-11-27T02:30:00+07:00
 phases:
     - id: 1
       title: "Bug fixes: arrow keys pan the reader; Ctrl+/ focuses the shown sidebar"
@@ -21,8 +21,8 @@ phases:
       note: "275 tests; live: holding j reads the last file, a folder selection leaves the reader, p shows Auto-preview off/on and gates it"
     - id: 5
       title: "Bracket jumps in the sidebar and the reader"
-      status: pending
-      note: —
+      status: done
+      note: "277 tests; live: ] moves the list two rows and the reader five lines, [ goes back. Footer hint not added: the 160-column footer test pins Scouter's footer (open question)"
     - id: 6
       title: ":q command prompt"
       status: pending

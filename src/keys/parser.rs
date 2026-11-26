@@ -128,6 +128,8 @@ impl Parser {
                 match key.text {
                     "{" => return Step::Done(Action::Paragraph(-1)),
                     "}" => return Step::Done(Action::Paragraph(1)),
+                    "]" => return Step::Done(Action::Jump(1)),
+                    "[" => return Step::Done(Action::Jump(-1)),
                     _ => {}
                 }
             }
@@ -215,6 +217,11 @@ fn list_move(key: Key<'_>) -> Option<Action> {
 fn tree(key: Key<'_>) -> Option<Action> {
     if !key.plain() {
         return None;
+    }
+    match key.text {
+        "]" => return Some(Action::Jump(1)),
+        "[" => return Some(Action::Jump(-1)),
+        _ => {}
     }
     match key.name {
         "return" => Some(Action::Toggle),

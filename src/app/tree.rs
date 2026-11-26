@@ -49,6 +49,12 @@ pub fn activate(m: &mut Model) {
     open(m, path);
 }
 
+/// `]` and `[`: the list moves by the settings' sidebar jump (architecture.md, "`[` and `]` jump in the sidebar").
+pub fn jump(m: &mut Model, step: i8) {
+    let rows = isize::try_from(m.sidebar_jump).unwrap_or(isize::MAX);
+    m.browser.move_by(rows * isize::from(step));
+}
+
 /// A click on the focused list: a folder toggles as Enter does; a file is only selected, because only Enter opens one
 /// (architecture.md, "Auto-preview in the sidebar, and Enter alone opens").
 pub fn click(m: &mut Model) {

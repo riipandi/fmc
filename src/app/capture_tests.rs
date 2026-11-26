@@ -7,13 +7,18 @@ use super::*;
 
 /// The panes wired with the key capture, and a long unwrapped line open in the reader, on a screen `columns` wide.
 fn reading(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
+    reading_text(columns, &format!("{}\n", "Expelliarmus! ".repeat(40)))
+}
+
+/// The same panes with `text` open in the reader.
+fn reading_text(columns: u16, text: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);
-    let document = decode(format!("{}\n", "Expelliarmus! ".repeat(40)).as_bytes()).expect("a text document");
+    let document = decode(text.as_bytes()).expect("a text document");
     ui.borrow().reader.show(&document, None);
     model.borrow_mut().shown = reader::Shown::Text {
         path: PathBuf::from("/hogwarts/spells.txt"),
@@ -49,4 +54,15 @@ fn ctrl_slash_that_shows_the_sidebar_focuses_the_list() {
     app.press("ctrl+/");
     assert!(layout::shown(&model.borrow(), 79));
     assert_eq!(model.borrow().focus, Focus::List);
+}
+
+#[test]
+fn brackets_scroll_the_reader_by_the_reader_jump() {
+    let (app, model, ui) = reading_text(80, &"Hedwig\n".repeat(80));
+    app.click(40, 10);
+    assert_eq!(model.borrow().focus, Focus::Reader);
+    app.press("]");
+    assert_eq!(ui.borrow().viewer.position().1, 5.0);
+    app.press("[");
+    assert_eq!(ui.borrow().viewer.position().1, 0.0);
 }

@@ -59,6 +59,8 @@ pub enum Action {
     GoUp,
     /// `p` on the tree: turns auto-preview on or off for this session.
     TogglePreview,
+    /// `]` (+1) and `[` (-1) while browsing: the list moves, or the reader scrolls, by the settings' jump.
+    Jump(i8),
     Find,
     FocusDiff,
     Scroll(i32),
@@ -95,6 +97,8 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("/", "find a file by name; Tab: text in files"),
             ("-", "open the folder above"),
             ("p", "auto-preview on or off"),
+            ("[ ]", "jump the list or reader"),
+            ("[ ]", "jump the list or reader"),
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
         ],

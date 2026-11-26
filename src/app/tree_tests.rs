@@ -78,3 +78,26 @@ fn a_click_on_a_folder_toggles_it() {
     click(&mut model.borrow_mut());
     assert!(!model.borrow().browser.tree.is_expanded(&hogsmeade));
 }
+
+#[test]
+fn brackets_move_the_list_by_the_sidebar_jump() {
+    let (_app, model, _ui) = browsing();
+    let root = PathBuf::from("/hogwarts");
+    {
+        let mut m = model.borrow_mut();
+        m.browser.listed(
+            &root,
+            vec![
+                Entry::new(&root, "owls.txt", Kind::File),
+                Entry::new(&root, "hedwig.txt", Kind::File),
+                Entry::new(&root, "hogsmeade", Kind::Directory),
+            ],
+        );
+        m.browser.select(&root.join("owls.txt"));
+        m.sidebar_jump = 2;
+    }
+    jump(&mut model.borrow_mut(), 1);
+    assert_eq!(model.borrow().browser.selected(), root.join("hogsmeade"));
+    jump(&mut model.borrow_mut(), -1);
+    assert_eq!(model.borrow().browser.selected(), root.join("owls.txt"));
+}
