@@ -90,13 +90,15 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
 | `Click` header | fold / unfold the file, on release; a drag does not |
-| `Click` reader header, below 80 columns | show the hidden file list and focus it |
-| `Click` list header, below 60 columns | close the file list drawer |
+| `Click` `≡` box, below 80 columns | show the hidden file list and focus it |
+| `Click` any cell of the reader header, below 80 columns | show the hidden file list and focus it |
+| `Click` `✕` box, below 80 columns | hide the file list |
+| `Click` any cell of the list header, below 60 columns | hide the file list drawer |
 | `Click` file, below 60 columns | open the file in the reader |
 | `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
 | `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 
-A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it. While the drawer covers the reader, moving through the list does not preview a file; Enter or a tap on a file opens it. On the welcome screen below 60 columns the text shows full width and the list starts hidden: a tap on the reader's header row opens the list as the drawer, and a second tap on the list's header row hides it.
+The `«` and `»` marks are drawn at 80 columns and wider only; below 80 the `≡` and `✕` boxes in the headers do their work. A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it. While the drawer covers the reader, moving through the list does not preview a file; Enter or a tap on a file opens it. On the welcome screen below 60 columns the text shows full width and the list starts hidden: the `≡` box (or a tap on the reader's header row) opens the list as the drawer, and the `✕` box on the list's header hides it. While the list is hidden the welcome says `Tap ≡ to browse files.`. The `✕` box shows beside a document between 60 and 79 columns too, so the list can be hidden by touch there.
 
 Below 80 columns the footer keeps the keys that leave the current state first (`Copy` while text is selected, `Esc`, `^/`, `q`), then `?`, `/`, `d`, `Enter`, and `Tab`, and a row that is too short drops the rest from its end. At 80 columns and wider the footer keeps Scouter's order.
 

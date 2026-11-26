@@ -27,21 +27,38 @@ fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
         .selectable(false)
 }
 
-/// The welcome screen: its key card, and the three lines that wrap below `NARROW_WELCOME` columns.
+const PROMPT: &str = "Select a file and press Enter.";
+/// The prompt while the list is hidden below 80 columns: it names the menu button (plan-00004, amended).
+const MENU_PROMPT: &str = "Tap ≡ to browse files.";
+
+/// The welcome screen: its key card, and its lines, which wrap below `NARROW_WELCOME` columns.
 pub struct Welcome {
     pub root: View,
     card: View,
-    lines: Vec<Text>,
+    prompt: Text,
+    /// The closing line in one row, and the same line broken at its ` · ` below 80 columns (plan-00004, P5, amended).
+    closing: Text,
+    closing_parts: [Text; 2],
+    tagline: Text,
 }
 
 impl Welcome {
     /// Fits the welcome to `columns`. Below `NARROW_WELCOME` it drops the card and wraps its lines instead of cutting
-    /// them (plan-00004, P5); at 50 columns and wider each line keeps one row, as Scouter draws it.
-    pub fn fit(&self, columns: u16) {
+    /// them (plan-00004, P5); at 50 columns and wider each line keeps one row, as Scouter draws it. `menu` is whether the
+    /// list is hidden below 80 columns, which swaps the prompt for the menu's.
+    pub fn fit(&self, columns: u16, menu: bool, p: &Palette) {
         let narrow = columns < fmc::layout::NARROW_WELCOME;
+        let phone = columns < fmc::layout::BREAKPOINT;
         self.card.visible(!narrow);
+        self.closing.visible(!phone);
+        for part in &self.closing_parts {
+            part.visible(phone);
+        }
+        let prompt = if menu { MENU_PROMPT } else { PROMPT };
+        self.prompt.set_text(content(&[Seg::new(prompt, p.accent_soft)], p.text));
         let (wrap, height) = if narrow { (WrapMode::Word, Length::Auto) } else { (WrapMode::None, Length::Cells(1.0)) };
-        for line in &self.lines {
+        let lines = [&self.tagline, &self.prompt, &self.closing].into_iter().chain(&self.closing_parts);
+        for line in lines {
             line.wrap(wrap);
             line.height(height);
         }
@@ -66,7 +83,7 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
         Seg::new(format!("  v{}", env!("CARGO_PKG_VERSION")), p.dim),
     ];
     let tagline = line(app, &tagline, p, 1);
-    let prompt = line(app, &[Seg::new("Select a file and press Enter.", p.accent_soft)], p, 1);
+    let prompt = line(app, &[Seg::new(PROMPT, p.accent_soft)], p, 1);
     view.add(&tagline).add(&prompt);
     let card = View::new(app)
         .column()
@@ -90,6 +107,10 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
         Seg::new("No editing. Just reading.", p.dim),
     ];
     let closing = line(app, &closing, p, 1);
-    view.add(&closing);
-    Welcome { root: view, card, lines: vec![tagline, prompt, closing] }
+    let parts = [
+        line(app, &[Seg::new("Press ? for every key.", p.accent_soft)], p, 1),
+        line(app, &[Seg::new("No editing. Just reading.", p.dim)], p, 0),
+    ];
+    view.add(&closing).add(&parts[0]).add(&parts[1]);
+    Welcome { root: view, card, prompt, closing, closing_parts: parts, tagline }
 }

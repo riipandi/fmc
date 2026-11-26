@@ -36,7 +36,7 @@ use crate::ui::changes::ChangesView;
 use crate::ui::diff::DiffBody;
 use crate::ui::find::{FindBar, prompt_segments};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
-use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
+use crate::ui::header::{self, Badge, BadgeKind, HeaderState, PaneHeader};
 use crate::ui::hints::{self, Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
@@ -550,7 +550,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 
     layout::sync(m, columns);
     let width = layout::lay_out(ui, m, columns, p);
-    ui.welcome.fit(columns);
+    ui.welcome.fit(columns, layout::menu_box(m, columns), p);
     let focused = |pane: Focus| color(if m.focus == pane { p.accent } else { p.border });
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));
@@ -560,7 +560,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let body = changes::body_shows(m);
     let root = m.browser.tree.root().to_path_buf();
     let name = root.file_name().map_or(String::new(), |n| fmc::text::display_label(&n.to_string_lossy()));
-    let sidebar = if on_changes {
+    let mut sidebar = if on_changes {
         changes::sidebar_header(m)
     } else {
         HeaderState {
@@ -571,6 +571,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         }
     };
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
+    sidebar.button = layout::close_box(m, columns).then_some(header::CLOSE);
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
     let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
@@ -602,7 +603,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         (None, Some((_, _, badges))) => badges,
         (None, None) => reader::badges(&m.shown, m.wrap),
     };
-    let viewer = HeaderState { title, parent, badges, focused: m.focus == Focus::Reader, notice: m.notice.clone() };
+    let button = layout::menu_box(m, columns).then_some(header::MENU);
+    let viewer =
+        HeaderState { title, parent, badges, focused: m.focus == Focus::Reader, notice: m.notice.clone(), button };
     ui.viewer_header.paint(&viewer, p);
     // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).
     let shows_preview = previewed.is_some();

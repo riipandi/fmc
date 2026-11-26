@@ -24,6 +24,11 @@ impl Badge {
     }
 }
 
+/// The glyph of a header's touch box: `MENU` shows the list, `CLOSE` hides it (plan-00004, amended). `☰` measures two
+/// cells in opentui's Unicode width method, so the menu takes `≡`, one cell; `✕` measures one cell.
+pub const MENU: &str = "≡";
+pub const CLOSE: &str = "✕";
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HeaderState {
     pub title: String,
@@ -31,6 +36,8 @@ pub struct HeaderState {
     pub badges: Vec<Badge>,
     pub focused: bool,
     pub notice: Option<String>,
+    /// The touch box left of the title, when the header shows one.
+    pub button: Option<&'static str>,
 }
 
 impl HeaderState {
@@ -64,6 +71,7 @@ impl HeaderState {
 
 pub struct PaneHeader {
     pub root: View,
+    button: Text,
     title: Text,
     badges: Text,
 }
@@ -77,16 +85,22 @@ impl PaneHeader {
             .shrink(0.0)
             .padding_x(1)
             .border_sides(Sides::BOTTOM);
+        // A filled box like a web menu button: the palette's pill pair (`accent_ink` on `accent`), padded by a cell.
+        let button = Text::new(app, "").height(1).shrink(0.0).wrap(WrapMode::None).selectable(false).visible(false);
         let title =
             Text::new(app, "").height(1).grow(1.0).shrink(1.0).min_width(0).wrap(WrapMode::None).selectable(false);
         let badges =
             Text::new(app, "").height(1).shrink(0.0).margin_edge(Edge::Left, 1).wrap(WrapMode::None).selectable(false);
-        root.add(&title).add(&badges);
-        Self { root, title, badges }
+        root.add(&button).add(&title).add(&badges);
+        Self { root, button, title, badges }
     }
 
     pub fn paint(&self, state: &HeaderState, p: &Palette) {
         self.root.border_color(color(p.border));
+        self.button.visible(state.button.is_some());
+        if let Some(glyph) = state.button {
+            self.button.set_text(content(&[Seg::new(format!(" {glyph} "), p.accent_ink).on(p.accent).bold()], p.text));
+        }
         self.title.set_text(content(&state.title_segments(p), p.text));
         self.badges.set_text(content(&state.badge_segments(p), p.text));
     }

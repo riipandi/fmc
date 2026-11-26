@@ -22,10 +22,20 @@ fn held(m: &Model) -> bool {
     m.finder.is_some()
 }
 
-/// The mark is drawn and the toggle works only where the list can hide: with a document, and on the welcome screen
-/// below `DRAWER` columns, where its list starts hidden (D7, amended).
+/// The toggle works only where the list can hide: with a document, and on the welcome screen below `DRAWER` columns,
+/// where its list starts hidden (D7, amended).
 fn can_hide(m: &Model, columns: u16) -> bool {
     !held(m) && (document(m) || columns < fmc::layout::DRAWER)
+}
+
+/// The reader's header shows the menu box: below 80 columns while the list is hidden (plan-00004, amended).
+pub fn menu_box(m: &Model, columns: u16) -> bool {
+    columns < fmc::layout::BREAKPOINT && !shown(m, columns)
+}
+
+/// The list's header shows the close box: below 80 columns while the list shows and can hide.
+pub fn close_box(m: &Model, columns: u16) -> bool {
+    columns < fmc::layout::BREAKPOINT && shown(m, columns) && can_hide(m, columns)
 }
 
 /// Whether the drawer covers the reader as of the last paint, so auto-preview waits (architecture.md, amended).
@@ -116,7 +126,8 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     ui.viewer_panel.visible(!covered);
     ui.handle.visible(visible && !covered);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
-    ui.mark.root.visible(can_hide(m, columns));
+    // The marks are drawn at 80 columns and wider only; below that the header boxes are the touch targets.
+    ui.mark.root.visible(columns >= fmc::layout::BREAKPOINT && can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
     width
 }
@@ -138,8 +149,9 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
-    // A tap on the reader's header row shows a hidden sidebar below 80 columns (P1). The press stops here, or the
-    // reader's own press takes the focus back. A tap on the list's header row closes a drawer (P3).
+    // A tap on the reader's header row shows a hidden sidebar below 80 columns (P1), and its menu box is the visible
+    // target. The press stops here, or the reader's own press takes the focus back. A tap on the list's header row
+    // closes the list when its close box shows (P3, amended).
     let (reader_header, list_header) = {
         let u = ui.borrow();
         (u.viewer_header.root.clone(), u.browser_header.root.clone())
@@ -152,7 +164,7 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             }
             let mut m = model.borrow_mut();
             let columns = cx.app().size().0;
-            if columns >= fmc::layout::BREAKPOINT || shown(&m, columns) {
+            if !menu_box(&m, columns) {
                 return;
             }
             cx.stop_propagation();
@@ -168,7 +180,7 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             }
             let mut m = model.borrow_mut();
             let columns = cx.app().size().0;
-            if !drawer(&m, columns) {
+            if !close_box(&m, columns) {
                 return;
             }
             cx.stop_propagation();
