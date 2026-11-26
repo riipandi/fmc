@@ -450,3 +450,37 @@ Alternatives considered:
 ## Pending decisions
 
 - `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.
+
+### Approved deviation: the diff chrome shows settled values after a fold
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: after `c` folds or unfolds a file in the stacked diff, Scouter updates the footer (hunk index, percentage) and the scrollbar thumb before the layout settles, so they keep the pre-fold values until the next scroll (`scouter:src/app/diff-screen.ts:268-275`, `src/app/diff-blocks.ts:242-252`). Live at 80x24 on the demo repo: Scouter `2/8 · 37%`, fmc `3/8 · 41%`; after one scroll both show `3/8 · 41%`.
+
+Decision: fmc updates the footer and the thumb from the settled layout right after the fold. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The footer and thumb always describe what is on screen.
+- (negative) A capture taken right after `c` differs from Scouter's until the next scroll.
+
+Alternatives considered:
+
+- Reproduce the lag — rejected by the owner: it is an ordering accident, not a designed behaviour.
+
+### Approved deviation: `a` and `x` keep the selected file at the top
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: after `a` (one file or all files) or `x` (context size), Scouter's `jumpAfterLayout` intends to put the selected file at the top, but the scroll lands on the file's pre-change row (live: `a` lands at Top with `8/8`; `x` with lumos selected lands at README's end, 14%).
+
+Decision: fmc puts the selected file's header at the top of the body after `a` or `x`, as `jumpAfterLayout` intends. Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) The file you were reading stays in view after a layout change.
+- (negative) The scroll position after `a` or `x` differs from Scouter's.
+
+Alternatives considered:
+
+- Reproduce Scouter's landing row — rejected by the owner.

@@ -13,6 +13,11 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - `Ctrl+q` quits. Plain `q` does not quit; it closes the open document, so the welcome screen returns, or the key list. On the changes screen, `q` goes back to browsing, as `d` does. `Ctrl+c` still quits.
 - Opening a file from the tree keeps the focus in the tree, so you can keep browsing with `j` and `k`. Press `Tab` or click the reader to move there.
 
+## Changes screen
+
+- After folding a file with `c`, the footer and the scrollbar show the new position at once. Scouter shows the old values until you scroll.
+- After switching between one file and all files (`a`) or changing the context (`x`), the selected file stays at the top. Scouter can land elsewhere.
+
 ## Copying text
 
 - Dragging the mouse across text selects it and keeps the selection on screen. Nothing is copied until you press `y`. Press `Esc` to clear the selection. With no selection, `y` copies the path, as in Scouter.
