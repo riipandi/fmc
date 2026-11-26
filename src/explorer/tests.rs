@@ -299,6 +299,25 @@ fn the_wheel_scrolls_without_moving_the_selection() {
 }
 
 #[test]
+fn a_repaint_at_the_same_height_keeps_the_wheel_scroll() {
+    let mut browser = browser(10, 4);
+    browser.scroll(3);
+    browser.set_height(4);
+    assert_eq!((browser.top(), browser.selected_index()), (3, 0));
+}
+
+#[test]
+fn the_first_layout_brings_the_selection_into_view() {
+    let root = PathBuf::from("/vault");
+    let entries = (0..10).map(|n| Entry::new(&root, &format!("f{n:02}.md"), Kind::File)).collect();
+    let mut browser = Browser::new(Tree::new(root.clone()));
+    browser.listed(&root, entries);
+    browser.select_index(8);
+    browser.set_height(4);
+    assert_eq!(browser.top(), 5);
+}
+
+#[test]
 fn a_click_maps_a_line_to_its_row_through_the_scroll_position() {
     let mut browser = browser(10, 4);
     browser.scroll(2);

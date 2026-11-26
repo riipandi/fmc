@@ -110,7 +110,12 @@ impl Browser {
     }
 
     /// Sets the number of rows the list shows, then keeps the selection in view.
+    /// A repaint at the same height keeps the wheel's scroll: only a new height brings the selection into view again.
     pub fn set_height(&mut self, height: usize) {
+        if height == self.height {
+            self.top = self.clamped_top(self.top as isize);
+            return;
+        }
         self.height = height;
         self.keep_visible();
     }

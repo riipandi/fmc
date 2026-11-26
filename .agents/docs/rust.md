@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T12:13:12+07:00
+updated: 2026-11-26T12:14:21+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -51,7 +51,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **Search marks name a style the buffer's table must hold.** A layer's group set names `opentui.<name>`, resolved against the buffer's style table, and the binding registers only the capture names a grammar uses. The code view installs its own table (`ui/syntax/mod.rs` `table`) with every capture name of the queries plus `opentui.search.match`; a new capture name in a query must join `CAPTURE_NAMES`, or it is drawn plain.
 - **Widths come from the native measure.** Footer fitting measures with `Context::text_width` and the app's width method, so `↑`, `…`, and wide characters count as the terminal draws them; tests pass a character count.
 - **The changes body is measured by the frame.** Block tops and hunk rows come from the laid-out blocks (`ui/diff.rs` `tops` and `hunk_rows`), so a jump to a file waits up to `JUMP_TRIES` paints for the layout (`app/changes.rs` `jump`). The list follows the body only from the body's own scroll event (`app/mod.rs`, the stack's `on_scroll`), as Scouter's `layoutChanged` does; a repaint alone never moves the selection.
-- **A list keeps its wheel scroll across repaints.** `ChangeList::set_height` only clamps the scroll: the selected row is brought into view by a new listing and by a selection move. A repaint that scrolled to the selection would undo each wheel notch on the next frame (`diff/list.rs`).
+- **A list keeps its wheel scroll across repaints.** `ChangeList::set_height` only clamps the scroll: the selected row is brought into view by a new listing and by a selection move. A repaint that scrolled to the selection would undo each wheel notch on the next frame (`diff/list.rs`). The tree's `Browser::set_height` follows the same rule at an unchanged height; a new height (the first layout, a resize) brings the selection into view (`explorer/browser.rs`, plan-00001 phase 23d).
 - **The body's build key names the listing.** `ui/diff.rs` `Key` is the session, the generation, the gutter digits, and the color mode. A generation counts from zero on each visit, so without the session a later visit could reuse the blocks of an earlier one.
 - **The stacked body is wider than the pane by its gutter.** Scouter's diff overflows the pane by the gutter (the digits, plus four cells), so an unwrapped block is that wide: the counts and the stat bar sit past the pane edge until a pan reveals them (`ui/diff.rs` `set_pane`). A wrapped body is the pane's width.
 - **The stacked body's pane is one column wider while its bar is hidden.** The bar takes a column only while the stack overflows (`ui/scrollbar.rs`), so `paint` sets the pane from `ui.diff.height() > viewport`; a fixed pane leaves a blank column in one-file view (Scouter's scroller reserves its bar only when the text overflows).
