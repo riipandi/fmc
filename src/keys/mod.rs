@@ -57,6 +57,8 @@ pub enum Action {
     Expand,
     Collapse,
     GoUp,
+    /// `p` on the tree: turns auto-preview on or off for this session.
+    TogglePreview,
     Find,
     FocusDiff,
     Scroll(i32),
@@ -92,6 +94,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("h ← Backspace", "collapse a folder or go back"),
             ("/", "find a file by name; Tab: text in files"),
             ("-", "open the folder above"),
+            ("p", "auto-preview on or off"),
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
         ],

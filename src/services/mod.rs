@@ -24,6 +24,8 @@ pub enum Event {
     Listed { path: PathBuf, result: Result<Vec<Entry>, String> },
     /// A user's open of an entry: a folder to expand, or a file.
     Opened { path: PathBuf, result: Result<fs::Opened, String> },
+    /// A file the list selected, read for auto-preview (`app/preview.rs`): it never moves the focus or the history.
+    Selected { path: PathBuf, result: Result<fs::Opened, String> },
     /// The git marks of the browsed folder; `None` outside a repository.
     Marks { root: PathBuf, result: Result<Option<Listing>, String> },
     /// The finder's index of the browsed folder, for the finder of that `session` (a newer one may have replaced it).

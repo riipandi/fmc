@@ -7,6 +7,7 @@ mod find;
 mod keys;
 mod layout;
 mod poll;
+mod preview;
 mod reader;
 mod scroll;
 mod search;
@@ -22,6 +23,7 @@ use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
 use fmc::reader::markdown::{PARAGRAPH_REFUSED, SEARCH_REFUSED};
 use fmc::reader::position::scroll_label;
+use fmc::settings::Parsed;
 use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
 use opentui::prelude::*;
 
@@ -151,6 +153,10 @@ struct Model {
     diff_jump: Option<(String, u8)>,
     /// An edge drag in progress: the pointer's start column and the sidebar's width then.
     drag: Option<(u16, u16)>,
+    /// Whether moving the list selection previews the file it selects (`p` turns it off; `settings.json` sets the start).
+    auto_preview: bool,
+    /// Counts the list's moves, so a preview is read only for the newest move (`app/preview.rs`).
+    preview_generation: u64,
 }
 
 impl Model {
@@ -220,11 +226,13 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         diff_started: None,
         diff_options: changes::Options::default(),
         diff_jump: None,
+        auto_preview: fmc::settings::AUTO_PREVIEW,
+        preview_generation: 0,
     }
 }
 
 /// Runs the app on `target` until the user quits.
-pub fn run(target: &Path, notices: Vec<String>) -> opentui::Result<()> {
+pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
     let options = AppOptions {
@@ -246,8 +254,12 @@ pub fn run(target: &Path, notices: Vec<String>) -> opentui::Result<()> {
         (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
     };
     let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
-    if !notices.is_empty() {
-        model.borrow_mut().message = Some(Message { text: notices.join(" "), error: true });
+    {
+        let mut m = model.borrow_mut();
+        m.auto_preview = settings.settings.auto_preview;
+        if !settings.notices.is_empty() {
+            m.message = Some(Message { text: settings.notices.join(" "), error: true });
+        }
     }
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
@@ -356,6 +368,8 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 _ => return,
             }
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
+            drop(m);
+            preview::moved(cx.app(), &model);
         }
     });
 

@@ -131,9 +131,29 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             {
                 tree::act(&mut m, action)
             }
+            Action::TogglePreview if m.focus == Focus::List && m.changes.is_none() => preview::toggle(&mut m),
             _ => {}
         }
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        // A list move or a toggle schedules the preview; the debounce's end checks the focus and the selection.
+        let previews = m.focus == Focus::List
+            && m.changes.is_none()
+            && matches!(
+                action,
+                Action::Move(_)
+                    | Action::MovePage(_)
+                    | Action::Top
+                    | Action::Bottom
+                    | Action::Toggle
+                    | Action::Expand
+                    | Action::Collapse
+                    | Action::GoUp
+                    | Action::TogglePreview
+            );
+        drop(m);
+        if previews {
+            preview::moved(cx.app(), &model);
+        }
     });
 }
 

@@ -221,6 +221,7 @@ fn tree(key: Key<'_>) -> Option<Action> {
         "l" | "right" => Some(Action::Expand),
         "h" | "left" | "backspace" => Some(Action::Collapse),
         "-" => Some(Action::GoUp),
+        "p" => Some(Action::TogglePreview),
         "/" => Some(Action::Find),
         _ => boundary(key).or_else(|| list_move(key)),
     }

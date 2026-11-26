@@ -49,7 +49,7 @@ fn run() -> Result<(), String> {
             let settings = services::settings::path(std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"))
                 .map(|path| services::settings::load(&path))
                 .unwrap_or_default();
-            app::run(&target, settings.notices).map_err(|e| e.to_string())?;
+            app::run(&target, settings).map_err(|e| e.to_string())?;
         }
     }
     Ok(())

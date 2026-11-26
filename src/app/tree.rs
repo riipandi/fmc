@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, reader};
+use super::{Model, Pending, Ui, changes, find, preview, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -59,7 +59,7 @@ pub fn click(m: &mut Model) {
 }
 
 /// A row in the tree that is a file, not a folder. A row the tree does not know (a finder's flat row) is not a file.
-fn is_file(m: &Model, path: &Path) -> bool {
+pub fn is_file(m: &Model, path: &Path) -> bool {
     m.browser.tree.entry(path).is_some_and(|entry| entry.kind != Kind::Directory)
 }
 
@@ -210,6 +210,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                 show_error(m, text);
             }
         },
+        Event::Selected { path, result } => preview::read(m, ui, path, result),
         Event::Opened { path, result } => {
             m.loading = false;
             match result {

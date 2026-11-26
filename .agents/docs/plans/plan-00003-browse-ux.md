@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T09:00:00+07:00
-updated: 2026-11-27T01:30:00+07:00
+updated: 2026-11-27T02:00:00+07:00
 phases:
     - id: 1
       title: "Bug fixes: arrow keys pan the reader; Ctrl+/ focuses the shown sidebar"
@@ -17,8 +17,8 @@ phases:
       note: "268 tests; live: Enter on README opens and focuses the reader, → on a file does nothing, first click only focuses the list, second click toggles a folder; a click on a file only selects it"
     - id: 4
       title: "Auto-preview with p toggle"
-      status: pending
-      note: —
+      status: done
+      note: "275 tests; live: holding j reads the last file, a folder selection leaves the reader, p shows Auto-preview off/on and gates it"
     - id: 5
       title: "Bracket jumps in the sidebar and the reader"
       status: pending
