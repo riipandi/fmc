@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | none open |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00004-phone-layout.md` (in progress: audit-00002 P1 to P8) |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00004-browse-ux.md` (done: plan-00003 closed, with the open questions for the owner); `handover-00003-sidebar-and-hidden-files.md` (done: plan-00002 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
