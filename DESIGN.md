@@ -178,7 +178,7 @@ A centred, rounded card titled ` Keyboard Shortcuts `, with sections Browse, Rea
 
 ### Welcome
 
-A three-row block wordmark in the three `wordmark` colours, a tagline with the version, a rounded hint card, and a line that says there is no editing. Below 80 columns the closing line breaks at its ` · `. Below 60 columns there is no welcome screen: the list is the first page.
+A three-row block wordmark in the three `wordmark` colours, a tagline with the version, a rounded hint card, and a line that says there is no editing. Below 80 columns the closing line breaks at its ` · `. From 60 to 74 columns the card goes, since the reader beside the list is narrower than it; the wordmark, tagline, and prompt stay. Below 60 columns there is no welcome screen: the list is the first page.
 
 ## Do's and Don'ts
 

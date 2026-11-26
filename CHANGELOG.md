@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Sidebar visibility: below 80 columns the sidebar hides while a document is open, and the welcome screen keeps it. `Ctrl+/`, or the `«` or `»` on the border, shows and hides it.
 - Dotfiles: `Ctrl+.` or `.` shows and hides them in the tree and the finder. They are shown by default, and the noise names stay hidden.
-- Phone layout below 80 columns: a tap on the reader's header row shows the hidden file list. Below 60 columns the list covers the screen as a drawer and closes when you open a file. Footer hints can be tapped, a `Copy` hint appears while text is selected, and finder rows show the file name before its folder. Below 50 columns the welcome drops its key card and wraps its text.
+- Phone layout below 80 columns: a tap on the reader's header row shows the hidden file list. Below 60 columns the list covers the screen as a drawer and closes when you open a file. Footer hints can be tapped, a `Copy` hint appears while text is selected, and finder rows show the file name before its folder. From 60 to 74 columns the welcome drops its key card, since the reader beside the list is narrower than the card.
 - Project workspace: agent instructions, agent docs, and project skills.
 - The just tasks build through the kache compiler cache; `KACHE=false` turns it off. CI runs `just verify` on macOS for pushes and pull requests.
 - A read-only settings file, `settings.json` under `XDG_CONFIG_HOME/fmc` (or `~/.config/fmc`), with three keys: `auto_preview`, `sidebar_jump`, and `reader_jump` (`docs/configuration.md`).

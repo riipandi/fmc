@@ -17,6 +17,14 @@ const HINTS: [(&str, &str); 5] = [
 ];
 
 const KEY_COLUMN_WIDTH: usize = 7;
+const SEPARATOR: &str = "  │  ";
+
+/// The card's outer width: its border (one column a side), its padding (two a side), the key column, the separator, and
+/// the longest action.
+fn card_width() -> u16 {
+    let action = HINTS.iter().map(|(_, action)| action.chars().count()).max().unwrap_or(0);
+    u16::try_from(2 + 4 + KEY_COLUMN_WIDTH + SEPARATOR.chars().count() + action).unwrap_or(u16::MAX)
+}
 
 fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
     Text::new(app, content(segments, p.text))
@@ -36,16 +44,23 @@ pub struct Welcome {
     /// The closing line in one row, and the same line broken at its ` · ` below 80 columns (plan-00004, P5, amended).
     closing: Text,
     closing_parts: [Text; 2],
+    card: View,
 }
 
 impl Welcome {
-    /// Fits the welcome to `columns`: below 80 the closing line breaks at its separator.
-    pub fn fit(&self, columns: u16, p: &Palette) {
-        let phone = fmc::layout::tier(columns) != fmc::layout::Tier::Wide;
+    /// Fits the welcome to `columns`, beside a sidebar `sidebar` columns wide: below 80 the closing line breaks at its
+    /// separator, and in the medium tier the card goes when the reader is narrower than it (architecture.md, follow-ups).
+    pub fn fit(&self, columns: u16, sidebar: u16, p: &Palette) {
+        let tier = fmc::layout::tier(columns);
+        let phone = tier != fmc::layout::Tier::Wide;
         self.closing.visible(!phone);
         for part in &self.closing_parts {
             part.visible(phone);
         }
+        // The reader's inner width: its border takes a column on each side. The rule is the medium tier's; the wide tier
+        // keeps the card as it was.
+        let reader = columns.saturating_sub(sidebar).saturating_sub(2);
+        self.card.visible(tier != fmc::layout::Tier::Medium || reader >= card_width());
         self.prompt.set_text(content(&[Seg::new(PROMPT, p.accent_soft)], p.text));
     }
 }
@@ -80,7 +95,7 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
     for (key, action) in HINTS {
         let row = [
             Seg::new(format!("{key:>KEY_COLUMN_WIDTH$}"), p.accent_soft).bold(),
-            Seg::new("  │  ", p.border),
+            Seg::new(SEPARATOR, p.border),
             Seg::new(action, p.text),
         ];
         card.add(&line(app, &row, p, 0));
@@ -97,5 +112,5 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
         line(app, &[Seg::new("No editing. Just reading.", p.dim)], p, 0),
     ];
     view.add(&closing).add(&parts[0]).add(&parts[1]);
-    Welcome { root: view, prompt, closing, closing_parts: parts }
+    Welcome { root: view, prompt, closing, closing_parts: parts, card }
 }

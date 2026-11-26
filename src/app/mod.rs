@@ -562,7 +562,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 
     layout::sync(m, columns);
     let width = layout::lay_out(ui, m, columns, p);
-    ui.welcome.fit(columns, p);
+    ui.welcome.fit(columns, width, p);
     let focused = |pane: Focus| color(if m.focus == pane { p.accent } else { p.border });
     ui.browser_panel.border_color(focused(Focus::List));
     ui.viewer_panel.border_color(focused(Focus::Reader));

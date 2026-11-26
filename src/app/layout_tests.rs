@@ -238,3 +238,15 @@ fn a_compact_title_tap_does_not_go_back_a_page() {
     app.click(8, 1);
     assert_eq!(model.borrow().pages.top(), Page::Keys, "only the back text goes back");
 }
+
+#[test]
+fn the_welcome_card_goes_at_medium_widths_when_the_reader_is_narrower_than_it() {
+    for (columns, card) in [(60, false), (70, false), (74, false), (75, true), (79, true), (80, true)] {
+        let (app, _, _) = panes(columns);
+        let text = screen(&app);
+        assert_eq!(text.contains("open file or folder"), card, "{columns}: the card");
+        assert!(text.contains("a quiet, read-only file viewer"), "{columns}: the tagline stays");
+        assert!(text.contains("█▀▀ █▀▄▀█ █▀▀"), "{columns}: the wordmark stays");
+        assert!(text.contains("Select a file and press Enter."), "{columns}: the prompt stays");
+    }
+}
