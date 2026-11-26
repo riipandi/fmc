@@ -453,13 +453,13 @@ Alternatives considered:
 
 Note (2026-11-26, plan-00001 W5): a knock-on of the `Ctrl+q` record above. The footer hint `^q quit` is one column wider than Scouter's `q quit`, so Scouter's own fit (`scouter:src/ui/footer.ts` `fitHints`, width minus 2) drops one more hint at 80 columns; on the changes screen that is `a one file`. Accepted as a consequence of the approved key change; the key list always shows every key.
 
-### Approved deviation: the diff chrome shows settled values after a fold
+### Approved deviation: the diff chrome shows settled values after a layout change
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: after `c` folds or unfolds a file in the stacked diff, Scouter updates the footer (hunk index, percentage) and the scrollbar thumb before the layout settles, so they keep the pre-fold values until the next scroll (`scouter:src/app/diff-screen.ts:268-275`, `src/app/diff-blocks.ts:242-252`). Live at 80x24 on the demo repo: Scouter `2/8 · 37%`, fmc `3/8 · 41%`; after one scroll both show `3/8 · 41%`.
 
-Decision: fmc updates the footer and the thumb from the settled layout right after the fold. Approved by the owner on 2026-11-26.
+Decision: fmc updates the footer and the thumb from the settled layout right after the fold. Approved by the owner on 2026-11-26. Widened by the owner the same day: whenever Scouter's chrome (footer counts, percentage, thumb) lags a layout change on the changes screen until the next scroll, fmc shows the settled values instead, without a new question. First case after folds: `r` reload, where Scouter shows `9/9 hunks · Top` and fmc `1/9 hunks · Top` with identical bodies.
 
 Consequences:
 
