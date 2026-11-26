@@ -91,9 +91,8 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Click` `«»` | show / hide the sidebar, from its mark |
 | `Click` header | fold / unfold the file, on release; a drag does not |
 | `Click` row (file list, finder, changes) | open or select, on release; a drag or swipe over the row does nothing |
-| `Click` `≡` box, below 80 columns | show the hidden file list and focus it |
-| `Click` any cell of the reader header, below 80 columns | show the hidden file list and focus it |
-| `Click` `✕` box, below 80 columns | hide the file list |
+| `Click` `›` at the reader header, at 60 to 79 columns | show the hidden file list and focus it |
+| `Click` `‹` at the list header, at 60 to 79 columns | hide the file list |
 | `Click` file, below 60 columns | open the file: the reader page takes the screen |
 | `q` or `Esc`, on a page below 60 columns | go back a page (Reader, Keys, Changes, Find) |
 | `Click` the `‹ Files` text, below 60 columns | go back a page, as `q` does |
@@ -101,7 +100,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
 | `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 
-The `«` and `»` marks are drawn at 80 columns and wider only; below 80 the `≡` and `✕` boxes in the headers do their work. A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the list and the reader are pages: the list fills the screen, a file opens the reader page, and `q`, `Esc`, or Tab goes back to the list. There is no welcome screen and no preview below 60 columns. The `✕` box shows beside a document between 60 and 79 columns too, so the list can be hidden by touch there.
+The `«` and `»` marks are drawn at 80 columns and wider only; below 80 the `‹` and `›` chevrons at the start of the header titles do their work. A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the list and the reader are pages: the list fills the screen, a file opens the reader page, and `q`, `Esc`, or Tab goes back to the list. There is no welcome screen and no preview below 60 columns. Between 60 and 79 columns the `‹` chevron hides the list beside a document, so it can be hidden by touch there.
 
 Below 80 columns the footer keeps the keys that leave the current state first (`Copy` while text is selected, `Esc`, `^/`, `q`), then `?`, `/`, `d`, `Enter`, and `Tab`, and a row that is too short drops the rest from its end. At 80 columns and wider the footer keeps Scouter's order.
 

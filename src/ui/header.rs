@@ -1,5 +1,6 @@
 //! A pane header (Scouter `src/ui/header.ts`): the title (with a dim parent folder) and badges, or an error notice in
-//! place of the badges, over a hairline.
+//! place of the badges, over a hairline. A lead text sits left of the title: the compact tier's back text, or a medium
+//! tier chevron that shows or hides the list (plan-00005, D3 and record 10).
 
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -24,11 +25,6 @@ impl Badge {
     }
 }
 
-/// The glyph of a header's touch box: `MENU` shows the list, `CLOSE` hides it (plan-00004, amended). `☰` measures two
-/// cells in opentui's Unicode width method, so the menu takes `≡`, one cell; `✕` measures one cell.
-pub const MENU: &str = "≡";
-pub const CLOSE: &str = "✕";
-
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HeaderState {
     pub title: String,
@@ -36,10 +32,8 @@ pub struct HeaderState {
     pub badges: Vec<Badge>,
     pub focused: bool,
     pub notice: Option<String>,
-    /// The touch box left of the title, when the header shows one.
-    pub button: Option<&'static str>,
-    /// The compact tier's back text left of the title, `‹ Files` (`ui/bars.rs`); it takes the box's place.
-    pub back: Option<String>,
+    /// The text left of the title: `‹ Files` in compact, or a medium chevron (`‹` hides the list, `›` shows it).
+    pub lead: Option<String>,
 }
 
 impl HeaderState {
@@ -73,7 +67,7 @@ impl HeaderState {
 
 pub struct PaneHeader {
     pub root: View,
-    button: Text,
+    lead: Text,
     title: Text,
     badges: Text,
 }
@@ -87,19 +81,18 @@ impl PaneHeader {
             .shrink(0.0)
             .padding_x(1)
             .border_sides(Sides::BOTTOM);
-        // A filled box like a web menu button: the palette's pill pair (`accent_ink` on `accent`), padded by a cell.
-        let button = Text::new(app, "").height(1).shrink(0.0).wrap(WrapMode::None).selectable(false).visible(false);
+        let lead = Text::new(app, "").height(1).shrink(0.0).wrap(WrapMode::None).selectable(false).visible(false);
         let title =
             Text::new(app, "").height(1).grow(1.0).shrink(1.0).min_width(0).wrap(WrapMode::None).selectable(false);
         let badges =
             Text::new(app, "").height(1).shrink(0.0).margin_edge(Edge::Left, 1).wrap(WrapMode::None).selectable(false);
-        root.add(&button).add(&title).add(&badges);
-        Self { root, button, title, badges }
+        root.add(&lead).add(&title).add(&badges);
+        Self { root, lead, title, badges }
     }
 
-    /// Runs `handler` on a press on the back text (the button's cell), which the compact tier's top bar takes as Back.
-    pub fn on_back_press(&self, handler: impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static) {
-        self.button.on_mouse(handler);
+    /// Runs `handler` on a press on the lead text: the compact back text, or a medium chevron.
+    pub fn on_lead_press(&self, handler: impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static) {
+        self.lead.on_mouse(handler);
     }
 
     /// The compact tier's header is one row with no rule under it (plan-00005, architecture.md record 5).
@@ -110,12 +103,11 @@ impl PaneHeader {
 
     pub fn paint(&self, state: &HeaderState, p: &Palette) {
         self.root.border_color(color(p.border));
-        self.button.visible(state.back.is_some() || state.button.is_some());
-        if let Some(back) = &state.back {
-            // Plain accent text with a space after it: a filled box would read as a glitch beside the title (record 6).
-            self.button.set_text(content(&[Seg::new(format!("{back}  "), p.accent)], p.text));
-        } else if let Some(glyph) = state.button {
-            self.button.set_text(content(&[Seg::new(format!(" {glyph} "), p.accent_ink).on(p.accent).bold()], p.text));
+        self.lead.visible(state.lead.is_some());
+        if let Some(lead) = &state.lead {
+            // Plain accent text with two columns after it: a filled box read as a glitch beside the title (record 6), and
+            // one column ran the text into the title.
+            self.lead.set_text(content(&[Seg::new(format!("{lead}  "), p.accent)], p.text));
         }
         self.title.set_text(content(&state.title_segments(p), p.text));
         self.badges.set_text(content(&state.badge_segments(p), p.text));

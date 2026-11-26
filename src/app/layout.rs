@@ -28,14 +28,14 @@ fn can_hide(m: &Model, columns: u16) -> bool {
     !held(m) && document(m) && tier(columns) != Tier::Compact
 }
 
-/// The reader's header shows the menu box in the medium tier while the list is hidden (plan-00004, amended).
-pub fn menu_box(m: &Model, columns: u16) -> bool {
-    tier(columns) == Tier::Medium && !shown(m, columns)
+/// The medium tier's chevron on the list's header: `‹` hides the list while it shows and can hide (plan-00005, record 10).
+pub fn list_chevron(m: &Model, columns: u16) -> Option<String> {
+    (tier(columns) == Tier::Medium && shown(m, columns) && can_hide(m, columns)).then(|| "‹".into())
 }
 
-/// The list's header shows the close box in the medium tier while the list shows and can hide.
-pub fn close_box(m: &Model, columns: u16) -> bool {
-    tier(columns) == Tier::Medium && shown(m, columns) && can_hide(m, columns)
+/// The medium tier's chevron on the reader's header: `›` shows the list while it is hidden.
+pub fn reader_chevron(m: &Model, columns: u16) -> Option<String> {
+    (tier(columns) == Tier::Medium && !shown(m, columns)).then(|| "›".into())
 }
 
 /// Whether the list shows. In compact the top page decides (the list pages show it); otherwise the sidebar rule does.
@@ -146,64 +146,29 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
-    // A tap on the reader's header row shows a hidden sidebar below 80 columns (P1), and its menu box is the visible
-    // target. The press stops here, or the reader's own press takes the focus back. A tap on the list's header row
-    // closes the list when its close box shows (P3, amended).
-    let (reader_header, list_header) = {
-        let u = ui.borrow();
-        (u.viewer_header.root.clone(), u.browser_header.root.clone())
-    };
-    reader_header.on_mouse({
-        let (model, ui) = (model.clone(), ui.clone());
-        move |cx, event| {
-            if event.kind != MouseEventKind::Down(MouseButton::Left) {
-                return;
-            }
-            let mut m = model.borrow_mut();
-            let columns = cx.app().size().0;
-            if !menu_box(&m, columns) {
-                return;
-            }
-            cx.stop_propagation();
-            toggle_key(&mut m, columns);
-            paint(cx.app(), &mut m, &mut ui.borrow_mut());
-        }
-    });
-    list_header.on_mouse({
-        let (model, ui) = (model.clone(), ui.clone());
-        move |cx, event| {
-            if event.kind != MouseEventKind::Down(MouseButton::Left) {
-                return;
-            }
-            let mut m = model.borrow_mut();
-            let columns = cx.app().size().0;
-            if !close_box(&m, columns) {
-                return;
-            }
-            cx.stop_propagation();
-            toggle_key(&mut m, columns);
-            paint(cx.app(), &mut m, &mut ui.borrow_mut());
-        }
-    });
-
-    // The compact top bar's back text is Back, as `q` is (plan-00005, record 6). The press stops at the text, so the
-    // header's own press does not act on it too.
+    // The lead text of each header is a button: the compact back text is Back, as `q` is (plan-00005, record 6), and a
+    // medium chevron shows or hides the list (record 10). The press stops at the text, so the header's own press does
+    // not act on it too.
     {
         let u = ui.borrow();
         for header in [&u.browser_header, &u.viewer_header] {
-            header.on_back_press({
+            header.on_lead_press({
                 let (model, ui) = (model.clone(), ui.clone());
                 move |cx, event| {
                     if event.kind != MouseEventKind::Down(MouseButton::Left) {
                         return;
                     }
-                    // Only the compact back text takes the press: the medium tier's box shares this cell.
                     let mut m = model.borrow_mut();
-                    if pages::back_label(&m).is_none() {
+                    let columns = cx.app().size().0;
+                    if pages::back_label(&m).is_some() {
+                        cx.stop_propagation();
+                        pages::back(&mut m, &ui.borrow());
+                    } else if list_chevron(&m, columns).is_some() || reader_chevron(&m, columns).is_some() {
+                        cx.stop_propagation();
+                        toggle_key(&mut m, columns);
+                    } else {
                         return;
                     }
-                    cx.stop_propagation();
-                    pages::back(&mut m, &ui.borrow());
                     paint(cx.app(), &mut m, &mut ui.borrow_mut());
                 }
             });

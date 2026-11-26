@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T03:48:39+07:00
+updated: 2026-11-27T03:51:33+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
@@ -17,8 +17,8 @@ phases:
       note: "`ui/bars.rs`: the bottom bar's equal cells per page (Find, Changes, Keys; Back, Search, Keys; Back, All/One, Split; Back), a prompt bar with Cancel first, and the top bar's back text (`‹ Files`, the page under the top). Notices show in the bottom bar. Taps press the segment's key; the back text pops. The compact footer is one row, the finder bar one row. Live at 40 columns: Files, Reader, Find, Changes, diff. Captures at 60 and 80 columns still match 166051c. Tests at 40, 49, 59 columns for the cells and the hits; labels per page. Agent decisions in architecture.md (plan-00005 list)."
     - id: 4
       title: "Medium tier chevrons; remove the boxes, drawer, and border marks below 80"
-      status: pending
-      note: —
+      status: done
+      note: "At 60 to 79 columns `‹` starts the list's title (it hides the list, when a document is open) and `›` starts the reader's title (it shows the list, when hidden); one press handler per header acts by tier. The `≡`/`✕` boxes, the header-row tap, and the drawer code are gone (the drawer went in phase 2); the `«`/`»` marks were already not drawn below 80. `rust.md`, `keymaps.md`, `parity.md`, `README.md`, `DESIGN.md`, and CHANGELOG describe the chevrons. 80x24 captures identical to 166051c (10 steps). Live at 70 columns: `›` showed the list and `‹` hid it, both by SGR press. 347 tests."
     - id: 5
       title: "Touch delivery from the phone probe"
       status: pending

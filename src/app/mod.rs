@@ -38,7 +38,7 @@ use crate::ui::changes::ChangesView;
 use crate::ui::diff::DiffBody;
 use crate::ui::find::{FindBar, prompt_segments};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
-use crate::ui::header::{self, Badge, BadgeKind, HeaderState, PaneHeader};
+use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
 use crate::ui::hints::{self, Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
@@ -583,8 +583,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         }
     };
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
-    sidebar.button = layout::close_box(m, columns).then_some(header::CLOSE);
-    sidebar.back = pages::back_label(m);
+    sidebar.lead = pages::back_label(m).or_else(|| layout::list_chevron(m, columns));
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
     let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
@@ -616,15 +615,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         (None, Some((_, _, badges))) => badges,
         (None, None) => reader::badges(&m.shown, m.wrap),
     };
-    let button = layout::menu_box(m, columns).then_some(header::MENU);
     let viewer = HeaderState {
         title,
         parent,
         badges,
         focused: m.focus == Focus::Reader,
         notice: m.notice.clone(),
-        button,
-        back: pages::back_label(m),
+        lead: pages::back_label(m).or_else(|| layout::reader_chevron(m, columns)),
     };
     ui.viewer_header.paint(&viewer, p);
     // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).

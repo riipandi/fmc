@@ -45,7 +45,7 @@ fn a_document_under_80_columns_hides_the_sidebar_and_draws_no_mark() {
     open_document(&app, &model, &ui);
     assert!(!layout::shown(&model.borrow(), 79));
     assert_ne!(app.render().row(0).chars().next(), Some('»'), "the » mark is drawn at 80 columns and wider only");
-    assert!(layout::menu_box(&model.borrow(), 79));
+    assert!(layout::reader_chevron(&model.borrow(), 79).is_some(), "the reader header shows its chevron");
 }
 
 #[test]
@@ -76,20 +76,6 @@ fn ctrl_arrows_do_not_resize_a_hidden_sidebar() {
     let before = model.borrow().sidebar;
     layout::resize(&mut model.borrow_mut(), 79, 1);
     assert_eq!(model.borrow().sidebar, before);
-}
-
-#[test]
-fn a_tap_on_the_reader_header_shows_a_hidden_sidebar_in_the_medium_tier() {
-    for columns in [60, 79] {
-        let (app, model, ui) = panes(columns);
-        open_document(&app, &model, &ui);
-        assert!(!layout::shown(&model.borrow(), columns), "{columns}: a document hides the sidebar");
-        app.click(columns / 2, 1);
-        let m = model.borrow();
-        assert!(layout::shown(&m, columns), "{columns}: the header tap shows the sidebar");
-        assert_eq!(m.focus, Focus::List, "{columns}: and focuses it");
-        assert_eq!(layout::width(&m, columns), 28, "{columns}: a sidebar beside the reader, 28 wide");
-    }
 }
 
 #[test]
@@ -127,47 +113,6 @@ fn column_of(app: &TestApp, y: u16, glyph: char) -> Option<u16> {
 fn rows(app: &TestApp) -> Vec<String> {
     let frame = app.render();
     (0..24).map(|y| frame.row(y)).collect()
-}
-
-#[test]
-fn the_box_glyphs_are_one_cell_wide_and_the_menu_takes_the_ascii_safe_one() {
-    let app = TestApp::new(40, 24);
-    let context = app.app().session().context();
-    let width = |text: &str| context.text_width(text, app.app().width_method()).unwrap();
-    assert_eq!(width("≡"), 1, "the menu glyph");
-    assert_eq!(width("✕"), 1, "the close glyph");
-    assert_eq!(width("☰"), 2, "why the menu glyph is ≡: opentui measures ☰ two cells wide");
-}
-
-#[test]
-fn the_menu_box_shows_the_list_beside_the_reader_at_60_and_79() {
-    for columns in [60, 79] {
-        for cell in 0..3 {
-            let (app, model, ui) = panes(columns);
-            open_document(&app, &model, &ui);
-            let x = column_of(&app, 1, '≡').unwrap_or_else(|| panic!("{columns}: no menu box"));
-            app.click(x - 1 + cell, 1);
-            let m = model.borrow();
-            assert!(layout::shown(&m, columns), "{columns}, cell {cell}: the box shows the list");
-            assert_eq!(m.focus, Focus::List, "{columns}: and focuses it");
-        }
-    }
-}
-
-#[test]
-fn the_close_box_hides_the_list_at_60_and_79() {
-    for columns in [60, 79] {
-        for cell in 0..3 {
-            let (app, model, ui) = panes(columns);
-            open_document(&app, &model, &ui);
-            app.click(columns / 2, 1);
-            assert!(layout::shown(&model.borrow(), columns), "{columns}: the list shows");
-            let x = column_of(&app, 1, '✕').unwrap_or_else(|| panic!("{columns}: no close box"));
-            app.click(x - 1 + cell, 1);
-            assert!(!layout::shown(&model.borrow(), columns), "{columns}, cell {cell}: the close box hides the list");
-            assert!(column_of(&app, 1, '≡').is_some(), "{columns}: the menu box is back");
-        }
-    }
 }
 
 #[test]
@@ -218,4 +163,52 @@ fn the_closing_line_breaks_at_its_separator_below_80_and_stays_whole_at_80() {
     }
     let (app, _, _) = panes(100);
     assert!(rows(&app).iter().any(|row| row.contains("Press ? for every key.  ·  No editing. Just reading.")));
+}
+
+#[test]
+fn the_reader_chevron_shows_the_hidden_list_at_60_and_79() {
+    for columns in [60, 79] {
+        let (app, model, ui) = panes(columns);
+        open_document(&app, &model, &ui);
+        let x = column_of(&app, 1, '›').unwrap_or_else(|| panic!("{columns}: no reader chevron"));
+        assert!(column_of(&app, 1, '‹').is_none(), "{columns}: the list is hidden, so no list chevron");
+        app.click(x, 1);
+        let m = model.borrow();
+        assert!(layout::shown(&m, columns), "{columns}: the chevron shows the list");
+        assert_eq!(m.focus, Focus::List, "{columns}: and focuses it");
+    }
+}
+
+#[test]
+fn the_list_chevron_hides_the_list_at_60_and_79() {
+    for columns in [60, 79] {
+        let (app, model, ui) = panes(columns);
+        open_document(&app, &model, &ui);
+        let x = column_of(&app, 1, '›').unwrap_or_else(|| panic!("{columns}: no reader chevron"));
+        app.click(x, 1);
+        let x = column_of(&app, 1, '‹').unwrap_or_else(|| panic!("{columns}: no list chevron"));
+        app.click(x, 1);
+        assert!(!layout::shown(&model.borrow(), columns), "{columns}: the list chevron hides the list");
+        assert!(column_of(&app, 1, '›').is_some(), "{columns}: and the reader chevron is back");
+    }
+}
+
+#[test]
+fn the_chevrons_are_absent_on_the_welcome_screen_and_at_80_columns() {
+    for columns in [60, 79] {
+        let (app, _, _) = panes(columns);
+        assert!(column_of(&app, 1, '‹').is_none() && column_of(&app, 1, '›').is_none(), "{columns}: nothing to hide");
+    }
+    let (app, model, ui) = panes(80);
+    open_document(&app, &model, &ui);
+    assert!(column_of(&app, 1, '‹').is_none() && column_of(&app, 1, '›').is_none(), "80: the marks are the controls");
+}
+
+#[test]
+fn the_chevron_glyphs_measure_one_cell() {
+    let app = TestApp::new(40, 24);
+    let context = app.app().session().context();
+    let width = |text: &str| context.text_width(text, app.app().width_method()).unwrap();
+    assert_eq!(width("‹"), 1, "the list chevron");
+    assert_eq!(width("›"), 1, "the reader chevron");
 }

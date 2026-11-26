@@ -108,7 +108,7 @@ The terminal font is the user's. Emphasis is bold and colour; comments are itali
 
 A column: a row of two panels that fills the screen, then the footer.
 
-- **Sidebar** (left): the file tree, or the change list on the changes screen. Width `min(40, max(28, 25% of the terminal))`; at least 24 columns, and the reader keeps at least 28. A width the user sets is kept for the session. Below 80 columns it hides while a document is open: the `≡` box shows it and the `✕` box hides it. At 80 columns and wider `Ctrl+/` or the mark on its border shows it (`docs/parity.md`, Layout).
+- **Sidebar** (left): the file tree, or the change list on the changes screen. Width `min(40, max(28, 25% of the terminal))`; at least 24 columns, and the reader keeps at least 28. A width the user sets is kept for the session. From 60 to 79 columns it hides while a document is open: the `›` at the reader's title shows it and the `‹` at the list's title hides it. Below 60 columns the list is a page of its own. At 80 columns and wider `Ctrl+/` or the mark on its border shows it (`docs/parity.md`, Layout).
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
 - **Panels**: rounded borders; the focused panel border is accent, the other is `border`.
 - **Header**: two rows at the top of each panel, with a hairline under it.
@@ -122,7 +122,7 @@ A column: a row of two panels that fills the screen, then the footer.
 
 ### Panel header
 
-The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` while dotfiles are hidden), or `Changes` with a count. Below 80 columns a touch box leads a header's title: `≡` on the reader's header while the list is hidden, and `✕` on the list's header while the list shows and can hide. Each is a pill (`accent-ink` on `accent`, bold) padded by a cell on each side. The reader shows a dim parent path and a bold file name, then badges: quiet (`read-only`, `rendered`, `image`, `binary`, `all files`, `one file`) or pills (`first 1 MiB`, `wrap`, `split`, `wide context`, `preview`). An error replaces the badges in `error`, bold, until the next key.
+The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` while dotfiles are hidden), or `Changes` with a count. From 60 to 79 columns a chevron leads a header's title: `›` on the reader's header while the list is hidden, and `‹` on the list's header while the list shows and can hide. Each is plain accent text. Below 60 columns the top bar leads with the back text (`‹ Files`), and the bottom bar is one row of words. The reader shows a dim parent path and a bold file name, then badges: quiet (`read-only`, `rendered`, `image`, `binary`, `all files`, `one file`) or pills (`first 1 MiB`, `wrap`, `split`, `wide context`, `preview`). An error replaces the badges in `error`, bold, until the next key.
 
 ### Footer pills and hints
 
@@ -138,7 +138,7 @@ A centred, rounded card titled ` Keyboard Shortcuts `, with sections Browse, Rea
 
 ### Welcome
 
-A three-row block wordmark in the three `wordmark` colours, a tagline with the version, a rounded hint card, and a line that says there is no editing. While the list is hidden below 80 columns the prompt reads `Tap ≡ to browse files.`, and the closing line breaks at its ` · `.
+A three-row block wordmark in the three `wordmark` colours, a tagline with the version, a rounded hint card, and a line that says there is no editing. Below 80 columns the closing line breaks at its ` · `. Below 60 columns there is no welcome screen: the list is the first page.
 
 ## Do's and Don'ts
 
