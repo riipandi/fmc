@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T06:16:20+07:00
+updated: 2026-11-27T00:10:25+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -105,7 +105,7 @@ User themes as JSON files, one per theme, each with a dark and a light variant o
 
 ### RI-11 — Adaptive layout and a collapsible sidebar
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+- status: landed (`55f9b45`, plan-00002 phases 1 and 2; persistence waits for RI-9) · updated 2026-11-27
 
 Scouter always shows the sidebar: its width is `min(40, max(28, floor(termWidth × 0.25)))` and `Ctrl+←`/`Ctrl+→` resize it (`research/scouter-inventory.md` §2, §4.2); it has no hide or collapse. The owner asked on 2026-11-26 for:
 
@@ -115,11 +115,11 @@ Scouter always shows the sidebar: its width is `min(40, max(28, floor(termWidth 
 
 Trap: in the legacy keyboard encoding `Ctrl+/` arrives as `0x1F`, the same byte as `Ctrl+_` (and `Ctrl+7` in some terminals). Telling them apart needs the kitty keyboard protocol; check what the locked `opentui` parser reports for each terminal fmc supports before binding it, and keep a fallback key if a terminal cannot send it.
 
-**Unlock:** plan-00001 done. **First move:** check `Ctrl+/` in Ghostty, Rio, and Terminal.app through `opentui`'s key events, then write the breakpoint rule and the `architecture.md` deviation record.
+**Landed:** plan-00002. The 80-column breakpoint, the welcome-screen rule, `Ctrl+/` with its legacy `Ctrl+_`, and the border mark are in `55f9b45`; the deviation record is in `architecture.md`. Terminal.app and the other terminals are an owner check.
 
 ### RI-12 — Toggle hidden files with `Ctrl+.`
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done, together with RI-11) · updated 2026-11-26
+- status: landed (`81a735f`, plan-00002 phase 3; persistence waits for RI-9) · updated 2026-11-27
 
 Scouter lists every entry except a fixed noise list (`.git`, `.hg`, `.svn`, `.DS_Store`, `.AppleDouble`, `Thumbs.db`, `desktop.ini`; `research/scouter-inventory.md` §9.1, `scouter:src/core/files.ts:34`) and has no hidden-file toggle. The owner chose on 2026-11-26:
 
@@ -130,7 +130,7 @@ Scouter lists every entry except a fixed noise list (`.git`, `.hg`, `.svn`, `.DS
 
 Trap: `Ctrl+.` has no legacy encoding; only terminals with the kitty keyboard protocol (Ghostty, Rio, kitty, WezTerm) send it, and Terminal.app cannot. It shares the terminal check and the fallback-key decision with RI-11's `Ctrl+/`.
 
-**Unlock:** plan-00001 done; run it with RI-11. **First move:** the same per-terminal key check as RI-11, then a fallback key that does not collide with the key table.
+**Landed:** plan-00002 phase 3. `Ctrl+.` and `.` toggle dotfiles; `.` is the fallback for terminals that cannot send `Ctrl+.`, and it is free in the key table. Kitty-protocol terminals and Terminal.app are an owner check.
 
 ### RI-13 — Configurable keymap in `~/.config/fmc/keymap.json`
 

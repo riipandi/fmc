@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-26T16:00:00+07:00
-updated: 2026-11-27T00:40:00+07:00
+updated: 2026-11-27T00:10:25+07:00
 phases:
     - id: 1
       title: "Key check and deviation records"
@@ -17,12 +17,12 @@ phases:
       note: "Rex at 80x24 on the demo repo (.gitignore is the dotfile; no demo change needed): the sidebar shows the header badge no dotfiles and drops .gitignore when hidden; the selected dotfile falls to the first row; in the finder a .gitignore query finds it while shown, and Ctrl+. rebuilds the index so it finds nothing. The badge is the header's files badge swapped for no dotfiles, which fits beside a 24-column title. Tests cover the row filter, a dot folder's children, the selection fallback, and the finder index skip. 246 tests pass."
     - id: 4
       title: "Docs sync, ledger close, handover"
-      status: pending
-      note: —
+      status: done
+      note: "Keymaps, README, CHANGELOG, DESIGN, shape, rust.md and the parity records synced; RI-11 and RI-12 landed in the roadmap with persistence left to RI-9; this plan archived; handover-00003 written and handover-00002 archived. The closing commit is the phase 4 commit."
     - id: 5
       title: "Final validation"
-      status: pending
-      note: —
+      status: done
+      note: "Run on 81a735f before the closing commit: just verify (246 tests pass, licenses and format included), cargo build --release, cargo fmt --check. Live Rex runs at 80x24 and 70x24 are in the phase 2 and 3 notes. Owner checks are open: Terminal.app and the kitty-protocol terminals with Ctrl+/ and Ctrl+., and a real terminal narrower than 80 columns."
 ---
 
 ## Add a collapsible sidebar and a hidden-files toggle — roadmap RI-11 and RI-12

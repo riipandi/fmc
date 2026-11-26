@@ -17,6 +17,8 @@ fmc --help     # every key
 
 Press `?` inside fmc for every key, and `Ctrl+q` to quit. A [Nerd Font](https://www.nerdfonts.com/) shows the file icons.
 
+Below 80 columns the file list hides while a file is open: `Ctrl+/`, or the mark on the border, shows it. `Ctrl+.` shows or hides dotfiles.
+
 ## Build
 
 You need Rust and Zig 0.17.1. See [docs/development.md](docs/development.md).
