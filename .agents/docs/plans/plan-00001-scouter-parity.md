@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T07:46:41+07:00
+updated: 2026-11-26T08:13:52+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -74,8 +74,8 @@ phases:
       note: "Tab in the finder searches the lines of the files: 2+ UTF-16 units, 150 ms debounce, 200 hits and 10 a file, 64 MiB budget (core find/text.rs with 11 tests; services/find.rs streams progress every 120 ms). Rows are name:line with the match in accent; the highlighted hit shows in its own preview view with the preview pill and a third-line scroll; Enter opens the file at the line with the query kept for n and N; Esc ends. Live at 80x24 against Scouter 0.9.9 on the chapters fixture and the demo repository: the text state, the preview (text and colours identical), Enter (line 43 at the top, search seeded 1 of 1), Tab back to names, type 2+ characters, Esc, and a deep hit (line 150); differences only the approved root row, reveal, and quit label, plus the welcome clipping (issue-00004). Found and fixed while validating: one selected row for each hit of a file (selection by row index), the open-at scroll (applied once the reader shows), and the preview sharing the reader scroll box (its own view now). Owner check: a click on a text row (picks it as Enter does)."
     - id: 18
       title: "W5: git service"
-      status: pending
-      note: "phase 10 built the marks part (services/git.rs: private index copy with a Drop guard, rev-parse, name-status, ls-files); this phase adds the change list and patches, plus Scouter's 15 s git timeout and 8 MiB listing cap (research/scouter-inventory.md §11.1), which phase 10 left out"
+      status: done
+      note: "verify 188 tests (19 services/git, 20 diff). Scouter: git.ts:8-12, :24-148, :156-198, :204-260, :303-370; patch.ts:5-206. Demo repo: Scouter 0.9.9's listChanges, readAllPatches, listMarks and fmc's Repository give the same 10 changes, 10 patch texts byte for byte, 3 marks, 3 ignored. A conflicted file lists as M in both (inventory §21). 80x24 capture: fmc at HEAD and in the tree are identical; Scouter differs only as approved, plus the welcome card gap that HEAD already has (wordmark, hint line, q row)"
     - id: 19
       title: "W5: changes screen and change list"
       status: pending

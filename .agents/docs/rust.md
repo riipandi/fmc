@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T07:39:44+07:00
+updated: 2026-11-26T08:12:18+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -35,7 +35,9 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **The root keeps the terminal's background.** OpenTUI's themes fill the root with a color (`#12161c` dark); Scouter draws on the default background, so `app::run` sets both themes' `background` to `Color::DEFAULT_BACKGROUND`.
 - **Keys are read in capture.** `on_key_capture` sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab.
 - **Workers answer through events.** `services::spawn` runs a job on its own thread and sends the `services::Event` it returns through the app's `AppProxy`; `app/` applies each event on the UI thread. A reply may arrive after the tree changed, so `apply` checks that the path is still in the tree.
-- **Git runs on a private index copy.** `services/git.rs` copies `.git/index` for each call, keeps its modification time (git's racy-index check), and removes the copy in a `Drop` guard. Git's `diff` rewrites the index it reads even with `GIT_OPTIONAL_LOCKS=0` (Scouter decision 0007).
+- **Git runs on a private index copy, one per repository.** `services/git.rs` `Repository` copies `.git/index` before a listing, keeps the copy's mtime (git's racy-index check), and copies again unless the index and the copy are unchanged and the index is older than 2 s (`src/diff/git.ts:156-198`). `Drop` removes the copy. Git's `diff` rewrites the index it reads even with `GIT_OPTIONAL_LOCKS=0` (Scouter decision 0007). A patch diffs against the base of the last listing and reads the copy that listing made, so call `changes()` before `patch` or `patches`.
+- **Each git call is bounded and queued.** A call is killed after 15 s (it then reports `git exited with status 143.`, as Scouter's Bun timeout does), and a listing past 8 MiB has no text. A patch is cut at 1 MiB, the stacked diff at 4 MiB, and the files past the cut are not shown. One queue per repository runs one call at a time. A quit during a call leaves its copy in the temp directory, which Scouter removes at exit (`src/diff/git.ts:372-375`); fmc does not yet.
+- **A conflicted file lists as modified.** `git diff <base> --name-status` reports it as `M`, so the `U` letter (`Conflict`) never comes from the change list; the `Unmerged:` notice is unreachable there, as in Scouter (`research/scouter-inventory.md` §21).
 - **A text search stops, and a preview answers its latest request.** Each text search runs on a worker that checks an `AtomicBool` between files and reports progress every 120 ms (`services/find.rs`). A new query stops the running search and bumps the `Generation` (`find/text.rs`); an event for an older number is dropped. A preview read answers the latest request, and an older answer is dropped (`app/find.rs`).
 - **The finder shows its matches in the tree's list.** `Browser::show` replaces the tree's rows with flat rows and `show_tree` brings the tree back (`explorer/browser.rs`); `row_count` is what the list and its scrollbar measure, and an empty list is valid. `Browser::rows` borrows the whole browser, so a method that also sets `selected` copies the new path out before it assigns.
 - **The tree is drawn from a scroll position.** `ui/tree.rs` paints only the visible rows; the scrollbar column exists only while the list overflows (a hidden widget takes no space).

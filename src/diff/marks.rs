@@ -1,86 +1,10 @@
-//! Change kinds and the git marks the tree draws (Scouter `src/diff/git.ts` `kinds` and `parseNameStatus`,
-//! `src/diff/changes.ts` `kindStyles`, `src/diff/marks.ts`).
+//! The git marks the tree draws (Scouter `src/diff/marks.ts`): a status letter on a changed file, a dot on a folder
+//! that holds one, and the ignored entries.
 
 use std::collections::{HashMap, HashSet};
 
+use super::change::{Change, ChangeKind, MAX_CHANGES, order};
 use crate::theme::Palette;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum ChangeKind {
-    Modified,
-    Added,
-    Deleted,
-    Renamed,
-    Typechange,
-    Conflict,
-    Untracked,
-}
-
-impl ChangeKind {
-    /// The kind of a `--name-status` letter. Any other letter, copies included, counts as modified.
-    pub fn from_status(status: &str) -> Self {
-        match status.chars().next() {
-            Some('A') => Self::Added,
-            Some('D') => Self::Deleted,
-            Some('R') => Self::Renamed,
-            Some('T') => Self::Typechange,
-            Some('U') => Self::Conflict,
-            _ => Self::Modified,
-        }
-    }
-
-    pub fn letter(self) -> &'static str {
-        match self {
-            Self::Modified => "M",
-            Self::Added => "A",
-            Self::Deleted => "D",
-            Self::Renamed => "R",
-            Self::Typechange => "T",
-            Self::Conflict => "U",
-            Self::Untracked => "?",
-        }
-    }
-
-    pub fn color(self, p: &Palette) -> &'static str {
-        match self {
-            Self::Modified => p.modified,
-            Self::Added => p.added,
-            Self::Deleted | Self::Conflict => p.removed,
-            Self::Renamed => p.accent_soft,
-            Self::Typechange | Self::Untracked => p.muted,
-        }
-    }
-}
-
-/// Splits git's `-z` output on NUL and drops the empty token after the last NUL (Scouter `splitZ`).
-pub fn split_z(text: &str) -> Vec<&str> {
-    let mut tokens: Vec<&str> = text.split('\0').collect();
-    if tokens.last() == Some(&"") {
-        tokens.pop();
-    }
-    tokens
-}
-
-/// `git diff --name-status -z` output: a status, then the path. A rename or copy has an old path before the new
-/// one, and the new one is the change's path.
-pub fn parse_name_status(text: &str) -> Vec<(String, ChangeKind)> {
-    let tokens = split_z(text);
-    let mut changes = Vec::new();
-    let mut index = 0;
-    while index < tokens.len() {
-        let status = tokens[index];
-        let renamed = status.starts_with('R') || status.starts_with('C');
-        let first = tokens.get(index + 1).copied();
-        let second = if renamed { tokens.get(index + 2).copied() } else { None };
-        index += if renamed { 3 } else { 2 };
-        let Some(path) = second.or(first).filter(|path| !path.is_empty()) else { continue };
-        changes.push((path.to_string(), ChangeKind::from_status(status)));
-    }
-    changes
-}
-
-/// Scouter lists at most this many changes, sorted by path, and marks only those (`src/diff/git.ts:12`).
-pub const MAX_CHANGES: usize = 1000;
 
 /// What git reported for the repository that holds the browsed folder.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -88,7 +12,7 @@ pub struct Listing {
     /// The browsed folder relative to the repository root; empty at the root.
     pub within: String,
     /// Tracked and untracked changes, repository-relative.
-    pub changes: Vec<(String, ChangeKind)>,
+    pub changes: Vec<Change>,
     /// Ignored entries, repository-relative; a folder ends with `/`.
     pub ignored: Vec<String>,
 }
@@ -111,13 +35,13 @@ impl Marks {
     pub fn new(listing: Listing) -> Self {
         let Listing { within, mut changes, ignored } = listing;
         // Scouter caps before it filters to the browsed folder, so a change outside it still uses up a slot.
-        changes.sort_by(|left, right| left.0.cmp(&right.0));
+        order(&mut changes);
         changes.truncate(MAX_CHANGES);
         let mut marks = Self::default();
-        for (path, kind) in changes {
-            let Some(inside) = within_folder(&within, &path) else { continue };
+        for change in changes {
+            let Some(inside) = within_folder(&within, &change.path) else { continue };
             marks.folders.extend(folders_above(&inside));
-            marks.changes.insert(inside, kind);
+            marks.changes.insert(inside, change.kind);
         }
         for path in &ignored {
             if let Some(inside) = within_folder(&within, path.trim_end_matches('/')) {

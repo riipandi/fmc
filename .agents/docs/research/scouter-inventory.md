@@ -886,7 +886,7 @@ From source, not triggered:
 - Finder over 20,000 entries (`src/find/search.ts:6`).
 - Text search over 200 hits (`src/find/search.ts:7`, observed text in `src/find/file-finder.ts:72`).
 - Repository with no commits: base is the empty tree, everything staged is `added` (`src/diff/git.ts:129-139`, `docs/decision/0005-diff-screen-shows-all-files-stacked.md`). Not triggered.
-- Git timeout 15 s (`src/diff/git.ts:9`). Not triggered.
+- Git timeout 15 s (`src/diff/git.ts:9`). Not triggered live. Its status is `git exited with status 143.` unless git wrote stderr: `child.exited` resolves to 143 for a process Bun ends with SIGTERM (`src/diff/git.ts:59`; probed with `bun` on 2026-11-26, a `sleep` under a 300 ms `signal` timeout).
 - Git not installed: `Git is not installed or could not be started.` (`src/diff/git.ts:61-63`). Not triggered.
 - Clipboard failure: `Could not copy to clipboard.` (`src/app/app.ts:852`). Not triggered.
 
@@ -991,6 +991,7 @@ All in `<scratch>/out/screens/`. `.txt` = Rex text capture (trimmed); `.html` = 
 - `docs/decision/0034-…md`: says the sidebar has no tint and footer/diff headers are tinted. Code agrees (section 14.2).
 - `README.md` keys table: all keys in the table are in `src/core/keymap.ts` (tested). The table does not mention `J K PageUp PageDown Home End [ ]` or `N` in the changes list; these work.
 - `docs/decision/0014-vendor-more-tree-sitter-grammars.md`: lists C and Java; manifest matches (`grammars/manifest.json`).
+- Code, not docs: `src/diff/git.ts:309` maps the status letter `U` to `conflict`, and `src/diff/patch.ts:191` has the `Unmerged:` notice for it. The list never gets `U` from `diff <base> --name-status`: a conflicted file is `M`, as git reports it (live: Scouter's `listChanges` on a merge conflict, 2026-11-26, git 2.56.1; the same in fmc, `services/git_tests.rs`). The `Unmerged:` notice is unreachable through the list.
 
 ---
 
