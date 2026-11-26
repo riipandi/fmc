@@ -3,7 +3,6 @@
 pub mod binary;
 pub mod footer;
 pub mod header;
-pub mod help;
 pub mod hints;
 pub mod markdown;
 pub mod picture;

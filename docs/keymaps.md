@@ -1,6 +1,6 @@
 # Keys
 
-Press `?` inside fmc to see this list, or run `fmc --help`.
+Press `?` inside fmc to see this list as tables in the reader, or run `fmc --help`.
 
 ## Browse
 
@@ -50,7 +50,7 @@ Press `?` inside fmc to see this list, or run `fmc --help`.
 | `y` | copy selection, or the current path |
 | `Ctrl+o` `Alt+i` | jump back / forward through opened places |
 | `Esc` | clear selection or search, or back to the file list |
-| `?` | this help (any key closes) |
+| `?` | this key list; ? or Esc closes it |
 | `^q` `^c` | quit |
 
 ## Mouse

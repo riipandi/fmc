@@ -1,6 +1,6 @@
-//! Turns one key press into an action, in Scouter's dispatch order (`src/app/app.ts` `onKeyPress`): quit, close
-//! help, count digits, global commands, changes-screen keys, then the focused pane. The find and search prompts
-//! read keys before this parser does.
+//! Turns one key press into an action, in Scouter's dispatch order (`src/app/app.ts` `onKeyPress`): quit, count
+//! digits, global commands, changes-screen keys, then the focused pane. The search prompt reads keys before this
+//! parser does.
 
 use super::{Action, Key};
 
@@ -24,7 +24,6 @@ pub enum Screen {
 pub struct State {
     pub screen: Screen,
     pub focus: Focus,
-    pub help_open: bool,
     /// The reader has something open (Scouter `readerReady`); counts need it.
     pub reader_ready: bool,
     /// The reader shows rendered Markdown, which refuses counts and line motions.
@@ -62,9 +61,6 @@ impl Parser {
         // Ctrl+q and Ctrl+c quit; a plain `q` does nothing (approved deviation, architecture.md).
         if (key.name == "q" || key.name == "c") && key.ctrl {
             return Step::Done(Action::Quit);
-        }
-        if state.help_open {
-            return Step::Done(Action::CloseHelp);
         }
         if self.absorb_count(key, state) {
             return Step::More;

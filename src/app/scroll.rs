@@ -37,7 +37,7 @@ pub fn motion(m: &Model, ui: &Ui, action: Action) {
             ui.viewer.scroll_to(0.0, motion::line_top(line, viewport) as f64);
         }
         Action::Paragraph(direction) => {
-            let Shown::Text { document, .. } = &m.shown else { return };
+            let Some((document, ..)) = m.shown.text() else { return };
             let blanks = motion::blank_lines(&document.text);
             let forward = direction > 0;
             match motion::paragraph_target(&blanks, m.top.floor() as usize, forward) {

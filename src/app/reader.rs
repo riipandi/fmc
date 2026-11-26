@@ -3,13 +3,14 @@
 
 use std::path::{Path, PathBuf};
 
-use fmc::keys::Focus;
+use fmc::keys::{Focus, key_page_markdown};
 use fmc::reader::binary::format_size;
 use fmc::reader::document::Document;
 use fmc::reader::image;
 use fmc::reader::jump::Jump;
 use fmc::reader::markdown::{View, is_markdown};
 use fmc::reader::position::scroll_label;
+use fmc::reader::search::Search;
 use fmc::text::display_label;
 
 use super::{Model, Ui, search};
@@ -28,6 +29,12 @@ pub enum Shown {
         language: Option<&'static str>,
         markdown: Option<View>,
     },
+    /// The key page (`?`): generated Markdown, shown as a Markdown document. `back` is what it replaced.
+    Keys {
+        document: Document,
+        markdown: View,
+        back: Box<Back>,
+    },
     Image {
         path: PathBuf,
         info: image::Info,
@@ -38,19 +45,42 @@ pub enum Shown {
     },
 }
 
+/// The reader before the key page took it: `?` and Esc put it back, with its focus, scroll, and search.
+#[derive(Debug)]
+pub struct Back {
+    pub shown: Shown,
+    pub focus: Focus,
+    /// The viewer's scroll position, columns then rows.
+    pub scroll: (f64, f64),
+    pub search: Option<Search>,
+}
+
 impl Shown {
     pub fn is_some(&self) -> bool {
         !matches!(self, Self::None)
     }
 
-    /// Whether the reader holds a document the keys can reach (Scouter `hasDocument`): text or an image.
+    pub fn shows_keys(&self) -> bool {
+        matches!(self, Self::Keys { .. })
+    }
+
+    /// Whether the reader holds a document the keys can reach (Scouter `hasDocument`): text, the key page, or an image.
     pub fn has_document(&self) -> bool {
-        matches!(self, Self::Text { .. } | Self::Image { .. })
+        matches!(self, Self::Text { .. } | Self::Keys { .. } | Self::Image { .. })
+    }
+
+    /// The text the reader shows, with its filetype and Markdown view: a file's, or the key page's.
+    pub fn text(&self) -> Option<(&Document, Option<&'static str>, Option<View>)> {
+        match self {
+            Self::Text { document, language, markdown, .. } => Some((document, *language, *markdown)),
+            Self::Keys { document, markdown, .. } => Some((document, Some("markdown"), Some(*markdown))),
+            _ => None,
+        }
     }
 
     /// Whether the rendered Markdown view shows (Scouter `previewing`).
     pub fn previewing(&self) -> bool {
-        matches!(self, Self::Text { markdown: Some(view), .. } if view.is_rendered())
+        matches!(self.text(), Some((_, _, Some(view))) if view.is_rendered())
     }
 }
 
@@ -72,18 +102,28 @@ fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
     true
 }
 
-/// Shows a text document the worker read.
+/// Puts a shown text into the views that draw it: the code view, and the rendered view for Markdown.
+fn present(ui: &Ui, shown: &Shown) {
+    let Some((document, language, markdown)) = shown.text() else { return };
+    ui.reader.show(document, language);
+    if markdown.is_some() {
+        ui.markdown.show(&document.text);
+    }
+}
+
+/// Shows a text document the worker read. A key page's search does not carry over to the file.
 pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document) {
     if !reveal(m, path, true) {
         return;
     }
     let language = language_for(path);
     let markdown = language.filter(|filetype| is_markdown(filetype)).map(|_| View::default());
-    ui.reader.show(&document, language);
-    if markdown.is_some() {
-        ui.markdown.show(&document.text);
+    let shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+    present(ui, &shown);
+    if m.shown.shows_keys() {
+        m.search = None;
     }
-    m.shown = Shown::Text { path: path.to_path_buf(), document, language, markdown };
+    m.shown = shown;
     search::follow(m);
     reset_scroll(m, ui, path);
 }
@@ -120,19 +160,56 @@ pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
 }
 
 /// The place the reader is at, for the jump history (Scouter `here`): a text's row, and the top of an image or binary.
+/// The key page is not a place.
 pub fn here(m: &Model) -> Option<Jump> {
     match &m.shown {
-        Shown::None => None,
+        Shown::None | Shown::Keys { .. } => None,
         Shown::Text { path, .. } => Some(Jump { path: path.clone(), top: m.top.floor() as usize }),
         Shown::Image { path, .. } | Shown::Binary { path, .. } => Some(Jump { path: path.clone(), top: 0 }),
     }
 }
 
-/// `m`: switches a Markdown document between its rendered view and its source (Scouter `toggleMarkdownSource`).
+/// `m`: switches a Markdown document, or the key page, between its rendered view and its source (Scouter
+/// `toggleMarkdownSource`).
 pub fn toggle_markdown(m: &mut Model) {
-    if let Shown::Text { markdown: Some(view), .. } = &mut m.shown {
-        *view = view.toggled();
+    match &mut m.shown {
+        Shown::Text { markdown: Some(view), .. } | Shown::Keys { markdown: view, .. } => *view = view.toggled(),
+        _ => {}
     }
+}
+
+/// `?`: shows the key page, or puts the document back when the page is shown. The page takes focus, so the reader keys
+/// scroll it; the document returns with its focus, scroll position, and search (architecture.md).
+pub fn toggle_keys(m: &mut Model, ui: &Ui) {
+    if m.shown.shows_keys() {
+        return close_keys(m, ui);
+    }
+    let text = key_page_markdown();
+    let document = Document { lines: text.lines().count(), text, truncated: false };
+    let back = Back {
+        shown: std::mem::take(&mut m.shown),
+        focus: m.focus,
+        scroll: ui.viewer.position(),
+        search: m.search.take(),
+    };
+    m.focus = Focus::Reader;
+    m.message = None;
+    let shown = Shown::Keys { document, markdown: View::default(), back: Box::new(back) };
+    present(ui, &shown);
+    m.shown = shown;
+    ui.viewer.scroll_to(0.0, 0.0);
+}
+
+/// Puts the document back that the key page replaced. Only called while the key page shows.
+pub fn close_keys(m: &mut Model, ui: &Ui) {
+    let Shown::Keys { back, .. } = std::mem::take(&mut m.shown) else { return };
+    let Back { shown, focus, scroll: (left, top), search } = *back;
+    present(ui, &shown);
+    m.shown = shown;
+    m.focus = focus;
+    m.search = search;
+    m.message = None;
+    ui.viewer.scroll_to(left, top);
 }
 
 /// A key the rendered view refuses: the footer says which key shows the source (Scouter `showMessage`, not an error).
@@ -166,7 +243,7 @@ pub fn badges(shown: &Shown, wrap: bool) -> Vec<Badge> {
         badges.push(Badge { text: "first 1 MiB".into(), kind: BadgeKind::Pill });
     }
     // Wrapping has no effect on the rendered view, and the image and binary have no text (Scouter `viewerBadgesFor`).
-    if wrap && matches!(shown, Shown::Text { .. }) && !shown.previewing() {
+    if wrap && shown.text().is_some() && !shown.previewing() {
         badges.push(Badge { text: "wrap".into(), kind: BadgeKind::Pill });
     }
     badges
@@ -175,10 +252,12 @@ pub fn badges(shown: &Shown, wrap: bool) -> Vec<Badge> {
 /// The rows the shown text takes: its lines, or the rendered Markdown's rows (`rendered_rows`). An image fills the
 /// viewport, so it takes none.
 pub fn content_rows(shown: &Shown, rendered_rows: usize, text_rows: usize) -> usize {
-    match shown {
-        Shown::Text { .. } if shown.previewing() => rendered_rows.max(1),
-        Shown::Text { .. } => text_rows.max(1),
-        _ => 0,
+    if shown.previewing() {
+        rendered_rows.max(1)
+    } else if shown.text().is_some() {
+        text_rows.max(1)
+    } else {
+        0
     }
 }
 
@@ -191,22 +270,22 @@ pub fn footer_facts(
     text_rows: usize,
     top: f64,
 ) -> Option<(DocumentInfo, Option<String>)> {
+    if let Some((document, language, markdown)) = shown.text() {
+        let info = DocumentInfo::Text {
+            lines: document.lines,
+            language: language.unwrap_or("plain text").into(),
+            truncated: document.truncated,
+            rendered: markdown.map(|view| view.is_rendered()),
+        };
+        return Some((info, Some(scroll_label(content_rows(shown, rendered_rows, text_rows), viewport, top))));
+    }
     match shown {
-        Shown::None => None,
-        Shown::Text { document, language, markdown, .. } => {
-            let info = DocumentInfo::Text {
-                lines: document.lines,
-                language: language.unwrap_or("plain text").into(),
-                truncated: document.truncated,
-                rendered: markdown.map(|view| view.is_rendered()),
-            };
-            Some((info, Some(scroll_label(content_rows(shown, rendered_rows, text_rows), viewport, top))))
-        }
         Shown::Image { info, .. } => {
             let info = DocumentInfo::Image { width: info.width, height: info.height, format: info.format.into() };
             Some((info, Some(scroll_label(viewport, viewport, 0.0))))
         }
         Shown::Binary { size, .. } => Some((DocumentInfo::Binary { size: format_size(*size) }, None)),
+        _ => None,
     }
 }
 
@@ -223,6 +302,22 @@ mod tests {
         );
         assert_eq!(title_parts(root, Path::new("/vault/README.md")), ("README.md".into(), None));
         assert_eq!(title_parts(root, Path::new("/elsewhere/Louvre.txt")), ("Louvre.txt".into(), None));
+    }
+
+    #[test]
+    fn the_key_page_is_a_rendered_markdown_document() {
+        let text = fmc::keys::key_page_markdown();
+        let back = Back { shown: Shown::None, focus: Focus::List, scroll: (0.0, 0.0), search: None };
+        let keys = Shown::Keys {
+            document: Document { lines: text.lines().count(), text, truncated: false },
+            markdown: View::Rendered,
+            back: Box::new(back),
+        };
+        assert!(keys.has_document() && keys.shows_keys());
+        assert!(keys.previewing(), "`/` is refused until `m` shows the source");
+        let (_, language, markdown) = keys.text().expect("the page is text");
+        assert_eq!((language, markdown), (Some("markdown"), Some(View::Rendered)));
+        assert!(badges(&keys, true).iter().all(|badge| badge.text != "wrap"));
     }
 
     #[test]

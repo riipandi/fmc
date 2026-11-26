@@ -1,4 +1,4 @@
-//! Keys: the parser that turns presses into actions, and the key list shown by `--help` and the `?` card (Scouter
+//! Keys: the parser that turns presses into actions, and the key list shown by `--help` and the `?` key page (Scouter
 //! `src/core/keymap.ts`). Tests check that every key the list documents is one the parser binds.
 
 mod parser;
@@ -27,8 +27,8 @@ impl Key<'_> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
     Quit,
+    /// `?`: shows the key page, or puts the document back when it is shown.
     Help,
-    CloseHelp,
     SwitchPane,
     Escape,
     /// Narrower (-1) or wider (1) list, by two columns.
@@ -124,7 +124,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
             ("Esc", "clear selection or search, or back to the file list"),
-            ("?", "this help (any key closes)"),
+            ("?", "this key list; ? or Esc closes it"),
             ("^q ^c", "quit"),
         ],
     ),
@@ -136,6 +136,15 @@ pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Wheel", "scroll the pane under the pointer"),
     ("Drag edge", "resize the list"),
 ];
+
+/// The Keys page (`?`): a Markdown table per section, Mouse last, from the same rows as `--help`.
+pub fn key_page_markdown() -> String {
+    let sections = KEY_SECTIONS.iter().copied().chain([("Mouse", MOUSE_ROWS)]).map(|(title, rows)| {
+        let rows: Vec<String> = rows.iter().map(|(keys, action)| format!("| `{keys}` | {action} |")).collect();
+        format!("## {title}\n\n| Key | Action |\n| --- | --- |\n{}", rows.join("\n"))
+    });
+    sections.collect::<Vec<_>>().join("\n\n") + "\n"
+}
 
 /// Width of the key column, in characters.
 pub const KEY_COLUMN: usize = 15;

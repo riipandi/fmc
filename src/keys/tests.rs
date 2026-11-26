@@ -1,13 +1,7 @@
 use super::*;
 
-const TREE: State = State {
-    screen: Screen::Browse,
-    focus: Focus::List,
-    help_open: false,
-    reader_ready: true,
-    previewing: false,
-    typing: false,
-};
+const TREE: State =
+    State { screen: Screen::Browse, focus: Focus::List, reader_ready: true, previewing: false, typing: false };
 const READER: State = State { focus: Focus::Reader, ..TREE };
 const CHANGES: State = State { screen: Screen::Changes, ..TREE };
 const DIFF_BODY: State = State { screen: Screen::Changes, focus: Focus::Reader, ..TREE };
@@ -55,14 +49,17 @@ fn last(keys: &[&str], state: State) -> Step {
 }
 
 #[test]
-fn quit_wins_even_over_help() {
-    assert_eq!(last(&["^q"], State { help_open: true, ..READER }), Step::Done(Action::Quit));
+fn quit_and_the_key_page_keys() {
+    assert_eq!(last(&["^q"], READER), Step::Done(Action::Quit));
     assert_eq!(last(&["^c"], TREE), Step::Done(Action::Quit));
-    // A plain `q` quits nowhere: in the help card it only closes the card, as any key does.
+    // A plain `q` quits nowhere; `?` toggles the key page from either pane, and Esc leaves it.
     assert_ne!(last(&["q"], TREE), Step::Done(Action::Quit));
-    assert_eq!(last(&["q"], State { help_open: true, ..READER }), Step::Done(Action::CloseHelp));
+    assert_eq!(last(&["?"], TREE), Step::Done(Action::Help));
+    assert_eq!(last(&["?"], READER), Step::Done(Action::Help));
+    assert_eq!(last(&["esc"], READER), Step::Done(Action::Escape));
     assert_eq!(last(&["^c"], CHANGES), Step::Done(Action::Quit));
-    assert_eq!(last(&["j"], State { help_open: true, ..READER }), Step::Done(Action::CloseHelp));
+    // Reader keys scroll the key page: it is a reader document, with focus on the reader.
+    assert_eq!(last(&["j"], READER), Step::Done(Action::Scroll(1)));
 }
 
 #[test]
@@ -195,6 +192,21 @@ fn every_documented_key_is_bound() {
             }
         }
     }
+}
+
+/// The Keys page and `--help` both come from the key table: every row is in each, one table per section.
+#[test]
+fn the_key_page_and_help_come_from_the_key_table() {
+    let page = key_page_markdown();
+    let help = key_list_text();
+    for (title, rows) in KEY_SECTIONS.iter().copied().chain([("Mouse", MOUSE_ROWS)]) {
+        assert!(page.contains(&format!("## {title}\n")), "the page lacks {title}");
+        for (keys, action) in rows {
+            assert!(page.contains(&format!("| `{keys}` | {action} |")), "the page lacks {keys}");
+            assert!(help.contains(&format!("{keys:<KEY_COLUMN$}{action}")), "--help lacks {keys}");
+        }
+    }
+    assert_eq!(page.matches("| --- | --- |").count(), KEY_SECTIONS.len() + 1);
 }
 
 #[test]

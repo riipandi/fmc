@@ -23,7 +23,6 @@ use crate::services::Event;
 use crate::ui::binary::BinaryView;
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
-use crate::ui::help::Help;
 use crate::ui::hints::{Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::picture::Picture;
@@ -56,8 +55,6 @@ struct Ui {
     bar: ScrollBar,
     narrow_bar: ScrollBar,
     footer: Footer,
-    layout: View,
-    help: Option<Help>,
 }
 
 /// A reveal in progress: list the folders on the way to `target`, then select it. `expand` also opens the target
@@ -73,7 +70,6 @@ struct Model {
     /// The location the footer shows: the startup path, then each folder opened.
     location: String,
     focus: Focus,
-    help_open: bool,
     mode: Mode,
     background: Option<String>,
     parser: Parser,
@@ -119,7 +115,6 @@ impl Model {
         State {
             screen: Screen::Browse,
             focus: self.focus,
-            help_open: self.help_open,
             reader_ready: self.shown.has_document(),
             previewing: self.shown.previewing(),
             typing: false,
@@ -152,7 +147,6 @@ pub fn run(target: &Path) -> opentui::Result<()> {
     let model = Rc::new(RefCell::new(Model {
         location: target.to_string_lossy().into_owned(),
         focus: Focus::List,
-        help_open: false,
         mode: Mode::Dark,
         background: None,
         parser: Parser::default(),
@@ -228,11 +222,11 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             repaint_after_layout(cx.app(), &model, &ui);
             match action {
                 Action::Quit => return cx.quit(),
-                Action::Help => m.help_open = true,
-                Action::CloseHelp => m.help_open = false,
+                Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
                 Action::Escape if cx.app().selected_text().is_some() || cx.app().is_selecting() => {
                     cx.app().clear_selection();
                 }
+                Action::Escape if m.shown.shows_keys() => reader::close_keys(&mut m, &ui.borrow()),
                 // Tab moves to the reader only when it shows a document (Scouter `switchPane`).
                 Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
                 Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
@@ -276,9 +270,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                     let text = if action == Action::Search { SEARCH_REFUSED } else { PARAGRAPH_REFUSED };
                     reader::refuse(&mut m, text);
                 }
-                Action::Search if m.focus == Focus::Reader && matches!(m.shown, reader::Shown::Text { .. }) => {
-                    search::start(&mut m)
-                }
+                Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
                 Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
                     search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
                 }
@@ -445,21 +437,16 @@ fn build(app: &App, p: &Palette) -> Ui {
         bar,
         narrow_bar,
         footer,
-        layout,
-        help: None,
     }
 }
 
-/// Rebuilds the parts that bake colors in (welcome, help), then repaints.
+/// Rebuilds the parts that bake colors in (welcome), then repaints.
 fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.welcome.detach();
     ui.welcome = welcome::welcome(app, m.palette());
     ui.stack.add(&ui.welcome);
     ui.reader.restyle(m.palette());
     ui.markdown.restyle(m.palette());
-    if let Some(help) = ui.help.take() {
-        help.overlay.detach();
-    }
     paint(app, m, ui);
 }
 
@@ -491,6 +478,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.tree.paint(app, &m.browser, &m.marks, p, &root);
     let (title, parent) = match &m.shown {
         reader::Shown::None => ("Reader".into(), None),
+        reader::Shown::Keys { .. } => ("Keys".into(), None),
         reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. } => {
             reader::title_parts(&root, path)
         }
@@ -505,7 +493,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.viewer_header.paint(&viewer, p);
     ui.welcome.visible(!m.shown.is_some());
     let previewing = m.shown.previewing();
-    ui.reader.visible(matches!(m.shown, reader::Shown::Text { .. }) && !previewing);
+    ui.reader.visible(m.shown.text().is_some() && !previewing);
     ui.markdown.visible(previewing);
     ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }));
     ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }));
@@ -521,16 +509,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
     m.top = ui.viewer.position().1;
-    let fill = m.wrap || !matches!(m.shown, reader::Shown::Text { .. }) || previewing;
+    let fill = m.wrap || m.shown.text().is_none() || previewing;
     ui.viewer.set_wrap(fill);
     ui.reader.set_wrap(m.wrap);
     // The pane is the viewer less its one-column bar; unwrapped text takes that width.
     ui.reader.set_width(u32::from(columns.saturating_sub(width + 3)));
     ui.picture.fill(viewport as u32);
-    let lines = match &m.shown {
-        reader::Shown::Text { document, .. } => document.lines,
-        _ => 0,
-    };
+    let lines = m.shown.text().map_or(0, |(document, ..)| document.lines);
     let total = reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines));
     let top = m.top.floor() as usize;
     ui.bar.paint(app, total, viewport, top, fill, p);
@@ -538,10 +523,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let (document, position) =
         reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
             .map_or((None, None), |(info, label)| (Some(info), label));
-    let search_text = match &m.shown {
-        reader::Shown::Text { document, .. } => document.content().to_owned(),
-        _ => String::new(),
-    };
+    let search_text = m.shown.text().map_or_else(String::new, |(document, ..)| document.content().to_owned());
     ui.reader.sync_search(
         p,
         m.search.as_ref().map_or("", |search| search.query.as_str()),
@@ -561,14 +543,4 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
-
-    if m.help_open && ui.help.is_none() {
-        let help = Help::new(app, p, &tint);
-        ui.layout.add(&help.overlay);
-        ui.help = Some(help);
-    }
-    if let Some(help) = &ui.help {
-        help.centre(usize::from(rows));
-        help.overlay.visible(m.help_open);
-    }
 }

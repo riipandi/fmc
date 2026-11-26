@@ -25,4 +25,4 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 ## Help
 
-- The `?` card lists the mouse actions, like `--help` does.
+- `?` shows the key list as tables in the reader, with the mouse actions in their own table. `--help` describes the same key list, so the two always agree. `?` or `Esc` brings the document back where it was. The key list is Markdown, so `/` is refused there, as Scouter refuses it in a rendered Markdown file: press `m` to see the source, then `/` to search the list.

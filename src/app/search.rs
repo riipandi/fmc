@@ -5,7 +5,6 @@
 use fmc::keys::Key;
 use fmc::reader::search::Search;
 
-use super::reader::Shown;
 use super::{Model, Ui};
 use crate::ui::footer::Message;
 
@@ -18,10 +17,7 @@ fn show(m: &mut Model, text: String) {
 
 /// The text the search reads: the document's lines, as the code view shows them.
 fn text(m: &Model) -> String {
-    match &m.shown {
-        Shown::Text { document, .. } => document.content().to_owned(),
-        _ => String::new(),
-    }
+    m.shown.text().map_or_else(String::new, |(document, ..)| document.content().to_owned())
 }
 
 /// Moves the view to `line`, with half a view above it (Scouter `scrollToLine`).
