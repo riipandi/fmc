@@ -722,8 +722,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.markdown.visible(previewing && !shows_preview && !body);
     ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview && !body);
     ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview && !body);
-    // The reader's pane takes no space beside the preview, which is the pane the stack shows then.
-    ui.viewer.visible(!shows_preview && !body);
+    // The reader's pane takes no space beside the preview, which is the pane the stack shows then. With no document it
+    // takes none either: an empty viewer would halve the stack and push the welcome out of its half.
+    ui.viewer.visible(m.shown.is_some() && !shows_preview && !body);
     ui.diff.root.visible(body);
     if on_changes {
         ui.diff.set_split(m.diff_options.split);

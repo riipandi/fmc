@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T08:56:27+07:00
+updated: 2026-11-26T12:08:05+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -56,3 +56,4 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **The stacked body is wider than the pane by its gutter.** Scouter's diff overflows the pane by the gutter (the digits, plus four cells), so an unwrapped block is that wide: the counts and the stat bar sit past the pane edge until a pan reveals them (`ui/diff.rs` `set_pane`). A wrapped body is the pane's width.
 - **The stacked body's pane is one column wider while its bar is hidden.** The bar takes a column only while the stack overflows (`ui/scrollbar.rs`), so `paint` sets the pane from `ui.diff.height() > viewport`; a fixed pane leaves a blank column in one-file view (Scouter's scroller reserves its bar only when the text overflows).
 - **The listing and its patches share one repository.** `services/changes.rs` `list` returns the `Repository` with its listing, shared as an `Arc`; the patches read that repository's copy of the index, so they run after the listing on the same repository, as Scouter's `loadAll` follows `load`.
+- **A visible child takes a share of its stack.** The stack's children split its height by grow, hidden ones take none, and the reader's viewer is shown only while a document is open (`src/app/mod.rs` paint, `ui.viewer.visible`). A visible empty viewer halves the stack, and the welcome inside its half clips at 80x24 (issue-00004, fixed in plan-00001 phase 23a). A rebuild that re-adds a child moves it to the end of the stack, so it sits behind the siblings above it.
