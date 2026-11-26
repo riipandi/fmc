@@ -90,7 +90,10 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
 | `Click` header | fold / unfold the file, on release; a drag does not |
+| `Click` reader header, below 80 columns | show the hidden file list and focus it |
+| `Click` list header, below 60 columns | close the file list drawer |
+| `Click` file, below 60 columns | open the file in the reader |
 
-A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. A click selects a file but does not open it: Enter does.
+A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it.
 
 Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.

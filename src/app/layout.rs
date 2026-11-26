@@ -31,14 +31,36 @@ pub fn shown(m: &Model, columns: u16) -> bool {
     m.visibility.shown(columns, document(m), held(m))
 }
 
-/// The width the sidebar takes: none while it is hidden.
-pub fn width(m: &Model, columns: u16) -> u16 {
-    if shown(m, columns) { sidebar::fit(columns, m.sidebar) } else { 0 }
+/// The sidebar covers the reader below `DRAWER` columns (P3).
+pub fn drawer(m: &Model, columns: u16) -> bool {
+    fmc::layout::is_drawer(columns, shown(m, columns))
 }
 
-/// Runs at each paint: records the width and document for the next crossing, and moves focus off a hidden sidebar.
+/// The width the sidebar takes: none while it is hidden, the whole terminal as a drawer.
+pub fn width(m: &Model, columns: u16) -> u16 {
+    if !shown(m, columns) {
+        0
+    } else if drawer(m, columns) {
+        columns
+    } else {
+        sidebar::fit(columns, m.sidebar)
+    }
+}
+
+/// Closes a drawer when a file opens from it (P3). A sidebar beside the reader is left as it is.
+pub fn close_drawer(m: &mut Model, columns: u16) {
+    if drawer(m, columns) {
+        m.visibility.close();
+    }
+}
+
+/// Runs at each paint: records the width and document for the next crossing, closes a drawer the reader's focus has
+/// reached, and moves focus off a hidden sidebar.
 pub fn sync(m: &mut Model, columns: u16) {
     m.visibility.observe(columns, document(m));
+    if m.focus == Focus::Reader {
+        close_drawer(m, columns);
+    }
     if m.focus == Focus::List && !shown(m, columns) {
         m.focus = Focus::Reader;
     }
@@ -59,7 +81,7 @@ pub fn toggle_key(m: &mut Model, columns: u16) {
 
 /// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`). A hidden sidebar takes no key.
 pub fn resize(m: &mut Model, columns: u16, step: i8) {
-    if !shown(m, columns) {
+    if !shown(m, columns) || drawer(m, columns) {
         return;
     }
     let width = i64::from(sidebar::fit(columns, m.sidebar)) + 2 * i64::from(step);
@@ -81,10 +103,12 @@ pub fn handle(app: &App) -> View {
 /// Lays out the sidebar, its edge, and its mark for this frame, and returns the width the sidebar takes.
 pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     let visible = shown(m, columns);
+    let covered = drawer(m, columns);
     let width = width(m, columns);
     ui.browser_panel.visible(visible);
     ui.browser_panel.width(width);
-    ui.handle.visible(visible);
+    ui.viewer_panel.visible(!covered);
+    ui.handle.visible(visible && !covered);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
     ui.mark.root.visible(can_hide(m));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
@@ -104,6 +128,45 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             cx.stop_propagation();
             let mut m = model.borrow_mut();
             toggle_key(&mut m, cx.app().size().0);
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+
+    // A tap on the reader's header row shows a hidden sidebar below 80 columns (P1). The press stops here, or the
+    // reader's own press takes the focus back. A tap on the list's header row closes a drawer (P3).
+    let (reader_header, list_header) = {
+        let u = ui.borrow();
+        (u.viewer_header.root.clone(), u.browser_header.root.clone())
+    };
+    reader_header.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                return;
+            }
+            let mut m = model.borrow_mut();
+            let columns = cx.app().size().0;
+            if columns >= fmc::layout::BREAKPOINT || shown(&m, columns) {
+                return;
+            }
+            cx.stop_propagation();
+            toggle_key(&mut m, columns);
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
+    list_header.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                return;
+            }
+            let mut m = model.borrow_mut();
+            let columns = cx.app().size().0;
+            if !drawer(&m, columns) {
+                return;
+            }
+            cx.stop_propagation();
+            toggle_key(&mut m, columns);
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });

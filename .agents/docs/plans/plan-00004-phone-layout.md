@@ -9,8 +9,8 @@ phases:
       note: "Fold on release done (P7). Duplicate [ ] row held: it changes the 80x24 ? page, and the audit's open question 4 is unanswered (owner)."
     - id: 2
       title: "Header-row tap and the full-width drawer (P1, P3)"
-      status: pending
-      note: —
+      status: done
+      note: "Header tap (P1) and the drawer below 60 (P3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged). A tap on a file under the drawer opens it, as Enter does."
     - id: 3
       title: "Tappable footer hints, priority order, Copy hint (P2, P6, P8)"
       status: pending

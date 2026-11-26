@@ -5,6 +5,15 @@
 /// Below this many columns a document hides the sidebar (D1): at 80 or more the layout is Scouter's.
 pub const BREAKPOINT: u16 = 80;
 
+/// Below this many columns a shown sidebar is a drawer over the reader, and a focus that moves to the reader closes it
+/// (approved phone rule, architecture.md, "a phone layout below 80 columns").
+pub const DRAWER: u16 = 60;
+
+/// Whether a shown sidebar covers the whole terminal.
+pub fn is_drawer(columns: u16, shown: bool) -> bool {
+    shown && columns < DRAWER
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Visibility {
     /// The width and the document's presence last observed, to see a crossing or a document opening or closing.
@@ -23,6 +32,11 @@ impl Visibility {
             self.manual = None;
         }
         self.last = Some((columns, document));
+    }
+
+    /// Hides a shown sidebar until the width crosses the breakpoint or a document opens or closes.
+    pub fn close(&mut self) {
+        self.manual = Some(false);
     }
 
     pub fn shown(&self, columns: u16, document: bool, held: bool) -> bool {

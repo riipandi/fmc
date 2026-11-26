@@ -23,6 +23,10 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                         // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
                         if m.finder.is_some() {
                             find::pick(&mut m);
+                        } else if tree::is_file(&m, m.browser.selected()) && layout::drawer(&m, cx.app().size().0) {
+                            // Under a drawer a tap on a file opens it, as Enter does: the reader takes the focus, and
+                            // the drawer closes (P3). A preview would not show it, since the focus leaves the list.
+                            tree::activate(&mut m);
                         } else {
                             tree::click(&mut m);
                         }
@@ -53,6 +57,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     let line = line_at(event.y, LIST_TOP, m.change_list.height());
                     if let Some(index) = line.filter(|_| focused).and_then(|line| m.change_list.row_at(line)) {
                         changes::click_row(&mut m, index);
+                        layout::close_drawer(&mut m, cx.app().size().0);
                     }
                     cx.stop_propagation();
                 }

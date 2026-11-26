@@ -60,3 +60,21 @@ fn a_manual_show_below_the_breakpoint_holds_while_the_width_stays_under_it() {
     v.observe(75, true);
     assert!(v.shown(75, true, false));
 }
+
+#[test]
+fn a_shown_sidebar_covers_the_reader_only_below_the_drawer_breakpoint() {
+    assert!(is_drawer(59, true));
+    assert!(!is_drawer(60, true));
+    assert!(!is_drawer(40, false), "a hidden sidebar covers nothing");
+}
+
+#[test]
+fn closing_a_drawer_holds_until_the_next_crossing() {
+    let mut v = Visibility::default();
+    v.observe(40, true);
+    v.toggle(40, true, false);
+    v.close();
+    assert!(!v.shown(40, true, false));
+    v.observe(41, true);
+    assert!(!v.shown(41, true, false), "a resize that does not cross keeps it closed");
+}
