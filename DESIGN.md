@@ -73,9 +73,13 @@ layout:
   sidebar-width: "min(40, max(28, floor(terminal width × 0.25))) columns"
   sidebar-min: 24
   reader-min: 28
+  compact-below: 60
   header-rows: 2
   footer-rows: 2
   find-bar-rows: 2
+  compact-header-rows: 1
+  compact-footer-rows: 1
+  compact-find-bar-rows: 1
   split-diff-min-reader: 60
   resize-step: 2
   tint: 0.025
@@ -87,7 +91,7 @@ layout:
 
 fmc looks like Scouter. Until parity is reached, Scouter's screen is the reference, and this file only describes it. If this file and Scouter disagree, Scouter wins and this file is wrong.
 
-The interface is quiet: two bordered panels, a two-row footer, and colour used for meaning (focus, git state, matches), not decoration.
+The interface is quiet: two bordered panels, a two-row footer (one row below 60 columns), and colour used for meaning (focus, git state, matches), not decoration.
 
 ## Colors
 
@@ -110,9 +114,45 @@ A column: a row of two panels that fills the screen, then the footer.
 
 - **Sidebar** (left): the file tree, or the change list on the changes screen. Width `min(40, max(28, 25% of the terminal))`; at least 24 columns, and the reader keeps at least 28. A width the user sets is kept for the session. From 60 to 79 columns it hides while a document is open: the `›` at the reader's title shows it and the `‹` at the list's title hides it. Below 60 columns the list is a page of its own. At 80 columns and wider `Ctrl+/` or the mark on its border shows it (`docs/parity.md`, Layout).
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
-- **Panels**: rounded borders; the focused panel border is accent, the other is `border`.
-- **Header**: two rows at the top of each panel, with a hairline under it.
-- **Footer**: two rows. Row one: a pill, the location or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last.
+- **Panels**: rounded borders; the focused panel border is accent, the other is `border`. Below 60 columns there is no border.
+- **Header**: two rows at the top of each panel, with a hairline under it, from 60 columns up. Below 60 columns it is one row with no hairline.
+- **Footer**: two rows from 60 columns up. Row one: a pill, the location or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last. Below 60 columns it is one row of words (see Tiers).
+
+### Tiers
+
+The width picks one of three layouts (`fmc::layout::tier`). The sketches are excerpts from live runs on the demo repository.
+
+- **Compact, below 60 columns**: two pages. The file list fills the screen; a file opens the reader full screen. The top bar's `‹ Files` goes back (`q` and `Esc` do too). The bottom bar is one row of equal words: `Find`, `Changes`, `Keys` on the list; `Back`, `Search`, `Keys` on the reader. A notice or an open prompt takes that row.
+
+```text
+ demo-fmc                         files
+ ▸  assets/                           •
+ ▸  docs/                             •
+    README.md                         M
+
+  Find     ·   Changes   ·    Keys
+```
+
+```text
+ ‹ Files  README.md  read-only rendered
+  Marauder's Map
+  A small ledger and symbology
+
+    Back     ·   Search    ·    Keys
+```
+
+- **Medium, 60 to 79 columns**: the list beside the reader, with the two-row header and footer. The list hides while a document is open; `‹` at the start of the list's title hides it, and `›` at the start of the reader's title shows it. No boxes and no border marks.
+
+```text
+╭──────────────────────────╮╭────────────────────────────────────────╮
+│ ‹  demo-fmc        files ││ README.md           read-only rendered │
+│──────────────────────────││────────────────────────────────────────│
+│ ▸  assets/             •││  Marauder's Map                       ▐│
+  FILES  …c-ref/demo-fmc/README.md  78 lines · markdown · UTF-8 · Top
+ q close   ? help   / find   d changes   Enter open   ^q quit
+```
+
+- **Wide, 80 columns and wider**: Scouter's layout, with the `«` and `»` marks on the sidebar's border (`docs/parity.md`, Layout).
 
 ## Components
 

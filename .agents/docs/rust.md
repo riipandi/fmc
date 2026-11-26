@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-27T03:20:00+07:00
+updated: 2026-11-27T04:02:00+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 

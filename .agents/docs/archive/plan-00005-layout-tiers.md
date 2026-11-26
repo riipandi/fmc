@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T03:53:11+07:00
+updated: 2026-11-27T03:57:42+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
@@ -25,8 +25,8 @@ phases:
       note: "The probe log had data at 03:39 (747 chunks, 1087 mouse events, the log not cleared). A tap is a press and its release at one cell (43 taps, none unpaired). A swipe is a run of wheel codes 64 and 65 (five runs, 1001 events), with no drag or motion events; no long press appears. The handler already matches those bytes, so no handler changed; `app/mouse_tests.rs` `a_logged_*` feeds the logged bytes through TestApp (tap, swipe, tap after swipe). The commit keeps the phase's message; its body says no handler changed. Agent decision in architecture.md (plan-00005 list)."
     - id: 6
       title: "Docs, ledger close, handover, final validation"
-      status: pending
-      note: —
+      status: done
+      note: "Docs: DESIGN.md (the three tiers with sketches, footer and header by tier, the compact tokens), README.md, docs/keymaps.md (touch rows, the bottom bar, back and chevron taps), docs/parity.md (layout), CHANGELOG (Unreleased), shape.md (tier, pages, bars), rust.md (tier, page stack, bars, clicks, phone bytes). Plan archived to archive/; handover-00006-layout-tiers.md written; index updated. Validation: just verify (350 tests), cargo build, cargo build --release; live captures at 40x30, 49x40, 59x30, 60x24, 70x24, 80x24 (10 steps each); 80x24 identical to 166051c; bottom-bar taps live at 49 columns. Owner checks in the handover."
 ---
 
 ## Rebuild the narrow layouts as tiers: a phone-native compact tier and a cleaner medium tier
