@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-27T00:49:46+07:00
+updated: 2026-11-27T01:42:45+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 
@@ -15,7 +15,8 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 | `LICENSE-MIT`, `LICENSE-APACHE` | fmc is `MIT OR Apache-2.0` (`Cargo.toml`). |
 | `rust-toolchain.toml`, `rustfmt.toml` | Toolchain pin and formatting rules. |
 | `deny.toml`, `about.toml`, `about.hbs` | License gate (`cargo deny`) and third-party notices (`cargo about`). |
-| `justfile`, `scripts/task-*.just` | Task shortcuts (`just` lists them): development (`native`, `run`, `build`, `start`, `install`, `demo`, `deps`), quality (`format`, `format-check`, `check`, `lint`, `test`, `licenses`, `notices`, `verify`), utility (`cleanup`). Build, run, and quality tasks run `native` first. |
+| `justfile`, `scripts/task-*.just` | Task shortcuts (`just` lists them): development (`native`, `run`, `build`, `start`, `install`, `demo`, `deps`), quality (`format`, `format-check`, `check`, `lint`, `test`, `licenses`, `notices`, `verify`), utility (`cleanup`). Build, run, and quality tasks run `native` first. The root `justfile` exports `RUSTC_WRAPPER=kache`; `KACHE=false` (`0`, `no`) exports an empty `RUSTC_WRAPPER` (which also overrides a user-level `build.rustc-wrapper`) and `KACHE_DISABLED=1`. The private `kache` recipe, a dependency of `run`, `build`, `install`, `check`, `lint`, and `test`, fails when kache is on but not installed. |
+| `.github/workflows/ci.yml` | CI: `just verify` on `macos-15` (arm64) for pushes to `main` and pull requests; `permissions: contents: read`, actions pinned by commit. kache-action (pinned kache `v2.4.0`, store in the GitHub Actions cache), `actions/cache` for `~/.cache/fmc/opentui-native/<version>`, and zig from `mlugg/setup-zig` only on that cache's miss. |
 | `scripts/opentui-native.sh`, `.cargo/config.toml` | Builds the OpenTUI native library with video off into `~/.cache/fmc/opentui-native/<version>` and links it at `.cache/opentui-native/<version>` (git-ignored); `.cargo/config.toml` points `OPENTUI_LIB_DIR` there. Run it before the first build and after an `opentui` version bump (both files name the version). |
 | `scripts/demo-repo.sh <dir>` | Builds the deterministic demo git repository for live runs of fmc and Scouter (same hashes and `git status` every run); replaces `<dir>` only when it holds the script's marker `.git/fmc-demo-repo` or is empty. |
 | `docs/` | Human docs: `configuration.md` (the settings file and its keys), `development.md` (prerequisites, first build, checks, demo repository, parity reference), `parity.md` (every approved difference from Scouter, with the baseline). |
@@ -31,11 +32,11 @@ No workspace, no `justfile`, no server, no database. Phase 1 is a read-only term
 
 - Rust 1.100.0 pinned in `rust-toolchain.toml` with clippy and rustfmt; rustup installs it on first use. Edition 2024.
 - Formatting: `rustfmt.toml` (`max_width = 120`, `use_small_heuristics = "Max"`). The Claude Code `PostToolUse` hook (`.claude/hooks/format.sh`) formats each edited `.rs` file with `rustfmt --edition 2024`, and each edited `.md` file with `rumdl fmt`.
-- Tools: `jq` (the hook needs it), `rumdl` (optional: the Markdown branch of the hook skips it when missing), `just` (task shortcuts), Rex (the `rex` skill: live runs of fmc and of Scouter), zig 0.17.1 (the native library build), `cargo-deny` and `cargo-about` (`cargo install cargo-deny`, `cargo install cargo-about --locked --features cli`). Check that a tool is installed before relying on it; do not install one unasked.
+- Tools: `jq` (the hook needs it), `rumdl` (optional: the Markdown branch of the hook skips it when missing), `just` (task shortcuts), Rex (the `rex` skill: live runs of fmc and of Scouter), zig 0.17.1 (the native library build), `cargo-deny` and `cargo-about` (`cargo install cargo-deny`, `cargo install cargo-about --locked --features cli`), kache (`cargo install kache --locked`; Apache-2.0; the compiler cache the just tasks use, `kache stats` for hits). Check that a tool is installed before relying on it; do not install one unasked.
 
 ## Commands
 
-`just verify` runs format-check (rustfmt and rumdl), check, lint, test, and licenses in one go.
+`just verify` runs format-check (rustfmt and rumdl), check, lint, test, and licenses in one go, through kache unless `KACHE=false`. The table's commands are plain cargo; they use kache only if the user's own Cargo config sets it.
 
 Run from the repository root.
 

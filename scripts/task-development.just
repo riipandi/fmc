@@ -10,12 +10,12 @@ native *args:
 [group('development')]
 [no-exit-message]
 [positional-arguments]
-run *args: native
+run *args: kache native
     @cargo run -q -- "$@"
 
 [doc('Build the release binary')]
 [group('development')]
-build *args: native
+build *args: kache native
     @cargo build --release {{ args }}
     @ls -lh target/release/{{ app_bin }} | awk '{printf "{{ BOLD + GREEN }}    %s{{ NORMAL }} %s (%s)\n", "Output", $5, $NF}'
 
@@ -38,7 +38,7 @@ deps *args:
 
 [doc('Install fmc to ~/.local/bin: `just install` (release -> fmc) or `just install debug` (-> fmc-debug)')]
 [group('development')]
-install profile="release": native
+install profile="release": kache native
     #!/usr/bin/env bash
     set -euo pipefail
     case "{{ profile }}" in

@@ -12,17 +12,17 @@ format-check:
 
 [doc('Type-check all targets')]
 [group('quality')]
-check *args: native
+check *args: kache native
     @cargo check --all-targets {{ args }}
 
 [doc('Lint with clippy')]
 [group('quality')]
-lint *args: native
+lint *args: kache native
     @cargo clippy --all-targets {{ args }} -- -D warnings
 
 [doc('Run the tests')]
 [group('quality')]
-test *args: native
+test *args: kache native
     @if command -v cargo-nextest >/dev/null; then cargo nextest run --no-tests=pass {{ args }}; else cargo test {{ args }}; fi
 
 [doc('Check dependency licenses against the allowlist')]

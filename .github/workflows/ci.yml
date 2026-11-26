@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  ZIG_VERSION: 0.17.1
+  # Keep in step with .cargo/config.toml and scripts/opentui-native.sh.
+  OPENTUI_VERSION: 0.9.9
+
+jobs:
+  verify:
+    # fmc supports macOS on Apple silicon only.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the Rust toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+
+      - uses: kunobi-ninja/kache-action@061011817fd04b0e460f79d6bb3c115b1fc8f029 # v1
+        with:
+          version: v2.4.0
+          # The action's default is a sticky PR comment, which needs write access this job does not have.
+          pr-comment: false
+
+      # kache-action only warns when its download fails; fail here instead of building uncached.
+      - name: Check kache
+        run: kache --version
+
+      - uses: taiki-e/install-action@073e1fd0bc889c9aee68dbaaa927cde1b5653a83 # v2.90.11
+        with:
+          tool: just,cargo-deny
+
+      - name: Restore the OpenTUI native library
+        id: native
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/fmc/opentui-native/${{ env.OPENTUI_VERSION }}
+          key: opentui-native-${{ env.OPENTUI_VERSION }}-zig${{ env.ZIG_VERSION }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/opentui-native.sh') }}
+
+      # Zig is needed only to build the library on a cache miss (`just verify` runs scripts/opentui-native.sh).
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: steps.native.outputs.cache-hit != 'true'
+        with:
+          version: ${{ env.ZIG_VERSION }}
+          use-cache: false
+
+      - name: Verify
+        run: just verify

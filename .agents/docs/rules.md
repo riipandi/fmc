@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-26T06:00:38+07:00
+updated: 2026-11-27T01:42:45+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -51,7 +51,7 @@ Versions are the crates.io snapshot of 2026-11-26 (`research/dependency-survey.m
 | `tree-sitter-javascript` `=0.25.0`, `tree-sitter-typescript` `=0.23.2`, `tree-sitter-md` `=0.5.4`, `tree-sitter-zig` `=1.1.2` | exact (the versions `opentui` already links) | default | Language handles to register Core's highlight queries for JS, TS, TSX, JSX, Markdown, and Zig (owner, 2026-11-26) |
 | dev: `insta` `1.49`, `assert_cmd` `2.2`, `tempfile` `3.27` | | default | Snapshots, CLI tests, fixture repositories |
 
-Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
+Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices), kache `2.4.0` (Apache-2.0, compiler cache for the just tasks and CI; owner, 2026-11-27). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
 
 ### Approved for after parity (owner, 2026-11-26)
 

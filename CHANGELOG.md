@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sidebar visibility: below 80 columns the sidebar hides while a document is open, and the welcome screen keeps it. `Ctrl+/`, or the `«` or `»` on the border, shows and hides it.
 - Dotfiles: `Ctrl+.` or `.` shows and hides them in the tree and the finder. They are shown by default, and the noise names stay hidden.
 - Project workspace: agent instructions, agent docs, and project skills.
+- The just tasks build through the kache compiler cache; `KACHE=false` turns it off. CI runs `just verify` on macOS for pushes and pull requests.
 - A read-only settings file, `settings.json` under `XDG_CONFIG_HOME/fmc` (or `~/.config/fmc`), with three keys: `auto_preview`, `sidebar_jump`, and `reader_jump` (`docs/configuration.md`).
 - Text files open in the reader with a line-number gutter, syntax colours for Scouter's languages, and the footer's line count, language, and scroll position. A file over 1 MiB shows its first 1 MiB.
 - Reader motions: `j` and `k` scroll, `h` and `l` pan, `space` and `b` page, `Ctrl+d` and `Ctrl+u` move half a page, `gg` and `G` go to the top and bottom, `120G` goes to line 120, `{` and `}` move by paragraph, `zz` centres the view, and `w` wraps long lines. `Ctrl+o` and `Alt+i` go back and forward through the places opened. A scrollbar shows beside text taller than the reader.

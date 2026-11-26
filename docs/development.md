@@ -6,6 +6,7 @@ fmc builds on macOS with Apple silicon. Other platforms come later.
 
 - Rust. `rustup` installs the pinned version from `rust-toolchain.toml` the first time you run `cargo`.
 - Zig 0.17.1 (`brew install zig`). fmc uses it once per OpenTUI version to build the native library.
+- [kache](https://github.com/kunobi-ninja/kache) (`cargo install kache --locked`), the compiler cache the just tasks use. Optional with `KACHE=false`.
 - Git.
 - [just](https://just.systems) (`brew install just`), for the task shortcuts. Optional: every task is a plain command you can run yourself.
 - A terminal with a Nerd Font, for the file icons.
@@ -25,6 +26,18 @@ To put fmc on your `PATH`, run `just install`. It builds a release binary and co
 
 The script builds the library without video support, so the fmc binary contains no FFmpeg code. The first run takes a few minutes. It keeps the result in `~/.cache/fmc/opentui-native/<version>`, so later runs and other checkouts finish at once.
 
+## Build cache
+
+The just tasks run cargo through kache, which keeps compiled crates and reuses them across builds, checkouts, and `cargo clean`. If kache is missing, a task stops and says how to install it.
+
+To run plain cargo, set `KACHE` to `false`, `0`, or `no`:
+
+```sh
+KACHE=false just verify
+```
+
+`kache stats` shows the hit rate and the time saved. Plain `cargo` commands follow your own Cargo setup; `kache init` makes them use kache too.
+
 ## Checks
 
 Run these before you send a change, or run `just verify`:
@@ -43,6 +56,8 @@ cargo deny check licenses
 cargo install cargo-deny
 cargo install cargo-about --locked --features cli
 ```
+
+CI runs `just verify` on macOS (Apple silicon) for every push to `main` and every pull request, with kache's store kept in the GitHub Actions cache.
 
 ## Demo repository
 
