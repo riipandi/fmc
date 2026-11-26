@@ -1,5 +1,7 @@
 //! The text view (Scouter `src/reader/code-view.ts`): the document's lines in a line-number gutter, coloured by its
-//! filetype. It scrolls inside the viewer (`ui/viewer.rs`); wrapping and the width it takes are set here.
+//! filetype. It scrolls inside the viewer (`ui/viewer.rs`); wrapping and the width it takes are set here. Unwrapped
+//! text keeps its numbers in a gutter outside the scroll, so a pan moves only the text; wrapped text keeps them inside,
+//! where the rows of a wrapped line stay with its number.
 
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
@@ -22,7 +24,16 @@ const SEARCH_LAYER: u32 = 2;
 
 pub struct CodeView {
     code: Code,
+    /// The numbers beside the text inside the scroll, shown while the text wraps.
     numbers: LineNumbers,
+    /// The numbers outside the scroll, shown while the text does not wrap: a line-free copy of the text numbers it,
+    /// one row per line, and the gutter moves up with the viewer's scroll (`follow`).
+    line_rows: Code,
+    gutter: LineNumbers,
+    gutter_box: View,
+    /// Whether the view is shown, and whether its document has numbers (an empty file has none).
+    visible: Cell<bool>,
+    numbered: Cell<bool>,
     /// A second view of the code's text, which counts the rows the text takes when it wraps.
     counter: Option<TextView>,
     /// The columns the text takes without wrapping: the pane's width. Scouter's text is pane-wide, so the viewer pans
@@ -38,9 +49,24 @@ impl CodeView {
         let code = Code::new(app);
         // Scouter's gutter is a `LineNumberRenderable` with `minWidth: 3` and `paddingRight: 2` (`code-view.ts:99-108`).
         let numbers = LineNumbers::new(app, &code).gutter_min_width(3).gutter_padding(2).visible(false);
+        let line_rows = Code::new(app).width(Length::Cells(0.0));
+        let gutter = LineNumbers::new(app, &line_rows).gutter_min_width(3).gutter_padding(2);
+        let gutter_box = View::new(app).column().overflow(Overflow::Hidden).shrink(0.0).visible(false);
+        gutter_box.add(&gutter);
         let counter = TextView::new(code.buffer()).ok();
-        let view =
-            Self { code, numbers, counter, width: Cell::new(0), wrap: Cell::new(false), applied: RefCell::new(None) };
+        let view = Self {
+            code,
+            numbers,
+            line_rows,
+            gutter,
+            gutter_box,
+            visible: Cell::new(false),
+            numbered: Cell::new(false),
+            counter,
+            width: Cell::new(0),
+            wrap: Cell::new(false),
+            applied: RefCell::new(None),
+        };
         view.restyle(p);
         view
     }
@@ -49,17 +75,26 @@ impl CodeView {
         self.numbers.clone()
     }
 
+    /// The gutter outside the scroll, for the viewer's gutter slot; it shows while the text does not wrap.
+    pub fn gutter(&self) -> View {
+        self.gutter_box.clone()
+    }
+
     pub fn restyle(&self, p: &Palette) {
         self.code.fg(color(p.text)).syntax_theme(Arc::new(syntax::theme(p)));
         self.install_table(p);
         self.numbers.fg(color(p.dim));
+        self.gutter.fg(color(p.dim));
     }
 
     /// Shows a document; `language` is its filetype when Scouter highlights it.
     pub fn show(&self, document: &Document, language: Option<&str>) {
         let empty = document.lines == 0;
         self.code.filetype(if empty { None } else { language });
-        self.numbers.show_line_numbers(!empty);
+        self.numbered.set(!empty);
+        // One row per line, for the gutter outside the scroll; the text's own rows are not needed for its numbers.
+        self.line_rows.set_code("\n".repeat(document.lines.saturating_sub(1)));
+        self.sync_gutter();
         let content = if empty { EMPTY_FILE } else { document.content() };
         self.code.set_code(content);
         // Setting the text empties the buffer's layers, so the marks are applied again.
@@ -84,14 +119,31 @@ impl CodeView {
             let _ = buffer.set_layer(SEARCH_LAYER, 0..u32::MAX, &runs);
         }
         self.numbers.clear_line_colors();
+        self.gutter.clear_line_colors();
         if let Some(line) = current {
             let colors = LineColor::new(color(p.target_gutter), color(p.target_bg));
             self.numbers.line_color(line as u32, colors);
+            self.gutter.line_color(line as u32, colors);
         }
     }
 
     pub fn visible(&self, visible: bool) {
+        self.visible.set(visible);
         self.numbers.visible(visible);
+        self.sync_gutter();
+    }
+
+    /// Moves the outside gutter up with the viewer's scroll, so its rows match the text's (the box clips the rest).
+    pub fn follow(&self, row: f64) {
+        self.gutter.margin_edge(Edge::Top, Length::Cells(-(row.floor() as f32)));
+    }
+
+    /// Which numbers show: beside the text while it wraps, outside it while it does not, and none for an empty file.
+    fn sync_gutter(&self) {
+        let (wrap, numbered) = (self.wrap.get(), self.numbered.get());
+        self.numbers.show_line_numbers(wrap && numbered);
+        self.gutter.show_line_numbers(!wrap && numbered);
+        self.gutter_box.visible(self.visible.get() && !wrap && numbered);
     }
 
     /// Wrapping long lines; without it a line runs past the edge and the viewer pans (Scouter `setWrap`).
@@ -99,6 +151,7 @@ impl CodeView {
         if self.wrap.replace(wrap) != wrap {
             self.code.wrap(if wrap { WrapMode::Word } else { WrapMode::None });
             self.apply_width();
+            self.sync_gutter();
         }
     }
 

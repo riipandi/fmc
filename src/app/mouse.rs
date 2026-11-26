@@ -2,6 +2,7 @@
 //! handlers run on the UI thread like the key capture (`app/capture.rs`).
 
 use super::*;
+use crate::ui::viewer::Viewer;
 
 /// Mouse on the list (click to select and open, wheel to scroll) and on the sidebar's edge (drag to resize).
 pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
@@ -143,7 +144,33 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
+    // The gutters sit outside their scrolling boxes, so a wheel over one scrolls the text it numbers (`ui/reader.rs`).
+    let (reader_gutter, preview_gutter) = {
+        let u = ui.borrow();
+        (u.reader.gutter(), u.preview.gutter())
+    };
+    wire_gutter(model, ui, &reader_gutter, |u| &u.viewer);
+    wire_gutter(model, ui, &preview_gutter, |u| &u.preview_viewer);
+
     layout::wire(model, ui);
+}
+
+/// A wheel over a gutter scrolls the box that holds its text, one row or one column a step.
+fn wire_gutter(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, gutter: &View, target: fn(&Ui) -> &Viewer) {
+    gutter.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            let (columns, rows) = match event.kind {
+                MouseEventKind::ScrollUp => (0.0, -1.0),
+                MouseEventKind::ScrollDown => (0.0, 1.0),
+                MouseEventKind::ScrollLeft => (-1.0, 0.0),
+                MouseEventKind::ScrollRight => (1.0, 0.0),
+                _ => return,
+            };
+            target(&ui.borrow()).scroll_by(columns, rows);
+            repaint_after_layout(cx.app(), &model, &ui);
+        }
+    });
 }
 
 /// A header folds on the release that ends a click: a press and a release at one cell, with no drag between (approved

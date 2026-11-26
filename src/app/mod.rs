@@ -484,6 +484,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let preview_viewer = Viewer::new(app);
     preview_viewer.visible(false);
     preview_viewer.widget().add(&preview.widget());
+    preview_viewer.gutter().add(&preview.gutter());
     let diff = DiffBody::new(app);
     let footer = Footer::new(app);
     browser_panel.add(&browser_header.root).add(&finder_bar.root).add(&tree.root).add(&changes_list.root);
@@ -492,7 +493,8 @@ fn build(app: &App, p: &Palette) -> Ui {
     let narrow_bar = ScrollBar::new(app, 0);
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
-    stack.add(&welcome.root).add(&binary.root()).add(&viewer.widget()).add(&preview_viewer.widget()).add(&diff.root);
+    viewer.gutter().add(&reader.gutter());
+    stack.add(&welcome.root).add(&binary.root()).add(&viewer.view()).add(&preview_viewer.view()).add(&diff.root);
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
@@ -649,6 +651,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
     m.top = if body { ui.diff.scroller.position().1 } else { ui.viewer.position().1 };
+    // The outside gutters follow the scroll rows, so their numbers stay level with the text (`ui/reader.rs`).
+    ui.reader.follow(ui.viewer.position().1);
+    ui.preview.follow(ui.preview_viewer.position().1);
     find::paint_preview(m, ui, p);
     // A preview is unwrapped, as Scouter's is; it takes the same width as the reader. The stacked diff's bar overlays
     // its last column, as Scouter's diff scroller does (no blank before the thumb).

@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The changes screen opens showing one file's diff, where Scouter stacks every file at first. `a` stacks all files, and `a` again goes back to one.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
 - A diff file folds when you release the click on its header, not when you press, so a swipe that starts on a header does not fold it.
+- The line numbers stay in place when the reader pans sideways: only the text moves, and a wheel over the numbers scrolls the text beside them.
 - Below 60 columns the welcome screen shows its text full width and its list starts hidden; a tap on the reader's header row opens the list. While the drawer covers the reader, moving through the list does not preview a file.
 
 ### Fixed
