@@ -100,7 +100,6 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("-", "open the folder above"),
             ("p", "auto-preview on or off"),
             ("[ ]", "jump the list or reader"),
-            ("[ ]", "jump the list or reader"),
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
         ],
