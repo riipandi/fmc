@@ -342,3 +342,58 @@ fn reflow_clamps_after_rows_disappear() {
     assert_eq!(browser.visible_rows().len(), 1);
     assert_eq!(selected_name(&browser), "only.md", "a selection that lost its row moves to the first");
 }
+
+#[test]
+fn an_empty_folder_takes_no_move_and_no_panic() {
+    let mut browser = browser(0, 5);
+    browser.move_by(1);
+    browser.move_by(-1);
+    browser.move_to_edge(true);
+    assert_eq!(browser.row_count(), 0);
+    assert!(!browser.is_flat());
+}
+
+#[test]
+fn flat_rows_replace_the_tree_and_the_tree_comes_back_with_its_selection() {
+    let mut browser = browser(4, 5);
+    browser.move_by(2);
+    let root = PathBuf::from("/vault");
+    let hits = vec![Entry::new(&root, "notes", Kind::Directory), Entry::new(&root, "ledger.md", Kind::File)];
+    browser.show(hits, Path::new("/vault/notes"));
+    assert!(browser.is_flat());
+    assert_eq!(browser.row_count(), 2);
+    assert_eq!(browser.selected(), Path::new("/vault/notes"));
+    assert!(browser.visible_rows().iter().all(|row| row.depth == 0 && !row.expanded));
+    assert!(browser.visible_rows()[0].folder);
+    assert!(!browser.visible_rows()[1].folder);
+
+    browser.move_by(1);
+    assert_eq!(browser.selected(), Path::new("/vault/ledger.md"));
+    browser.move_by(5);
+    assert_eq!(browser.selected(), Path::new("/vault/ledger.md"));
+
+    browser.show_tree(Path::new("/vault/f02.md"));
+    assert!(!browser.is_flat());
+    assert_eq!(browser.row_count(), 4);
+    assert_eq!(selected_name(&browser), "f02.md");
+}
+
+#[test]
+fn a_flat_list_without_a_match_selects_nothing_and_a_missing_path_takes_the_first_row() {
+    let mut browser = browser(3, 5);
+    browser.show(Vec::new(), Path::new("/vault/f01.md"));
+    assert_eq!(browser.row_count(), 0);
+    assert!(browser.selected_entry().is_none());
+    browser.show(vec![Entry::new(Path::new("/vault"), "f02.md", Kind::File)], Path::new("/vault/gone.md"));
+    assert_eq!(selected_name(&browser), "f02.md");
+    assert_eq!(browser.selected_entry().map(|entry| entry.name), Some("f02.md".into()));
+}
+
+#[test]
+fn a_listing_that_lands_while_the_flat_list_shows_keeps_its_selection() {
+    let mut browser = browser(0, 5);
+    browser.show(vec![Entry::new(Path::new("/vault"), "ledger.md", Kind::File)], Path::new("/vault/ledger.md"));
+    let root = PathBuf::from("/vault");
+    browser.listed(&root, vec![Entry::new(&root, "a.md", Kind::File)]);
+    assert_eq!(selected_name(&browser), "ledger.md");
+}

@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-26T06:56:18+07:00
+updated: 2026-11-26T07:27:34+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -36,6 +36,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **Keys are read in capture.** `on_key_capture` sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab.
 - **Workers answer through events.** `services::spawn` runs a job on its own thread and sends the `services::Event` it returns through the app's `AppProxy`; `app/` applies each event on the UI thread. A reply may arrive after the tree changed, so `apply` checks that the path is still in the tree.
 - **Git runs on a private index copy.** `services/git.rs` copies `.git/index` for each call, keeps its modification time (git's racy-index check), and removes the copy in a `Drop` guard. Git's `diff` rewrites the index it reads even with `GIT_OPTIONAL_LOCKS=0` (Scouter decision 0007).
+- **The finder shows its matches in the tree's list.** `Browser::show` replaces the tree's rows with flat rows and `show_tree` brings the tree back (`explorer/browser.rs`); `row_count` is what the list and its scrollbar measure, and an empty list is valid. `Browser::rows` borrows the whole browser, so a method that also sets `selected` copies the new path out before it assigns.
 - **The tree is drawn from a scroll position.** `ui/tree.rs` paints only the visible rows; the scrollbar column exists only while the list overflows (a hidden widget takes no space).
 - **Overlapping captures cascade as Core's.** The vendored grammars register with `Grammar::core_captures()` (`src/ui/syntax/mod.rs`, `grammar`). Without it, a TOML key takes `(bare_key) @type`'s style where Scouter shows `(pair ...) @property`'s; with it, every vendored grammar's captures match Scouter's (plan-00001 phase 11). Rust, bundled with `opentui`, is registered by the binding and matched Scouter without it.
 - **Core's queries use `#match?`, not `#lua-match?`.** The binding evaluates tree-sitter's regex predicates and ignores unknown ones, so a `#lua-match?` would colour every identifier. `src/ui/syntax/queries/{typescript,typescriptreact,zig}/highlights.scm` carry the translation (same patterns; the comment pattern takes `(?s)`); the test `typescript_names_a_property_as_core_does` pins one capture.

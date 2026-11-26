@@ -1,6 +1,7 @@
 //! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy
 //! (`rust.md`, "Layout rules").
 
+pub mod find;
 pub mod fs;
 pub mod git;
 
@@ -8,6 +9,7 @@ use std::path::PathBuf;
 
 use fmc::diff::Listing;
 use fmc::explorer::Entry;
+use fmc::find::Index;
 use opentui::prelude::AppProxy;
 
 /// What a worker found, for the app to apply on the UI thread.
@@ -19,6 +21,8 @@ pub enum Event {
     Opened { path: PathBuf, result: Result<fs::Opened, String> },
     /// The git marks of the browsed folder; `None` outside a repository.
     Marks { root: PathBuf, result: Result<Option<Listing>, String> },
+    /// The finder's index of the browsed folder, for the finder of that `session` (a newer one may have replaced it).
+    Indexed { session: u64, index: Index },
 }
 
 /// Runs `work` on its own thread, then sends the event it returns to the UI thread. A send after the app has

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Images (PNG, JPG, GIF, WEBP) open scaled to fit the reader, with their size and format in the footer. A binary file shows Scouter's notice with its name and size, and focus stays in the file list.
 - Markdown files open rendered: headings, emphasis, links, lists, task boxes, quotes, tables, and highlighted code blocks. `m` shows the source with line numbers, and `/` and `{ }` say which key shows the source while the document is rendered.
 - Product and design records (`PRODUCT.md`, `DESIGN.md`) and the plan for parity with Scouter.
+- The file finder: `/` in the file list finds a file or folder by name. Every word must appear in its path, the matches come in Scouter's order, and up to 200 are listed with the total. Enter opens a file or reveals a folder, and Esc returns the tree to where it was.
 
 ### Changed
 
@@ -31,5 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In-file search: `/` opens the prompt, and typing shows the lines that contain the query, ignoring case, with every match marked. Enter and `↓` go to the next match, Shift+Enter and `↑` to the previous, `n` and `N` step on, and Esc keeps the matches for `n` and `N` before it clears them.
 - Dragging across text selects it and keeps the selection on screen. `y` copies the selection and `Esc` clears it; Scouter copies as soon as the mouse is released.
 - File errors read as Node's messages, such as `ENOENT: no such file or directory, scandir '<path>'`.
+
+### Fixed
+
+- `j` and `k` in a folder with nothing to show no longer crash the app.
 
 [Unreleased]: https://github.com/riipandi/fmc/commits/main

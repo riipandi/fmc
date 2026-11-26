@@ -14,6 +14,20 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | `gg` `G` | top / bottom |
 | `Ctrl+←` `→` | resize the list, or drag its edge |
 
+## Find a file
+
+`/` in the file list opens the finder. Its matches take the place of the tree until it closes.
+
+| Keys | Action |
+| --- | --- |
+| type | filter by name: every word must appear in the path |
+| `Backspace` | delete a character |
+| `↑` `↓` | move the highlight |
+| `Enter` | open the file, or reveal the folder the query found; with no text, open or toggle the row |
+| `Esc` | close the finder; the tree is back where it was |
+
+Tab, which searches inside files, is not in fmc yet.
+
 ## Reader
 
 | Keys | Action |

@@ -8,7 +8,7 @@ use fmc::explorer::{Browser, Expand, Reveal, Tree};
 use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
-use super::{Model, Pending, Ui, reader};
+use super::{Model, Pending, Ui, find, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -142,6 +142,7 @@ pub fn refresh_marks(m: &mut Model) {
 /// Applies a worker's event on the UI thread.
 pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
     match event {
+        Event::Indexed { session, index } => find::indexed(m, *session, index.clone()),
         Event::Listed { path, result } => match result {
             Ok(entries) => {
                 m.browser.listed(path, entries.clone());
@@ -177,6 +178,13 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             }
         }
     }
+}
+
+/// Reveals `target` as Scouter's `reveal` and `revealFolder` do: the folders above it are listed and expanded, the
+/// folder itself too when `expand`, then `target` is selected and opened when `open`.
+pub fn reveal(m: &mut Model, target: PathBuf, expand: bool, open: bool) {
+    m.pending = Some(Pending { target, expand, open });
+    advance(m);
 }
 
 /// Moves a pending reveal (startup on a file, going up) one step: list the next folder, or finish by selecting

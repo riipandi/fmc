@@ -177,9 +177,14 @@ impl TreeView {
 
     /// Paints the visible rows. Before the root is listed the list is empty (no flash of a collapsed root).
     pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) {
-        let lines = if browser.tree.is_listed(root) { self.lines(browser, marks, p, root) } else { Vec::new() };
+        // The finder's rows need no listed root; the tree does (Scouter draws nothing before the root lists).
+        let lines = if browser.is_flat() || browser.tree.is_listed(root) {
+            self.lines(browser, marks, p, root)
+        } else {
+            Vec::new()
+        };
         // The thumb column exists only while the list scrolls; a hidden widget takes no space (Scouter's scrollbar).
-        self.bar.visible(browser.tree.rows().len() > browser.height());
+        self.bar.visible(browser.row_count() > browser.height());
         while self.views.len() < lines.len() {
             self.views.push(RowView::new(app, &self.rows));
             let thumb = Text::new(app, "").height(1).width(1).wrap(WrapMode::None).selectable(false);
@@ -205,7 +210,7 @@ impl TreeView {
 
     fn lines(&self, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) -> Vec<Line> {
         let visible = browser.visible_rows();
-        let thumbs = thumb(browser.tree.rows().len(), browser.height(), browser.top(), visible.len());
+        let thumbs = thumb(browser.row_count(), browser.height(), browser.top(), visible.len());
         visible
             .iter()
             .zip(thumbs)

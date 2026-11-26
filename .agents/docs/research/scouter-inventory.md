@@ -543,7 +543,7 @@ Git marks in the tree are computed for the browsed folder's repository only (`sr
 Files: `src/find/file-finder.ts`, `src/find/search.ts`, `src/find/types.ts`.
 
 - Index: breadth-first walk of the browsed root, 32 directories at a time (`src/find/search.ts:8`, `:15-47`). Capped at 20,000 entries; the footer then says `first 20,000 files` (`src/find/search.ts:6`, `src/find/file-finder.ts:245`). Git-ignored paths are skipped (`src/find/file-finder.ts:130`). Entries include folders, so folder names can be matched (observed, screen 12).
-- Name matching: every whitespace-separated word must occur in the lower-cased relative path. Name-first ordering (`src/find/search.ts:56-88`). Result cap 200 (`:7`). Footer shows `N matches` or `no matches`.
+- Name matching: every whitespace-separated word must occur in the lower-cased relative path. Name-first ordering (`src/find/search.ts:56-88`). Result cap 200 (`:7`). Footer shows `N matches` or `no matches`, with `, first 20,000 files` added when the index stopped at its limit (`src/find/file-finder.ts:239-245`).
 - Index is walked on demand and discarded on close (`docs/decision/0016-...`).
 
 Text search (Tab in finder; `src/find/search.ts:90-237`, `src/find/file-finder.ts:181-205`):

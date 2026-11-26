@@ -100,7 +100,7 @@ pub struct Mark {
 }
 
 /// The git marks of the browsed folder, keyed by path relative to it.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Marks {
     changes: HashMap<String, ChangeKind>,
     folders: HashSet<String>,

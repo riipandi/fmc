@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-26T06:56:18+07:00
+updated: 2026-11-26T07:30:13+07:00
 phases:
     - id: 1
       title: "W0: licenses, toolchain, formatting, license gate"
@@ -65,8 +65,9 @@ phases:
       note: "In-file search: core reader/search.rs (whole-line matches ignoring case, wrap-around stepping, the footer text, the refresh on a shown text); app/search.rs keys (the prompt takes plain keys, Enter and arrows step, Esc keeps then clears, n N p, and / refused in the rendered view); the marks are a layer over the code, naming opentui.search.match in a buffer table that lists every capture name (rust.md). Live at 80x24 against Scouter 0.9.9 on the chapters fixture and the demo main.rs: the prompt, typing, the count (1 of 183, wrap), Enter, Shift+Enter via arrows, n, Esc keeps and clears, text and chip colours identical, including Rust syntax under a search. Owner check: none beyond the approved footer and focus differences."
     - id: 16
       title: "W4: file finder"
-      status: pending
-      note: —
+      status: done
+      note: "/ in the tree: index walked on a worker (services/find.rs, Scouter's breadth-first order, noise and ignored skipped, 20,000 cap), core find/ with AND words, name group first, UTF-16 length then code-unit order, 200 rows and the total; finder rows replace the tree in Browser (flat rows); Enter reveals or opens with the reader focused, as Scouter; Esc returns. 16 new tests (149 in verify). Live at 80x24 against Scouter 0.9.9 on the demo repository: empty prompt, name matches, Esc, Enter on a file, Enter on a folder, typed q; text identical apart from the approved root row, reveal, and ^q label. Tab (text search) is phase 17. Empty-folder j and k panicked on HEAD (fixed). Issues 00004 (welcome clipped at 80x24) and 00005 (Markdown table widths) found, open for phases 22 and 23."
+
     - id: 17
       title: "W4: text search and preview"
       status: pending

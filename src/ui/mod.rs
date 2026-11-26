@@ -1,6 +1,7 @@
 //! Views, one per screen or component.
 
 pub mod binary;
+pub mod find;
 pub mod footer;
 pub mod header;
 pub mod hints;

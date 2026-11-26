@@ -1,6 +1,7 @@
 //! The `opentui` app loop: the two panes and the footer, key and mouse dispatch, the tree's worker events, and theme
 //! changes. Terminal restore on exit and on panic is OpenTUI's (`rust.md`, "Contracts and traps").
 
+mod find;
 mod keys;
 mod reader;
 mod scroll;
@@ -21,6 +22,7 @@ use opentui::prelude::*;
 
 use crate::services::Event;
 use crate::ui::binary::BinaryView;
+use crate::ui::find::{FindBar, prompt_segments};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, HeaderState, PaneHeader};
 use crate::ui::hints::{Pane, Prompt};
@@ -40,6 +42,7 @@ struct Ui {
     browser_panel: View,
     browser_header: PaneHeader,
     tree: TreeView,
+    find: FindBar,
     handle: View,
     viewer_panel: View,
     viewer_header: PaneHeader,
@@ -96,6 +99,10 @@ struct Model {
     restore: Option<(PathBuf, usize)>,
     /// The in-file search, while there is one (Scouter `DocumentSearch`).
     search: Option<fmc::reader::search::Search>,
+    /// The file finder, while it is open (Scouter `FileFinder`).
+    finder: Option<find::Finder>,
+    /// The last finder's number; its index worker answers to it.
+    find_session: u64,
     /// The width the user set with Ctrl+←/→ or a drag; `None` keeps the default (Scouter `preferredWidth`).
     sidebar: Option<i64>,
     /// An edge drag in progress: the pointer's start column and the sidebar's width then.
@@ -117,7 +124,8 @@ impl Model {
             focus: self.focus,
             reader_ready: self.shown.has_document(),
             previewing: self.shown.previewing(),
-            typing: false,
+            // Ctrl+o and Alt+i are left to a prompt (Scouter `commandFor`: the finder and the search).
+            typing: self.finder.is_some() || self.search.as_ref().is_some_and(|search| search.editing),
         }
     }
 }
@@ -161,6 +169,8 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         top: 0.0,
         restore: None,
         search: None,
+        finder: None,
+        find_session: 0,
         loading: false,
         focus_reader_on_open: false,
         notice: None,
@@ -207,6 +217,13 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             // Scouter clears the reader's error notice on every key (`src/app/app.ts:531-534`).
             m.notice = None;
             let state = m.key_state();
+            // While the finder is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
+            if m.finder.is_some() && named.key().plain() {
+                find::prompt_key(&mut m, named.key());
+                paint(cx.app(), &mut m, &mut ui.borrow_mut());
+                repaint_after_layout(cx.app(), &model, &ui);
+                return;
+            }
             // While the search prompt is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
             if m.search.as_ref().is_some_and(|search| search.editing) && named.key().plain() {
                 search::prompt_key(&mut m, &ui.borrow(), named.key());
@@ -272,6 +289,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                     reader::refuse(&mut m, text);
                 }
                 Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
+                Action::Find if m.focus == Focus::List => find::start(&mut m),
                 Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
                     search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
                 }
@@ -319,7 +337,12 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
                     let Some(index) = row else { return };
                     m.browser.select_index(index);
-                    tree::activate(&mut m);
+                    // A click on a finder row picks it, as Enter does (Scouter `onExplorerActivate`).
+                    if m.finder.is_some() {
+                        find::pick(&mut m);
+                    } else {
+                        tree::activate(&mut m);
+                    }
                 }
                 MouseEventKind::ScrollUp => m.browser.scroll(-1),
                 MouseEventKind::ScrollDown => m.browser.scroll(1),
@@ -391,6 +414,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let browser_panel = View::new(app).shrink(0.0).column().border(BorderStyle::Rounded);
     let browser_header = PaneHeader::new(app);
     let tree = TreeView::new(app);
+    let finder_bar = FindBar::new(app);
     // The sidebar's right edge: a one-column strip over the panel's border, between its top and bottom rows.
     let handle = View::new(app)
         .absolute()
@@ -409,7 +433,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let picture = Picture::new(app);
     let binary = BinaryView::new(app);
     let footer = Footer::new(app);
-    browser_panel.add(&browser_header.root).add(&tree.root);
+    browser_panel.add(&browser_header.root).add(&finder_bar.root).add(&tree.root);
     let stack = View::new(app).grow(1.0).min_width(0).min_height(0).column().overflow(Overflow::Hidden);
     let bar = ScrollBar::new(app, 2);
     let narrow_bar = ScrollBar::new(app, 0);
@@ -425,6 +449,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         browser_panel,
         browser_header,
         tree,
+        find: finder_bar,
         handle,
         viewer_panel,
         viewer_header,
@@ -475,7 +500,11 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         focused: m.focus == Focus::List,
         ..Default::default()
     };
+    // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
+    ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
+    let bar = m.finder.as_ref().map(|finder| prompt_segments("/", &finder.query, &finder.status, p));
+    ui.find.paint(bar, p);
     ui.tree.paint(app, &m.browser, &m.marks, p, &root);
     let (title, parent) = match &m.shown {
         reader::Shown::None => ("Reader".into(), None),
@@ -534,7 +563,11 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let footer = FooterState {
         location,
         pane,
-        prompt: m.search.as_ref().filter(|search| search.editing).map(|_| Prompt::Reader),
+        prompt: match (&m.finder, &m.search) {
+            (Some(_), _) => Some(Prompt::Files),
+            (None, Some(search)) if search.editing => Some(Prompt::Reader),
+            _ => None,
+        },
         message: m.message.clone(),
         document,
         positions: [position, None],

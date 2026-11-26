@@ -86,6 +86,13 @@ pub fn list(path: &Path, loop_parents: &[PathBuf]) -> Result<Vec<Entry>, String>
     if fs::symlink_metadata(path).map_err(|error| describe(&error, "lstat", Some(path)))?.file_type().is_symlink() {
         reject_loop(path, loop_parents)?;
     }
+    let mut entries = read_entries(path)?;
+    sort_entries(&mut entries);
+    Ok(entries)
+}
+
+/// A folder's entries with the noise dropped, in directory order. A link stays a link: a folder is not followed.
+pub fn read_entries(path: &Path) -> Result<Vec<Entry>, String> {
     let mut entries = Vec::new();
     for dirent in fs::read_dir(path).map_err(|error| describe(&error, "scandir", Some(path)))? {
         let dirent = dirent.map_err(|error| describe(&error, "scandir", Some(path)))?;
@@ -105,7 +112,6 @@ pub fn list(path: &Path, loop_parents: &[PathBuf]) -> Result<Vec<Entry>, String>
         };
         entries.push(Entry { name, path: dirent.path(), kind });
     }
-    sort_entries(&mut entries);
     Ok(entries)
 }
 
