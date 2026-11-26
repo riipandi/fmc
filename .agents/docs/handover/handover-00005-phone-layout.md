@@ -9,7 +9,8 @@ plan: plan-00004-phone-layout
 ## Closed
 
 - plan-00004 phases 1 to 5, oldest first: `f46692d` (fold on release, P7; with a rumdl fix in `docs/parity.md`, since the gate was red at HEAD), `f4f46bd` (header tap, P1, and the drawer below 60, P3), `14b7078` (footer taps, priority, and the Copy hint, P2, P6, P8), `355957e` (finder rows name first, P4), `18b623f` (the duplicate `[ ]` row removed), `6be0b8e` (the welcome below 60 starts with its list hidden; auto-preview waits while the drawer covers the reader), `5ec24e4` (the narrow welcome below 50, P5), and the phase 5 docs commit.
-- Tests: 283 at the start, 307 at the end (`just verify`).
+- Tests: 283 at the start, 307 when plan-00004 closed, 314 after the sticky gutter (`just verify`).
+- After the plan, two owner items landed: the welcome below 60 starts with its list hidden (`6be0b8e`, recorded by `cc7ae66`), the duplicate `[ ]` row is gone (`18b623f`), the narrow welcome below 50 (`5ec24e4`), and the line-number gutter stays in place while the reader pans (`e064ab9`; unwrapped text only, wrapped text keeps its numbers inside).
 - The welcome decision (drawer or full width below 60) is recorded in `architecture.md` by `cc7ae66`.
 - Live matrix on the final build at 40x30, 50x40, 59x30, and 80x24, in tabs that were closed after each run: the welcome with its list hidden or shown, the drawer, a file opened from it, the keys page, the changes screen, and the finder rows.
 
