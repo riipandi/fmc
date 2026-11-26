@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T09:00:00+07:00
 updated: 2026-11-27T03:00:00+07:00
 phases:
@@ -29,8 +29,8 @@ phases:
       note: "281 tests; live: : opens COMMAND, an unknown word shows Not a command, Esc cancels, :q exits the app"
     - id: 7
       title: "Docs sync, ledger close, handover, final validation"
-      status: pending
-      note: —
+      status: done
+      note: "281 tests; fmt, clippy -D warnings, just verify, release build, and cargo deny pass; handover-00004; app/mod.rs moved its mouse code to app/mouse.rs to stay under 800 lines"
 ---
 
 ## Make browsing smoother: auto-preview, Enter to open, bracket jumps, `:q`, and a settings file

@@ -15,7 +15,9 @@ fmc <file>     # open a file, with its folder in the tree
 fmc --help     # every key
 ```
 
-Press `?` inside fmc for every key, and `Ctrl+q` to quit. A [Nerd Font](https://www.nerdfonts.com/) shows the file icons.
+Press `?` inside fmc for every key, and `Ctrl+q` or `:q` to quit. A [Nerd Font](https://www.nerdfonts.com/) shows the file icons.
+
+With the file list focused, the file it selects shows in the reader. Enter opens a file and moves to the reader. `p` turns that preview off or on. `[` and `]` jump; their steps and the preview's start are set in `settings.json` (see [docs/configuration.md](docs/configuration.md)).
 
 Below 80 columns the file list hides while a file is open: `Ctrl+/`, or the mark on the border, shows it. `Ctrl+.` shows or hides dotfiles.
 
