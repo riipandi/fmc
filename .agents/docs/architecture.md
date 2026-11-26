@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-26T07:06:30+07:00
+updated: 2026-11-26T23:55:23+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -554,3 +554,40 @@ Consequences:
 Alternatives considered:
 
 - Keep Scouter's row-only clicks — rejected by the owner.
+
+### Approved deviation: the sidebar hides below 80 columns, and a border mark or `Ctrl+/` shows or hides it
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter always draws the sidebar. Its width is a quarter of the terminal within 28 to 40 columns, constrained so the reader keeps at least 28 (`scouter:src/explorer/sidebar-resizer.ts:48-53`), and no key or click hides it. `Ctrl+/` is unbound there; Scouter binds `/` only (`scouter:src/app/app.ts:931,965`). A live probe in Rex at 80x24 logged that `Ctrl+/` reaches fmc as `Char('/')` with Ctrl under the Kitty keyboard protocol that OpenTUI enables (`opentui-0.9.9/src/host.rs:147`), and as `Char('_')` with Ctrl from the legacy byte `0x1F` (`opentui-0.9.9/src/input/core_tests.rs:202`).
+
+Decision: below 80 columns the sidebar hides on its own, and the reader takes the full width. At 80 columns or more the layout is Scouter's, so the 80x24 captures do not change. `Ctrl+/`, or a click on the mark on the border, flips the current state: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again, and a crossing resets to the automatic state. When the focused sidebar hides, the focus moves to the reader. Nothing is saved across runs (RI-9). Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) A narrow terminal gets a full-width reader, and 80x24 keeps Scouter's layout.
+- (negative) Below 80 columns the tree is out of sight until it is toggled back, where Scouter always shows it.
+
+Alternatives considered:
+
+- Hide below 60 columns — rejected by the owner: a cramped reader from 60 to 79.
+- Hide below 100 columns — rejected by the owner: it hides the sidebar at 80x24 and changes every parity capture.
+- The sidebar title as the click target — rejected by the owner: hard to see, and nothing to click once the sidebar is hidden.
+
+### Approved deviation: `Ctrl+.` or `.` shows and hides dotfiles, which are shown by default
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter lists every entry except its noise names (`.git`, `.hg`, `.svn`, `.DS_Store`, `.AppleDouble`, `Thumbs.db`, `desktop.ini`; `scouter:src/core/files.ts:34`), so dotfiles are shown, and it has no key that hides them. `.` and `Ctrl+.` are unbound in Scouter. A live probe in Rex logged `Ctrl+.` as `Char('.')` with Ctrl, which only the Kitty keyboard protocol can carry, and a plain `.` as `Char('.')` with no modifiers. Terminal.app cannot send `Ctrl+.`.
+
+Decision: `Ctrl+.` and `.` show or hide dotfiles in the tree and in the finder's index. Dotfiles are shown by default, and the noise names stay hidden in both states. `.` is the fallback for `Ctrl+.`, which reaches fmc only from terminals with the Kitty keyboard protocol. Nothing is saved across runs (RI-9). Approved by the owner on 2026-11-26.
+
+Consequences:
+
+- (positive) Dotfiles are one key away in every terminal, and the default matches Scouter.
+- (negative) `.` is a second key for the same toggle, and it is a key Scouter leaves free.
+
+Alternatives considered:
+
+- `Ctrl+.` alone — rejected by the owner: Terminal.app cannot send it.
+- Dotfiles hidden by default — rejected by the owner: Scouter shows them.

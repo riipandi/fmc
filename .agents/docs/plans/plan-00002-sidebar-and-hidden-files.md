@@ -1,12 +1,12 @@
 ---
-status: awaiting-approval
+status: in-progress
 created: 2026-11-26T16:00:00+07:00
-updated: 2026-11-26T16:00:00+07:00
+updated: 2026-11-26T23:55:23+07:00
 phases:
     - id: 1
       title: "Key check and deviation records"
-      status: pending
-      note: —
+      status: done
+      note: "Rex probe at 80x24 (fmc on the demo repo): Ctrl+/ gives Char('/') with ctrl; Ctrl+. gives Char('.') with ctrl; . gives Char('.') with no modifiers; a raw 0x1F byte (rex send) gives Char('_') with ctrl. The toggle must match both '/' and '_' under ctrl."
     - id: 2
       title: "Collapsible sidebar: auto-hide, Ctrl+/, border mark"
       status: pending

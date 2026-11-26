@@ -15,6 +15,13 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - Because `^q quit` is one column wider than Scouter's `q quit`, the footer at 80 columns can drop one more hint (on the changes screen, `a one file`). The key list (`?`) always shows every key.
 - Opening a file from the tree keeps the focus in the tree, so you can keep browsing with `j` and `k`. Press `Tab` or click the reader to move there.
 - A click anywhere in a pane (the file list, the reader, the changes list, or the diff) moves the focus there. In Scouter only a click on a row does something.
+- `Ctrl+/` shows or hides the sidebar. `Ctrl+.` shows or hides dotfiles in the tree and the finder, and `.` does the same for terminals that cannot send `Ctrl+.` (Terminal.app). Dotfiles are shown by default, as in Scouter. Scouter has none of these keys.
+
+## Layout
+
+- Below 80 columns the sidebar hides and the reader takes the full width. At 80 columns or more the layout is Scouter's. Scouter always shows the sidebar.
+- A mark on the border shows or hides the sidebar with a click: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again.
+- Nothing about the sidebar or the dotfiles is saved across runs.
 
 ## Changes screen
 
