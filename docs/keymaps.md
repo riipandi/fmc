@@ -93,7 +93,11 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Click` reader header, below 80 columns | show the hidden file list and focus it |
 | `Click` list header, below 60 columns | close the file list drawer |
 | `Click` file, below 60 columns | open the file in the reader |
+| `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
+| `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 
 A click on the file list while another pane has the focus only moves the focus there; the next click selects the row. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the file list is a full-width drawer over the reader, and a focus that reaches the reader (Enter, Tab, or a tap on a file) closes it.
+
+Below 80 columns the footer keeps the keys that leave the current state first (`Copy` while text is selected, `Esc`, `^/`, `q`), then `?`, `/`, `d`, `Enter`, and `Tab`, and a row that is too short drops the rest from its end. At 80 columns and wider the footer keeps Scouter's order.
 
 Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.

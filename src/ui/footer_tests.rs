@@ -170,3 +170,27 @@ fn a_hidden_sidebar_hint_survives_a_phone_width() {
     assert!(plain(&hints).contains("^/ sidebar"), "{:?}", plain(&hints));
     assert!(plain(&hints).contains("^q quit"), "{:?}", plain(&hints));
 }
+
+#[test]
+fn below_80_columns_the_hint_that_leaves_the_prompt_comes_first() {
+    let state = FooterState { prompt: Some(Prompt::Reader), ..FooterState::default() };
+    let hints = |columns| plain(&state.render(columns, &DARK, &chars).2);
+    assert!(hints(40).starts_with(" Esc close"), "{}", hints(40));
+    assert!(hints(80).starts_with(" type search"), "at 80 columns the order is Scouter's: {}", hints(80));
+}
+
+#[test]
+fn a_selection_leads_the_hints_with_copy_below_80_columns() {
+    let state = FooterState { pane: Pane::Reader, selection: true, ..FooterState::default() };
+    assert_eq!(state.hint_row(40, &chars)[0], ("y", "Copy"));
+    assert!(!state.hint_row(80, &chars).contains(&("y", "Copy")), "the copy hint is a phone rule");
+}
+
+#[test]
+fn a_tap_finds_the_hint_under_its_cells() {
+    let cells = FooterState::default().hint_cells(80, &chars);
+    // " j k move   Enter open   / find": the `/` hint starts after " j k move   Enter open   ", at column 25.
+    let find = cells.iter().find(|(_, key)| *key == "/").expect("find is shown");
+    assert_eq!(find.0.start, 25);
+    assert_eq!(cells.last().map(|(_, key)| *key), Some("^q"), "quit is the last cell");
+}

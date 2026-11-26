@@ -13,8 +13,8 @@ phases:
       note: "Header tap (P1) and the drawer below 60 (P3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged). A tap on a file under the drawer opens it, as Enter does."
     - id: 3
       title: "Tappable footer hints, priority order, Copy hint (P2, P6, P8)"
-      status: pending
-      note: —
+      status: done
+      note: "Taps press the hint key through the key path (D2); priority and Copy below 80 (P6, P8, D3). Live at 40x30, 50x40, 59x30, 80x24 (80x24 unchanged; taps off)."
     - id: 4
       title: "Name-first rows and the narrow welcome (P4, P5)"
       status: pending

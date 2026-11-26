@@ -1,6 +1,6 @@
 //! Footer pills and key hints per context (Scouter `src/ui/footer-hints.ts`).
 
-use super::styled::{Measure, Seg, width};
+use super::styled::{Measure, Seg};
 use fmc::theme::Palette;
 
 pub const HINT_GAP: &str = "   ";
@@ -173,20 +173,50 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     hints
 }
 
-/// The hints that fit in `columns`, in order, each a key in `accent-soft` and an action in `dim`.
-pub fn fit_hint_list(hints: &[Hint], columns: usize, palette: &Palette, measure: Measure<'_>) -> Vec<Seg> {
-    let mut segments: Vec<Seg> = Vec::new();
-    for (key, action) in hints {
-        let hint = [Seg::new(*key, palette.accent_soft), Seg::new(format!(" {action}"), palette.dim)];
-        let mut next = segments.clone();
-        if !next.is_empty() {
-            next.push(Seg::plain(HINT_GAP));
-        }
-        next.extend(hint);
-        if width(&next, measure) > columns {
+/// The footer's hint row as text: each hint as `key action`, with the gap between hints.
+pub fn row_text(hints: &[Hint]) -> String {
+    hints.iter().map(|(key, action)| format!("{key} {action}")).collect::<Vec<_>>().join(HINT_GAP)
+}
+
+/// The hints that fit in `columns`, in order: the first that does not fit ends the row.
+pub fn fit_hints(hints: &[Hint], columns: usize, measure: Measure<'_>) -> Vec<Hint> {
+    let mut fitted: Vec<Hint> = Vec::new();
+    for hint in hints {
+        fitted.push(*hint);
+        if measure(&row_text(&fitted)) > columns {
+            fitted.pop();
             break;
         }
-        segments = next;
+    }
+    fitted
+}
+
+/// The segments of a hint row: each key in `accent-soft`, its action in `dim`, and the gap between hints.
+pub fn hint_segments(hints: &[Hint], palette: &Palette) -> Vec<Seg> {
+    let mut segments = Vec::new();
+    for (i, (key, action)) in hints.iter().enumerate() {
+        if i > 0 {
+            segments.push(Seg::plain(HINT_GAP));
+        }
+        segments.push(Seg::new(*key, palette.accent_soft));
+        segments.push(Seg::new(format!(" {action}"), palette.dim));
     }
     segments
+}
+
+/// Below 80 columns a short row keeps these hints first (plan-00004, P6): the one that leaves the current state, then
+/// help, find, and the pane switch. A sort is stable, so the other hints keep their order after them.
+pub fn phone_rank(hint: &Hint) -> u8 {
+    match *hint {
+        ("y", "Copy") => 0,
+        ("Esc", _) => 1,
+        ("^/", _) => 2,
+        ("q", _) => 3,
+        ("?", _) => 4,
+        ("/", _) => 5,
+        ("d", _) => 6,
+        ("Enter", _) => 7,
+        ("Tab", _) => 8,
+        _ => 9,
+    }
 }

@@ -1,14 +1,18 @@
 //! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the location or a message, and facts on
 //! the right; then a row of key hints that fit. `FooterState::render` is pure; `Footer` holds the widgets.
 
+use std::cell::RefCell;
+use std::ops::Range;
 use std::path::Path;
 
+use fmc::layout::BREAKPOINT;
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
 use super::find::prompt_segments;
 use super::hints::{
-    HINT_GAP, Mode, Pane, Prompt, Shown, fit_hint_list, hints_for, pill_label, prompt_hints, prompt_label,
+    HINT_GAP, Hint, Mode, Pane, Prompt, Shown, fit_hints, hint_segments, hints_for, phone_rank, pill_label,
+    prompt_hints, prompt_label, row_text,
 };
 use super::styled::{Measure, Seg, content, fit_end, fit_start, width};
 
@@ -57,6 +61,8 @@ pub struct FooterState {
     pub sidebar_hidden: bool,
     /// The `:` command line's text while it is open; it takes the footer's left side (`Prompt::Command`).
     pub command: Option<String>,
+    /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does (plan-00004, P8).
+    pub selection: bool,
 }
 
 impl Default for FooterState {
@@ -74,6 +80,7 @@ impl Default for FooterState {
             pending: None,
             sidebar_hidden: false,
             command: None,
+            selection: false,
         }
     }
 }
@@ -105,7 +112,7 @@ impl FooterState {
         let mut left = vec![pill, Seg::plain(" ")];
         left.extend(self.describe(room, p, measure));
         let mut hints = vec![Seg::plain(" ")];
-        hints.extend(self.fit_hints(inner, p, measure));
+        hints.extend(hint_segments(&self.hint_row(columns, measure), p));
         (left, facts, hints)
     }
 
@@ -219,8 +226,10 @@ impl FooterState {
         segments
     }
 
-    fn fit_hints(&self, columns: usize, p: &Palette, measure: Measure<'_>) -> Vec<Seg> {
-        let hints = match self.prompt {
+    /// The hints on the second row, in order, for a terminal `columns` wide. `render` draws them; `hint_cells` taps them.
+    pub fn hint_row(&self, columns: usize, measure: Measure<'_>) -> Vec<Hint> {
+        let inner = columns.saturating_sub(2);
+        let mut hints = match self.prompt {
             Some(prompt) => prompt_hints(prompt),
             None => {
                 let all_files = self.diff.as_ref().is_none_or(|d| d.all_files);
@@ -236,19 +245,36 @@ impl FooterState {
                 hints_for(self.mode, self.pane, self.wrap, all_files, shown)
             }
         };
-        let (quit, rest): (Vec<_>, Vec<_>) = hints.into_iter().partition(|(key, _)| *key == "^q");
-        let tail = fit_hint_list(&quit, columns, p, measure);
-        let room = columns.saturating_sub(if tail.is_empty() { 0 } else { width(&tail, measure) + HINT_GAP.len() });
-        let mut head = fit_hint_list(&rest, room, p, measure);
-        if tail.is_empty() {
-            return head;
+        // Below 80 columns a short row keeps the hints that leave the state first, and `Copy` leads while a selection
+        // exists (plan-00004, P6, P8, D3). At 80 columns and wider the order is Scouter's.
+        if columns < usize::from(BREAKPOINT) {
+            if self.selection && self.prompt.is_none() {
+                hints.retain(|hint| hint.0 != "y");
+                hints.push(("y", "Copy"));
+            }
+            hints.sort_by_key(phone_rank);
         }
-        if head.is_empty() {
-            return tail;
+        let (quit, rest): (Vec<Hint>, Vec<Hint>) = hints.into_iter().partition(|(key, _)| *key == "^q");
+        let tail = fit_hints(&quit, inner, measure);
+        let room = inner.saturating_sub(if tail.is_empty() { 0 } else { measure(&row_text(&tail)) + HINT_GAP.len() });
+        let mut shown = fit_hints(&rest, room, measure);
+        shown.extend(tail);
+        shown
+    }
+
+    /// Each hint's cells on the second row, from its left edge (`render` starts the row with a space), with its key.
+    pub fn hint_cells(&self, columns: usize, measure: Measure<'_>) -> Vec<(Range<usize>, &'static str)> {
+        let mut cells = Vec::new();
+        let mut at = 1;
+        for (i, (key, action)) in self.hint_row(columns, measure).into_iter().enumerate() {
+            if i > 0 {
+                at += HINT_GAP.len();
+            }
+            let end = at + measure(&format!("{key} {action}"));
+            cells.push((at..end, key));
+            at = end;
         }
-        head.push(Seg::plain(HINT_GAP));
-        head.extend(tail);
-        head
+        cells
     }
 }
 
@@ -259,6 +285,8 @@ pub struct Footer {
     left: Text,
     right: Text,
     hints: Text,
+    /// Where the last paint put each hint, so a tap finds its key.
+    targets: RefCell<Vec<(Range<usize>, &'static str)>>,
 }
 
 impl Footer {
@@ -276,7 +304,7 @@ impl Footer {
             .selectable(false);
         band.add(&left).add(&right);
         root.add(&band).add(&hints);
-        Self { root, band, left, right, hints }
+        Self { root, band, left, right, hints, targets: RefCell::new(Vec::new()) }
     }
 
     pub fn set_background(&self, hex: &str) {
@@ -288,6 +316,17 @@ impl Footer {
         self.left.set_text(content(&left, p.text));
         self.right.set_text(content(&right, p.text));
         self.hints.set_text(content(&hints, p.text));
+        *self.targets.borrow_mut() = state.hint_cells(columns, measure);
+    }
+
+    /// The key the last paint's hint at `column` names, for a tap on the hint row.
+    pub fn key_at(&self, column: usize) -> Option<&'static str> {
+        self.targets.borrow().iter().find(|(cells, _)| cells.contains(&column)).map(|(_, key)| *key)
+    }
+
+    /// Runs `handler` on a press in the hint row.
+    pub fn on_hint_press(&self, handler: impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static) {
+        self.hints.on_mouse(handler);
     }
 }
 

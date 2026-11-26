@@ -77,6 +77,16 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     };
     focus_on_press(model, ui, &sidebar, Focus::List);
     focus_on_press(model, ui, &viewer, Focus::Reader);
+    // A drag's release ends a text selection, which the footer's `Copy` hint shows (plan-00004, P8). The selection is
+    // settled after the handlers, so the frame repaints shortly after.
+    viewer.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            if event.kind == MouseEventKind::Up(MouseButton::Left) {
+                repaint_after_layout(cx.app(), &model, &ui);
+            }
+        }
+    });
 
     // The bars: a drag, a track click, and a wheel step move the pane each bar belongs to (Scouter's scroll box bars).
     let tree_track = ui.borrow().tree.track();
@@ -115,6 +125,23 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             },
         );
     }
+
+    // A tap on a footer hint presses the hint's key through the key path, so it runs the same Action (plan-00004, D2).
+    // `^q` has no tap (P2).
+    ui.borrow().footer.on_hint_press({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            // A phone rule: at 80 columns and wider the hints are not buttons (plan-00004, P2).
+            if event.kind != MouseEventKind::Down(MouseButton::Left) || cx.app().size().0 >= fmc::layout::BREAKPOINT {
+                return;
+            }
+            let Some(key) = ui.borrow().footer.key_at(usize::from(event.x)) else { return };
+            let Some(presses) = keys::hint_presses(key) else { return };
+            for press in &presses {
+                capture::press_key(cx, &model, &ui, press);
+            }
+        }
+    });
 
     layout::wire(model, ui);
 }

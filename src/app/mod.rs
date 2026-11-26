@@ -710,6 +710,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         positions: if body { [None, position] } else { [position, None] },
         wrap: m.wrap,
         pending: m.parser.pending_count(),
+        selection: app.selected_text().is_some(),
         sidebar_hidden: !layout::shown(m, columns),
     };
     ui.footer.set_background(&tint);

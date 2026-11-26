@@ -54,3 +54,34 @@ pub fn name(event: &KeyEvent) -> Option<Named> {
     let alt = m.contains(Modifiers::ALT) || m.contains(Modifiers::META);
     Some(Named { name, text, ctrl: m.contains(Modifiers::CTRL), alt, shift })
 }
+
+/// The presses a tap on a footer hint sends, named by the hint's key (plan-00004, P2): the hint's own key, or its first
+/// where it names several. `None` for a hint with no key to press; `^q` stays on the keyboard.
+pub fn hint_presses(key: &str) -> Option<Vec<Named>> {
+    let press = |name: &str, text: &str, ctrl: bool| Named {
+        name: name.into(),
+        text: text.into(),
+        ctrl,
+        alt: false,
+        shift: false,
+    };
+    Some(match key {
+        "Enter" => vec![press("return", "\r", false)],
+        "Tab" => vec![press("tab", "\t", false)],
+        "Esc" => vec![press("escape", "\x1b", false)],
+        "↑ ↓" => vec![press("up", "", false)],
+        "j k" => vec![press("j", "j", false)],
+        "n N" => vec![press("n", "n", false)],
+        "gg G" => vec![press("g", "g", false), press("g", "g", false)],
+        "z z" => vec![press("z", "z", false), press("z", "z", false)],
+        "^d ^u" => vec![press("d", "d", true)],
+        "^o alt+i" => vec![press("o", "o", true)],
+        "^/" => vec![press("/", "/", true)],
+        single if single.chars().count() == 1 => vec![press(single, single, false)],
+        _ => return None,
+    })
+}
+
+#[cfg(test)]
+#[path = "keys_tests.rs"]
+mod tests;
