@@ -6,6 +6,9 @@ use opentui::prelude::*;
 
 use super::styled::{Seg, content};
 
+/// The line under the title: what the reader shows instead (the product name is fmc, `docs/parity.md`).
+pub const HINT: &str = "fmc only displays UTF-8 text and images.";
+
 pub struct BinaryView {
     root: View,
     title: Text,
@@ -52,6 +55,10 @@ impl BinaryView {
             &[Seg::new(name, p.accent_soft), Seg::new("  ·  ", p.ignored), Seg::new(size, p.muted)],
             p.text,
         ));
-        self.hint.set_text(content(&[Seg::new("Scouter only displays UTF-8 text and images.", p.dim)], p.text));
+        self.hint.set_text(content(&[Seg::new(HINT, p.dim)], p.text));
     }
 }
+
+#[cfg(test)]
+#[path = "binary_tests.rs"]
+mod tests;

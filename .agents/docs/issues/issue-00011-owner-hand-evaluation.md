@@ -1,7 +1,7 @@
 ---
 status: open
 created: 2026-11-26T16:07:05+07:00
-updated: 2026-11-26T16:07:05+07:00
+updated: 2026-11-26T16:30:00+07:00
 summary: "The owner's hand evaluation of fmc (2026-11-26) found four items: the scrollbar thumb does not drag and a track click does nothing; the changes screen opens in all-files; the binary notice names Scouter; a click does not move the focus. The owner asked for all four to be fixed, one commit each."
 count: 4
 ---
@@ -34,11 +34,12 @@ count: 4
 
 ## The binary notice names Scouter
 
-- status: open
+- status: resolved (2026-11-26, `fix(binary): name fmc in the binary notice`)
   area: the binary notice (`src/ui/binary.rs:55`)
   summary: The notice reads "Scouter only displays UTF-8 text and images." The product name is fmc (approved deviation, architecture.md, "the product name is fmc wherever Scouter says scouter"). A grep of `src` for `scouter` outside comments, test names, and vendored query comments finds this string and no other user-visible one.
   plan: none; the owner asked for the fix (2026-11-26).
-  trigger: resolved by the commit `fix(binary): name fmc in the binary notice`, with a test that pins the notice.
+  resolution: `src/ui/binary.rs` `HINT` reads `fmc only displays UTF-8 text and images.`. Test `src/ui/binary_tests.rs` (`the_binary_notice_on_screen_names_fmc_and_never_scouter`) renders the notice and checks the screen. A grep of `src` for `scouter` in string literals finds none; `--help`, `--version`, and the error text were run and name fmc. Live at 80x24: `assets/seal.bin` shows the new line.
+  trigger: None — closed.
 
 ## A click does not move the focus
 
