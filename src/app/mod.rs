@@ -766,9 +766,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.viewer.set_wrap(fill);
     ui.reader.set_wrap(m.wrap);
     ui.preview.set_wrap(false);
-    // The pane is the viewer less its one-column bar; unwrapped text takes that width.
-    ui.reader.set_width(u32::from(columns.saturating_sub(width + 3)));
-    ui.preview.set_width(u32::from(columns.saturating_sub(width + 3)));
+    // Unwrapped text takes the pane's inner width, the bar's column included: the pan range is that width less the
+    // viewport, and it stops where Scouter's does (issue-00008).
+    ui.reader.set_width(u32::from(columns.saturating_sub(width + 2)));
+    ui.preview.set_width(u32::from(columns.saturating_sub(width + 2)));
     ui.picture.fill(viewport as u32);
     let lines = m.shown.text().map_or(0, |(document, ..)| document.lines);
     let total = match preview_lines {

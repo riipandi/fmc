@@ -2,7 +2,7 @@
 title: "Audit: Scouter parity, whole system (plan-00001 phase 22)"
 status: in_review
 created_at: 2026-11-26T12:01:10+07:00
-updated_at: 2026-11-26T12:01:10+07:00
+updated_at: 2026-11-26T12:18:05+07:00
 completed_at: null
 scope:
     type: system
@@ -31,7 +31,7 @@ findings:
     total: 8
     by_severity: { critical: 0, high: 0, medium: 5, low: 3, info: 0 }
     by_status:
-        { open: 8, fixed: 0, deferred: 0, wont_fix: 0, false_positive: 0 }
+        { open: 3, fixed: 5, deferred: 0, wont_fix: 0, false_positive: 0 }
     verified: 8
     unverified: 0
 cleanup_candidates: 0
@@ -178,11 +178,11 @@ Evidence: captures are in `/tmp/fmc-ref/out/w6-22/` (outside the repository): `f
 
 | ID | Severity | Category | Location | Title | Evidence | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| F-01 | medium | layout | `src/ui/welcome.rs`, viewer stack in `src/app/mod.rs` | Welcome clipped at 80x24 | verified | open |
-| F-02 | medium | layout | `src/ui/viewer.rs`, `src/ui/markdown.rs` | Rendered Markdown two cells narrower than Scouter | verified | open |
-| F-03 | medium | scroll state | `src/ui/scrollbar.rs`, `src/ui/markdown.rs` (`block_rows`) | Rendered Markdown thumb and percentage wrong | verified | open |
-| F-04 | medium | input | `src/explorer/browser.rs` (`set_height`, `keep_visible`) | Tree wheel scrolls back | verified | open |
-| F-05 | low | layout | `src/ui/reader.rs` (`set_width`), `src/ui/viewer.rs` | Reader pan ends one column short | verified | open |
+| F-01 | medium | layout | `src/ui/welcome.rs`, viewer stack in `src/app/mod.rs` | Welcome clipped at 80x24 | verified | fixed (498958c) |
+| F-02 | medium | layout | `src/app/mod.rs` (bar), `src/ui/markdown.rs` | Rendered Markdown two cells narrower than Scouter | verified | fixed (784caf4) |
+| F-03 | medium | scroll state | `src/ui/markdown.rs` (`rows`) | Rendered Markdown thumb and percentage wrong | verified | fixed (d9bd454) |
+| F-04 | medium | input | `src/explorer/browser.rs` (`set_height`, `keep_visible`) | Tree wheel scrolls back | verified | fixed (e3d6c73) |
+| F-05 | low | layout | `src/app/mod.rs` (unwrapped width) | Reader pan ends one column short | verified | fixed (23e) |
 | F-06 | medium | chrome | `src/diff/row.rs` (`header_counts`), `src/ui/diff.rs` | Folded diff header draws no stat bar | verified | open (owner question) |
 | F-07 | low | chrome | `src/app/reader.rs` (`footer_facts`) | Scouter's stale binary footer position | verified | open (owner question) |
 | F-08 | low | docs | `docs/parity.md`, `.agents/docs/architecture.md` | `--upgrade` drop is not recorded as a deviation | verified | open (owner question) |
@@ -197,7 +197,7 @@ Evidence: captures are in `/tmp/fmc-ref/out/w6-22/` (outside the repository): `f
 - **Evidence**: `welcome-fmc.txt` against `welcome-sco.txt` (verified, captures in `/tmp/fmc-ref/out/w6-22/`). Scouter: `src/ui/welcome.ts:7-87`, `:53`, `:78`. Same as issue-00004.
 - **Fix**: measure the welcome's rows against the reader's inner height at 80x24, then reduce the margins or the wordmark's offset so all rows fit (issue-00004).
 - **Confidence**: high
-- **Status**: open; fix in phase 23.
+- **Status**: fixed in plan-00001 phase 23 (see the commit named in the findings table).
 
 #### F-02 Rendered Markdown two cells narrower than Scouter
 
@@ -233,7 +233,7 @@ Evidence: captures are in `/tmp/fmc-ref/out/w6-22/` (outside the repository): `f
 - **Evidence**: fmc keeps `hogwarts-01` at the top; Scouter moves to `hogwarts-03` at the top, one row per notch. The thumb size is equal (11 rows at col 26) in both. Issue-00007 has the same captures from HEAD.
 - **Fix**: make `set_height` only clamp the scroll, as the change list does (`src/diff/list.rs`), with a test that a repaint keeps a wheel scroll (issue-00007).
 - **Confidence**: high
-- **Status**: open; fix in phase 23.
+- **Status**: fixed in plan-00001 phase 23 (see the commit named in the findings table).
 
 #### F-05 Reader pan ends one column short
 
@@ -245,7 +245,7 @@ Evidence: captures are in `/tmp/fmc-ref/out/w6-22/` (outside the repository): `f
 - **Evidence**: fmc `│ use std::collections::`, Scouter `│use std::collections::`. Same as issue-00008.
 - **Fix**: measure the widest line and the pane's inner width against Scouter's `ScrollBox` content width, then correct the content width by the difference (issue-00008).
 - **Confidence**: high
-- **Status**: open; fix in phase 23.
+- **Status**: fixed in plan-00001 phase 23 (see the commit named in the findings table).
 
 #### F-06 Folded diff header draws no stat bar (owner question)
 
@@ -303,7 +303,7 @@ None recorded by this audit.
 
 ### Decisions log
 
-- 2026-11-26: plan-00001 phase 22 go-ahead (owner). Phase 23 fixes F-01 to F-05; F-06 to F-08 wait for the owner.
+- 2026-11-26: plan-00001 phase 22 go-ahead (owner). Phase 23 fixes F-01 to F-05 (fixed, sub-phases 23a to 23e); F-06 to F-08 wait for the owner.
 
 ### Coverage and limitations
 
@@ -331,3 +331,4 @@ Not checked against Scouter: the copied-path notice after `y` (not visible after
 ### Change log
 
 - 2026-11-26T12:01:10+07:00: status draft -> in_review; eight findings (five defects for phase 23, three owner questions); live runs at 80x24 on d826786.
+- 2026-11-26T12:18:05+07:00: status in_review -> in_review; F-01 to F-05 fixed in plan-00001 phase 23 (498958c, 784caf4, d9bd454, e3d6c73, and 23e); F-06 to F-08 remain open for the owner.
