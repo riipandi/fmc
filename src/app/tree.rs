@@ -54,7 +54,7 @@ fn expand(m: &mut Model) {
     open(m, path);
 }
 
-/// `h`, Left, Backspace: collapse an expanded folder, or go to the parent row.
+/// `h`, Left, Backspace: collapse an expanded folder, or go to the parent row (a top-level row has none).
 fn collapse(m: &mut Model) {
     let path = m.browser.selected().to_path_buf();
     if m.browser.tree.is_expanded(&path) {
@@ -62,7 +62,7 @@ fn collapse(m: &mut Model) {
         m.browser.select(&path);
         return;
     }
-    if let Some(parent) = m.browser.tree.ancestors(&path).first().cloned() {
+    if let Some(parent) = m.browser.tree.parent_row(&path) {
         m.browser.select(&parent);
     }
 }
@@ -144,7 +144,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
     match event {
         Event::Listed { path, result } => match result {
             Ok(entries) => {
-                m.browser.tree.listed(path, entries.clone());
+                m.browser.listed(path, entries.clone());
                 advance(m);
             }
             Err(text) => {
@@ -156,7 +156,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             m.loading = false;
             match result {
                 Ok(fs::Opened::Folder(entries)) => {
-                    m.browser.tree.listed(path, entries.clone());
+                    m.browser.listed(path, entries.clone());
                     m.browser.select(path);
                     folder_opened(m, path);
                 }

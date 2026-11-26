@@ -4,7 +4,7 @@
 
 use std::path::{Path, PathBuf};
 
-use super::{Row, Tree};
+use super::{Entry, Row, Tree};
 
 pub struct Browser {
     pub tree: Tree,
@@ -14,7 +14,7 @@ pub struct Browser {
 }
 
 impl Browser {
-    /// A browser with the root selected and no rows visible until [`Browser::set_height`] gives a viewport.
+    /// A browser with the root selected, which has no row: the first row is selected once the root is listed.
     pub fn new(tree: Tree) -> Self {
         let selected = tree.root().to_path_buf();
         Self { tree, selected, top: 0, height: 0 }
@@ -41,6 +41,14 @@ impl Browser {
     pub fn set_height(&mut self, height: usize) {
         self.height = height;
         self.keep_visible();
+    }
+
+    /// Lists a folder into the tree; a selection without a row (the root, before its listing) moves to the first row.
+    pub fn listed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
+        let listed = self.tree.listed(path, entries);
+        let selected = self.selected.clone();
+        self.select(&selected);
+        listed
     }
 
     /// Selects `path` if it has a row, else the first row (Scouter `show`, which renders after each change).

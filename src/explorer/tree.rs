@@ -9,7 +9,6 @@ use super::{Entry, Kind};
 
 struct Node {
     entry: Entry,
-    depth: usize,
     parent: Option<PathBuf>,
     expanded: bool,
     /// `None` until the folder is listed; a listed folder keeps its children when collapsed.
@@ -53,7 +52,7 @@ impl Tree {
     pub fn new(root: PathBuf) -> Self {
         let name = root.file_name().map_or_else(|| root.display().to_string(), |n| n.to_string_lossy().into_owned());
         let entry = Entry { name, path: root.clone(), kind: Kind::Directory };
-        let node = Node { entry, depth: 0, parent: None, expanded: false, children: None };
+        let node = Node { entry, parent: None, expanded: false, children: None };
         Self { nodes: HashMap::from([(root.clone(), node)]), root }
     }
 
@@ -75,7 +74,9 @@ impl Tree {
 
     /// Stores a folder's sorted listing and expands it. Scouter's `load` and `expand` both end here.
     pub fn listed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
-        let Some(depth) = self.nodes.get(path).map(|node| node.depth) else { return false };
+        if !self.nodes.contains_key(path) {
+            return false;
+        }
         if let Some(old) = self.nodes.get_mut(path).and_then(|node| node.children.take()) {
             old.iter().for_each(|child| self.forget(child));
         }
@@ -83,8 +84,7 @@ impl Tree {
             .into_iter()
             .map(|entry| {
                 let child = entry.path.clone();
-                let node =
-                    Node { entry, depth: depth + 1, parent: Some(path.to_path_buf()), expanded: false, children: None };
+                let node = Node { entry, parent: Some(path.to_path_buf()), expanded: false, children: None };
                 self.nodes.insert(child.clone(), node);
                 child
             })
@@ -116,18 +116,22 @@ impl Tree {
         self.nodes.get(path).map(|node| &node.entry)
     }
 
-    /// The visible rows, depth first: the root, then the children of each expanded folder.
+    /// The visible rows, depth first. The root is not a row: its children are the top level, at depth 0.
     pub fn rows(&self) -> Vec<Row<'_>> {
         let mut rows = Vec::new();
-        self.visit(&self.root, &mut rows);
+        if let Some(children) = self.nodes.get(&self.root).and_then(|node| node.children.as_ref()) {
+            for child in children {
+                self.visit(child, 0, &mut rows);
+            }
+        }
         rows
     }
 
-    fn visit<'a>(&'a self, path: &Path, rows: &mut Vec<Row<'a>>) {
+    fn visit<'a>(&'a self, path: &Path, depth: usize, rows: &mut Vec<Row<'a>>) {
         let Some(node) = self.nodes.get(path) else { return };
         rows.push(Row {
             entry: &node.entry,
-            depth: node.depth,
+            depth,
             folder: node.entry.kind == Kind::Directory || node.children.is_some(),
             expanded: node.expanded,
         });
@@ -135,9 +139,14 @@ impl Tree {
             && let Some(children) = &node.children
         {
             for child in children {
-                self.visit(child, rows);
+                self.visit(child, depth + 1, rows);
             }
         }
+    }
+
+    /// The folder above `path` when that folder has a row: `None` for a top-level row, whose parent is the root.
+    pub fn parent_row(&self, path: &Path) -> Option<PathBuf> {
+        self.nodes.get(path)?.parent.clone().filter(|parent| *parent != self.root)
     }
 
     /// The folders above `path` in the tree, nearest first, up to the root (Scouter's `rejectLinkLoop` walk).

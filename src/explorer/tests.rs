@@ -157,11 +157,25 @@ fn rows_show_only_expanded_children() {
     let mut tree = Tree::new(PathBuf::from("/vault"));
     list(&mut tree, &vault_disk(), Path::new("/vault"));
     let names: Vec<(String, usize)> = tree.rows().iter().map(|row| (row.entry.name.clone(), row.depth)).collect();
-    assert_eq!(names, [("vault".into(), 0), ("hogwarts".into(), 1), ("Notes.md".into(), 1)]);
+    assert_eq!(names, [("hogwarts".into(), 0), ("Notes.md".into(), 0)], "the root is not a row");
+
+    list(&mut tree, &vault_disk(), Path::new("/vault/hogwarts"));
+    let names: Vec<(String, usize)> = tree.rows().iter().map(|row| (row.entry.name.clone(), row.depth)).collect();
+    assert_eq!(names, [("hogwarts".into(), 0), ("gryffindor".into(), 1), ("Notes.md".into(), 0)]);
 
     tree.collapse(Path::new("/vault/hogwarts"));
-    assert_eq!(tree.rows().len(), 3);
-    assert!(tree.rows()[1].folder && !tree.rows()[1].expanded);
+    assert_eq!(tree.rows().len(), 2);
+    assert!(tree.rows()[0].folder && !tree.rows()[0].expanded);
+}
+
+#[test]
+fn a_top_level_row_has_no_parent_row() {
+    let disk = vault_disk();
+    let mut tree = Tree::new(PathBuf::from("/vault"));
+    reveal_from_disk(&mut tree, &disk, Path::new("/vault/hogwarts/gryffindor/chamber13.ts"));
+    assert_eq!(tree.parent_row(Path::new("/vault/hogwarts")), None);
+    assert_eq!(tree.parent_row(Path::new("/vault/Notes.md")), None);
+    assert_eq!(tree.parent_row(Path::new("/vault/hogwarts/gryffindor")), Some(PathBuf::from("/vault/hogwarts")));
 }
 
 #[test]
@@ -171,7 +185,7 @@ fn collapse_keeps_the_listing() {
     list(&mut tree, &vault_disk(), Path::new("/vault/hogwarts"));
     tree.collapse(Path::new("/vault/hogwarts"));
     assert_eq!(tree.expand(Path::new("/vault/hogwarts")), Expand::Ready);
-    assert_eq!(tree.rows().len(), 4);
+    assert_eq!(tree.rows().len(), 3);
 }
 
 #[test]
@@ -193,7 +207,7 @@ fn reveal_of_a_file_in_the_root_lists_only_the_root() {
     let disk = vault_disk();
     let mut tree = Tree::new(PathBuf::from("/vault"));
     assert_eq!(reveal_from_disk(&mut tree, &disk, Path::new("/vault/Notes.md")), 1);
-    assert_eq!(tree.rows().len(), 3);
+    assert_eq!(tree.rows().len(), 2);
 }
 
 #[test]
@@ -219,16 +233,16 @@ fn relisting_replaces_the_old_children() {
     list(&mut tree, &vault_disk(), Path::new("/vault/hogwarts"));
     list(&mut tree, &[("/vault", vec![file("/vault", "Only.md")])], Path::new("/vault"));
     assert!(tree.entry(Path::new("/vault/hogwarts")).is_none());
-    assert_eq!(tree.rows().len(), 2);
+    assert_eq!(tree.rows().len(), 1);
 }
 
 /// A browser over a root with `files` children, named `f00.md`, `f01.md`, ..., and a viewport of `height` rows.
+/// The first file is selected, since the root has no row.
 fn browser(files: usize, height: usize) -> Browser {
     let root = PathBuf::from("/vault");
-    let mut tree = Tree::new(root.clone());
     let entries = (0..files).map(|n| Entry::new(&root, &format!("f{n:02}.md"), Kind::File)).collect();
-    tree.listed(&root, entries);
-    let mut browser = Browser::new(tree);
+    let mut browser = Browser::new(Tree::new(root.clone()));
+    browser.listed(&root, entries);
     browser.set_height(height);
     browser
 }
@@ -247,7 +261,7 @@ fn moving_past_the_bottom_scrolls_from_the_nearest_edge() {
     browser.move_by(1);
     assert_eq!((browser.selected_index(), browser.top()), (5, 1));
     browser.move_to_edge(true);
-    assert_eq!((browser.selected_index(), browser.top()), (10, 6));
+    assert_eq!((browser.selected_index(), browser.top()), (9, 5));
     browser.move_by(-20);
     assert_eq!((browser.selected_index(), browser.top()), (0, 0));
 }
@@ -256,7 +270,7 @@ fn moving_past_the_bottom_scrolls_from_the_nearest_edge() {
 fn moves_clamp_at_both_ends() {
     let mut browser = browser(2, 10);
     browser.move_by(-1);
-    assert_eq!(selected_name(&browser), "vault");
+    assert_eq!(selected_name(&browser), "f00.md");
     browser.move_by(99);
     assert_eq!(selected_name(&browser), "f01.md");
 }
@@ -278,7 +292,7 @@ fn the_wheel_scrolls_without_moving_the_selection() {
     browser.scroll(3);
     assert_eq!((browser.top(), browser.selected_index()), (3, 0));
     browser.scroll(100);
-    assert_eq!(browser.top(), 7, "rows minus the viewport: the last full page");
+    assert_eq!(browser.top(), 6, "rows minus the viewport: the last full page");
     browser.scroll(-100);
     assert_eq!(browser.top(), 0);
 }
@@ -291,14 +305,14 @@ fn a_click_maps_a_line_to_its_row_through_the_scroll_position() {
     assert_eq!(browser.row_at(3), Some(5));
     assert_eq!(browser.row_at(4), None, "below the viewport");
     browser.select_index(5);
-    assert_eq!(selected_name(&browser), "f04.md");
+    assert_eq!(selected_name(&browser), "f05.md");
 }
 
 #[test]
 fn a_click_past_the_last_row_selects_nothing() {
     let browser = browser(1, 6);
-    assert_eq!(browser.row_at(1), Some(1));
-    assert_eq!(browser.row_at(2), None);
+    assert_eq!(browser.row_at(0), Some(0));
+    assert_eq!(browser.row_at(1), None);
 }
 
 #[test]
@@ -306,7 +320,7 @@ fn selecting_a_missing_path_falls_back_to_the_first_row() {
     let mut browser = browser(3, 5);
     browser.move_by(2);
     browser.select(Path::new("/vault/gone.md"));
-    assert_eq!(selected_name(&browser), "vault");
+    assert_eq!(selected_name(&browser), "f00.md");
     assert!(!browser.select_row(Path::new("/vault/gone.md")));
     assert!(browser.select_row(Path::new("/vault/f01.md")));
     assert_eq!(selected_name(&browser), "f01.md");
@@ -322,8 +336,9 @@ fn relative_paths_use_slashes_and_keep_the_root_out() {
 fn reflow_clamps_after_rows_disappear() {
     let mut browser = browser(10, 4);
     browser.move_to_edge(true);
-    browser.tree.listed(Path::new("/vault"), vec![Entry::new(Path::new("/vault"), "only.md", Kind::File)]);
+    browser.listed(Path::new("/vault"), vec![Entry::new(Path::new("/vault"), "only.md", Kind::File)]);
     browser.reflow();
     assert_eq!(browser.top(), 0);
-    assert_eq!(browser.visible_rows().len(), 2);
+    assert_eq!(browser.visible_rows().len(), 1);
+    assert_eq!(selected_name(&browser), "only.md", "a selection that lost its row moves to the first");
 }
