@@ -96,6 +96,8 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Click` `✕` box, below 80 columns | hide the file list |
 | `Click` file, below 60 columns | open the file: the reader page takes the screen |
 | `q` or `Esc`, on a page below 60 columns | go back a page (Reader, Keys, Changes, Find) |
+| `Click` the `‹ Files` text, below 60 columns | go back a page, as `q` does |
+| `Click` a bottom-bar word, below 60 columns | press its key: `Find` is `/`, `Changes` is `d`, `Keys` is `?`, `Back` is `q`, `Search` is `/`, `All` or `One` is `a`, `Split` is `s`, `Copy` is `y`, and `Cancel` is `Esc` |
 | `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
 | `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 

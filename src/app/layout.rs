@@ -122,6 +122,7 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     ui.viewer_panel.border_sides(sides);
     ui.browser_header.compact(compact);
     ui.viewer_header.compact(compact);
+    ui.find.compact(compact);
     // The marks are drawn at 80 columns and wider only; below that the header boxes are the touch targets.
     ui.mark.root.visible(tier(columns) == Tier::Wide && can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
@@ -184,6 +185,30 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     });
+
+    // The compact top bar's back text is Back, as `q` is (plan-00005, record 6). The press stops at the text, so the
+    // header's own press does not act on it too.
+    {
+        let u = ui.borrow();
+        for header in [&u.browser_header, &u.viewer_header] {
+            header.on_back_press({
+                let (model, ui) = (model.clone(), ui.clone());
+                move |cx, event| {
+                    if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                        return;
+                    }
+                    // Only the compact back text takes the press: the medium tier's box shares this cell.
+                    let mut m = model.borrow_mut();
+                    if pages::back_label(&m).is_none() {
+                        return;
+                    }
+                    cx.stop_propagation();
+                    pages::back(&mut m, &ui.borrow());
+                    paint(cx.app(), &mut m, &mut ui.borrow_mut());
+                }
+            });
+        }
+    }
 
     let handle = ui.borrow().handle.clone();
     handle.on_hover({

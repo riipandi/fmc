@@ -53,7 +53,7 @@ use crate::ui::{syntax, welcome};
 /// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2). The compact tier has
 /// no borders and a one-row header (plan-00005, record 5).
 const LIST_CHROME_ROWS: usize = 6;
-const COMPACT_CHROME_ROWS: usize = 3;
+const COMPACT_CHROME_ROWS: usize = 2;
 
 struct Ui {
     browser_panel: View,
@@ -584,6 +584,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
     sidebar.button = layout::close_box(m, columns).then_some(header::CLOSE);
+    sidebar.back = pages::back_label(m);
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
     let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
@@ -616,8 +617,15 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         (None, None) => reader::badges(&m.shown, m.wrap),
     };
     let button = layout::menu_box(m, columns).then_some(header::MENU);
-    let viewer =
-        HeaderState { title, parent, badges, focused: m.focus == Focus::Reader, notice: m.notice.clone(), button };
+    let viewer = HeaderState {
+        title,
+        parent,
+        badges,
+        focused: m.focus == Focus::Reader,
+        notice: m.notice.clone(),
+        button,
+        back: pages::back_label(m),
+    };
     ui.viewer_header.paint(&viewer, p);
     // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).
     let shows_preview = previewed.is_some();
@@ -715,6 +723,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         m.search.as_ref().and_then(|search| search.current_line()),
         &search_text,
     );
+    // The compact bottom bar shows an open prompt after `Cancel` (`ui/bars.rs`), as the finder bar does in the header.
+    let prompt_text = match (&m.finder, &m.search, &m.command) {
+        (Some(finder), _, _) => Some(prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p)),
+        (None, Some(search), _) if search.editing => Some(prompt_segments("/", &search.query, "", p)),
+        (None, _, Some(text)) => Some(prompt_segments(":", text, "", p)),
+        _ => None,
+    };
     let footer = FooterState {
         location,
         mode: if body { hints::Mode::Diff } else { hints::Mode::Browse },
@@ -734,6 +749,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         pending: m.parser.pending_count(),
         selection: app.selected_text().is_some(),
         sidebar_hidden: !layout::shown(m, columns),
+        page: m.pages.top(),
+        prompt_text,
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);

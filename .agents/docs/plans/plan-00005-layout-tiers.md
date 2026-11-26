@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T18:00:00+07:00
-updated: 2026-11-27T03:43:04+07:00
+updated: 2026-11-27T03:48:39+07:00
 phases:
     - id: 1
       title: "Tier model and touch-safe row actions"
@@ -13,8 +13,8 @@ phases:
       note: "`fmc::layout::Pages` (Files, Reader, Changes, Keys, Find) in the core, kept by `app/pages.rs` `sync` at each paint; compact draws the top page full width, has no panel border, one-row headers, no welcome, no preview. `q`, `Esc`, and Back (`pages::back`) pop; Tab and Ctrl+/ switch list and reader. Drawer code removed. Captures at 60, 70, and 80 columns are byte-identical to 166051c (10 steps each); 40 columns checked live (Files, Reader, q, Esc, Find, Keys, Changes, diff). 331 tests. Agent decisions in architecture.md (plan-00005 list)."
     - id: 3
       title: "Compact top bar and bottom bar"
-      status: pending
-      note: —
+      status: done
+      note: "`ui/bars.rs`: the bottom bar's equal cells per page (Find, Changes, Keys; Back, Search, Keys; Back, All/One, Split; Back), a prompt bar with Cancel first, and the top bar's back text (`‹ Files`, the page under the top). Notices show in the bottom bar. Taps press the segment's key; the back text pops. The compact footer is one row, the finder bar one row. Live at 40 columns: Files, Reader, Find, Changes, diff. Captures at 60 and 80 columns still match 166051c. Tests at 40, 49, 59 columns for the cells and the hits; labels per page. Agent decisions in architecture.md (plan-00005 list)."
     - id: 4
       title: "Medium tier chevrons; remove the boxes, drawer, and border marks below 80"
       status: pending

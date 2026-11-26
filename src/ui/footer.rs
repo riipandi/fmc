@@ -1,14 +1,16 @@
 //! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the location or a message, and facts on
-//! the right; then a row of key hints that fit. `FooterState::render` is pure; `Footer` holds the widgets.
+//! the right; then a row of key hints that fit. In the compact tier the footer is one row, the bottom bar (`ui/bars.rs`).
+//! `FooterState::render` is pure; `Footer` holds the widgets.
 
 use std::cell::RefCell;
 use std::ops::Range;
 use std::path::Path;
 
-use fmc::layout::{Tier, tier};
+use fmc::layout::{Page, Tier, tier};
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
+use super::bars;
 use super::find::prompt_segments;
 use super::hints::{
     HINT_GAP, Hint, Mode, Pane, Prompt, Shown, fit_hints, hint_segments, hints_for, phone_rank, pill_label,
@@ -63,6 +65,10 @@ pub struct FooterState {
     pub command: Option<String>,
     /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does (plan-00004, P8).
     pub selection: bool,
+    /// The page on screen, which names the compact bottom bar's segments (`ui/bars.rs`).
+    pub page: Page,
+    /// The open prompt's own text, which the compact bottom bar shows after `Cancel`.
+    pub prompt_text: Option<Vec<Seg>>,
 }
 
 impl Default for FooterState {
@@ -81,6 +87,8 @@ impl Default for FooterState {
             sidebar_hidden: false,
             command: None,
             selection: false,
+            page: Page::Files,
+            prompt_text: None,
         }
     }
 }
@@ -114,6 +122,26 @@ impl FooterState {
         let mut hints = vec![Seg::plain(" ")];
         hints.extend(hint_segments(&self.hint_row(columns, measure), p));
         (left, facts, hints)
+    }
+
+    /// The compact bottom bar (plan-00005, D3): an open prompt replaces it, a notice shows in it for its time, and
+    /// otherwise the page's segments. Returns each tap's cell and key with the text.
+    pub fn bar(
+        &self,
+        columns: usize,
+        p: &Palette,
+        measure: Measure<'_>,
+    ) -> (Vec<Seg>, Vec<(Range<usize>, &'static str)>) {
+        if let Some(text) = &self.prompt_text {
+            return bars::prompt(text, columns, p);
+        }
+        if let Some(message) = &self.message {
+            let fg = if message.error { p.error } else { p.accent_soft };
+            return (vec![Seg::new(fit_start(&message.text, columns, measure), fg)], Vec::new());
+        }
+        let all_files = self.diff.as_ref().is_none_or(|d| d.all_files);
+        let segments = bars::page_segments(self.page, self.mode == Mode::Diff, all_files, self.selection);
+        bars::render(&segments, columns, p)
     }
 
     fn describe(&self, columns: usize, p: &Palette, measure: Measure<'_>) -> Vec<Seg> {
@@ -312,6 +340,17 @@ impl Footer {
     }
 
     pub fn paint(&self, state: &FooterState, columns: usize, p: &Palette, measure: Measure<'_>) {
+        // The compact footer is the bottom bar alone, one row (architecture.md, record 7).
+        if tier(u16::try_from(columns).unwrap_or(u16::MAX)) == Tier::Compact {
+            self.root.height(1);
+            self.band.visible(false);
+            let (drawn, targets) = state.bar(columns, p, measure);
+            self.hints.set_text(content(&drawn, p.text));
+            *self.targets.borrow_mut() = targets;
+            return;
+        }
+        self.root.height(2);
+        self.band.visible(true);
         let (left, right, hints) = state.render(columns, p, measure);
         self.left.set_text(content(&left, p.text));
         self.right.set_text(content(&right, p.text));

@@ -55,6 +55,11 @@ impl Pages {
         self.0.last().copied().unwrap_or(Page::Files)
     }
 
+    /// The page under the one on screen: where Back goes.
+    pub fn under(&self) -> Page {
+        self.0.len().checked_sub(2).map_or(Page::Files, |at| self.0[at])
+    }
+
     /// Opens `page` on top when `open` holds and it is not open yet, and removes it when `open` does not hold.
     pub fn sync(&mut self, page: Page, open: bool) {
         if page == Page::Files {

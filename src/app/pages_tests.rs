@@ -169,3 +169,51 @@ fn screen(app: &TestApp) -> String {
     let frame = app.render();
     (0..24).map(|y| format!("{}\n", frame.row(y))).collect()
 }
+
+/// The screen's last row, which the compact bottom bar draws on.
+fn bottom_row(app: &TestApp) -> String {
+    app.render().row(23)
+}
+
+#[test]
+fn the_files_page_shows_find_changes_and_keys_in_the_bottom_bar() {
+    let (app, _, _) = compact();
+    let bar = bottom_row(&app);
+    for word in ["Find", "Changes", "Keys"] {
+        assert!(bar.contains(word), "{bar:?} names {word}");
+    }
+}
+
+#[test]
+fn the_reader_page_names_the_page_back_in_the_top_bar() {
+    let (app, model, ui) = compact();
+    open_hedwig(&app, &model, &ui);
+    assert!(app.render().row(0).contains("‹ Files"), "{:?}", app.render().row(0));
+}
+
+#[test]
+fn a_tap_on_the_find_segment_opens_the_finder() {
+    let (app, model, ui) = compact();
+    let first = crate::ui::bars::cells(40, 3)[0].start;
+    app.click(first as u16, 23);
+    repaint(&app, &model, &ui);
+    assert_eq!(top(&model), Page::Find, "a tap on Find presses / as the key does");
+}
+
+#[test]
+fn a_tap_on_the_back_text_pops_the_reader() {
+    let (app, model, ui) = compact();
+    open_hedwig(&app, &model, &ui);
+    app.click(2, 0);
+    repaint(&app, &model, &ui);
+    assert_eq!(top(&model), Page::Files);
+    assert_eq!(selected(&model), Path::new("/hogwarts/hedwig.txt"), "the selection stays");
+}
+
+#[test]
+fn an_open_finder_shows_cancel_in_the_bottom_bar() {
+    let (app, model, ui) = compact();
+    app.press("/");
+    repaint(&app, &model, &ui);
+    assert!(bottom_row(&app).contains("Cancel"), "{:?}", bottom_row(&app));
+}
