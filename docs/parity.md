@@ -26,7 +26,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - Below 80 columns the sidebar hides once a file is open, and the reader takes the full width. The welcome screen keeps the sidebar from 60 columns up, so there is always a list to pick from; below 60 columns its list starts hidden, and a tap on the header row opens it. At 80 columns or more the layout is Scouter's. Scouter always shows the sidebar.
 - A mark on the border shows or hides the sidebar with a click: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again.
 - Nothing about the sidebar or the dotfiles is saved across runs.
-- Below 80 columns fmc adapts to a phone: tap the reader's header row to show the hidden file list; below 60 columns the welcome screen takes the whole width, and the list opens over the whole screen and closes when you open a file; footer hints can be tapped; file names come before their folders in finder and change rows; the welcome screen wraps instead of cutting; and a `Copy` hint appears while text is selected.
+- Below 80 columns fmc adapts to a phone: tap the `☰` button left of the reader's title to show the hidden file list (`✕` hides it); below 60 columns the welcome screen takes the whole width, and the list opens over the whole screen and closes when you open a file; footer hints can be tapped; file names come before their folders in finder and change rows; the welcome screen wraps instead of cutting; and a `Copy` hint appears while text is selected.
 
 ## Changes screen
 

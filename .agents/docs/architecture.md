@@ -671,6 +671,8 @@ Consequences:
 - (positive) fmc is usable by touch on a phone; no action needs a hard-to-type key except quitting.
 - (negative) Narrow layouts have their own rules and tests; the footer gains click handling.
 
+Amended by the owner on 2026-11-27 (screenshot from a phone): the one-cell `»` mark is not accessible by touch. Below 80 columns, while the list is hidden, the reader's header shows a button to the left of its title, drawn as a filled box like a web menu button (`☰`); a tap shows the list and focuses it. While the drawer is open, its header shows the same box with `✕` to the left of its title; a tap hides it. The `»` mark is not drawn below 80 columns. The tappable `^/ sidebar` footer hint stays as a second target near the thumb. The welcome text names the button while the list is hidden (`Tap ☰ to browse files.`), and its key and reading lines break at the ` · ` instead of mid-phrase. At 80 columns and wider the marks stay as they are, and the mark's position on the border is fixed where it is drawn off the panel's corner.
+
 ### Approved deviation: a diff header folds on release, not on press
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
