@@ -65,8 +65,8 @@ impl Marks {
     }
 }
 
-/// `path` relative to `within`, or `None` when it is outside it.
-fn within_folder(within: &str, path: &str) -> Option<String> {
+/// `path` relative to the browsed folder `within` (relative to the repository root), or `None` outside it.
+pub fn within_folder(within: &str, path: &str) -> Option<String> {
     if within.is_empty() {
         return Some(path.to_string());
     }

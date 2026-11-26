@@ -34,8 +34,9 @@ pub enum Event {
     Previewed { session: u64, request: u64, result: Result<Document, String> },
     /// The changes screen's listing, for the `session` that asked for it; a cancelled session is dropped.
     ChangesListed { session: u64, result: Result<changes::Listed, String> },
-    /// The stacked patches of the listing of `session`; a reply for a listing that is no longer shown is dropped.
-    ChangesPatched { session: u64, result: Result<Vec<FilePatch>, String> },
+    /// The patches the body shows for the listing of `session`: all files, or the one selected. A `request` older than
+    /// the latest one, or a listing no longer shown, is dropped.
+    ChangesPatched { session: u64, request: u64, result: Result<Vec<FilePatch>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

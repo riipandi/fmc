@@ -54,16 +54,21 @@ fn a_header_names_the_file_with_its_index_mark_and_folder() {
         removed: Some(0),
         ..change("hogwarts/chamber.rs", ChangeKind::Modified)
     };
-    let title = header_title(&staged_and_not, true, &DARK);
+    let title = header_title(&staged_and_not, true, false, &DARK);
     assert_eq!(text(&title), "▎ ▾ M ◐ chamber.rs  hogwarts/");
     assert_eq!(title[0].fg, Some(DARK.accent));
-    assert_eq!(text(&header_title(&change("README.md", ChangeKind::Untracked), false, &DARK)), "  ▾ ? README.md");
+    assert_eq!(
+        text(&header_title(&change("README.md", ChangeKind::Untracked), false, false, &DARK)),
+        "  ▾ ? README.md"
+    );
+    // A folded file shows the closed chevron (Scouter `headerTitleContent`, `folded ? "▸ " : "▾ "`).
+    assert_eq!(text(&header_title(&change("README.md", ChangeKind::Untracked), false, true, &DARK)), "  ▸ ? README.md");
 }
 
 #[test]
 fn a_rename_header_keeps_the_old_path_in_full_and_the_list_row_its_name() {
     let rename = Change { old_path: Some("gringotts/key.rs".into()), ..change("louvre/key.rs", ChangeKind::Renamed) };
-    assert!(text(&header_title(&rename, false, &DARK)).contains("← gringotts/key.rs"));
+    assert!(text(&header_title(&rename, false, false, &DARK)).contains("← gringotts/key.rs"));
     let row = list_row(&rename, false, &DARK);
     assert_eq!(text(&row.name), "key.rs  ← key.rs  louvre/");
 }

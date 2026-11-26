@@ -125,6 +125,8 @@ struct Model {
     change_list: ChangeList,
     /// The changes screen, while it shows.
     changes: Option<changes::Changes>,
+    /// The stacked body's scope, view, and context, kept between visits (Scouter's `DiffScreen`).
+    diff_options: changes::Options,
     /// The listing in flight, by its session (Scouter `loading === "diff"`).
     changes_load: Option<u64>,
     /// The last session of a listing; each `d` takes the next.
@@ -214,6 +216,7 @@ pub fn run(target: &Path) -> opentui::Result<()> {
         changes: None,
         changes_load: None,
         changes_session: 0,
+        diff_options: changes::Options::default(),
         diff_jump: None,
     }));
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
@@ -283,6 +286,16 @@ pub fn run(target: &Path) -> opentui::Result<()> {
                 Action::Close if body => changes::leave(&mut m),
                 Action::Close => reader::close(&mut m, &ui.borrow()),
                 Action::ToggleChanges => changes::toggle(&mut m),
+                // The changes keys work in any focus while the body shows (Scouter `handleDiffKey`).
+                Action::ToggleSplit if body => {
+                    let columns = pane_columns(cx.app(), &m);
+                    changes::toggle_split(&mut m, columns);
+                }
+                Action::ToggleScope if body => changes::toggle_scope(&mut m),
+                Action::ToggleFold if body => changes::toggle_fold(&mut m),
+                Action::ToggleContext if body => changes::toggle_context(&mut m),
+                Action::OpenChanged if body => changes::open_changed(&mut m, &ui.borrow()),
+                Action::Hunk(step) if body => changes::step_hunk(&mut m, &ui.borrow(), step > 0),
                 Action::SwitchPane if body => changes::switch_pane(&mut m),
                 Action::FocusDiff => changes::activate(&mut m),
                 Action::Escape if cx.app().selected_text().is_some() || cx.app().is_selecting() => {
@@ -378,6 +391,22 @@ pub fn run(target: &Path) -> opentui::Result<()> {
             paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
         });
     }
+    {
+        // A left click on a file's header folds the file (Scouter `createHeader`); the rows are the last frame's.
+        let (model, ui) = (model.clone(), ui.clone());
+        let stacked = ui.borrow().diff.scroller.widget();
+        stacked.on_mouse(move |cx, event| {
+            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                return;
+            }
+            let mut m = model.borrow_mut();
+            if !changes::body_shows(&m) {
+                return;
+            }
+            changes::click_header(&mut m, &ui.borrow(), f64::from(event.y));
+            paint(cx.app(), &mut m, &mut ui.borrow_mut())
+        });
+    }
     wire_mouse(&model, &ui);
 
     #[cfg(debug_assertions)]
@@ -466,11 +495,26 @@ fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
 }
 
 /// Paints again once the frame has laid out the new text: a rendered Markdown document's rows, which the scrollbar
-/// and the footer count, exist only after that layout.
+/// and the footer count, exist only after that layout. The changes body's blocks are measured the same way, and a
+/// frame can land after the first repaint, so that repaint keeps going until the blocks have their rows.
 fn repaint_after_layout(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
+    repaint_later(app, model, ui, LAYOUT_TRIES);
+}
+
+/// How many more repaints a changes body may take to be measured after its blocks are built.
+const LAYOUT_TRIES: u8 = 10;
+
+fn repaint_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, tries: u8) {
     let (model, ui) = (model.clone(), ui.clone());
     app.set_timeout(std::time::Duration::from_millis(20), move |cx| {
-        paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
+        let (mut m, mut u) = (model.borrow_mut(), ui.borrow_mut());
+        paint(cx.app(), &mut m, &mut u);
+        let unmeasured = changes::body_shows(&m) && !m.change_list.changes().is_empty() && u.diff.tops().is_none();
+        drop((m, u));
+        if tries > 0 && unmeasured {
+            cx.app().request_redraw();
+            repaint_later(cx.app(), &model, &ui, tries - 1);
+        }
     });
 }
 
@@ -482,6 +526,12 @@ fn clear_message_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         model.borrow_mut().message = None;
         paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
     });
+}
+
+/// The columns the reader's pane takes, which the stacked body fills and `s` measures (Scouter `this.body.width`).
+fn pane_columns(app: &App, m: &Model) -> u32 {
+    let columns = app.size().0;
+    u32::from(columns.saturating_sub(sidebar::fit(columns, m.sidebar) + 3))
 }
 
 /// Ctrl+←/→: two columns narrower or wider, kept for the session (Scouter `nudge`).
@@ -651,9 +701,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.viewer.visible(!shows_preview && !body);
     ui.diff.root.visible(body);
     if on_changes {
+        ui.diff.set_split(m.diff_options.split);
         changes::sync(app, m, ui, p, &tint);
         ui.diff.set_wrap(m.wrap);
-        ui.diff.set_pane(u32::from(columns.saturating_sub(width + 3)));
+        // The stack gives its bar's column back only while the text overflows (the bar takes no space when hidden), as
+        // Scouter's diff scroller does; a fixed pane would leave that column empty.
+        let overflow = ui.diff.height() > viewport;
+        ui.diff.set_pane(u32::from(columns.saturating_sub(width + 3)) + u32::from(!overflow));
         changes::jump(m, ui);
     }
     if let Some((top, tries)) = m.pending_top.take() {

@@ -85,6 +85,9 @@ pub struct OpenAt {
     /// One-based.
     pub line: usize,
     pub query: String,
+    /// The path the footer shows, when it is not the tree's (a change opened from the changes screen, which Scouter names
+    /// by git's top-level path).
+    pub shown: Option<PathBuf>,
 }
 
 /// What the preview view shows, as the paint last drew it: its file, target line, and query, and whether its scroll
@@ -353,7 +356,7 @@ pub fn pick(m: &mut Model) {
     end(m, picked.as_ref().map(|flat| flat.entry.path.clone()));
     let Some(flat) = picked else { return };
     if let Some((line, _)) = flat.hit {
-        m.open_at = Some(OpenAt { path: flat.entry.path.clone(), line, query: typed });
+        m.open_at = Some(OpenAt { path: flat.entry.path.clone(), line, query: typed, shown: None });
         m.focus_reader_on_open = true;
         tree::reveal(m, flat.entry.path, false, true);
     } else if typed.trim().is_empty() {
@@ -394,9 +397,12 @@ pub fn arrive(m: &mut Model, path: &Path) {
         reader::toggle_markdown(m);
     }
     let Some((document, ..)) = m.shown.text() else { return };
-    let search = Search::seed(document.content(), &open.query, open.line - 1);
-    m.message = Some(Message { text: search.message(), error: false });
-    m.search = Some(search);
+    // A file the changes screen opens has no query, so it starts no search (Scouter `openChanged`).
+    if !open.query.is_empty() {
+        let search = Search::seed(document.content(), &open.query, open.line - 1);
+        m.message = Some(Message { text: search.message(), error: false });
+        m.search = Some(search);
+    }
     // The reader scrolls from the paint, once it shows: a view that is still hidden takes no scroll.
     m.pending_top = Some((open.line - 1, OPEN_SCROLL_TRIES));
 }

@@ -60,13 +60,25 @@ pub fn block_at(tops: &[usize], top: usize) -> Option<usize> {
     Some(tops.iter().rposition(|&block_top| block_top <= top).unwrap_or(0))
 }
 
+/// The new-file line each hunk of `text` starts at, in order, and at least line 1 (Scouter `hunkStartLines`,
+/// `src/diff/diff-blocks.ts`, the `@@ -a[,b] +c` regex).
+pub fn hunk_starts(text: &str) -> Vec<usize> {
+    text.lines().filter_map(|line| hunk_header(line).map(|(_, _, new_start, _)| new_start.max(1) as usize)).collect()
+}
+
 /// The line numbers a hunk header's ranges reach: the first line past the old range and past the new one (Scouter's
 /// `maxGutterDigits` regex, `@@ -a[,b] +c[,d] @@`, with a missing count as 1).
 fn hunk_ends(line: &str) -> Option<(u64, u64)> {
+    let (old_start, old_count, new_start, new_count) = hunk_header(line)?;
+    Some((old_start + old_count, new_start + new_count))
+}
+
+/// `(old start, old count, new start, new count)` of a hunk header line.
+fn hunk_header(line: &str) -> Option<(u64, u64, u64, u64)> {
     let rest = line.strip_prefix("@@ -")?;
     let (old_start, old_count, rest) = range(rest)?;
     let (new_start, new_count, _) = range(rest.strip_prefix(" +")?)?;
-    Some((old_start + old_count, new_start + new_count))
+    Some((old_start, old_count, new_start, new_count))
 }
 
 /// `start[,count]` at the front of `text`, with the rest of `text` after it.

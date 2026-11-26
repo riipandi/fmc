@@ -147,7 +147,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::Searched { session, scan, progress } => find::searched(m, *session, *scan, progress.clone()),
         Event::Previewed { session, request, result } => find::previewed(m, *session, *request, result.clone()),
         Event::ChangesListed { session, result } => changes::listed(m, *session, result.clone()),
-        Event::ChangesPatched { session, result } => changes::patched(m, *session, result.clone()),
+        Event::ChangesPatched { session, request, result } => changes::patched(m, *session, *request, result.clone()),
         Event::Listed { path, result } => match result {
             Ok(entries) => {
                 m.browser.listed(path, entries.clone());

@@ -82,8 +82,8 @@ phases:
       note: "verify 206 tests (18 new: diff row, list, stack). Scouter: diff-screen.ts:318-322, :379-417, :552-565; app.ts:291-315, :869-907; diff-blocks.ts:55-96, :425-521, :552-591; changes.ts:226-278; footer-hints.ts:47-79. Live 80x24 on the demo repository (/tmp/fmc-ref/out/w5-19/final, text and HTML): both key sequences match Scouter 0.9.9 cell for cell on rows 1 to 23 except the approved tree root row (steps 07, 11, b15) and the approved ^q label, which also drops `a one file` from the list-focus hint line. Empty state (clean and unborn repositories) matches. Wheel: list and body move one row per notch both ways. Found and fixed while validating: a wheel scroll undone by repaint, g and G losing the pan, the diff text colour, the stack width (gutter overflow), and a second visit reusing the first visit's blocks. Pre-existing, in HEAD too, recorded as issue-00007 (tree wheel) and issue-00008 (reader pan one column short)."
     - id: 20
       title: "W5: split, fold, context, hunks, open"
-      status: pending
-      note: —
+      status: done
+      note: "live 80x24 on the demo repo: keys d n N ] c c x x s a a o match Scouter except the approved deviations (settled fold values, a/x landing) and the footer hint dropped by ^q (accepted); one-file header column fixed (stack reserves its bar column only while it overflows). Split at 60+ columns: owner check, not verifiable at 80x24."
     - id: 21
       title: "W5: polling refresh"
       status: pending

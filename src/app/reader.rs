@@ -93,13 +93,22 @@ fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
         return false;
     }
     m.browser.select(path);
-    m.location = path.to_string_lossy().into_owned();
+    m.location = location_of(m, path);
     m.message = None;
     m.notice = None;
     if startup && focus_reader {
         m.focus = Focus::Reader;
     }
     true
+}
+
+/// The path the footer names a shown file by: the tree's, or the one a change opened from the changes screen names
+/// (`OpenAt::shown`).
+fn location_of(m: &Model, path: &Path) -> String {
+    match &m.open_at {
+        Some(open) if open.path == path => open.shown.as_deref().unwrap_or(path).to_string_lossy().into_owned(),
+        _ => path.to_string_lossy().into_owned(),
+    }
 }
 
 /// Puts a shown text into the views that draw it: the code view, and the rendered view for Markdown.

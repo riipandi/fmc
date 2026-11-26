@@ -7,10 +7,11 @@ use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::sync::Arc;
 
-use fmc::diff::{Change, FilePatch, Patch, header_counts, header_title};
+use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts};
 use fmc::theme::{Mode, Palette};
+use opentui::native::{TextView, Viewport};
 use opentui::prelude::*;
-use opentui::widget::{DiffColors, DiffGutter};
+use opentui::widget::{DiffColors, DiffGutter, DiffView};
 
 use super::styled::{Seg, color, content};
 use super::syntax;
@@ -31,15 +32,17 @@ struct Block {
     title: Text,
     counts: Text,
     body: Body,
-    /// Whether the title last painted names the active file (`None` until the first paint).
-    active: Cell<Option<bool>>,
+    /// The active and folded state the header last painted (`None` until the first paint).
+    painted: Cell<Option<(bool, bool)>>,
     /// The line-number width the block was built with, which its gutter takes.
     digits: Cell<usize>,
+    /// Counts the wrapped rows of the diff's text, for the hunks' rows under wrap (built when first needed).
+    counter: RefCell<Option<TextView>>,
 }
 
 enum Body {
     Diff(Diff),
-    Notice,
+    Notice(Text),
 }
 
 pub struct DiffBody {
@@ -52,6 +55,7 @@ pub struct DiffBody {
     blocks: RefCell<Vec<Block>>,
     built: Cell<Option<Key>>,
     wrapped: Cell<bool>,
+    split: Cell<bool>,
     /// The pane's width in columns, which the stack fills (`set_pane`).
     pane: Cell<u32>,
 }
@@ -80,6 +84,7 @@ impl DiffBody {
             blocks: RefCell::new(Vec::new()),
             built: Cell::new(None),
             wrapped: Cell::new(false),
+            split: Cell::new(false),
             pane: Cell::new(0),
         }
     }
@@ -119,8 +124,9 @@ impl DiffBody {
         self.built.set(Some(key));
         let (_, _, digits, _) = key;
         let wrap = self.wrapped.get();
+        let split = self.split.get();
         let blocks: Vec<Block> =
-            files.iter().enumerate().map(|(index, file)| block(app, index, file, digits, wrap, p)).collect();
+            files.iter().enumerate().map(|(index, file)| block(app, index, file, digits, wrap, split, p)).collect();
         for block in &blocks {
             block.root.min_width(Length::Cells(self.block_width(digits)));
         }
@@ -139,19 +145,101 @@ impl DiffBody {
         self.built.set(None);
     }
 
-    /// Paints each header's title for the active file (Scouter `paintHeader`) and its tint. A title is set only when
-    /// its active state changed.
-    pub fn paint_headers(&self, files: &[FilePatch], active: Option<&str>, tint: &str, p: &Palette) {
+    /// Paints each header's title for the active file and its fold (Scouter `paintHeader`), its tint, and each body's
+    /// visibility. A title is set only when its state changed.
+    pub fn paint_headers(&self, files: &[FilePatch], active: Option<&str>, folds: &Folds, tint: &str, p: &Palette) {
         for (block, file) in self.blocks.borrow().iter().zip(files) {
             block.header.bg(color(tint));
             let is_active = active == Some(file.change.path.as_str());
-            if block.active.get() == Some(is_active) {
+            let folded = folds.contains(&file.change.path);
+            if block.painted.get() == Some((is_active, folded)) {
                 continue;
             }
-            block.active.set(Some(is_active));
-            block.title.set_text(content(&header_title(&file.change, is_active, p), p.text));
+            block.painted.set(Some((is_active, folded)));
+            block.title.set_text(content(&header_title(&file.change, is_active, folded, p), p.text));
             block.counts.set_text(content(&header_counts(&file.change, p), p.text));
+            match &block.body {
+                Body::Diff(diff) => {
+                    diff.visible(!folded);
+                }
+                Body::Notice(note) => {
+                    note.visible(!folded);
+                }
+            }
         }
+    }
+
+    /// Sets the view of every diff: side by side when `split`, else one column (Scouter `toggleView`). The blocks built
+    /// after it take it too.
+    pub fn set_split(&self, split: bool) {
+        if self.split.replace(split) == split {
+            return;
+        }
+        let view = if split { DiffView::Split } else { DiffView::Unified };
+        for block in self.blocks.borrow().iter() {
+            if let Body::Diff(diff) = &block.body {
+                diff.view(view);
+            }
+        }
+    }
+
+    /// The block whose header holds the screen row `y`, by the header's last frame (a click, Scouter `onMouseDown`).
+    pub fn header_at(&self, y: f64) -> Option<usize> {
+        self.blocks.borrow().iter().position(|block| {
+            let rect = block.header.rect();
+            let (top, height) = (rect.screen_y, f64::from(rect.height));
+            height > 0.0 && y >= top && y < top + height
+        })
+    }
+
+    /// The hunks of the shown blocks, in stack order, from the laid-out rows (Scouter `hunkEntries`): a folded file has
+    /// none. Empty until the frame has laid the blocks out.
+    pub fn hunks(&self, files: &[FilePatch], folds: &Folds) -> Vec<Hunk> {
+        let mut hunks = Vec::new();
+        if self.tops().is_none() {
+            return hunks;
+        }
+        for (file, block) in self.blocks.borrow().iter().enumerate() {
+            let (Some(patch), Body::Diff(diff)) = (files.get(file), &block.body) else { continue };
+            let Patch::Text { text, .. } = &patch.patch else { continue };
+            if folds.contains(&patch.change.path) {
+                continue;
+            }
+            let header = block.header.rect().height.max(0.0) as usize;
+            let diff_top = block.root.rect().top.max(0.0) as usize + diff.rect().top.max(0.0) as usize;
+            let starts = hunk_starts(text);
+            for (index, offset) in self.offsets(block, diff).into_iter().enumerate() {
+                let row = (diff_top + offset).saturating_sub(if offset == 0 { header } else { 0 });
+                hunks.push(Hunk { row, file, line: starts.get(index).copied().unwrap_or(1) });
+            }
+        }
+        hunks
+    }
+
+    /// Each hunk's first row in a diff: its logical line, or under wrap its first wrapped row, as Scouter's
+    /// `computeHunkRowOffsets` counts (`@opentui/core` `DiffRenderable`, the left code's `lineSources`).
+    fn offsets(&self, block: &Block, diff: &Diff) -> Vec<usize> {
+        let logical: Vec<usize> = diff.hunk_lines().into_iter().map(|line| line as usize).collect();
+        if !self.wrapped.get() || logical.is_empty() {
+            return logical;
+        }
+        let (left, _) = diff.code_views();
+        let width = left.rect().width.max(1.0) as u32;
+        let mut counter = block.counter.borrow_mut();
+        if counter.is_none() {
+            *counter = TextView::new(left.buffer()).ok();
+        }
+        let Some(view) = counter.as_ref() else { return logical };
+        let viewport = Viewport { x: 0, y: 0, width, height: u32::MAX / 2 };
+        if view.set_viewport(viewport).is_err() || view.set_wrap(WrapMode::Word).is_err() {
+            return logical;
+        }
+        let total = view.info().map_or(0, |info| info.total_virtual_line_count);
+        let Ok(rows) = view.lines(0, total) else { return logical };
+        logical
+            .iter()
+            .map(|&line| rows.iter().position(|row| row.source_line as usize >= line).unwrap_or(line))
+            .collect()
     }
 
     /// Sets the wrapping of every block (Scouter `applyWrap`): wrapped lines take the pane's width, unwrapped ones
@@ -182,23 +270,6 @@ impl DiffBody {
         Some(blocks.iter().map(|block| block.root.rect().top.max(0.0) as usize).collect())
     }
 
-    /// The row each hunk starts on, in the stack, as Scouter's `hunkEntries` puts it: a hunk at the top of a diff starts
-    /// on its header (`src/diff/diff-blocks.ts:552-570`).
-    pub fn hunk_rows(&self) -> Vec<usize> {
-        let mut rows = Vec::new();
-        for block in self.blocks.borrow().iter() {
-            let Body::Diff(diff) = &block.body else { continue };
-            let header = block.header.rect().height.max(0.0) as usize;
-            let block_top = block.root.rect().top.max(0.0) as usize;
-            let diff_top = block_top + diff.rect().top.max(0.0) as usize;
-            for offset in diff.hunk_lines() {
-                let offset = offset as usize;
-                rows.push((diff_top + offset).saturating_sub(if offset == 0 { header } else { 0 }));
-            }
-        }
-        rows
-    }
-
     /// The rows the stack takes, as the frame laid them out.
     pub fn height(&self) -> usize {
         self.scroller.widget().content_view().rect().height.max(0.0) as usize
@@ -207,7 +278,7 @@ impl DiffBody {
 
 /// One file's block. Blocks after the first have a blank row above them and a hairline on their header (Scouter
 /// `createBlock`, `createHeader`).
-fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, p: &Palette) -> Block {
+fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, split: bool, p: &Palette) -> Block {
     let root = View::new(app).min_width(Length::percent(100.0)).column().shrink(0.0);
     if index > 0 {
         root.margin_edge(Edge::Top, 1);
@@ -224,7 +295,7 @@ fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, p
     root.add(&header);
     let body = match &file.patch {
         Patch::Text { text, .. } => {
-            let diff = diff(app, &file.change, text, digits, wrap, p);
+            let diff = diff(app, &file.change, text, digits, wrap, split, p);
             root.add(&diff);
             Body::Diff(diff)
         }
@@ -232,16 +303,26 @@ fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, p
             let notice = Text::new(app, "").height(1).shrink(0.0).margin_edge(Edge::Left, 2).wrap(WrapMode::None);
             notice.set_text(content(&[Seg::new(message.as_str(), p.muted)], p.text));
             root.add(&notice);
-            Body::Notice
+            Body::Notice(notice)
         }
     };
-    Block { root, header, title, counts, body, active: Cell::new(None), digits: Cell::new(digits) }
+    Block {
+        root,
+        header,
+        title,
+        counts,
+        body,
+        painted: Cell::new(None),
+        digits: Cell::new(digits),
+        counter: RefCell::new(None),
+    }
 }
 
 /// A file's patch as a unified diff, with the file's syntax and the palette's line colors (Scouter `createDiff`).
-fn diff(app: &App, change: &Change, text: &str, digits: usize, wrap: bool, p: &Palette) -> Diff {
+fn diff(app: &App, change: &Change, text: &str, digits: usize, wrap: bool, split: bool, p: &Palette) -> Diff {
     let gutter = DiffGutter { padding_left: 1, min_digits: Some(digits as u32) };
     let diff = Diff::new(app)
+        .view(if split { DiffView::Split } else { DiffView::Unified })
         .filetype(syntax::language_for(Path::new(&change.path)))
         .syntax_theme(Arc::new(syntax::theme(p)))
         .gutter(gutter)

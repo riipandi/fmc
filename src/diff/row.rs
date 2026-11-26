@@ -83,11 +83,11 @@ pub fn header_counts(change: &Change, p: &Palette) -> Vec<Seg> {
 
 /// The title of a file's block: the active mark, the fold chevron, the status letter, the index mark, the name, the old
 /// name of a rename, and the folder (Scouter `headerTitleContent`, `src/diff/diff-blocks.ts:425-449`).
-pub fn header_title(change: &Change, active: bool, p: &Palette) -> Vec<Seg> {
+pub fn header_title(change: &Change, active: bool, folded: bool, p: &Palette) -> Vec<Seg> {
     let (folder, name) = split_path(&change.path);
     let mut segments = vec![
         Seg::new(if active { "▎ " } else { "  " }, p.accent),
-        Seg::new("▾ ", p.dim),
+        Seg::new(if folded { "▸ " } else { "▾ " }, p.dim),
         Seg::new(format!("{} ", change.kind.letter()), change.kind.color(p)).bold(),
     ];
     if let Some(mark) = index_mark(change, p) {
