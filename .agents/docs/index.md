@@ -1,6 +1,6 @@
 # Agents Documentation Index
 
-updated: 2026-11-26T12:31:00+07:00
+updated: 2026-11-26T16:07:05+07:00
 
 Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), then the core documents below. Everything else is reference, history, or contract; navigate from here.
 
@@ -46,7 +46,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 | Path | Holds | Now |
 | --- | --- | --- |
 | `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | None live. `plan-00001-scouter-parity.md` is archived (done: W0 to W6, phases 1 to 25). |
-| `issues/` | Findings that outlive a turn. | `issue-00006-scrollbar-not-smooth.md` (open; owner check: the scrollbar's feel, keys and wheel match Scouter in Rex) |
+| `issues/` | Findings that outlive a turn. | `issue-00006-scrollbar-not-smooth.md` (open; owner check: the scrollbar's feel, keys and wheel match Scouter in Rex); `issue-00011-owner-hand-evaluation.md` (open: the owner's 2026-11-26 evaluation, four items, one commit each: the thumb drag, the one-file default, the binary notice, click-to-focus) |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00002-scouter-parity-closed.md` (done: plan-00001 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
 | `audit/` | Point-in-time audit reports. | `audit-00001-scouter-parity.md` (completed: the plan-00001 phase 22 parity audit; F-01 to F-06 fixed in phase 23, F-07 and F-08 approved deviations in 6cb4373) |
