@@ -6,6 +6,7 @@ use std::path::Path;
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Entry, Kind, Row, relative};
 use fmc::find::text::Snippet;
+use fmc::layout::BREAKPOINT;
 use fmc::text::display_label;
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -17,7 +18,7 @@ use super::styled::{Seg, color, content};
 pub const LIST_TOP: u16 = 3;
 
 /// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`).
-pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, p: &Palette) -> Vec<Seg> {
+pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, name_first: bool, p: &Palette) -> Vec<Seg> {
     if let Some((line, snippet)) = row.hit {
         return hit_segments(row.entry, line, snippet, selected, p);
     }
@@ -47,8 +48,16 @@ pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, p: &Palette) -
     }
     segments.push(Seg::new(marker, if selected { p.accent } else { p.dim }));
     segments.push(Seg::new(format!("{} ", icon(row.entry, folder, row.expanded)), glyph_fg));
-    let name = Seg::new(format!("{}{}", display_label(&row.entry.name), if folder { "/" } else { "" }), name_fg);
+    // A finder row names the file first and its folder after it, dimmed, so a cut row keeps the name (plan-00004, P4).
+    let (parent, label) = match row.entry.name.rsplit_once('/') {
+        Some((parent, label)) if name_first => (Some(parent), label),
+        _ => (None, row.entry.name.as_str()),
+    };
+    let name = Seg::new(format!("{}{}", display_label(label), if folder { "/" } else { "" }), name_fg);
     segments.push(if selected { name.bold() } else { name });
+    if let Some(parent) = parent {
+        segments.push(Seg::new(format!("  {}/", display_label(parent)), p.dim));
+    }
     segments
 }
 
@@ -213,7 +222,7 @@ impl TreeView {
     pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) {
         // The finder's rows need no listed root; the tree does (Scouter draws nothing before the root lists).
         let lines = if browser.is_flat() || browser.tree.is_listed(root) {
-            self.lines(browser, marks, p, root)
+            self.lines(browser, marks, p, root, app.size().0 < BREAKPOINT)
         } else {
             Vec::new()
         };
@@ -243,7 +252,7 @@ impl TreeView {
         }
     }
 
-    fn lines(&self, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) -> Vec<Line> {
+    fn lines(&self, browser: &Browser, marks: &Marks, p: &Palette, root: &Path, narrow: bool) -> Vec<Line> {
         let visible = browser.visible_rows();
         let thumbs = thumb(browser.row_count(), browser.height(), browser.top(), visible.len());
         // The selection is a row, not a path: a file with several text hits has a row for each (Browser `flat_at`).
@@ -256,7 +265,7 @@ impl TreeView {
                 let selected = browser.top() + line == selected_row;
                 let key = relative(root, &row.entry.path);
                 Line {
-                    segments: row_segments(row, selected, marks.is_ignored(&key), p),
+                    segments: row_segments(row, selected, marks.is_ignored(&key), browser.is_flat() && narrow, p),
                     selected,
                     mark: marks.mark(&key, p).map(|mark| (mark.letter, mark.color)),
                     thumb,

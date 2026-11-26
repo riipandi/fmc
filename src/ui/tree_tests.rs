@@ -26,7 +26,7 @@ fn text(segments: &[Seg]) -> String {
 #[test]
 fn a_selected_folder_row_reads_like_scouter() {
     let hogwarts = entry("hogwarts", Kind::Directory);
-    let segments = row_segments(&row(&hogwarts, 1, true, true), true, false, &DARK);
+    let segments = row_segments(&row(&hogwarts, 1, true, true), true, false, false, &DARK);
     assert_eq!(text(&segments), "▎│ ▾ \u{f07c} hogwarts/");
     let name = segments.last().unwrap();
     assert!(name.bold);
@@ -36,7 +36,7 @@ fn a_selected_folder_row_reads_like_scouter() {
 #[test]
 fn a_file_row_has_two_spaces_for_the_marker_and_the_default_icon() {
     let notes = entry("Notes.md", Kind::File);
-    let segments = row_segments(&row(&notes, 0, false, false), false, false, &DARK);
+    let segments = row_segments(&row(&notes, 0, false, false), false, false, false, &DARK);
     assert_eq!(text(&segments), "   \u{f48a} Notes.md");
     assert_eq!(segments.last().unwrap().fg, Some(DARK.text));
 }
@@ -44,7 +44,7 @@ fn a_file_row_has_two_spaces_for_the_marker_and_the_default_icon() {
 #[test]
 fn an_ignored_row_is_dimmed_in_its_icon_and_name() {
     let target = entry("target", Kind::Directory);
-    let segments = row_segments(&row(&target, 0, true, false), false, true, &DARK);
+    let segments = row_segments(&row(&target, 0, true, false), false, true, false, &DARK);
     assert_eq!(text(&segments), " ▸ \u{f07b} target/");
     assert_eq!(segments[2].fg, Some(DARK.ignored));
     assert_eq!(segments.last().unwrap().fg, Some(DARK.ignored));
@@ -63,7 +63,7 @@ fn icons_and_colors_follow_the_extension() {
     ];
     for (name, kind, glyph, colour) in cases {
         let e = entry(name, kind);
-        let segments = row_segments(&row(&e, 0, false, false), false, false, &DARK);
+        let segments = row_segments(&row(&e, 0, false, false), false, false, false, &DARK);
         assert_eq!(segments[2].text, format!("{glyph} "), "{name}");
         assert_eq!(segments[2].fg, Some(colour), "{name}");
     }
@@ -95,9 +95,19 @@ fn a_text_hit_row_reads_name_line_snippet_and_folder_like_scouter() {
     let chapters =
         Entry { name: "notes/chapters.txt".into(), path: "/vault/notes/chapters.txt".into(), kind: Kind::File };
     let snippet = Snippet { before: "Line ".into(), matched: "043".into(), after: ": Teabing".into() };
-    let segments = row_segments(&hit_row(&chapters, 43, &snippet), false, false, &DARK);
+    let segments = row_segments(&hit_row(&chapters, 43, &snippet), false, false, false, &DARK);
     assert_eq!(text(&segments), " \u{f016} chapters.txt:43  Line 043: Teabing  notes/");
     let matched = segments.iter().find(|seg| seg.text == "043").unwrap();
     assert_eq!(matched.fg, Some(DARK.accent_soft));
     assert!(matched.bold);
+}
+
+#[test]
+fn a_finder_row_names_the_file_first_and_its_folder_dimmed_after_it() {
+    let marauder = entry("assets/marauder-map.png", Kind::File);
+    let narrow = row_segments(&row(&marauder, 0, false, false), false, false, true, &DARK);
+    assert_eq!(narrow.last(), Some(&Seg::new("  assets/", DARK.dim)));
+    assert!(text(&narrow).find("marauder-map.png") < text(&narrow).find("assets/"));
+    let wide = row_segments(&row(&marauder, 0, false, false), false, false, false, &DARK);
+    assert!(text(&wide).contains("assets/marauder-map.png"), "a row at 80 columns keeps its path");
 }
