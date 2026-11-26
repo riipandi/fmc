@@ -520,3 +520,20 @@ Consequences:
 Alternatives considered:
 
 - Implement `--upgrade` — rejected by the owner: it needs an installer and a release channel.
+
+### Approved deviation: the changes screen opens in one-file mode
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's changes screen starts with every changed file stacked in one body (`scouter:src/diff/diff-screen.ts:82`, `scope: DiffScope = "all"`); `a` toggles to one file.
+
+Decision: fmc opens the changes screen showing only the selected file's diff; `a` toggles to all files and back, as in Scouter. Approved by the owner on 2026-11-26, after the parity evaluation.
+
+Consequences:
+
+- (positive) The diff body shows one file at a time by default, which is easier to read in a large change set.
+- (negative) The first frame of the changes screen differs from Scouter's; Scouter users press `a` once more.
+
+Alternatives considered:
+
+- Keep Scouter's all-files default — rejected by the owner.
