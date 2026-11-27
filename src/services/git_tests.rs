@@ -437,3 +437,18 @@ fn a_file_outside_a_repository_is_an_error() {
     fs::write(dir.path().join("spells.txt"), "Hogwarts\n").unwrap();
     assert_eq!(signs(&dir.path().join("spells.txt")), Err(NOT_A_REPOSITORY.to_string()));
 }
+
+#[test]
+fn a_pure_rename_has_no_signs_as_the_changes_screen_shows_it() {
+    let dir = committed_spells(None);
+    git(dir.path(), &["mv", "spells.txt", "incantations.txt"]);
+    assert_eq!(signs(&dir.path().join("incantations.txt")), Ok(Vec::new()));
+}
+
+#[test]
+fn a_renamed_file_is_diffed_from_its_old_path() {
+    let dir = committed_spells(None);
+    git(dir.path(), &["mv", "spells.txt", "incantations.txt"]);
+    fs::write(dir.path().join("incantations.txt"), "Hermione Granger\nLeigh Teabing\nSophie Neveu\n").unwrap();
+    assert_eq!(signs(&dir.path().join("incantations.txt")), Ok(vec![(1, Sign::Modified)]));
+}

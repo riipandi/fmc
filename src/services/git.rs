@@ -159,16 +159,27 @@ impl Repository {
     }
 
     /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`, plan-00008
-    /// D2). An untracked file is all added, as the listing shows it.
+    /// D2). The whole tree's status is read with the listing's rename detection, so a renamed file diffs from its old
+    /// path, and a pure rename has no signs, as the changes screen shows it. An untracked file is all added.
     fn file_signs(&self, path: &str) -> Result<Vec<(u32, Sign)>, String> {
-        let kind = {
+        let change = {
             let mut queue = self.queue();
             queue.base = resolve_base(&self.root)?;
             self.sync(&mut queue);
-            let untracked = self.copy_git(&["ls-files", "--others", "--exclude-standard", "-z", "--", path])?;
-            if untracked.text.is_empty() { ChangeKind::Modified } else { ChangeKind::Untracked }
+            let statuses = self.copy_git(&diff_args(&["diff", queue.base.as_str(), "--name-status", "-z"]))?;
+            let listed =
+                parse_name_status(&statuses.text, &HashMap::new()).into_iter().find(|change| change.path == path);
+            match listed {
+                Some(change) => change,
+                None => {
+                    let untracked = self.copy_git(&["ls-files", "--others", "--exclude-standard", "-z", "--", path])?;
+                    if untracked.text.is_empty() {
+                        return Ok(Vec::new());
+                    }
+                    Change::untracked(path)
+                }
+            }
         };
-        let change = Change { kind, ..Change::untracked(path) };
         Ok(fmc::diff::signs(&self.patch(&change, 0)?))
     }
 

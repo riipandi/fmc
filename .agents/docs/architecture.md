@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T12:07:07+07:00
+updated: 2026-11-27T12:45:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -712,7 +712,7 @@ Decision: the owner approved (2026-11-27, plan-00008, O1 to O3) a one-column str
 Agent decisions within that approval (`plan-00008`, D1 to D7):
 
 - D1: the strip is reserved by a blank sign on line 1 (`ui/reader.rs` `draw_signs`), so the numbers do not move as signs come and go. "Inside a repository" is the tree's marks (`app/tree.rs`, `m.in_repo`).
-- D2: the classes come from a `-U0` patch (`src/diff/signs.rs`). The first new lines of a hunk are modified, as many as the old side had, and the rest are added; a hunk with no new lines marks the line above, or line 1 with `▔`; an untracked file is all added (`services/git.rs` `file_signs`).
+- D2: the classes come from a `-U0` patch (`src/diff/signs.rs`). The first new lines of a hunk are modified, as many as the old side had, and the rest are added; a hunk with no new lines marks the line above, or line 1 with `▔`; an untracked file is all added. A renamed file diffs from its old path, found by the listing's rename detection, so a pure rename has no signs, as `d` shows it (`services/git.rs` `file_signs`).
 - D3: the text view only. The finder's preview and rendered Markdown, images, binaries, and the changes screen draw no signs. Auto-preview's reader does.
 - D4 (refined): the sign job runs when a text is shown and on each browse tick (2 s to 30 s), not only when the file reloads or the change stamp moves. A commit that keeps some of the file's edits leaves its mark at `M`, so the marks cannot show that the signs moved (checked live: after a partial commit only the uncommitted line kept its sign). The job is a `-U0` diff of one file plus an untracked check: about 45 ms on fmc's repository, against about 60 ms for the marks job the same tick runs, and it runs on a worker. An answer is applied only to the showing it was asked for: `Shown::Text.serial` counts showings, and a reload keeps its showing, so the next tick brings the reloaded file's signs (`app/gutter.rs` `apply`). The plan keyed the answer by a reload generation; the showing serial covers the same case with one counter.
 - D5: a git failure, or a file outside a repository, clears the signs with no notice.
