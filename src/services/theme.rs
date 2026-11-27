@@ -2,16 +2,15 @@
 //! `services/settings.rs` reads the settings. The UI thread never reads the folder again.
 
 use std::ffi::OsString;
-use std::fs::{self, File};
-use std::io::{ErrorKind, Read};
+use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use fmc::text::display_label;
 use fmc::theme::catalog::{self, Theme};
 
-/// A theme file larger than this is skipped unread past the cap: a palette is a few hundred bytes, and the read happens
-/// before the first frame.
-const MAX_BYTES: u64 = 1 << 20;
+use super::{MAX_CONFIG_BYTES, ReadError};
+use crate::services;
 
 /// The themes the folder holds, and a notice for each file that was skipped.
 #[derive(Debug, Default)]
@@ -56,16 +55,13 @@ pub fn load(dir: &Path) -> Loaded {
     loaded
 }
 
-/// The file's text, or why it cannot be read: a read error, a size past `MAX_BYTES`, or text that is not UTF-8.
+/// The file's text, or why it cannot be read: a read error, a size past the cap, or text that is not UTF-8.
 fn read(file: &Path) -> Result<String, String> {
-    let mut bytes = Vec::new();
-    File::open(file)
-        .and_then(|handle| handle.take(MAX_BYTES + 1).read_to_end(&mut bytes))
-        .map_err(|error| format!("it could not be read ({})", display_label(&error.to_string())))?;
-    if bytes.len() as u64 > MAX_BYTES {
-        return Err(format!("it is larger than {} KiB", MAX_BYTES / 1024));
-    }
-    String::from_utf8(bytes).map_err(|_| "it is not UTF-8 text".into())
+    services::read_config(file).map_err(|error| match error {
+        ReadError::Io(error) => format!("it could not be read ({})", display_label(&error.to_string())),
+        ReadError::TooLarge => format!("it is larger than {} KiB", MAX_CONFIG_BYTES / 1024),
+        ReadError::NotText => "it is not UTF-8 text".into(),
+    })
 }
 
 #[cfg(test)]

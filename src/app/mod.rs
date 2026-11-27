@@ -330,6 +330,7 @@ pub fn run(
     target: &Path,
     settings: Parsed,
     themes: crate::services::theme::Loaded,
+    keys: fmc::keys::Parsed,
     settings_path: Option<PathBuf>,
 ) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
@@ -358,6 +359,7 @@ pub fn run(
         m.settings.values = settings.settings.clone();
         m.settings.themes = themes.themes.clone();
         m.settings.path = settings_path;
+        m.parser = Parser::new(keys.keymap);
         m.auto_preview = settings.settings.auto_preview;
         m.sidebar_jump = settings.settings.sidebar_jump;
         m.reader_jump = settings.settings.reader_jump;
@@ -368,7 +370,8 @@ pub fn run(
         let Chosen { dark, light, notices } =
             catalog::choose(themes.themes, &settings.settings.dark_theme, &settings.settings.light_theme);
         (m.dark, m.light) = (dark, light);
-        let notices: Vec<String> = settings.notices.into_iter().chain(themes.notices).chain(notices).collect();
+        let notices: Vec<String> =
+            settings.notices.into_iter().chain(themes.notices).chain(keys.notices).chain(notices).collect();
         if !notices.is_empty() {
             m.message = Some(Message { text: notices.join(" "), error: true });
         }

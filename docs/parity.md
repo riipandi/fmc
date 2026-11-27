@@ -18,6 +18,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 - `Ctrl+/` shows or hides the sidebar. `Ctrl+.` shows or hides dotfiles in the tree and the finder, and `.` does the same for terminals that cannot send `Ctrl+.`, such as Terminal.app. Dotfiles are shown by default, as in Scouter. Scouter has none of these keys.
 - `Ctrl+F` in the finder switches name matching to fuzzy (see Finder).
 - The footer at 80 columns can drop one more hint than Scouter's does, on the changes screen `a one file`, because `^q quit` is one column wider than `q quit`. The key list always shows every key.
+- The keys can be changed in `keymap.json`, which is read at start (plan-00015). Scouter's keys are fixed (`scouter:src/core/keymap.ts:3-55`). The defaults are Scouter's keys with the differences above, and `architecture.md` records the file ("Approved deviation: the keys can be changed in keymap.json"). The file is described in [Keys](keymaps.md#changing-the-keys).
 
 ## Mouse and focus
 

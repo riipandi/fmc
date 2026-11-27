@@ -145,3 +145,14 @@ fn a_wheel_over_the_gutter_scrolls_the_text_beside_it() {
     app.advance(std::time::Duration::from_millis(50));
     assert!(reader_row(&app, 3).starts_with("  2  line 01"), "{}", reader_row(&app, 3));
 }
+
+#[test]
+fn a_key_from_the_keymap_file_runs_its_action_and_the_default_key_does_nothing() {
+    let (app, model, _ui) = reading(120);
+    let keymap = r#"{"everywhere.ctrl-,": null, "everywhere.ctrl-s": "open_settings"}"#;
+    model.borrow_mut().parser = Parser::new(fmc::keys::keymap::parse(keymap).keymap);
+    app.key(KeyEvent::new(KeyCode::Char(','), Modifiers::CTRL));
+    assert!(model.borrow().settings.page.is_none(), "the default Ctrl+, is unbound");
+    app.key(KeyEvent::new(KeyCode::Char('s'), Modifiers::CTRL));
+    assert!(model.borrow().settings.page.is_some(), "the rebound Ctrl+s opens the Settings page");
+}

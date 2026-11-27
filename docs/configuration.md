@@ -94,3 +94,7 @@ A theme file is strict JSON, with no comments:
 `find_mode` sets how the file finder (`/`) matches a name when it opens. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one pattern, spaces included, and matches its letters in order anywhere in the path, ignoring case. The best matches come first, and the letters that matched are highlighted.
 
 `Ctrl+F` in the finder flips the match for this run only, and the query runs again; the footer names `fuzzy` while it is on. A restart returns to `find_mode`: a flip is not saved. Change `find_mode` on the Settings page to keep a different start. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
+
+## Keymap file
+
+`$XDG_CONFIG_HOME/fmc/keymap.json`, or `~/.config/fmc/keymap.json`, sets key bindings. It is a JSON object of `"<context>.<key>": "<action>"` entries, or `null` to unbind a default key. fmc reads it when it starts and never writes it, so a change applies on the next start. A bad entry is skipped with a footer notice that names its line, and the other entries apply; a file that is not a JSON object keeps every default. The shape, the context and action names, and the notices are in [Keys](keymaps.md#changing-the-keys).

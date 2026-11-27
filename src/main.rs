@@ -34,10 +34,22 @@ impl Drop for RemoveCopies {
     }
 }
 
+/// The keys the keymap file sets, with its notices, read once at start (`services/keymap.rs`).
+fn keymap() -> fmc::keys::Parsed {
+    let (config_home, home) = (std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"));
+    services::keymap::path(config_home, home).as_deref().map(services::keymap::load).unwrap_or_default()
+}
+
 fn run() -> Result<(), String> {
     let _copies = RemoveCopies;
     match args::parse(std::env::args_os().skip(1))? {
-        Command::Help => println!("{}", args::help_text()),
+        Command::Help => {
+            let keys = keymap();
+            for notice in &keys.notices {
+                eprintln!("fmc: {notice}");
+            }
+            println!("{}", args::help_text(&keys.keymap));
+        }
         Command::Version => println!("{}", args::version_text()),
         Command::Open(path) => {
             if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
@@ -51,7 +63,8 @@ fn run() -> Result<(), String> {
             let settings = path.as_deref().map(services::settings::load).unwrap_or_default();
             let themes =
                 services::theme::folder(config_home, home).map(|dir| services::theme::load(&dir)).unwrap_or_default();
-            app::run(&target, settings, themes, path).map_err(|e| e.to_string())?;
+            let keys = keymap();
+            app::run(&target, settings, themes, keys, path).map_err(|e| e.to_string())?;
         }
     }
     Ok(())

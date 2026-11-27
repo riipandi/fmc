@@ -23,12 +23,12 @@ pub enum Command {
     Open(Option<OsString>),
 }
 
-pub fn help_text() -> String {
+pub fn help_text(keymap: &fmc::keys::Keymap) -> String {
     format!(
         "fmc — a minimal terminal file manager\n\n\
          Usage: fmc [file-or-directory]\n       fmc --version\n\n\
          Defaults to the current directory. UTF-8 text files show their first megabyte.\n\n{}\n",
-        fmc::keys::key_list_text()
+        fmc::keys::key_list_text_with(keymap)
     )
 }
 

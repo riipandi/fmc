@@ -15,11 +15,11 @@ phases:
     - id: 3
       title: The Settings page on Ctrl+,
       status: committed
-      note: "to be added by the phase 4 commit; agent decisions A19 to A21 (2026-11-27)"
+      note: "d68af26; agent decisions A19 to A21 (2026-11-27)"
     - id: 4
       title: The keymap file over the defaults
-      status: pending
-      note: —
+      status: committed
+      note: "to be added by the phase 5 commit"
     - id: 5
       title: Docs sync, ledger close, handover
       status: pending
@@ -104,6 +104,14 @@ These picks are the agent's, dated 2026-11-27. Each is one line to change; the o
 - **A19 (2026-11-27): Left and Right step a choice back and forward.** Enter and Space step forward, as the plan's keys say. Left (and `h`) step back and Right (and `l`) step forward, because a choice with no way back would be a one-way walk through the theme ids. Rejected: a Shift or Backspace binding, which a terminal may not send.
 - **A20 (2026-11-27): one save is in flight at a time.** A change made while a write runs waits in a queue, and the next write takes the queue as one batch (`app/settings.rs` `start`). A refused batch takes back itself and the queue, last first. Rejected: refusing a change while a save runs (a held key would be refused), and one write per change in parallel (two writes would race on the file, and the second would lose the first's key).
 - **A21 (2026-11-27): the page is modal to the mouse.** While the page is open the dialog's catcher covers the screen (`app/overlay.rs` `draw`), so a click or a wheel step on the list or the reader does nothing, as it does under a dialog. The rows take keys only. Open for the owner: whether a click should select a row, which the plan does not name.
+- **A22 (2026-11-27): the keymap file is one flat object.** Each entry is `"<context>.<key>": "<action>"` to bind, or `"<context>.<key>": null` to unbind the default in that context. Contexts are `everywhere`, `browse`, `reader`, `changes`, `changes_list`, and `changes_reader`; a key is one chord or several separated by spaces (a sequence). Rejected: a nested object per context (a second level for one key), Zed's array of blocks (ordered blocks with a predicate, more syntax than RI-13 needs), and JSONC (D10 (a)). The smallest shape that the notices (A11) need: the line of an entry is found in the text, since serde_json keeps no lines.
+- **A23 (2026-11-27): action names are the variants in snake_case, one name per parameter a row uses.** `move_down` and `move_up` are `Move(1)` and `Move(-1)`, `move_down_five` is `Move(5)`, `jump_next` is `Jump(1)`, `next_hunk` is `Hunk(1)`, and so on through `ACTION_NAMES` (68 names, `keys/bindings.rs`). `GoToLine` has no name, because a count is not a key. The names are listed in `docs/keymaps.md`.
+- **A24 (2026-11-27): the table matches modifiers as the old arms did.** `ctrl-` and `alt-` rows ignore Shift; `*-` ignores every modifier (Tab, Escape, as the old arms did); a named key or a symbol ignores Shift, except that a `shift-down` or `shift-up` row comes before its plain row; `.` checks Shift, because the old `.` arm does (`!key.shift`), so a Shift+`.` (a kitty terminal can send `>` that way) is not dotfiles. A differential run of the old `match` (from HEAD) against the table gave no difference over 945,024 cases (every key, modifier set, state, and key pair); the run was a scratch test outside the tree, and `keys/tests.rs` passes unchanged.
+- **A25 (2026-11-27): a sequence waits, and the defaults have none.** A row longer than the keys pressed so far makes them wait (`More`), and the longer row wins over a shorter one that matches the same keys. A key that cannot continue the wait cancels it and is read alone, so the cancelled keys do not run. The defaults have no sequence: `g` is Top on its own (`keys/tests.rs` pins it), and `gg` is the card's label for it. Only a user sequence that starts with `g` makes `g` wait.
+- **A26 (2026-11-27): the card reads A10 as "a row shows its actions' keys".** A card row lists the merged keys of its actions, and keeps its fixed label while they are the defaults. A binding of an action with a row joins that row, so a rebound key shows on its action's row. A binding of an action with no row gets its own row under its context's section. Read this way, A10's "a new binding gets its own row" applies to actions with no row. Open for the owner: the other reading (every added binding its own row, with the default row showing only the default keys).
+- **A27 (2026-11-27): the keymap notices follow the theme notices, and `--help` reads the file.** The footer order is settings, themes, keymap, then the palette choice (extends A18). `fmc --help` loads the same file and prints its notices to the error stream, before the help text.
+- **A28 (2026-11-27): one config-file read, capped at 1 MiB.** `services/mod.rs` `read_config` (with `MAX_CONFIG_BYTES`) serves the theme files and `keymap.json`; a FIFO or device is refused by its metadata before it is opened. Residual: a FIFO put in place between that check and the open could still block the startup read, which needs write access to the config folder.
+- **A29 (2026-11-27): the CLI tests run with no config.** `tests/cli.rs` sets `XDG_CONFIG_HOME` to a folder that does not exist (A12), so no test reads the owner's files; the help test with a rebound key sets its own folder.
 - **A12 (2026-11-27): a live run uses a temporary config folder.** Every live run sets `XDG_CONFIG_HOME` to a temp folder (`src/services/settings.rs:12-18` reads it), so the owner's `~/.config/fmc` is never touched by a test.
 
 ### Parity and records (what each feature needs)

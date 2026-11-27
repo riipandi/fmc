@@ -5,12 +5,15 @@ pub mod changes;
 pub mod find;
 pub mod fs;
 pub mod git;
+pub mod keymap;
 pub mod poll;
 pub mod settings;
 pub mod theme;
 pub mod write;
 
 use std::ffi::OsString;
+use std::fs::File;
+use std::io::{self, ErrorKind, Read};
 use std::path::{Path, PathBuf};
 
 use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
@@ -28,6 +31,32 @@ pub fn config_folder(config_home: Option<OsString>, home: Option<OsString>) -> O
         None => PathBuf::from(home?).join(".config"),
     };
     Some(base.join("fmc"))
+}
+
+/// A config file larger than this is refused unread past the cap: the reads happen before the first frame.
+pub const MAX_CONFIG_BYTES: u64 = 1 << 20;
+
+/// Why a config file could not be read whole.
+pub enum ReadError {
+    Io(io::Error),
+    TooLarge,
+    NotText,
+}
+
+/// The text of a config file, read up to `MAX_CONFIG_BYTES`. A FIFO or a device is refused before it is opened, so a
+/// read at startup cannot block on it.
+pub fn read_config(file: &Path) -> Result<String, ReadError> {
+    if std::fs::metadata(file).is_ok_and(|meta| !meta.is_file()) {
+        return Err(ReadError::Io(io::Error::new(ErrorKind::InvalidInput, "it is not a regular file")));
+    }
+    let mut bytes = Vec::new();
+    File::open(file)
+        .and_then(|handle| handle.take(MAX_CONFIG_BYTES + 1).read_to_end(&mut bytes))
+        .map_err(ReadError::Io)?;
+    if bytes.len() as u64 > MAX_CONFIG_BYTES {
+        return Err(ReadError::TooLarge);
+    }
+    String::from_utf8(bytes).map_err(|_| ReadError::NotText)
 }
 
 /// What a worker found, for the app to apply on the UI thread.

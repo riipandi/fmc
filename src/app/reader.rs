@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 
 use fmc::diff::Sign;
-use fmc::keys::{Focus, key_page_markdown};
+use fmc::keys::{Focus, key_page_markdown_with};
 use fmc::reader::binary::format_size;
 use fmc::reader::document::Document;
 use fmc::reader::image;
@@ -239,7 +239,7 @@ pub fn toggle_keys(m: &mut Model, ui: &Ui) {
     if m.shown.shows_keys() {
         return close_keys(m, ui);
     }
-    let text = key_page_markdown();
+    let text = key_page_markdown_with(m.parser.keymap());
     let document = Document { lines: text.lines().count(), text, truncated: false };
     let back = Back {
         shown: std::mem::take(&mut m.shown),

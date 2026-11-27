@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T21:30:00+07:00
+updated: 2026-11-27T22:30:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -235,6 +235,8 @@ Context: Scouter keeps a keymap for `?` and `--help` (`scouter:src/core/keymap.t
 
 Decision: one key table drives dispatch, the `?` card, and `--help`; a pure parser over pending keys (counts included) returns `More | Bad | Done`, tested with key-sequence tables. The keys and dispatch order are Scouter's (`research/scouter-inventory.md` §4).
 
+Correction (plan-00015 phase 4): the table is true from that phase, in code (`keys/bindings.rs`), read through the merged keymap (`keys/keymap.rs`). Before it, dispatch was the `match` arms of `keys/parser.rs`, and the card and `--help` were hand-written, so this record's claim was not yet true.
+
 Consequences:
 
 - (positive) Help and dispatch cannot drift; key handling is unit-testable without a terminal.
@@ -243,6 +245,76 @@ Consequences:
 Alternatives considered:
 
 - A Neovim-style grammar — rejected: `Tab`, `?`, `q`, `w`, `d`, `y`, `m` mean other things in Scouter (`research/editor-study.md` §4); parked as an alternate keymap in the roadmap.
+
+### The default keys are one table, and keymap.json merges over it
+
+Context: Scouter's keys are a fixed list (`scouter:src/core/keymap.ts:3-55`), and its dispatch is a chain of checks (`scouter:src/app/app.ts:760-800`, `handleBrowserKey`, `handleViewerKey`, `handleDiffKey`). fmc's dispatch was the `match` arms of `keys/parser.rs`, so the card and the dispatch could drift. RI-13 asks for user keys in `keymap.json`; the owner chose a file read at start and edited by hand (plan-00015, D11 (a)).
+
+Decision: the default keys are rows of `keys/bindings.rs` (`DEFAULTS`: context, key, typing, action). `keys/keymap.rs` merges the file over them: a user row comes first, a user row at the same context and key replaces the default, and `null` removes it. The parser walks the merged rows (plan-00015, A8), and a pending sequence reads the same rows, so a longer binding that starts with a default key makes that key wait. Count digits and `z` stay in code. The defaults were checked against the old arms with a differential run over 945,024 key, state, and key-pair cases (2026-11-27): no `Step` differs, and `keys/tests.rs` passes unchanged.
+
+Consequences:
+
+- (positive) The defaults, the card, and `--help` read one table, so a key is bound in one place.
+- (positive) A rebound key works in the parser and on the card, with no second list to edit.
+- (negative) Each row carries its modifier rule in data (`ctrl-`, `alt-`, `*-`, Shift on a letter); a new row needs the rule that its old arm had (`rust.md`, "A key is bound in one row").
+- (negative) Count digits and `z` cannot be rebound.
+
+Alternatives considered:
+
+- A second parser beside the match arms — rejected (plan-00015, A8): the card and the dispatch would drift again.
+- An in-UI rebinding with a key-capture step (plan-00015, D11 (b)) — rejected for this plan: the legacy encoding cannot send some keys, so a capture cannot finish for them; the owner chose the file.
+
+### Approved deviation: the keys can be changed in keymap.json
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's keys are fixed (`scouter:src/core/keymap.ts:3-55`), and it has no configuration file (`scouter:docs/decision/0001-read-only-and-minimal.md:7`).
+
+Decision: `$XDG_CONFIG_HOME/fmc/keymap.json`, or `~/.config/fmc/keymap.json`, rebinds keys. Each entry is `"<context>.<key>": "<action>"` to bind, or `null` to unbind a default. The file is read at start and never written. The default keys are unchanged, and the card and `--help` show the merged keys. The owner approved the file on 2026-11-27 (plan-00015, D11 (a) and D13 (a); RI-13). The shape and names are in `docs/keymaps.md` and `docs/configuration.md`.
+
+Consequences:
+
+- (positive) A key a terminal cannot send, or one that clashes with a terminal's own, can move to another key.
+- (negative) A restart applies a change; a rebind is not checked against other keys beyond the rule that the first matching row wins.
+- (negative) A bad entry is skipped with a notice, so a typo costs one key, and the owner must read the footer or the stderr line to see it.
+
+Alternatives considered:
+
+- In-UI rebinding with a key-capture step (D11 (b)) — rejected: the owner chose the file (see the record above).
+- JSONC with comments (D10 (b)) — rejected: strict JSON, as the settings file (D10 (a)).
+
+### A bad keymap entry is skipped with a notice that names its line, and the rest apply
+
+Context: a user file can name an unknown action or context, or a key name fmc does not know. RI-13 asks that a bad file is not applied; the owner's answer (plan-00015, A11) is that only the bad entry is skipped. The bad-file rule of the settings file (a file that is not a JSON object keeps every default) applies to a file that is not an object or not JSON.
+
+Decision: each entry is checked alone (`keys/keymap.rs` `parse`). A skipped entry gives one notice, `keymap.json line N: "<entry>": <reason>.`, where N is the entry's line in the file; the other entries apply. A file that is not a JSON object, or is not JSON, keeps every default and gives one notice. The file is read by `services/mod.rs` `read_config`, which refuses a file past 1 MiB (the theme files' cap, now shared) and a FIFO before it is opened. The notices show in the footer at start, after the settings' and the themes' notices (A18). `--help` prints them to stderr.
+
+Consequences:
+
+- (positive) One typo costs one key, and the notice names the line to fix.
+- (negative) `serde_json` keeps no line numbers, so a skipped entry's line is found by searching the text, once per skipped entry (`keys/keymap.rs` `line_of`).
+- (negative) A FIFO put in place between the check and the open could still block the startup read; only someone who can write the config folder can do that.
+
+Alternatives considered:
+
+- Refusing the whole file at the first bad entry — rejected (A11): one typo would drop every rebind.
+- A JSON parser that keeps line numbers — rejected: it needs a dependency the rules do not approve.
+
+### The `?` card and `--help` show the merged keys
+
+Context: the card and `--help` used a hand-written list (`keys/mod.rs` `KEY_SECTIONS`). A rebound key would show its old label, and a new key would show nowhere (plan-00015, A10).
+
+Decision: each card row with actions (`ROW_ACTIONS`) lists the merged keys of those actions. A row keeps its fixed label while its keys are still the defaults, so the card with no file is the card of the previous phase. A binding of an action that has a row joins that row, so a rebound key shows on its action's row. A binding of an action with no row (for example `move_page_down`, which no row names) gets a row of its own under its context's section. Rows without actions (`120G`, `zz`, `: q`) stay fixed text. Read this way, plan-00015 A10's "a new binding gets its own row" applies to actions with no row; the owner may want the other reading.
+
+Consequences:
+
+- (positive) A rebound key shows on the row the user looks at, and `--help` matches the card.
+- (negative) A row whose keys are all unbound reads `unbound`.
+- (negative) A second key for a documented action joins its row rather than getting its own, which is the reading above.
+
+Alternatives considered:
+
+- A separate "custom keys" section — rejected (A10): it repeats what the table already says.
 
 ### Approved deviation: revealing a file expands its immediate parent folder
 
