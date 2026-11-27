@@ -4,7 +4,9 @@
 
 use fmc::keys::Key;
 use fmc::layout::tier;
-use fmc::overlay::{Dialog, FieldEdit, Outcome, Overlay, Stop};
+#[cfg(any(debug_assertions, test))]
+use fmc::overlay::Dialog;
+use fmc::overlay::{FieldEdit, Outcome, Overlay, Stop};
 use opentui::prelude::*;
 
 use super::*;
@@ -191,7 +193,7 @@ pub fn close(app: &App, m: &mut Model) {
 }
 
 /// Opens a dialog over the page with its field empty.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, test))]
 fn open_dialog(m: &mut Model, ui: &Ui, dialog: Dialog) {
     ui.overlay.dialog.field.set_value("");
     m.overlay = Some(Overlay::Dialog(dialog));
