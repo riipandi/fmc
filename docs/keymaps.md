@@ -39,7 +39,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | Keys | Action |
 | --- | --- |
 | `j` `k` | scroll |
-| `/` | search the file, in the rendered view too (its occurrences); Enter next, Esc keeps it for n N |
+| `/` | search the file; Enter next, Esc keeps it for n N |
 | `n` `N` `p` | next / previous match |
 | `space` `b` `^d` `^u` | page / half a page |
 | `gg` `G` | top / bottom |

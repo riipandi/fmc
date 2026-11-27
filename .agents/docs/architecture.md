@@ -856,6 +856,24 @@ Alternatives considered:
 - Smart case, as in the usual editors — rejected: it would make the rendered view disagree with the code view on the same query.
 - Exact rows inside a block — rejected: OpenTUI 0.9.9 exposes a block's rows, not a byte's row (`opentui-0.9.9/src/widget/markdown.rs:758`).
 
+### Approved deviation: the rendered view shows git change signs beside its blocks
+
+Context: plan-00008 draws the git signs in the text view's strip and keeps them out of the rendered view (its D3). Scouter's reader has no git signs (`scouter:src/reader/code-view.ts:99-108`). plan-00010 asks for the signs beside the rendered blocks, so a changed paragraph reads as changed where the reader draws it (owner, 2026-11-27).
+
+Decision: each top-level block takes the signs of its source lines (the split of `ui/markdown_blocks.rs`, marked by `reader/rendered_signs.rs`). A block with an added or changed line gets a bar in its strongest colour (`modified` over `added`) for its rows, in a column over the viewer's left edge, where the rendered text's padding is. A deletion is a `▁` in `removed` on the row under the block above it, and a deletion above line 1 is a `▔` over the first block. A sign on a blank line between blocks belongs to no block, so an added blank line draws nothing. The column is absolutely positioned, so the text does not move, and each mark is placed at its block's document row less the scroll at each paint. The signs are plan-00008's (the same base, the same refresh), and `git_gutter` turns them off (plan-00010 D7).
+
+Consequences:
+
+- (positive) A changed paragraph, heading, or list is marked where the reader draws it, and a deletion sits under the block that lost its line.
+- (negative) A bar covers the whole block, not the changed line; a deletion inside a block is drawn under the block.
+- (negative) A blank line added between blocks is not marked.
+- (negative) The column overlays the viewer's first column; a pointer on it does not reach the scroll box (not measured).
+
+Alternatives considered:
+
+- A per-line gutter beside the viewer, as the code view has — rejected: a gutter slot takes its width from the text, which would move the rendered text. The padding is the column the owner asked for (plan-00010 D6).
+- Per-line signs inside a block — rejected: OpenTUI draws a block's rows, not its source lines (`opentui-0.9.9/src/widget/markdown.rs:758`), so the block is the unit.
+
 ### Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.

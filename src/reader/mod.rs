@@ -12,4 +12,5 @@ pub mod mermaid;
 pub mod motion;
 pub mod position;
 pub mod rendered_search;
+pub mod rendered_signs;
 pub mod search;

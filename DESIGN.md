@@ -178,6 +178,8 @@ One column left of the line numbers in the text view, inside a git repository. `
 
 In the rendered Markdown view, `/` marks each occurrence of the query in the text the view draws. Every match takes `match-fg` on `match-bg`, as the code view's match does. The current match takes the text colour on `target-bg`, so `n` and `N` show which one they reached. A fenced block in a highlighted language is marked the same way; a block of another language is counted and not marked. Scouter has no marks here (it refuses the search), so this is a recorded deviation (`docs/parity.md`).
 
+In the rendered view, the same signs sit at the left edge beside each changed block: a bar in `added` or `modified` for the block's rows (the stronger one when a block has both), and `▁` in `removed` under the block above a deletion. The text does not move. The sign column is over the padding, so a block with a change keeps its width. Scouter has no signs here; this is a recorded deviation (`docs/parity.md`).
+
 ### Footer pills and hints
 
 Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `SEARCH`. A pill is `accent-ink` on `accent`, bold. Hints show the key in `accent-soft` and the action in `dim`. Position reads `All`, `Top`, `Bot`, or a percentage.

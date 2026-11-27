@@ -28,6 +28,7 @@ use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
 use fmc::layout::{Page, Tier, tier};
 use fmc::reader::markdown::PARAGRAPH_REFUSED;
 use fmc::reader::position::scroll_label;
+use fmc::reader::rendered_signs::block_marks;
 use fmc::settings::Parsed;
 use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
 use mouse::wire_mouse;
@@ -42,6 +43,7 @@ use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
 use crate::ui::hints::{self, Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
+use crate::ui::markdown_signs::SignStrip;
 use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
@@ -74,6 +76,8 @@ struct Ui {
     diff: DiffBody,
     reader: CodeView,
     markdown: MarkdownView,
+    /// The git signs beside the rendered view's blocks (plan-00010 D6), over the viewer's left edge.
+    markdown_signs: SignStrip,
     picture: Picture,
     /// The preview of a text hit, in its own view beside the reader while the finder shows (Scouter `HitPreview`).
     preview: CodeView,
@@ -498,6 +502,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let welcome = welcome::welcome(app, p);
     let reader = CodeView::new(app, p);
     let markdown = MarkdownView::new(app, p);
+    let markdown_signs = SignStrip::new(app);
     let viewer = Viewer::new(app);
     let picture = Picture::new(app);
     let binary = BinaryView::new(app);
@@ -516,6 +521,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
     viewer.gutter().add(&reader.gutter());
     stack.add(&welcome.root).add(&binary.root()).add(&viewer.view()).add(&preview_viewer.view()).add(&diff.root);
+    viewer.view().add(&markdown_signs.view());
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
     panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
@@ -537,6 +543,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         diff,
         reader,
         markdown,
+        markdown_signs,
         picture,
         preview,
         preview_viewer,
@@ -686,6 +693,15 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The outside gutters follow the scroll rows, so their numbers stay level with the text (`ui/reader.rs`).
     ui.reader.follow(ui.viewer.position().1);
     ui.preview.follow(ui.preview_viewer.position().1);
+    // The rendered view's git signs sit beside its blocks at the scroll (plan-00010 D6). Nothing shows outside it.
+    let (signs, strip) = gutter::drawn(m);
+    let marks = match m.shown.text() {
+        Some((document, ..)) if strip && m.shown.previewing() && !signs.is_empty() => {
+            block_marks(&ui.markdown.block_lines(&document.text), signs)
+        }
+        _ => Vec::new(),
+    };
+    ui.markdown_signs.show(app, p, &marks, &ui.markdown.block_tops(), ui.viewer.position().1);
     find::paint_preview(m, ui, p);
     // A preview is unwrapped, as Scouter's is; it takes the same width as the reader. The stacked diff's bar overlays
     // its last column, as Scouter's diff scroller does (no blank before the thumb).
@@ -788,3 +804,7 @@ mod mermaid_tests;
 #[cfg(test)]
 #[path = "search_tests.rs"]
 mod search_tests;
+
+#[cfg(test)]
+#[path = "rendered_signs_tests.rs"]
+mod rendered_signs_tests;

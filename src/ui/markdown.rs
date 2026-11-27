@@ -4,6 +4,7 @@
 //! go through the inline hook and the code renderers, which the view registers once and rebuilds for each change.
 
 use std::cell::RefCell;
+use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -14,12 +15,16 @@ use fmc::theme::Palette;
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
+use super::markdown_blocks;
 use super::markdown_search::{
     Captured, Mark, Paint, Styles, capture_code, capture_prose, count_code, index, paint_code, paint_prose,
 };
 use super::mermaid::{Colors, Diagram};
 use super::styled::color;
 use super::syntax;
+
+/// The source lines of each top-level block, shared with the view's cache.
+type BlockLines = Rc<Vec<Range<usize>>>;
 
 pub struct MarkdownView {
     doc: Markdown,
@@ -29,6 +34,8 @@ pub struct MarkdownView {
     captured: Rc<RefCell<Vec<Captured>>>,
     /// The index of the last source the view indexed, so a search step does not index it again.
     index: RefCell<Option<(String, Rc<Rendered>)>>,
+    /// The source lines of each top-level block of the last source, for the git signs.
+    lines: RefCell<Option<(String, BlockLines)>>,
 }
 
 impl MarkdownView {
@@ -37,7 +44,14 @@ impl MarkdownView {
         let offscreen = Markdown::new(app);
         let captured = Rc::new(RefCell::new(Vec::new()));
         register_capture(&offscreen, &captured);
-        let view = Self { doc, offscreen, paint: Rc::new(Paint::default()), captured, index: RefCell::new(None) };
+        let view = Self {
+            doc,
+            offscreen,
+            paint: Rc::new(Paint::default()),
+            captured,
+            index: RefCell::new(None),
+            lines: RefCell::new(None),
+        };
         view.restyle(p);
         view
     }
@@ -126,10 +140,26 @@ impl MarkdownView {
         rendered
     }
 
+    /// The source lines of each top-level block of `source`, cached for the last source (`ui/markdown_blocks.rs`).
+    pub fn block_lines(&self, source: &str) -> BlockLines {
+        let cached = self.lines.borrow().as_ref().filter(|(of, _)| of == source).map(|(_, lines)| Rc::clone(lines));
+        if let Some(lines) = cached {
+            return lines;
+        }
+        let lines =
+            Rc::new(markdown_blocks::split(source).blocks.into_iter().map(|block| block.lines).collect::<Vec<_>>());
+        *self.lines.borrow_mut() = Some((source.to_owned(), Rc::clone(&lines)));
+        lines
+    }
+
     /// Each top-level block's top row and rows in the document, in order. `block_rows` clamps a block scrolled above the
     /// view to row 0 but keeps its height, and the blocks stand one row apart, so the tops follow from the heights. Empty
     /// until a frame lays the document out.
     pub fn block_tops(&self) -> Vec<(u32, u32)> {
+        // Before a frame lays the document out, every block is zero rows, so there are no tops yet.
+        if self.rows() == 0 {
+            return Vec::new();
+        }
         let mut top = 0;
         self.doc
             .block_rows()

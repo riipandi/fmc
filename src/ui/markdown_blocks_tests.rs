@@ -177,7 +177,8 @@ fn probes(kind: &str, source: &str) -> Vec<String> {
 
 /// Renders `source` in a tall app and returns the rows of each top-level block OpenTUI drew, with their text.
 fn drawn(source: &str, width: u16) -> Vec<(Range<u32>, String)> {
-    let app = TestApp::new(width, 400);
+    // Tall enough for DESIGN.md at 40 columns, which renders past 400 rows.
+    let app = TestApp::new(width, 1200);
     let view = MarkdownView::new(app.app(), &DARK);
     app.app().root().add(&view.widget());
     view.visible(true);
