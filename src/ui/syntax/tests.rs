@@ -213,6 +213,7 @@ fn injected_code_is_painted_in_its_own_languages_colours() {
         ("heex", "<div class=\"vault\"><%= if Hogwarts.open?() do %>vault<% end %></div>\n", "if", syntax.keyword),
         ("elixir", "def query, do: ~SQL\"\"\"\nSELECT name FROM vaults;\n\"\"\"\n", "SELECT", syntax.keyword),
         ("elixir", "def pattern, do: ~r/^[A-Z]+$/\n", "[", syntax.punctuation),
+        ("elixir", "def pattern, do: ~r/^[A-Z]+$/\n", "-", syntax.keyword),
     ];
     for (filetype, sample, token, expected) in cases {
         let got = painted(sample, filetype, token);

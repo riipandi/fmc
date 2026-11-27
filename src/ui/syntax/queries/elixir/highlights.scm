@@ -92,11 +92,13 @@
   quoted_end: _ @string
   (#match? @__name__ "^[sS]$")) @string
 
+; fmc (plan-00013): the whole `~r` is not captured, for the same reason as the sigils above: the regex injection paints
+; its body, and a 2-part `string.regex` over it would hide the escapes and operators.
 (sigil
   (sigil_name) @__name__
   quoted_start: _ @string.regex
   quoted_end: _ @string.regex
-  (#match? @__name__ "^[rR]$")) @string.regex
+  (#match? @__name__ "^[rR]$"))
 
 ; Calls
 
