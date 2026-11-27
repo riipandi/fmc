@@ -50,3 +50,12 @@ fn every_footer_key_taps_except_the_named_few() {
         }
     }
 }
+
+#[test]
+fn super_is_cmd_and_alt_is_not() {
+    let cmd_left = name(&KeyEvent::new(KeyCode::Left, Modifiers::SUPER)).expect("a press");
+    assert_eq!(cmd_left.key().name, "left");
+    assert!(cmd_left.cmd && !cmd_left.alt);
+    let option_b = name(&KeyEvent::new(KeyCode::Char('b'), Modifiers::ALT)).expect("a press");
+    assert!(option_b.alt && !option_b.cmd);
+}

@@ -19,6 +19,7 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `space` | context menu for the row |
 | `a` | new file; a name ending in / makes a folder |
 | `A` | new folder |
+| `R` | duplicate the row under a new name |
 | `r` | rename |
 | `D` `Delete` | move to the Trash |
 | `c` | copy the row |
@@ -42,6 +43,25 @@ The file the list selects shows in the reader after a short pause, and the focus
 | `Esc` | close the finder; the tree is back where it was |
 
 Text search starts at two characters and lists at most 200 hits, ten from one file.
+
+## Name field
+
+The name field of a dialog (a new file or folder, a rename) holds one line. Its caret moves and its text is edited by word and by line. These keys are not in the `?` list.
+
+| Keys | Action |
+| --- | --- |
+| type | insert at the caret |
+| `Backspace` | delete the character before the caret |
+| `Option+←` `Option+→` `Option+B` `Option+F` `Ctrl+←` `Ctrl+→` | move the caret by word |
+| `Option+Backspace` `Ctrl+W` | delete the word before the caret |
+| `Option+Delete` `Option+D` | delete the word after the caret |
+| `Cmd+←` `Cmd+→` `Ctrl+A` `Ctrl+E` | move the caret to the start or the end of the line |
+| `Cmd+Backspace` `Ctrl+U` | delete to the start of the line |
+| `Ctrl+K` | delete to the end of the line |
+| `←` `→` `Tab` | move the focus between the field and the buttons |
+| `Enter` `Esc` | confirm; cancel |
+
+The Option keys need the terminal to send Option as Alt. The Cmd keys need the terminal to pass Cmd on to fmc; a terminal that does neither sends what its own keymap maps the chord to, such as `Ctrl+A` for `Cmd+←`. The bare arrows move the focus between the field and the buttons, not the caret, so the caret moves with the keys above.
 
 ## Reader
 

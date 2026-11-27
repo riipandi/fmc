@@ -1,11 +1,16 @@
 use super::*;
 
+/// A key with the modifiers an Option, Cmd, or Ctrl chord sends; `text` is empty, as the field edits ignore it.
+fn modified(name: &str, ctrl: bool, alt: bool, cmd: bool) -> Key<'_> {
+    Key { name, text: "", ctrl, alt, shift: false, cmd }
+}
+
 fn key<'a>(name: &'a str, text: &'a str) -> Key<'a> {
-    Key { name, text, ctrl: false, alt: false, shift: false }
+    Key { name, text, ctrl: false, alt: false, shift: false, cmd: false }
 }
 
 fn ctrl(name: &str) -> Key<'_> {
-    Key { name, text: "", ctrl: true, alt: false, shift: false }
+    Key { name, text: "", ctrl: true, alt: false, shift: false, cmd: false }
 }
 
 /// The Harry Potter menu the app shows: `Paste` is disabled until a path is copied.
@@ -97,7 +102,7 @@ fn typing_goes_to_the_field_and_moves_the_focus_there() {
     assert_eq!(dialog.key(key("r", "r")), Outcome::Insert("r".into()));
     assert_eq!(dialog.focus, Stop::Field);
     assert_eq!(dialog.key(key("space", " ")), Outcome::Insert(" ".into()));
-    assert_eq!(dialog.key(key("backspace", "")), Outcome::Backspace);
+    assert_eq!(dialog.key(key("backspace", "")), Outcome::Edit(FieldEdit::Backspace));
     assert_eq!(dialog.key(ctrl("x")), Outcome::Stay, "a control key is not text");
 }
 
@@ -152,4 +157,55 @@ fn a_pointer_over_a_button_highlights_it_and_leaves_the_focus_alone() {
     named.hover(0, true);
     assert_eq!(named.key(key("a", "a")), Outcome::Insert("a".into()));
     assert_eq!(named.focus, Stop::Field);
+}
+
+#[test]
+fn each_option_cmd_and_ctrl_key_asks_for_its_field_edit() {
+    let cases = [
+        (modified("left", false, true, false), FieldEdit::WordBackward),
+        (modified("b", false, true, false), FieldEdit::WordBackward),
+        (modified("left", true, false, false), FieldEdit::WordBackward),
+        (modified("right", false, true, false), FieldEdit::WordForward),
+        (modified("f", false, true, false), FieldEdit::WordForward),
+        (modified("right", true, false, false), FieldEdit::WordForward),
+        (modified("backspace", false, true, false), FieldEdit::DeleteWordBackward),
+        (modified("w", true, false, false), FieldEdit::DeleteWordBackward),
+        (modified("backspace", true, false, false), FieldEdit::DeleteWordBackward),
+        (modified("delete", false, true, false), FieldEdit::DeleteWordForward),
+        (modified("d", false, true, false), FieldEdit::DeleteWordForward),
+        (modified("delete", true, false, false), FieldEdit::DeleteWordForward),
+        (modified("left", false, false, true), FieldEdit::LineHome),
+        (modified("a", true, false, false), FieldEdit::LineHome),
+        (modified("right", false, false, true), FieldEdit::LineEnd),
+        (modified("e", true, false, false), FieldEdit::LineEnd),
+        (modified("backspace", false, false, true), FieldEdit::DeleteToLineStart),
+        (modified("u", true, false, false), FieldEdit::DeleteToLineStart),
+        (modified("k", true, false, false), FieldEdit::DeleteToLineEnd),
+        (modified("backspace", false, false, false), FieldEdit::Backspace),
+    ];
+    for (key, edit) in cases {
+        let mut dialog = Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1);
+        assert_eq!(dialog.key(key), Outcome::Edit(edit), "{key:?}");
+    }
+}
+
+#[test]
+fn a_field_edit_takes_the_focus_to_the_field_from_a_button() {
+    let mut dialog = Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1);
+    dialog.key(key("tab", ""));
+    assert_eq!(dialog.focus, Stop::Button(0));
+    dialog.key(modified("left", false, true, false));
+    assert_eq!(dialog.focus, Stop::Field);
+}
+
+#[test]
+fn other_option_cmd_and_ctrl_keys_do_nothing_in_the_field_and_a_confirm_has_no_field_edit() {
+    let mut dialog = Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1);
+    for other in [modified("x", false, true, false), modified("up", false, false, true), ctrl("x")] {
+        assert_eq!(dialog.key(other), Outcome::Stay, "{other:?}");
+    }
+    let mut confirm = Dialog::new("Move to Trash?", "Gone.", false, &["Cancel", "Delete"], 0);
+    assert_eq!(confirm.key(modified("left", false, true, false)), Outcome::Stay);
+    assert_eq!(confirm.key(modified("backspace", true, false, false)), Outcome::Stay);
+    assert_eq!(confirm.focus, Stop::Button(0), "a confirm's focus does not move");
 }

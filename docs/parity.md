@@ -5,6 +5,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 ## Name and command line
 
 - fmc shows its own name and version where Scouter shows `scouter`: the welcome screen, `--help`, `--version`, and error messages.
+- The welcome screen's tagline says `a quiet terminal file manager`, and its closing line says `Space opens the menu.`. Scouter says `a quiet, read-only file viewer` and `No editing. Just reading.`, because fmc now writes files (`architecture.md`, "the welcome screen names fmc a file manager").
 - There is no `--upgrade`. To update fmc, install a new build (see [Install](install.md)).
 
 ## Keys

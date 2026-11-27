@@ -143,7 +143,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
         Action::Find if m.focus == Focus::List => find::start(&mut m),
         Action::ContextMenu if m.focus == Focus::List && m.changes.is_none() => write::open_menu(&mut m),
-        Action::NewFile | Action::NewFolder | Action::Rename | Action::Delete
+        Action::NewFile | Action::NewFolder | Action::Rename | Action::Duplicate | Action::Delete
             if m.focus == Focus::List && m.changes.is_none() =>
         {
             write::key(&mut m, &ui.borrow(), action)

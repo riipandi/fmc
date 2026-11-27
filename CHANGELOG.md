@@ -7,15 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-27
+
+fmc becomes a file manager: files can be created, renamed, copied, moved, duplicated, and moved to the Trash from the file list.
+
 ### Added
 
 - Files can be managed from the file list. `a` creates a file (a name ending in `/` makes a folder), `A` creates a folder, `r` renames, `c` copies, `x` cuts, and `v` pastes into the selected folder or beside the selected file. `D` or `Delete` moves the row to the Trash after a dialog, and Finder's Put Back restores it. `Space` and a right-click open a context menu with the same actions. A name that is taken is never overwritten.
 - A context menu and a confirm dialog, drawn over the page with a dimmed background. The dialog's Cancel is the default.
+- The name field of a dialog edits by word and by line, as in a macOS text field: `Option+←` and `Option+→` move by word, `Option+Backspace` and `Option+Delete` delete a word, `Cmd+←` and `Cmd+→` go to the ends of the line, and `Cmd+Backspace` deletes to its start. The Ctrl keys `Ctrl+A`, `Ctrl+E`, `Ctrl+W`, `Ctrl+U`, and `Ctrl+K` do the same (`docs/keymaps.md`, "Name field").
+- `R` on a file row duplicates it: a name dialog opens with the name a paste would give, and Return copies the row into the same folder under the name typed. The context menu has a Duplicate row too. A taken name keeps the dialog open with its message.
 
 ### Changed
 
 - fmc is no longer read-only. Its file operations are the only writes it makes, inside the folder it opened (`docs/parity.md`, "File operations").
 - A pointer over a dialog button highlights it and leaves the focus where the keys put it, so Return picks the focused button.
+- The welcome screen calls fmc a terminal file manager, and its closing line names the menu key: `Space opens the menu.` It said `a quiet, read-only file viewer` and `No editing. Just reading.`. `fmc --help` calls it a terminal file manager too.
+
+### Fixed
+
+- A folder that is swapped for a link during a copy or move is refused, not copied from the link's target. The check runs before the folder is created, so nothing outside the root is written.
 
 ## [0.1.1] - 2026-11-27
 
@@ -70,6 +81,7 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/riipandi/fmc/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/riipandi/fmc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/riipandi/fmc/releases/tag/v0.1.0

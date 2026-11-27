@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use fmc::explorer::{Entry, Kind};
-use fmc::overlay::{Dialog, Stop};
+use fmc::overlay::{Dialog, FieldEdit, Stop};
 use opentui::testing::TestApp;
 
 use super::*;
@@ -120,4 +120,128 @@ fn tab_moves_a_confirm_dialogs_focus_and_escape_closes_it() {
     assert_eq!(focus, Stop::Button(1));
     app.press("escape");
     assert!(!is_open(&model));
+}
+
+/// A name dialog over the page, its field holding `text` with the caret at the end. The bytes in the tests below are
+/// what Rex sends for each chord (`rex send-key`, legacy and with the kitty keyboard protocol), so each test feeds
+/// them through the parser.
+fn name_field(text: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
+    let (app, model, ui) = screen(120, 40);
+    open_dialog(&mut model.borrow_mut(), &ui.borrow(), Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1));
+    ui.borrow().overlay.dialog.field.set_value(text);
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    app.render();
+    (app, model, ui)
+}
+
+/// The field's text and caret (in bytes; the test names are ASCII).
+fn field(ui: &Rc<RefCell<Ui>>) -> (String, u32) {
+    let ui = ui.borrow();
+    (ui.overlay.dialog.field.value(), ui.overlay.dialog.field.cursor_offset())
+}
+
+#[test]
+fn option_and_ctrl_arrows_move_the_caret_by_word() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;3D"); // Option+Left, as Rex sends it
+    assert_eq!(field(&ui), ("sophie neveu".into(), 7));
+    app.feed(b"\x1bb"); // Option+Left as ESC b
+    assert_eq!(field(&ui), ("sophie neveu".into(), 0));
+    app.feed(b"\x1b[1;3C"); // Option+Right: OpenTUI stops at the start of the next word
+    assert_eq!(field(&ui), ("sophie neveu".into(), 7));
+    app.feed(b"\x1b[98;3u"); // Option+B with the kitty protocol
+    assert_eq!(field(&ui), ("sophie neveu".into(), 0));
+    app.feed(b"\x1b[102;3u"); // Option+F with the kitty protocol
+    assert_eq!(field(&ui), ("sophie neveu".into(), 7));
+    app.feed(b"\x1bf"); // Option+Right as ESC f, past the last word
+    assert_eq!(field(&ui), ("sophie neveu".into(), 12));
+    app.feed(b"\x1b[1;5D"); // Ctrl+Left
+    assert_eq!(field(&ui), ("sophie neveu".into(), 7));
+}
+
+#[test]
+fn cmd_arrows_and_ctrl_a_e_move_to_the_ends_of_the_line() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;9D"); // Cmd+Left, as Rex sends it
+    assert_eq!(field(&ui), ("sophie neveu".into(), 0));
+    app.feed(b"\x1b[1;9C"); // Cmd+Right
+    assert_eq!(field(&ui), ("sophie neveu".into(), 12));
+    app.feed(b"\x01"); // Ctrl+A, the byte Ghostty sends for Cmd+Left
+    assert_eq!(field(&ui), ("sophie neveu".into(), 0));
+    app.feed(b"\x05"); // Ctrl+E, the byte Ghostty sends for Cmd+Right
+    assert_eq!(field(&ui), ("sophie neveu".into(), 12));
+}
+
+#[test]
+fn option_backspace_deletes_the_word_before_the_caret() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b\x7f"); // Option+Backspace, as Rex sends it (ESC DEL)
+    assert_eq!(field(&ui), ("sophie ".into(), 7));
+    app.feed(b"\x17"); // Ctrl+W
+    assert_eq!(field(&ui), ("".into(), 0));
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[127;3u"); // Option+Backspace with the kitty protocol
+    assert_eq!(field(&ui), ("sophie ".into(), 7));
+}
+
+#[test]
+fn option_delete_deletes_the_word_after_the_caret() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;9D"); // Cmd+Left: the caret goes to the start
+    app.feed(b"\x1b[3;3~"); // Option+Delete, as Rex sends it: the word and the space after it
+    assert_eq!(field(&ui), ("neveu".into(), 0));
+    app.feed(b"\x1bd"); // Option+D: the last word
+    assert_eq!(field(&ui), ("".into(), 0));
+}
+
+#[test]
+fn cmd_backspace_and_ctrl_u_delete_to_the_start_of_the_line() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;3D"); // the caret to the start of "neveu"
+    app.feed(b"\x15"); // Ctrl+U, the byte Ghostty sends for Cmd+Backspace
+    assert_eq!(field(&ui), ("neveu".into(), 0));
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;3D");
+    app.feed(b"\x1b[127;9u"); // Cmd+Backspace with the kitty protocol
+    assert_eq!(field(&ui), ("neveu".into(), 0));
+}
+
+#[test]
+fn ctrl_k_deletes_to_the_end_and_typing_goes_at_the_caret() {
+    let (app, _model, ui) = name_field("sophie neveu");
+    app.feed(b"\x1b[1;9D"); // Cmd+Left
+    app.feed(b"\x1bf"); // Option+Right: the caret at the start of "neveu"
+    app.feed(b"\x0b"); // Ctrl+K
+    assert_eq!(field(&ui), ("sophie ".into(), 7));
+    app.feed(b"\x1b[1;9D");
+    app.type_text("X");
+    assert_eq!(field(&ui), ("Xsophie ".into(), 1));
+}
+
+#[test]
+fn opentui_input_binds_each_field_edit_to_the_same_action() {
+    let keymap = Input::default_keymap();
+    let cases = [
+        ("alt+left", FieldEdit::WordBackward),
+        ("alt+b", FieldEdit::WordBackward),
+        ("ctrl+left", FieldEdit::WordBackward),
+        ("alt+right", FieldEdit::WordForward),
+        ("alt+f", FieldEdit::WordForward),
+        ("ctrl+right", FieldEdit::WordForward),
+        ("alt+backspace", FieldEdit::DeleteWordBackward),
+        ("ctrl+w", FieldEdit::DeleteWordBackward),
+        ("ctrl+backspace", FieldEdit::DeleteWordBackward),
+        ("alt+delete", FieldEdit::DeleteWordForward),
+        ("alt+d", FieldEdit::DeleteWordForward),
+        ("ctrl+delete", FieldEdit::DeleteWordForward),
+        ("ctrl+a", FieldEdit::LineHome),
+        ("ctrl+e", FieldEdit::LineEnd),
+        ("super+backspace", FieldEdit::DeleteToLineStart),
+        ("ctrl+u", FieldEdit::DeleteToLineStart),
+        ("ctrl+k", FieldEdit::DeleteToLineEnd),
+        ("backspace", FieldEdit::Backspace),
+    ];
+    for (shortcut, edit) in cases {
+        assert_eq!(keymap.lookup(shortcut), Some(editor_action(edit)), "{shortcut}");
+    }
 }

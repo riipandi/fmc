@@ -492,17 +492,17 @@ Alternatives considered:
 
 Context: a link inside the browsed root can point outside it, so a write through a link would escape the root (plan-00012 D6). std has no no-clobber rename and no `O_NOFOLLOW`; both need libc.
 
-Decision (plan-00012 D5, D6): each operation runs the same checks before its one system call: the name is one segment, both folders lie inside the root after resolving, the source exists, a folder does not go into itself, and the destination is vacant. A link is operated on as the link. A file copy opens the source and compares the opened file's device and inode with the `lstat` taken before the open (`services/write.rs`, `open_seen`), so a link swapped in after the `lstat` is refused before a byte is read; this needs no libc constant. A cross-volume move takes the source's device and inode before the copy and refuses to remove the source when they changed (`Error::Changed`), leaving the copy in place.
+Decision (plan-00012 D5, D6): each operation runs the same checks before its one system call: the name is one segment, both folders lie inside the root after resolving, the source exists, a folder does not go into itself, and the destination is vacant. A link is operated on as the link. A file copy opens the source and compares the opened file's device and inode with the `lstat` taken before the open (`services/write.rs`, `open_seen`), so a link swapped in after the `lstat` is refused before a byte is read; this needs no libc constant. A folder copy makes the same check before it creates the destination or reads a child (`copy_seen`). A cross-volume move takes the source's device and inode before the copy and refuses to remove the source when they changed (`Error::Changed`), leaving the copy in place.
 
 Consequences:
 
 - (positive) Each refusal and each swap has a test in a temporary folder (`services/write_tests.rs`), with the fixture names of the sample-data rule.
-- (negative) Four races remain, each a `shortcut:` comment in `services/write.rs`. The check and the create, rename, or move: std cannot refuse an existing target atomically. The directory branch of `copy_entry`: a folder swapped for a link after its `lstat` is read through the link (LOW, from the 2026-11-27 `security-review`; the upgrade is to open the folder and compare its identity before reading). The check and the Trash call. Each needs a process running as the user, which can already write there.
+- (negative) The races that remain are each a `shortcut:` comment in `services/write.rs`. The check and the create, rename, or move: std cannot refuse an existing target atomically. The folder copy: its identity is checked before its children are read, so a folder swapped for a link before the check is refused (LOW, from the 2026-11-27 `security-review`). A swap in the gap between that check and `read_dir` still copies the outside folder (the upgrade reads the checked descriptor, `fdopendir`, a libc call). The check and the Trash call. Each needs a process running as the user, which can already write there.
 - (negative) A cross-volume move refused after its copy leaves the copy at the new place and the original where it was.
 
 Alternatives considered:
 
-- A Replace, Keep both, or Cancel dialog for a taken name: rejected for the first cut (D5); more surface, and it can follow.
+- A Replace, Keep both, or Cancel dialog for a taken name: rejected for the first cut (D5); more surface, and it can follow. The owner kept it deferred on 2026-11-27: a paste into a folder that has the name keeps the automatic `copy` names (`services/write.rs`, `free_name`).
 - `O_NOFOLLOW` through a libc constant: rejected, it needs a new dependency or a per-OS constant that the identity check does not need.
 
 ### The clipboard is fmc's own, and the footer names what it holds
@@ -1165,3 +1165,22 @@ Alternatives considered:
 - `fff-search`: rejected; a large tree, LMDB frecency, and a different result set (`research/dependency-survey.md`).
 - `frizbee`: the same code under its old name; `neo_frizbee` is the newer release (D4).
 - A setting alone, or a key alone: rejected by O3, which asks for both.
+
+### Approved deviation: the welcome screen names fmc a file manager
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's welcome says it is a read-only viewer: the tagline `a quiet, read-only file viewer` (`scouter:src/ui/welcome.ts:46`) and the closing line `No editing. Just reading.` (`scouter:src/ui/welcome.ts:80`). fmc now creates, renames, copies, moves, and deletes files (the record "The file-manager operations are the one write path"), so both lines are false for fmc.
+
+Decision (owner, 2026-11-27): the tagline reads `a quiet terminal file manager`, and the closing line reads `Space opens the menu.`, which names the key that opens the menu (`Space`, plan-00012). The stacked welcome below 80 columns uses the same two parts. The rest of the welcome stays Scouter's: the wordmark, the prompt, the key card, and the layout. At 80 columns Scouter's closing line is cut after `Just readin` (`research/scouter-inventory.md`, section 18); the new line is shorter and fits whole. The `--help` banner says `a minimal terminal file manager` for the same reason.
+
+Consequences:
+
+- (positive) The welcome matches what fmc does, and the menu key is named where a new user looks first.
+- (negative) A text capture of the welcome differs from Scouter's on these two lines; a parity diff masks them.
+- (negative) At 80 columns the closing line is still cut; a shorter line would fit, and the owner has not chosen one.
+
+Alternatives considered:
+
+- Keep Scouter's text: rejected by the owner, since it says fmc does not write.
+- `Space: file menu.`: not taken; `Space opens the menu.` also fits at 80 columns and reads as a sentence.

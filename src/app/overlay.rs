@@ -4,7 +4,7 @@
 
 use fmc::keys::Key;
 use fmc::layout::tier;
-use fmc::overlay::{Dialog, Outcome, Overlay, Stop};
+use fmc::overlay::{Dialog, FieldEdit, Outcome, Overlay, Stop};
 use opentui::prelude::*;
 
 use super::*;
@@ -152,10 +152,26 @@ fn apply(app: &App, m: &mut Model, ui: &Ui, outcome: Outcome) {
             ui.overlay.dialog.field.insert(text);
             clear_error(m);
         }
-        Outcome::Backspace => {
-            ui.overlay.dialog.field.perform(EditorAction::Backspace);
+        Outcome::Edit(edit) => {
+            ui.overlay.dialog.field.perform(editor_action(edit));
             clear_error(m);
         }
+    }
+}
+
+/// The OpenTUI action of a field edit: `Input::default_keymap` binds the same keys to it (`app/overlay_tests.rs` checks
+/// that). OpenTUI binds Cmd+Left and Cmd+Right to its visual-line actions; on a one-line field those are the line's ends.
+fn editor_action(edit: FieldEdit) -> EditorAction {
+    match edit {
+        FieldEdit::Backspace => EditorAction::Backspace,
+        FieldEdit::DeleteWordBackward => EditorAction::DeleteWordBackward,
+        FieldEdit::DeleteWordForward => EditorAction::DeleteWordForward,
+        FieldEdit::DeleteToLineStart => EditorAction::DeleteToLineStart,
+        FieldEdit::DeleteToLineEnd => EditorAction::DeleteToLineEnd,
+        FieldEdit::WordBackward => EditorAction::WordBackward,
+        FieldEdit::WordForward => EditorAction::WordForward,
+        FieldEdit::LineHome => EditorAction::LineHome,
+        FieldEdit::LineEnd => EditorAction::LineEnd,
     }
 }
 

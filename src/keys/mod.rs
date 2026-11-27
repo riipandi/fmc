@@ -6,7 +6,8 @@ mod parser;
 pub use parser::{Focus, Parser, Screen, State, Step};
 
 /// One key press, named as OpenTUI Core names it: `name` is the lowercase key (`g`, `return`, `pagedown`), `text`
-/// the typed text (`G`, `?`, `{`), and Shift is set for capitals.
+/// the typed text (`G`, `?`, `{`), and Shift is set for capitals. `cmd` is the Super key (Cmd on a Mac), which a
+/// terminal sends only with the kitty keyboard protocol or when it passes Cmd through.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Key<'a> {
     pub name: &'a str,
@@ -14,10 +15,12 @@ pub struct Key<'a> {
     pub ctrl: bool,
     pub alt: bool,
     pub shift: bool,
+    pub cmd: bool,
 }
 
 impl Key<'_> {
-    /// No Ctrl and no Alt (Scouter `isPlain`); Shift may be set.
+    /// No Ctrl and no Alt (Scouter `isPlain`); Shift may be set. Cmd does not count, so a Cmd key takes the path of
+    /// the same key without it unless a rule names `cmd`.
     pub fn plain(&self) -> bool {
         !self.ctrl && !self.alt
     }
@@ -70,6 +73,8 @@ pub enum Action {
     NewFile,
     /// `A` on a tree row: a dialog for a new folder.
     NewFolder,
+    /// `R` on a tree row: a name dialog for a copy of the row in its folder (plan-00012, D9).
+    Duplicate,
     /// `r` on a tree row: a dialog that renames the row.
     Rename,
     /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
@@ -123,6 +128,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("space", "context menu for the row"),
             ("a", "new file; a name ending in / makes a folder"),
             ("A", "new folder"),
+            ("R", "duplicate the row under a new name"),
             ("r", "rename"),
             ("D Delete", "move to the Trash"),
             ("c", "copy the row"),

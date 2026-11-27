@@ -8,7 +8,7 @@ const DIFF_BODY: State = State { screen: Screen::Changes, focus: Focus::Reader, 
 
 /// A key as OpenTUI Core reports it: `G` is name `g` with Shift; `^d` is Ctrl+d; `M-i` is Alt+i.
 fn key(spec: &str) -> Key<'_> {
-    let plain = Key { name: spec, text: spec, ctrl: false, alt: false, shift: false };
+    let plain = Key { name: spec, text: spec, ctrl: false, alt: false, shift: false, cmd: false };
     if let Some(rest) = spec.strip_prefix("^") {
         return Key { name: rest, text: rest, ctrl: true, ..plain };
     }
@@ -33,6 +33,7 @@ fn key(spec: &str) -> Key<'_> {
                 "Q" => "q",
                 "A" => "a",
                 "D" => "d",
+                "R" => "r",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -189,6 +190,7 @@ fn file_keys_act_on_the_tree_only() {
     assert_eq!(last(&["a"], TREE), Step::Done(Action::NewFile));
     assert_eq!(last(&["A"], TREE), Step::Done(Action::NewFolder));
     assert_eq!(last(&["r"], TREE), Step::Done(Action::Rename));
+    assert_eq!(last(&["R"], TREE), Step::Done(Action::Duplicate));
     assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["c"], TREE), Step::Done(Action::CopyFile));
@@ -200,6 +202,7 @@ fn file_keys_act_on_the_tree_only() {
     }
     assert_eq!(last(&["a"], READER), Step::Bad);
     assert_eq!(last(&["D"], READER), Step::Bad);
+    assert_eq!(last(&["R"], READER), Step::Bad);
 }
 
 #[test]
