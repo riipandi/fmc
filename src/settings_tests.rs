@@ -144,6 +144,14 @@ fn a_bad_entry_is_skipped_with_a_notice_that_names_it() {
 }
 
 #[test]
+fn a_skipped_entry_notice_is_one_line_with_the_user_text_shown_as_text() {
+    let parsed = parse(r#"{"file_associations": {"hogwarts\nvault.rs": 3}}"#);
+    assert_eq!(parsed.notices.len(), 1, "{:?}", parsed.notices);
+    assert!(parsed.notices[0].contains("\"hogwarts vault.rs\" is skipped"), "{:?}", parsed.notices);
+    assert!(!parsed.notices[0].contains('\n'), "{:?}", parsed.notices);
+}
+
+#[test]
 fn a_file_associations_value_that_is_not_an_object_sets_nothing() {
     let parsed = parse(r#"{"file_associations": ["*.rs"]}"#);
     assert_eq!(parsed.settings, Settings::default());

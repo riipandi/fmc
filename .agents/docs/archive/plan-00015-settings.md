@@ -27,7 +27,7 @@ phases:
     - id: 6
       title: Final validation
       status: done
-      note: "final validation, see handover-00011-settings.md"
+      note: "final validation, see handover-00011-settings.md; its two defects are fixed in the phase 6 commit `fix(settings): read settings.json with the same cap and file check as the other files, and sanitise the file_associations notice`"
 ---
 
 ## Settings, themes, and keys from files — a Settings page, a theme catalog, and a keymap file, in six phases

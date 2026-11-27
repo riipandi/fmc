@@ -8,7 +8,10 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 use fmc::settings::{self, Parsed};
+use fmc::text::display_label;
 use serde_json::Value;
+
+use super::{MAX_CONFIG_BYTES, ReadError};
 
 /// `settings.json` in the config folder (`services::config_folder`).
 pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
@@ -17,12 +20,18 @@ pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<Pat
 
 /// The settings the file sets, with a notice for each value it cannot use. A missing file has no notice.
 pub fn load(path: &Path) -> Parsed {
-    match fs::read_to_string(path) {
+    let notice = |text: String| Parsed { notices: vec![text], ..Parsed::default() };
+    match super::read_config(path) {
         Ok(text) => settings::parse(&text),
-        Err(error) if error.kind() == ErrorKind::NotFound => Parsed::default(),
-        Err(error) => {
-            Parsed { notices: vec![format!("settings.json could not be read: {error}.")], ..Parsed::default() }
+        Err(ReadError::Io(error)) if error.kind() == ErrorKind::NotFound => Parsed::default(),
+        Err(ReadError::Io(error)) => {
+            notice(format!("settings.json could not be read: {}.", display_label(&error.to_string())))
         }
+        Err(ReadError::TooLarge) => notice(format!(
+            "settings.json is larger than {} KiB; every setting uses its default.",
+            MAX_CONFIG_BYTES / 1024
+        )),
+        Err(ReadError::NotText) => notice("settings.json is not UTF-8 text; every setting uses its default.".into()),
     }
 }
 
@@ -30,14 +39,16 @@ pub fn load(path: &Path) -> Parsed {
 /// is read here, not when the page changed, so a hand edit made since the start is kept. A missing file starts from `{}`;
 /// a file that does not parse is refused and left as it is (`settings::merged`).
 pub fn update(path: &Path, changes: &[(&str, Value)]) -> Result<(), String> {
-    // A FIFO or a device would block the read below, and the page would wait for its answer forever.
-    if fs::metadata(path).is_ok_and(|meta| !meta.is_file()) {
-        return Err("settings.json is not a regular file; nothing was saved.".into());
-    }
-    let text = match fs::read_to_string(path) {
+    let text = match super::read_config(path) {
         Ok(text) => text,
-        Err(error) if error.kind() == ErrorKind::NotFound => "{}".into(),
-        Err(error) => return Err(format!("settings.json could not be read: {error}.")),
+        Err(ReadError::Io(error)) if error.kind() == ErrorKind::NotFound => "{}".into(),
+        Err(ReadError::Io(error)) => {
+            return Err(format!("settings.json could not be read: {error}; nothing was saved."));
+        }
+        Err(ReadError::TooLarge) => {
+            return Err(format!("settings.json is larger than {} KiB; nothing was saved.", MAX_CONFIG_BYTES / 1024));
+        }
+        Err(ReadError::NotText) => return Err("settings.json is not UTF-8 text; nothing was saved.".into()),
     };
     let text = settings::merged(&text, changes)?;
     save(path, &text).map_err(|error| format!("settings.json could not be saved: {error}; nothing was saved."))

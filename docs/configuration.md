@@ -26,7 +26,7 @@ The file keeps no UI state. The sidebar's width and visibility, wrap, the change
 
 ## Errors
 
-A file that is not valid JSON, or whose top level is not an object, sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
+A file that is not valid JSON, whose top level is not an object, or that is over 1 MiB sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
 
 ## Saving from the Settings page
 

@@ -5,6 +5,7 @@ use serde_json::{Map, Value};
 
 use crate::find::Matching;
 use crate::reader::associations::Associations;
+use crate::text::display_label;
 use crate::theme::catalog::{SCOUTER, Theme, slot_ids};
 use crate::theme::{Mode, ModeChoice};
 
@@ -117,7 +118,9 @@ fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Assoc
                     None => Err("its value must be a filetype name".into()),
                 };
                 if let Err(reason) = added {
-                    notices.push(format!("settings.json: file_associations \"{pattern}\" is skipped: {reason}."));
+                    // The pattern and the reason both hold the user's text, so the whole notice is one line.
+                    let notice = format!("settings.json: file_associations \"{pattern}\" is skipped: {reason}.");
+                    notices.push(display_label(&notice));
                 }
             }
         }

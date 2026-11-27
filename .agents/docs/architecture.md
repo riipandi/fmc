@@ -287,7 +287,7 @@ Alternatives considered:
 
 Context: a user file can name an unknown action or context, or a key name fmc does not know. RI-13 asks that a bad file is not applied; the owner's answer (plan-00015, A11) is that only the bad entry is skipped. The bad-file rule of the settings file (a file that is not a JSON object keeps every default) applies to a file that is not an object or not JSON.
 
-Decision: each entry is checked alone (`keys/keymap.rs` `parse`). A skipped entry gives one notice, `keymap.json line N: "<entry>": <reason>.`, where N is the entry's line in the file; the other entries apply. A file that is not a JSON object, or is not JSON, keeps every default and gives one notice. The file is read by `services/mod.rs` `read_config`, which refuses a file past 1 MiB (the theme files' cap, now shared) and a FIFO before it is opened. The notices show in the footer at start, after the settings' and the themes' notices (A18). `--help` prints them to stderr.
+Decision: each entry is checked alone (`keys/keymap.rs` `parse`). A skipped entry gives one notice, `keymap.json line N: "<entry>": <reason>.`, where N is the entry's line in the file; the other entries apply. A file that is not a JSON object, or is not JSON, keeps every default and gives one notice. The file is read by `services/mod.rs` `read_config`, which refuses a file past 1 MiB and a FIFO before it is opened; the settings file, the theme files, and `keymap.json` all read through it (plan-00015 phase 6). The notices show in the footer at start, after the settings' and the themes' notices (A18). `--help` prints them to stderr.
 
 Consequences:
 

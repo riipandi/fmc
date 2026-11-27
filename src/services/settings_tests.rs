@@ -61,6 +61,17 @@ fn git_gutter_is_read_from_the_config_home_the_path_names() {
 }
 
 #[test]
+fn a_file_past_the_cap_is_refused_unread_with_the_defaults() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    fs::write(&file, vec![b' '; crate::services::MAX_CONFIG_BYTES as usize + 1]).unwrap();
+    let parsed = load(&file);
+    assert_eq!(parsed.settings, Settings::default());
+    assert_eq!(parsed.notices.len(), 1, "{:?}", parsed.notices);
+    assert!(parsed.notices[0].contains("larger than 1024 KiB"), "{:?}", parsed.notices);
+}
+
+#[test]
 fn a_path_that_cannot_be_read_is_the_defaults_with_a_notice() {
     let dir = TempDir::new().unwrap();
     let parsed = load(dir.path());
@@ -160,5 +171,5 @@ fn an_update_refuses_a_fifo_without_blocking_on_it() {
     let made = std::process::Command::new("mkfifo").arg(&file).status().unwrap();
     assert!(made.success());
     let reason = update(&file, &[("auto_preview", json!(false))]).unwrap_err();
-    assert_eq!(reason, "settings.json is not a regular file; nothing was saved.");
+    assert_eq!(reason, "settings.json could not be read: it is not a regular file; nothing was saved.");
 }
