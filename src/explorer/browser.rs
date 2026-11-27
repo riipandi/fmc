@@ -3,6 +3,7 @@
 //! OpenTUI's `scrollChildIntoView` does for Scouter. While the finder shows, the rows are its flat list, and the
 //! selection is the row's index: a text search lists one file once per line, so a path does not name a row.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use super::{Entry, Kind, Row, Tree};
@@ -32,13 +33,55 @@ pub struct Browser {
     flat: Option<Vec<Flat>>,
     /// The selected index among the flat rows.
     flat_at: usize,
+    /// The entries the user marked with `s` (plan-00014, D2). A listing that drops an entry drops its mark, and a new root
+    /// starts with none, since `-` builds a new browser.
+    marked: BTreeSet<PathBuf>,
 }
 
 impl Browser {
     /// A browser with the root selected, which has no row: the first row is selected once the root is listed.
     pub fn new(tree: Tree) -> Self {
         let selected = tree.root().to_path_buf();
-        Self { tree, selected, top: 0, height: 0, flat: None, flat_at: 0 }
+        Self { tree, selected, top: 0, height: 0, flat: None, flat_at: 0, marked: BTreeSet::new() }
+    }
+
+    /// The marked paths, in path order: a folder comes before the paths under it.
+    pub fn marked(&self) -> &BTreeSet<PathBuf> {
+        &self.marked
+    }
+
+    pub fn is_marked(&self, path: &Path) -> bool {
+        self.marked.contains(path)
+    }
+
+    /// Marks `path` if it is not marked, and unmarks it if it is.
+    pub fn toggle_mark(&mut self, path: &Path) {
+        if !self.marked.remove(path) {
+            self.marked.insert(path.to_path_buf());
+        }
+    }
+
+    pub fn clear_marks(&mut self) {
+        self.marked.clear();
+    }
+
+    /// The paths a copy, move, or Trash acts on: the marked set in path order, without a marked path inside a marked
+    /// folder, since the folder's action already takes it (plan-00014, D5).
+    pub fn targets(&self) -> Vec<PathBuf> {
+        let mut kept: Vec<PathBuf> = Vec::new();
+        for path in &self.marked {
+            if !kept.iter().any(|folder| path.starts_with(folder)) {
+                kept.push(path.clone());
+            }
+        }
+        kept
+    }
+
+    /// Drops the marks of entries the tree no longer has: a file that was renamed, moved, or trashed, or that a listing
+    /// dropped. Marks on a collapsed folder's children stay, since the tree keeps them.
+    fn prune_marks(&mut self) {
+        let tree = &self.tree;
+        self.marked.retain(|path| tree.entry(path).is_some());
     }
 
     pub fn selected(&self) -> &Path {
@@ -127,6 +170,7 @@ impl Browser {
     /// While the finder's rows show, a listing that lands leaves the selection alone.
     pub fn listed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
         let listed = self.tree.listed(path, entries);
+        self.prune_marks();
         if !self.is_flat() {
             let selected = self.selected.clone();
             self.select(&selected);
@@ -137,6 +181,7 @@ impl Browser {
     /// A poll's fresh listing of an expanded folder (`Tree::refreshed`). Returns whether the rows changed.
     pub fn refreshed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
         let changed = self.tree.refreshed(path, entries);
+        self.prune_marks();
         if changed && !self.is_flat() {
             let selected = self.selected.clone();
             self.select(&selected);

@@ -6,8 +6,8 @@ references: roadmap-00001-post-parity.md (RI-19), plan-00012-write-operations.md
 phases:
     - id: 1
       title: The selection model (no UI)
-      status: pending
-      note: a set of marked paths in the browser, pruned as listings change; tests only
+      status: committed (feat(explorer): a set of marked rows that survives scrolling and collapse)
+      note: a set of marked paths in the browser, pruned as listings change; 8 tests in explorer/tests.rs
     - id: 2
       title: Mark rows with s, clear them with S
       status: pending
