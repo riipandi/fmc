@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The context menu shows each row's key at its right edge, separates its groups with a rule, and colours Delete as a destructive act.
+
 ## [0.3.0] - 2026-11-27
 
 Many rows can be marked and copied, moved, or sent to the Trash at once, and code embedded in other languages is coloured as its own language.

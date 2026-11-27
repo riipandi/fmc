@@ -5,10 +5,16 @@
 use crate::keys::Key;
 
 /// One row of a menu. A disabled row is drawn muted, and the selection skips it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Item {
     pub label: String,
     pub enabled: bool,
+    /// The tree key that does the same act, shown at the row's right edge; empty for none.
+    pub hint: &'static str,
+    /// A destructive act: its label takes the error colour.
+    pub danger: bool,
+    /// A rule above the row starts a new group.
+    pub rule: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

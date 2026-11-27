@@ -38,6 +38,31 @@ pub enum Act {
     Delete,
 }
 
+impl Act {
+    /// The tree key that does the act (`keys/parser.rs`), shown at the menu row's right edge.
+    fn hint(self) -> &'static str {
+        match self {
+            Act::NewFile => "a",
+            Act::NewFolder => "A",
+            Act::Rename => "r",
+            Act::Copy => "c",
+            Act::Cut => "x",
+            Act::Paste => "v",
+            Act::Duplicate => "R",
+            Act::Delete => "D",
+        }
+    }
+
+    /// The menu's groups: creating, changing an entry, and deleting. A rule separates them.
+    fn group(self) -> u8 {
+        match self {
+            Act::NewFile | Act::NewFolder => 0,
+            Act::Delete => 2,
+            _ => 1,
+        }
+    }
+}
+
 /// The entries copy or cut put on fmc's clipboard (plan-00012, D2; plan-00014, D11): their paths, and whether a paste
 /// moves them. The clipboard is fmc's own, not the system's.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -142,7 +167,17 @@ pub fn open_menu(m: &mut Model) {
 pub fn open_menu_at(m: &mut Model, cell: (u16, u16)) {
     let clipped = m.clipboard.as_ref().map_or(0, |clip| clip.paths.len());
     let rows = menu_rows(m.browser.selected_entry().is_some(), clipped, acted_on(m).len());
-    let items = rows.iter().map(|(_, label, enabled)| Item { label: label.clone(), enabled: *enabled }).collect();
+    let items = rows
+        .iter()
+        .enumerate()
+        .map(|(index, &(act, ref label, enabled))| Item {
+            label: label.clone(),
+            enabled,
+            hint: act.hint(),
+            danger: act == Act::Delete,
+            rule: index > 0 && rows[index - 1].0.group() != act.group(),
+        })
+        .collect();
     m.overlay_at = cell;
     m.overlay = Some(Overlay::Menu(Menu::new(items)));
     m.overlay_task = Some(Task::Menu(rows.into_iter().map(|(act, ..)| act).collect()));

@@ -21,10 +21,17 @@ pub struct Rect {
     pub height: u16,
 }
 
-/// The box a menu of `items` takes: the longest label, the marker and its padding, and the border.
+/// The gap between a row's label and its key hint.
+const HINT_GAP: usize = 3;
+
+/// The box a menu of `items` takes: two cells of padding on each side, the longest label, the gap and the longest key
+/// hint, and the border; a row per item and per group rule.
 pub fn size(items: &[Item]) -> (u16, u16) {
     let longest = items.iter().map(|item| item.label.chars().count()).max().unwrap_or(0);
-    (longest as u16 + 6, items.len() as u16 + 2)
+    let hint = items.iter().map(|item| item.hint.chars().count()).max().unwrap_or(0);
+    let hint = if hint > 0 { HINT_GAP + hint } else { 0 };
+    let rules = items.iter().filter(|item| item.rule).count();
+    ((longest + hint) as u16 + 6, (items.len() + rules) as u16 + 2)
 }
 
 /// Where a box of `size` goes at `anchor`: flipped above the anchor when it would run off the bottom, and moved left
@@ -62,6 +69,8 @@ pub fn frame(items: &[Item], anchor: (u16, u16), screen: (u16, u16), tier: Tier)
 
 pub struct MenuView {
     pub root: View,
+    /// One slot per row: the group rule above it, when it starts a group, and the row.
+    slots: Vec<(View, Text)>,
     /// The rows in item order; a row past the items is hidden.
     pub rows: Vec<Text>,
 }
@@ -69,18 +78,28 @@ pub struct MenuView {
 impl MenuView {
     pub fn new(app: &App) -> Self {
         let root = View::new(app).absolute().z_index(i32::MAX).column().border(BorderStyle::Rounded).visible(false);
-        let rows = (0..MAX_ROWS)
+        let line = || Text::new(app, "").height(1).wrap(WrapMode::None).selectable(false);
+        let slots: Vec<(View, Text)> = (0..MAX_ROWS)
             .map(|_| {
-                let row = Text::new(app, "").height(1).wrap(WrapMode::None).selectable(false);
-                root.add(&row);
+                let (slot, rule) = (View::new(app).column(), line());
+                root.add(&slot.add(&rule));
+                (slot, rule)
+            })
+            .collect();
+        let rows = slots
+            .iter()
+            .map(|(slot, _)| {
+                let row = line();
+                slot.add(&row);
                 row
             })
             .collect();
-        Self { root, rows }
+        Self { root, slots, rows }
     }
 
-    /// Draws `menu` in `rect` on the `background` tint. A disabled row is muted; the selected row has the row surface
-    /// and the accent marker.
+    /// Draws `menu` in `rect` on the `background` tint. A disabled row is muted, a destructive one takes the error
+    /// colour, and the selected row has the row surface and a bold label (no marker: the owner, 2026-11-27). A key hint sits at the right edge, and a
+    /// rule in the border colour opens each group after the first.
     pub fn show(&self, menu: &Menu, rect: Rect, p: &Palette, background: &str) {
         self.root
             .position(Edge::Left, Length::Cells(f32::from(rect.x)))
@@ -90,26 +109,40 @@ impl MenuView {
             .bg(color(background))
             .border_color(color(p.accent));
         let inner = usize::from(rect.width).saturating_sub(2);
-        for (index, row) in self.rows.iter().enumerate() {
+        for (index, (row, (slot, rule))) in self.rows.iter().zip(&self.slots).enumerate() {
             let item = menu.items().get(index);
-            row.visible(item.is_some());
+            slot.visible(item.is_some());
             let Some(item) = item else { continue };
-            let chosen = index == menu.selected();
-            let fill = chosen.then_some(p.row_active_bg);
-            let pad = inner.saturating_sub(3 + item.label.chars().count());
-            let marker = Seg {
-                text: format!(" {} ", if chosen { "▎" } else { " " }),
-                fg: Some(p.accent),
-                bg: fill,
+            rule.visible(item.rule);
+            let line = Seg {
+                text: format!(" {} ", "─".repeat(inner.saturating_sub(2))),
+                fg: Some(p.border),
+                bg: None,
                 bold: false,
             };
+            rule.width(Length::Cells(inner as f32)).set_text(content(&[line], p.text));
+            let chosen = index == menu.selected();
+            let fill = chosen.then_some(p.row_active_bg);
+            let hint = item.hint.chars().count();
+            let pad = inner.saturating_sub(2 + item.label.chars().count() + hint + 2);
+            let lead = Seg { text: "  ".into(), fg: None, bg: fill, bold: false };
             let label = Seg {
                 text: format!("{}{}", item.label, " ".repeat(pad)),
-                fg: Some(if item.enabled { p.text } else { p.muted }),
+                fg: Some(match (item.enabled, item.danger) {
+                    (false, _) => p.muted,
+                    (true, true) => p.error,
+                    (true, false) => p.text,
+                }),
                 bg: fill,
                 bold: chosen,
             };
-            row.width(Length::Cells(inner as f32)).set_text(content(&[marker, label], p.text));
+            let hint = Seg {
+                text: format!("{}  ", item.hint),
+                fg: Some(if item.enabled { p.muted } else { p.dim }),
+                bg: fill,
+                bold: false,
+            };
+            row.width(Length::Cells(inner as f32)).set_text(content(&[lead, label, hint], p.text));
         }
     }
 }
