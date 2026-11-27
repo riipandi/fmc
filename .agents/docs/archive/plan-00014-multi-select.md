@@ -1,32 +1,32 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T21:00:00+07:00
 updated: 2026-11-27T21:00:00+07:00
 references: roadmap-00001-post-parity.md (RI-19), plan-00012-write-operations.md (D2, D7, D8), architecture.md (the write records)
 phases:
     - id: 1
       title: The selection model (no UI)
-      status: committed (feat(explorer): a set of marked rows that survives scrolling and collapse)
+      status: committed (19d119d, feat(explorer): a set of marked rows that survives scrolling and collapse)
       note: a set of marked paths in the browser, pruned as listings change; 8 tests in explorer/tests.rs
     - id: 2
       title: Mark rows with s, clear them with S
-      status: committed (feat(tree): mark rows with s and clear them with S)
+      status: committed (b669168, feat(tree): mark rows with s and clear them with S)
       note: the keys, the mark glyph, the footer count, Esc; Rex capture at 120x40 and 45x30 (marks, count, Esc, 45x30 bar)
     - id: 3
       title: Copy, cut, and paste several marked rows
-      status: committed (feat(tree): copy, cut, and paste several marked rows)
+      status: committed (4c7eac9, feat(tree): copy, cut, and paste several marked rows)
       note: the clipboard holds a list with each device and inode; one bulk queue on the worker; the menu counts; a swapped entry is skipped and stops the run (security review, finding 1); Rex run at 120x40 and 45x30; 56 write tests
     - id: 4
       title: Delete several marked rows to the Trash
-      status: committed (feat(tree): delete several marked rows to the Trash)
+      status: committed (df88716, feat(tree): delete several marked rows to the Trash)
       note: the confirm names five entries and counts the rest; the Trash joins the queue; a link is refused (Finder cannot trash one, error -5000, plan-00014 D16); the security review's findings 1 and 2 are a recorded shortcut; the Rex scenario at 120x40 and 45x30 trashed two files each, and the link check; 63 write tests
     - id: 5
       title: Docs sync, ledger close, handover
-      status: pending
+      status: committed (see git log: docs: multi-select and bulk operations)
       note: index rows, roadmap RI-19 landed, this plan archived, handover-00009; the one docs commit the brief names
     - id: 6
       title: Final validation
-      status: pending
+      status: done (gates green, no commit)
       note: the gates over the tree as it stands; no commit if green
 ---
 
