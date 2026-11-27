@@ -75,10 +75,16 @@
 
 ; Note that we explicitly target sigil quoted start/end, so they are not overridden by delimiters
 
+; fmc (plan-00013): the body of a sigil with an injection (`injections.scm`) is left to the injection. Core's cascade
+; paints this 2-part capture over the 1-part captures inside it, so the HEEx `tag` of `~H` would show as a string.
 (sigil
   (sigil_name) @__name__
   quoted_start: _ @string.special
-  quoted_end: _ @string.special) @string.special
+  quoted_end: _ @string.special)
+
+(sigil
+  (sigil_name) @__name__
+  (#not-any-of? @__name__ "H" "LVN" "HOLO" "r" "R" "SQL" "MD" "PY" "JS" "VUE")) @string.special
 
 (sigil
   (sigil_name) @__name__
@@ -86,11 +92,13 @@
   quoted_end: _ @string
   (#match? @__name__ "^[sS]$")) @string
 
+; fmc (plan-00013): the whole `~r` is not captured, for the same reason as the sigils above: the regex injection paints
+; its body, and a 2-part `string.regex` over it would hide the escapes and operators.
 (sigil
   (sigil_name) @__name__
   quoted_start: _ @string.regex
   quoted_end: _ @string.regex
-  (#match? @__name__ "^[rR]$")) @string.regex
+  (#match? @__name__ "^[rR]$"))
 
 ; Calls
 
