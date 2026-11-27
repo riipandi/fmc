@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T13:30:00+07:00
 updated: 2026-11-27T13:30:00+07:00
 references: settings.rs, ui/syntax/mod.rs (language_for), reader/language.rs, reader/markdown.rs
@@ -12,7 +12,7 @@ phases:
       status: done
     - id: 3
       title: "Docs, live checks, close"
-      status: pending
+      status: done
 ---
 
 ## File associations in settings, as VS Code's `files.associations`
