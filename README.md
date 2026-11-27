@@ -23,6 +23,8 @@ Inside a git repository, a strip left of the line numbers marks the lines that d
 
 A ```` ```mermaid ```` fence in a Markdown file is drawn as a box diagram in the rendered view. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason. `m` shows the Markdown source.
 
+Code is coloured in Scouter's languages and in the owner's extra ones: astro, diff, elixir, heex, hcl, jsdoc, lua, regex, sql, svelte, vim, and xml. `.tf` and `.tfvars` files are HCL.
+
 From 60 to 79 columns the file list hides while a file is open: a `›` at the start of the reader's title shows it, and a `‹` at the start of the list's title hides it. `Ctrl+/` does both too. Below 60 columns the list and the reader are two pages: a file opens full screen, and the header's `‹` or `q` goes back. The bottom bar has the page's keys as words, and each word is a tap. At 80 columns and wider a `«` or `»` on the border shows and hides the list. `Ctrl+.` shows or hides dotfiles.
 
 ## Build

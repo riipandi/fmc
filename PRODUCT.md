@@ -31,7 +31,7 @@ Started from a shell inside a project (`fmc`, `fmc <folder>`, `fmc <file>`). Use
 ## Capabilities and Constraints
 
 - File tree with git status marks, icons, and ignored files dimmed.
-- Reader for text with syntax colours in 16 languages, Markdown rendered or as source, images, and a notice for binary files.
+- Reader for text with syntax colours in Scouter's languages and the owner's extra ones, Markdown rendered or as source, images, and a notice for binary files.
 - Find a file by name, or search text inside files with a preview.
 - Changes view: every changed file as a stacked diff, unified or split, with folding and hunk navigation.
 - Light and dark palettes that follow the terminal background.

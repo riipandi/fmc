@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | Run order approved 2026-11-27: `plan-00006-mermaid-grammars-fuzzy.md` phases 4 to 6 (in-progress: phases 1 to 3 done, phase 3 the grammar load spike) |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | Run order approved 2026-11-27: `plan-00006-mermaid-grammars-fuzzy.md` phases 5 and 6 (in-progress: phases 1 to 4 done) |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00006-layout-tiers.md` (done: plan-00005 closed, with the owner checks on a phone); `handover-00005-phone-layout.md` (done: plan-00004 closed, with the owner checks); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |

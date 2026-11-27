@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T14:45:00+07:00
+updated: 2026-11-27T15:25:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
@@ -18,7 +18,8 @@ phases:
       note: "All 12 candidates load on tree-sitter 0.27.2 and compile their query: diff, elixir, heex, hcl (no query shipped; D7 query in phase 4), jsdoc, lua, regex, sql, svelte-ng, xml, astro-next, vim. None dropped. Scratch test, not committed; the Cargo files reverted. Lock 131 to 143 packages (12 direct, 0 transitive); clean debug build about 4 s more CPU. Captures to rename or add in phase 4 are in the report. Report: research/grammar-load-spike.md. Dependency approvals land in rules.md with phase 4."
     - id: 4
       title: "Register the new grammars and their filetypes"
-      status: pending
+      status: done
+      note: "Twelve grammars registered and =-pinned (src/ui/syntax/mod.rs), queries and LICENSE files under queries/<filetype>/. Captures renamed to the names the palette styles (lua, sql, xml markup to none); CAPTURE_NAMES +12; HIGHLIGHTED 18 to 30; reader/language.rs EXTENSIONS maps heex, hcl, tf, tfvars. Injections not registered (follow-up in the roadmap, RI-2). Tests: the load test covers all twelve, a capture-name check, and a styled token per language. Live: HCL, SQL, Elixir in the reader, and a sql fence in rendered Markdown, colours read from rex capture --format=vt. Records: architecture (Approved deviation: the owner's extra grammars are highlighted), parity, rules (Dependencies, Licenses), rust, shape, README, CHANGELOG, configuration, PRODUCT. Citation fix: Scouter supportedLanguages is code-view.ts:20-29."
     - id: 5
       title: "Fuzzy finding: matcher, `find_mode` setting, Ctrl+F in the finder"
       status: pending

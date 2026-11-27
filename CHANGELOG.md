@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Syntax colours for the owner's extra languages: astro, diff, elixir, heex, hcl (with `.hcl`, `.tf`, and `.tfvars`), jsdoc, lua, regex, sql, svelte, vim, and xml. Code blocks in rendered Markdown and `file_associations` accept these names.
 - Search in the rendered Markdown view: `/` searches the text the view draws, so `**Harry** Potter` matches `Harry Potter`; every occurrence is marked, the current one in its own colour, and `n`, `N`, and `p` step through them, with the footer's `k of N`. Scouter refuses `/` there.
 - Command line: `fmc [file-or-directory]`, `--help` with every key, and `--version`, with the same checks and messages as Scouter.
 - Dark and light palettes that follow the terminal's background, checked at start, every 3 seconds, and when the terminal reports a change.

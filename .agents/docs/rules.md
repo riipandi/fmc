@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-27T11:35:00+07:00
+updated: 2026-11-27T15:10:00+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -64,6 +64,25 @@ Decision O4 of `plan-00006-mermaid-grammars-fuzzy.md`, with the MSRV raised from
 
 Dependencies that come with `mermaid-text` and are not declared in `Cargo.toml`: `ascii-dag` 0.9.1, `chrono` 0.4.45 (with `std` and `clock`, `default-features = false`, as `mermaid-text` declares it), `iana-time-zone` 0.1.65, `core-foundation-sys` 0.8.7, `num-traits` 0.2.19, and `autocfg` 1.5.1 (a build dependency of `num-traits`). These are the crates `cargo tree` lists for `aarch64-apple-darwin`. `Cargo.lock` also holds packages that only other targets build (`wasm-bindgen`, `js-sys`, the `windows-*` crates, `android_system_properties`, `iana-time-zone-haiku`, `futures-*`, `log`, `slab`, `pin-project-lite`, `rustversion`, `bumpalo`). `cargo deny check licenses` passes with all of them.
 
+### Approved for plan-00006 phase 4 (owner, 2026-11-27)
+
+Decision O2 of `plan-00006-mermaid-grammars-fuzzy.md`: every grammar crate that loads on the locked `tree-sitter` 0.27.2 (`research/grammar-load-spike.md`, sections 2 and 4). Each is pinned exactly and is registered in `src/ui/syntax/mod.rs`. Each brings no other crate: the lock gains these twelve packages and no transitive ones.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `tree-sitter-diff` | `=0.1.0` | default | Diff and patch files (`diff`); MIT |
+| `tree-sitter-elixir` | `=0.3.5` | default | Elixir (`.ex`, `.exs`); Apache-2.0 |
+| `tree-sitter-heex` | `=0.8.1` | default | HEEx templates (`.heex`); MIT |
+| `tree-sitter-hcl` | `=1.1.0` | default | HCL and Terraform (`.hcl`, `.tf`, `.tfvars`); Apache-2.0; ships no query, so fmc's query is adapted from nvim-treesitter (Apache-2.0, D7) |
+| `tree-sitter-jsdoc` | `=0.25.0` | default | JSDoc, reached by association or fence; MIT |
+| `tree-sitter-lua` | `=0.5.0` | default | Lua (`.lua`); MIT |
+| `tree-sitter-regex` | `=0.25.0` | default | Regular expressions, reached by association or fence; MIT |
+| `tree-sitter-sequel` | `=0.3.13` | default | SQL (`.sql`); MIT |
+| `tree-sitter-svelte-ng` | `=1.0.2` | default | Svelte (`.svelte`); MIT |
+| `tree-sitter-xml` | `=0.7.0` | default | XML (`.xml`); MIT |
+| `tree-sitter-astro-next` | `=0.1.1` | default | Astro (`.astro`); MIT or Apache-2.0 |
+| `tree-sitter-vim` | `=0.4.0` | default | Vim script (`.vim`, `.vimrc`); MIT; depends on `tree-sitter` directly (`>=0.21`), which resolves to 0.27.2 |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -75,6 +94,7 @@ Dependencies that come with `mermaid-text` and are not declared in `Cargo.toml`:
 - One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
 - The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
+- The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.
 
 ## Sample data
 

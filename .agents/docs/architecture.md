@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T15:00:00+07:00
+updated: 2026-11-27T15:10:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -195,6 +195,8 @@ Alternatives considered:
 - Unmodified Scouter on 0.9.0 — rejected: Markdown table differences would be unavoidable and recorded as permanent deviations.
 
 ### Phase 1 ships exactly Scouter's 16 tree-sitter grammars
+
+Superseded for the owner's twelve extra grammars by "Approved deviation: the owner's extra grammars are highlighted" (plan-00006 O2, 2026-11-27). Scouter's set is unchanged.
 
 Context: Scouter highlights JavaScript, TypeScript, TSX, Markdown (with inline), and Zig through OpenTUI's bundled grammars, plus JSON, CSS, HTML, Go, Rust, Python, Bash, YAML, TOML, C, and Java from `scouter:grammars/manifest.json`. The owner's wider Neovim set waits.
 
@@ -1002,7 +1004,7 @@ Alternatives considered:
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
-Context: Scouter's `languageFor` reads only the extension, through OpenTUI's `pathToFiletype` (`scouter:src/reader/code-view.ts:31-34`, with `supportedLanguages` at `:14-22`), and its Markdown view is gated on the same result (`isMarkdown`, `:230-232`). A file such as `vault.rs.bak` or `louvre.env.example` is shown plain, and OpenTUI has no `dotenv` filetype (`plan-00009-file-associations.md`, the owner's request of 2026-11-27: "a setting like VS Code").
+Context: Scouter's `languageFor` reads only the extension, through OpenTUI's `pathToFiletype` (`scouter:src/reader/code-view.ts:31-34`, with `supportedLanguages` at `:20-29`), and its Markdown view is gated on the same result (`isMarkdown`, `:230-232`). A file such as `vault.rs.bak` or `louvre.env.example` is shown plain, and OpenTUI has no `dotenv` filetype (`plan-00009-file-associations.md`, the owner's request of 2026-11-27: "a setting like VS Code").
 
 Decision (owner, 2026-11-27, with the go-ahead of plan-00009):
 
@@ -1029,3 +1031,23 @@ Alternatives considered:
 - "The last matching entry wins" — rejected: the parsed object has no order, so the rule would not be defined.
 - A once-set global for the table — rejected: tests would share it and could not set their own associations; the model carries the table instead.
 - Built-in env-file defaults — rejected by the owner's D6 choice; the file decides.
+
+### Approved deviation: the owner's extra grammars are highlighted
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter colours its own sixteen grammars, and a file of any other filetype shows plain: `languageFor` checks `supportedLanguages` (`scouter:src/reader/code-view.ts:31-34`, the set at `:20-29`, with `extraLanguages` from its grammar manifest). The owner's Neovim set (RI-2, `roadmap-00001-post-parity.md`) names nineteen filetypes. Twelve have a crate that loads on the locked `tree-sitter` 0.27.2: diff, elixir, heex, hcl, jsdoc, lua, regex, sql, svelte, xml, astro, and vim. The other seven (json5, just, luadoc, luap, query, vimdoc, eex) have none (`research/grammar-load-spike.md`, sections 2 and 5).
+
+Decision (owner, 2026-11-27, O2 of `plan-00006`: every crate that loads): fmc highlights those twelve filetypes. Each grammar crate is pinned exactly in `Cargo.toml`, and its highlight query and LICENSE sit under `src/ui/syntax/queries/<filetype>/`. HCL ships no query; its query is adapted from nvim-treesitter's (Apache-2.0, a header names it; D7). `.heex`, `.hcl`, `.tf`, and `.tfvars` map to heex and hcl before OpenTUI's lookup (`reader/language.rs`, `EXTENSIONS`), because OpenTUI's table has no entry for them. A capture a query uses is renamed to a Core-style name the palette styles (`keyword.repeat` for Lua's `repeat`, `variable.member` for SQL's `field`, and so on), or drawn plain when the palette styles none (`error`). Injections are not registered, so code inside a file is not coloured by its own grammar; a Markdown fence and `file_associations` reach these filetypes by name.
+
+Consequences:
+
+- (positive) A file in these languages is coloured in every view, as Scouter's are. `file_associations` and Markdown fences accept the names, and `m` renders a `markdown` association.
+- (negative) A file in these languages is coloured where Scouter shows it plain. Code inside one of them, such as Svelte's `<script>` body, is not highlighted: the spike's Svelte sample gave three captures (`research/grammar-load-spike.md`, section 3).
+- (negative) Twelve more C grammars. A clean debug build takes about 4 s more CPU on this machine, and the lockfile gains twelve packages with no transitive additions (`research/grammar-load-spike.md`, section 4).
+
+Alternatives considered:
+
+- Scouter's sixteen only: rejected by the owner (O2).
+- Register the injections now: deferred. Each injection query needs its own review against the palette, and the spike measured no injected case. The follow-up is in the spike report.
+- Wait for the nine missing grammars: not taken. The twelve load and compile their queries today; the seven are parked in the roadmap.
