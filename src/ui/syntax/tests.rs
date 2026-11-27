@@ -229,3 +229,27 @@ fn injections_leave_what_no_grammar_is_registered_for_plain() {
         assert_eq!(painted(sample, "svelte", token), Some(color(DARK.text)), "svelte: {token}");
     }
 }
+
+#[test]
+fn jsdoc_and_regex_are_painted_in_their_own_languages_colours() {
+    let syntax = DARK.syntax;
+    let jsdoc = "/**\n * Opens the Louvre vault.\n * @param {string} key Robert Langdon's key\n */\n";
+    // Each token takes the palette colour of the capture its own language gives it; a plain string or a line comment
+    // takes the colour of its host capture, because it is not JSDoc or a pattern.
+    let cases = [
+        ("javascript", jsdoc, "param", syntax.keyword),
+        ("typescript", jsdoc, "param", syntax.keyword),
+        ("typescriptreact", jsdoc, "param", syntax.keyword),
+        ("javascript", "// Sophie checks the key @param x\n", "param", syntax.comment),
+        ("javascript", "function open(key) {\n  return /^[A-Z]+\\d{2}$/.test(key);\n}\n", "\\d", syntax.constant),
+        ("javascript", "const pattern = \"[A-Z]+\";\n", "[", syntax.string),
+        ("python", "import re\nPATTERN = re.compile(r\"^[A-Z][a-z]+ Neveu$\")\n", "[", syntax.punctuation),
+        ("python", "import re\nPATTERN = re.compile(r\"^[A-Z][a-z]+ Neveu$\")\n", "A-Z", syntax.constant),
+        ("python", "print(\"[A-Z]\")\n", "[", syntax.string),
+        ("markdown", "```js\n/** @param {string} key */\n```\n", "param", syntax.keyword),
+    ];
+    for (filetype, sample, token, expected) in cases {
+        let got = painted(sample, filetype, token);
+        assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
+    }
+}

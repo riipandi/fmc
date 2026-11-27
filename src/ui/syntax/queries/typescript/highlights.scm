@@ -190,8 +190,9 @@
   (html_comment)
 ] @comment @spell
 
-((comment) @comment.documentation
-  (#match? @comment.documentation "(?s)^/[*][*][^*].*[*]/$"))
+; fmc (plan-00013): Core's `comment.documentation` rule for `/** */` is removed. It covered the whole doc comment as a
+; 2-part capture, which painted over the JSDoc injection's tags. It styled the same as `comment` (the first-part
+; fallback), so only the injected tags change.
 
 (hash_bang_line) @keyword.directive
 
@@ -204,7 +205,8 @@
 
 (escape_sequence) @string.escape
 
-(regex_pattern) @string.regexp
+; fmc (plan-00013): no `string.regexp` for the pattern; the regex injection colours it (see `(regex ...)` below and
+; `javascript/injections.scm`). A 2-part capture here would paint over the pattern's 1-part captures, such as `\d`.
 
 (regex_flags) @character.special
 

@@ -87,7 +87,10 @@
   (template_string)
 ] @string
 
-(regex) @string.special
+; fmc (plan-00013): the pattern is the regex injection's (`injections.scm`). A 2-part capture over the whole literal
+; would paint over the pattern's 1-part captures, such as `\d`'s escape. The delimiters and flags keep the string colour.
+(regex "/" @string.special)
+(regex flags: (regex_flags) @string.special)
 (number) @number
 
 ; Tokens

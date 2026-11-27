@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T19:04:32+07:00
+updated: 2026-11-27T19:18:34+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1128,7 +1128,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter colours its own sixteen grammars, and a file of any other filetype shows plain: `languageFor` checks `supportedLanguages` (`scouter:src/reader/code-view.ts:31-34`, the set at `:20-29`, with `extraLanguages` from its grammar manifest). The owner's Neovim set (RI-2, `roadmap-00001-post-parity.md`) names nineteen filetypes. Twelve have a crate that loads on the locked `tree-sitter` 0.27.2: diff, elixir, heex, hcl, jsdoc, lua, regex, sql, svelte, xml, astro, and vim. The other seven (json5, just, luadoc, luap, query, vimdoc, eex) have no crate that loads: six pin another `tree-sitter` (0.20 or 0.25), and eex has none published (`research/grammar-load-spike.md`, section 5).
 
-Decision (owner, 2026-11-27, O2 of `plan-00006`: every crate that loads): fmc highlights those twelve filetypes. Each grammar crate is pinned exactly in `Cargo.toml`, and its highlight query and LICENSE sit under `src/ui/syntax/queries/<filetype>/`. HCL ships no query; its query is adapted from nvim-treesitter's (Apache-2.0, a header names it; D7). `.heex`, `.hcl`, `.tf`, and `.tfvars` map to heex and hcl before OpenTUI's lookup (`reader/language.rs`, `EXTENSIONS`), because OpenTUI's table has no entry for them. A capture a query uses is renamed to a Core-style name the palette styles (`keyword.repeat` for Lua's `repeat`, `variable.member` for SQL's `field`, and so on), or drawn plain when the palette styles none (`error`). Injections are registered for these pairs (plan-00013 phase 1): the code in a Svelte or Astro file, the markup and expressions of a HEEx template and of an Elixir `~H` sigil, and the body of Elixir's `~r`, `~SQL`, `~MD`, `~PY`, and `~JS` sigils. A Markdown fence and `file_associations` reach these filetypes by name. The HTML pair is a Scouter-set difference, with its own record below; the JavaScript, TypeScript, and Python pairs follow in plan-00013 phase 2.
+Decision (owner, 2026-11-27, O2 of `plan-00006`: every crate that loads): fmc highlights those twelve filetypes. Each grammar crate is pinned exactly in `Cargo.toml`, and its highlight query and LICENSE sit under `src/ui/syntax/queries/<filetype>/`. HCL ships no query; its query is adapted from nvim-treesitter's (Apache-2.0, a header names it; D7). `.heex`, `.hcl`, `.tf`, and `.tfvars` map to heex and hcl before OpenTUI's lookup (`reader/language.rs`, `EXTENSIONS`), because OpenTUI's table has no entry for them. A capture a query uses is renamed to a Core-style name the palette styles (`keyword.repeat` for Lua's `repeat`, `variable.member` for SQL's `field`, and so on), or drawn plain when the palette styles none (`error`). Injections are registered for these pairs (plan-00013 phase 1): the code in a Svelte or Astro file, the markup and expressions of a HEEx template and of an Elixir `~H` sigil, and the body of Elixir's `~r`, `~SQL`, `~MD`, `~PY`, and `~JS` sigils. A Markdown fence and `file_associations` reach these filetypes by name. The HTML pair and the JavaScript, TypeScript, and Python pairs are Scouter-set differences, each with its own record below.
 
 Consequences:
 
@@ -1173,6 +1173,26 @@ Alternatives considered:
 
 - Scouter's plain HTML: rejected by the owner's request.
 - `<style>` only: not taken. The owner named both, and the crate's file has both.
+
+### Approved deviation: JavaScript, TypeScript, and Python code inside a file is highlighted
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's JavaScript, TypeScript, TSX, and Python grammars have a highlight query and no injection: a regex literal is a `string.special` and a `/** */` comment is a `comment` (`scouter:src/reader/grammars.ts:9-17`; Core's default parsers, `@opentui/core`, `chunk-bun-rgb7yx3r.js:4398-4438`, give JavaScript, TypeScript, and TSX `highlights` only). Core's TypeScript query also paints a `/** */` comment as `comment.documentation`, a 2-part capture over the whole comment.
+
+Decision (owner, 2026-11-27, plan-00013: the owner named JSDoc inside JavaScript and TypeScript comments and regex inside JavaScript and Python literals): the regex literals of JavaScript, TypeScript, and TSX are highlighted by the regex grammar, their `/** */` comments by the JSDoc grammar, and the strings of Python's `re` functions (`re.compile`, `re.match`, and the rest) by the regex grammar. The rules are in `queries/javascript/injections.scm` (the crate's regex and JSDoc rules, the JSDoc one only for `/**`) and `queries/python/injections.scm` (fmc's own, D5 of the plan). Three host rules leave the injected text out, or the host would paint over the injection (`rust.md`, "Core's cascade"): the JavaScript regex literal keeps its delimiters and flags `string.special` and not the pattern; TypeScript and TSX drop `string.regexp` on the pattern; TypeScript and TSX drop `comment.documentation` on a `/** */` comment, which styles as `comment` anyway. A Markdown fence in one of these languages takes the same rules.
+
+Consequences:
+
+- (positive) A JSDoc tag reads as a keyword and its type as a constant, a regex as its own grammar's colours (an escape as a constant, a class's `-` as an operator), and a Python pattern in `re.compile` the same way.
+- (negative) A JavaScript, TypeScript, or Python file, and a Markdown fence in one of them, is coloured where Scouter shows its comments and regex literals plain. The difference is on `docs/parity.md`.
+- (negative) Cost: the first 1,000,000 bytes of Scouter's `node_modules` JavaScript, a bundle dense in regex literals and comments, highlight in about 1.4 times the time without the injections (medians of seven debug runs, three interleaved pairs on a machine at load 15 to 20: 1.12 to 1.19 s without, 1.57 to 1.61 s with; `plan-00013` phase 2). A 222,000-byte TypeScript file shows no measurable change (288 to 308 ms without, 300 ms with).
+
+Alternatives considered:
+
+- Scouter's plain comments and regex: rejected by the owner's request.
+- Combined injections (`injection.combined`) for the JSDoc and regex layers: measured, no faster (1.60 to 1.64 s combined against 1.55 to 1.58 s per layer, on the same bundle), so the simpler per-layer rules stay.
+- JSDoc for every comment, as the crate's rule has it: not taken. The JSDoc grammar gives a `//` comment no captures, so the rule costs parse time for nothing; the `/**` test states what JSDoc is.
 
 ### Approved deviation: the finder can match fuzzily, from `find_mode` and `Ctrl+F`
 

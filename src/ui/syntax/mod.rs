@@ -19,13 +19,25 @@ use super::styled::color;
 /// once, before the first code view is shown.
 pub fn register() {
     register_lazy("javascript", || {
-        grammar(tree_sitter_javascript::LANGUAGE, include_str!("queries/javascript/highlights.scm"))
+        injected(
+            tree_sitter_javascript::LANGUAGE,
+            include_str!("queries/javascript/highlights.scm"),
+            include_str!("queries/javascript/injections.scm"),
+        )
     });
     register_lazy("typescript", || {
-        grammar(tree_sitter_typescript::LANGUAGE_TYPESCRIPT, include_str!("queries/typescript/highlights.scm"))
+        injected(
+            tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+            include_str!("queries/typescript/highlights.scm"),
+            include_str!("queries/javascript/injections.scm"),
+        )
     });
     register_lazy("typescriptreact", || {
-        grammar(tree_sitter_typescript::LANGUAGE_TSX, include_str!("queries/typescriptreact/highlights.scm"))
+        injected(
+            tree_sitter_typescript::LANGUAGE_TSX,
+            include_str!("queries/typescriptreact/highlights.scm"),
+            include_str!("queries/javascript/injections.scm"),
+        )
     });
     register_lazy("markdown", || {
         Grammar::new(tree_sitter_md::LANGUAGE, include_str!("queries/markdown/highlights.scm"))
@@ -48,7 +60,13 @@ pub fn register() {
         )
     });
     register_lazy("go", || grammar(tree_sitter_go::LANGUAGE, include_str!("queries/go/highlights.scm")));
-    register_lazy("python", || grammar(tree_sitter_python::LANGUAGE, include_str!("queries/python/highlights.scm")));
+    register_lazy("python", || {
+        injected(
+            tree_sitter_python::LANGUAGE,
+            include_str!("queries/python/highlights.scm"),
+            include_str!("queries/python/injections.scm"),
+        )
+    });
     register_lazy("bash", || grammar(tree_sitter_bash::LANGUAGE, include_str!("queries/bash/highlights.scm")));
     register_lazy("yaml", || grammar(tree_sitter_yaml::LANGUAGE, include_str!("queries/yaml/highlights.scm")));
     register_lazy("toml", || grammar(tree_sitter_toml_ng::LANGUAGE, include_str!("queries/toml/highlights.scm")));
