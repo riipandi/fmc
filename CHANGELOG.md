@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-27
+
+Many rows can be marked and copied, moved, or sent to the Trash at once, and code embedded in other languages is coloured as its own language.
+
 ### Added
 
 - `s` marks the selected row and moves down one row, and `S` clears the marks. A marked row shows `✓`, and the footer counts the marks. `Esc` drops a copy or cut first, then the marks.
@@ -95,7 +99,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/riipandi/fmc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/riipandi/fmc/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/riipandi/fmc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/riipandi/fmc/releases/tag/v0.1.0
