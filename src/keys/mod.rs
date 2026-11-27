@@ -112,8 +112,7 @@ pub enum Action {
     Hunk(i8),
 }
 
-/// One help row: the keys, then what they do. The Keys page and `docs/keymaps.md` show the action first; `--help`
-/// keeps the keys first, as a command line's usage does.
+/// One help row: the keys, then what they do. The Keys page and `docs/keymaps.md` show the action first.
 pub type KeyRow = (&'static str, &'static str);
 
 /// The sections, each in groups of related acts: moving, then opening, then finding and viewing; in Files, the menu,
@@ -209,30 +208,13 @@ pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Click «»", "show / hide the sidebar, from its mark"),
 ];
 
-/// The Keys page (`?`): a Markdown table per section, Mouse last, from the same rows as `--help`.
+/// The Keys page (`?`): a Markdown table per section, Mouse last, from the key table.
 pub fn key_page_markdown() -> String {
     let sections = KEY_SECTIONS.iter().copied().chain([("Mouse", MOUSE_ROWS)]).map(|(title, rows)| {
         let rows: Vec<String> = rows.iter().map(|(keys, action)| format!("| {action} | `{keys}` |")).collect();
         format!("## {title}\n\n| Action | Key |\n| --- | --- |\n{}", rows.join("\n"))
     });
     sections.collect::<Vec<_>>().join("\n\n") + "\n"
-}
-
-/// Width of the key column, in characters.
-pub const KEY_COLUMN: usize = 15;
-
-/// Every section, then Mouse, as plain text (`--help`).
-pub fn key_list_text() -> String {
-    KEY_SECTIONS
-        .iter()
-        .copied()
-        .chain([("Mouse", MOUSE_ROWS)])
-        .map(|(title, rows)| {
-            let rows = rows.iter().map(|(keys, action)| format!("  {keys:<KEY_COLUMN$}{action}"));
-            std::iter::once(title.to_string()).chain(rows).collect::<Vec<_>>().join("\n")
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n")
 }
 
 #[cfg(test)]

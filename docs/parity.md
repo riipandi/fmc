@@ -76,5 +76,5 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 ## Help
 
-- `?` shows the key list as tables in the reader, with the mouse actions in a table of their own. `--help` prints the same list, so the two always agree. `?` or `Esc` brings the document back where it was. Scouter shows its key list as a card over the panes.
+- `?` shows the key list as tables in the reader, with the mouse actions in a table of their own. `--help` prints the usage and the options and points to `?` for the keys; Scouter's `--help` lists every key. `?` or `Esc` brings the document back where it was. Scouter shows its key list as a card over the panes.
 - The key list is Markdown, so `/` searches it in the rendered view, as it does any rendered Markdown file.

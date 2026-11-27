@@ -1,6 +1,6 @@
 # Keys
 
-Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the same list in the terminal. The screens are explained in [Usage](usage.md).
+Press `?` inside fmc to see this list in the reader. The screens are explained in [Usage](usage.md).
 
 ## Browse
 

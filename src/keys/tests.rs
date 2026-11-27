@@ -223,7 +223,7 @@ fn reader_keys() {
     assert_eq!(last(&["/"], DIFF_BODY), Step::Bad);
 }
 
-/// Every key the `?` card and `--help` list does something in the section's context.
+/// Every key the `?` page lists does something in the section's context.
 #[test]
 fn every_documented_key_is_bound() {
     for (title, rows) in KEY_SECTIONS {
@@ -260,16 +260,14 @@ fn every_documented_key_is_bound() {
     }
 }
 
-/// The Keys page and `--help` both come from the key table: every row is in each, one table per section.
+/// The Keys page comes from the key table: every row is in it, one table per section.
 #[test]
-fn the_key_page_and_help_come_from_the_key_table() {
+fn the_key_page_comes_from_the_key_table() {
     let page = key_page_markdown();
-    let help = key_list_text();
     for (title, rows) in KEY_SECTIONS.iter().copied().chain([("Mouse", MOUSE_ROWS)]) {
         assert!(page.contains(&format!("## {title}\n")), "the page lacks {title}");
         for (keys, action) in rows {
             assert!(page.contains(&format!("| {action} | `{keys}` |")), "the page lacks {keys}");
-            assert!(help.contains(&format!("{keys:<KEY_COLUMN$}{action}")), "--help lacks {keys}");
         }
     }
     assert_eq!(page.matches("| --- | --- |").count(), KEY_SECTIONS.len() + 1);
