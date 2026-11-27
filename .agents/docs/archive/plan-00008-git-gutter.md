@@ -11,7 +11,7 @@ phases:
     - id: 2
       title: "Signs in the reader gutter, the `git_gutter` setting, refresh"
       status: done
-      note: "Landed in 1049197 with the Scouter-Base trailer. The architecture record, docs/parity.md, docs/configuration.md, README, CHANGELOG, DESIGN.md, shape.md, and rust.md moved into this commit, because rules.md requires a deviation's record and parity line in the commit that changes the behaviour. D4 is refined (the job runs on each browse tick, keyed by a showing serial), and D6 is accepted (one column). Tests: services/git_tests (6 sign cases), app/gutter_tests (7, real repositories), settings tests with a temporary XDG_CONFIG_HOME. Live: 49, 70, and 100 columns; edits, deletion, appended line, full and partial commits, an untracked file, and 80x24 outside a repository byte-identical to HEAD."
+      note: "Landed in 1049197 with the Scouter-Base trailer. The architecture record, docs/parity.md, docs/configuration.md, README, CHANGELOG, DESIGN.md, shape.md, and rust.md moved into this commit, because rules.md requires a deviation's record and parity line in the commit that changes the behaviour. D4 is refined (the job runs on each browse tick, keyed by a showing serial), and D6 is accepted (one column). Tests: services/git_tests (6 sign cases), app/gutter_tests (5, real repositories), settings tests with a temporary XDG_CONFIG_HOME. Live: 49, 70, and 100 columns; edits, deletion, appended line, full and partial commits, an untracked file, and 80x24 outside a repository byte-identical to HEAD."
     - id: 3
       title: "Docs, live checks, close"
       status: done
