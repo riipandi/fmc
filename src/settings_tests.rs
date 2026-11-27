@@ -3,7 +3,7 @@ use serde_json::json;
 use super::*;
 use crate::find::Matching;
 use crate::reader::associations::Language;
-use crate::theme::catalog::{self, SCOUTER, Theme, bundled};
+use crate::theme::catalog::{self, DEFAULT_THEME, Theme, bundled};
 use crate::theme::{Mode, ModeChoice};
 
 #[test]
@@ -34,10 +34,10 @@ fn a_bad_theme_mode_or_theme_id_keeps_its_default_and_notes_it() {
     assert_eq!(parsed.settings, Settings::default());
     assert_eq!(parsed.notices.len(), 2);
     assert!(parsed.notices[0].contains(r#"theme_mode must be "auto", "dark", or "light"; "auto" is used."#));
-    assert!(parsed.notices[1].contains(r#"dark_theme must be a theme id, a string; "scouter" is used."#));
+    assert!(parsed.notices[1].contains(r#"dark_theme must be a theme id, a string; "default" is used."#));
     assert_eq!(Settings::default().theme_mode, ModeChoice::Auto);
-    assert_eq!(Settings::default().dark_theme, "scouter");
-    assert_eq!(Settings::default().light_theme, "scouter");
+    assert_eq!(Settings::default().dark_theme, "default");
+    assert_eq!(Settings::default().light_theme, "default");
 }
 
 #[test]
@@ -256,17 +256,17 @@ fn find_mode_and_theme_mode_stop_at_their_ends() {
 }
 
 #[test]
-fn a_dark_slot_walks_only_dark_themes_and_scouter() {
+fn a_dark_slot_walks_only_dark_themes_and_the_default() {
     let themes = [user_theme("hogwarts-dusk", Mode::Dark)];
     let walked = walk(&Settings::default(), Row::DarkTheme, &themes);
     assert_eq!(walked, catalog::slot_ids(&themes, Mode::Dark));
-    assert_eq!(walked.first().map(String::as_str), Some(SCOUTER));
+    assert_eq!(walked.first().map(String::as_str), Some(DEFAULT_THEME));
     assert!(walked.contains(&"hogwarts-dusk".to_string()), "a user dark theme joins the slot");
     assert!(walked.contains(&"dark".to_string()) && !walked.contains(&"light".to_string()));
 }
 
 #[test]
-fn a_light_slot_walks_only_light_themes_and_scouter() {
+fn a_light_slot_walks_only_light_themes_and_the_default() {
     let walked = walk(&Settings::default(), Row::LightTheme, &[]);
     assert_eq!(walked, catalog::slot_ids(&[], Mode::Light));
     assert!(walked.contains(&"light".to_string()) && !walked.contains(&"dark".to_string()));
@@ -278,8 +278,8 @@ fn a_light_slot_walks_only_light_themes_and_scouter() {
 #[test]
 fn an_id_the_list_lacks_steps_to_its_first_entry() {
     let odd = Settings { dark_theme: "hogwarts-nowhere".into(), ..Settings::default() };
-    assert_eq!(odd.step(Row::DarkTheme, true, &[]).unwrap().dark_theme, SCOUTER);
-    assert_eq!(odd.step(Row::DarkTheme, false, &[]).unwrap().dark_theme, SCOUTER);
+    assert_eq!(odd.step(Row::DarkTheme, true, &[]).unwrap().dark_theme, DEFAULT_THEME);
+    assert_eq!(odd.step(Row::DarkTheme, false, &[]).unwrap().dark_theme, DEFAULT_THEME);
 }
 
 #[test]
@@ -309,7 +309,7 @@ fn shown_gives_the_word_the_file_uses() {
     assert_eq!(settings.shown(Row::ThemeMode), "dark");
     assert_eq!(settings.shown(Row::FindMode), "fuzzy");
     assert_eq!(settings.shown(Row::AutoPreview), "true");
-    assert_eq!(settings.shown(Row::DarkTheme), SCOUTER);
+    assert_eq!(settings.shown(Row::DarkTheme), DEFAULT_THEME);
 }
 
 #[test]

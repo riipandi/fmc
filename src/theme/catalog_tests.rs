@@ -145,13 +145,13 @@ fn a_role_may_be_upper_case_and_is_kept_lower_case() {
 }
 
 #[test]
-fn the_scouter_pair_is_not_a_file_id() {
-    assert!(parse(SCOUTER, DUSK).unwrap_err().contains("built-in pair"));
+fn the_default_pair_is_not_a_file_id() {
+    assert!(parse(DEFAULT_THEME, DUSK).unwrap_err().contains("built-in pair"));
 }
 
 #[test]
-fn a_dark_id_in_the_dark_slot_is_used_and_the_default_is_scouter() {
-    let chosen = choose(Vec::new(), SCOUTER, SCOUTER);
+fn a_dark_id_in_the_dark_slot_is_used_and_the_default_is_the_default_theme() {
+    let chosen = choose(Vec::new(), DEFAULT_THEME, DEFAULT_THEME);
     assert_eq!(chosen.dark, DARK);
     assert_eq!(chosen.light, LIGHT);
     assert!(chosen.notices.is_empty());
@@ -162,47 +162,56 @@ fn a_dark_id_in_the_dark_slot_is_used_and_the_default_is_scouter() {
 }
 
 #[test]
-fn a_wrong_slot_or_an_unknown_id_keeps_scouter_and_names_the_key() {
+fn a_wrong_slot_or_an_unknown_id_keeps_the_default_and_names_the_key() {
     let chosen = choose(Vec::new(), "gruvbox-light", "tokyo-night");
     assert_eq!(chosen.dark, DARK);
     assert_eq!(chosen.light, LIGHT);
     assert_eq!(
         chosen.notices,
         [
-            "settings.json: dark_theme \"gruvbox-light\" is a light theme; scouter is used.",
-            "settings.json: light_theme \"tokyo-night\" is a dark theme; scouter is used.",
+            "settings.json: dark_theme \"gruvbox-light\" is a light theme; the default theme is used.",
+            "settings.json: light_theme \"tokyo-night\" is a dark theme; the default theme is used.",
         ]
     );
-    let chosen = choose(Vec::new(), "hogwarts-dusk", SCOUTER);
+    let chosen = choose(Vec::new(), "hogwarts-dusk", DEFAULT_THEME);
     assert_eq!(chosen.dark, DARK);
-    assert_eq!(chosen.notices, ["settings.json: dark_theme \"hogwarts-dusk\" is not a theme; scouter is used."]);
+    assert_eq!(
+        chosen.notices,
+        ["settings.json: dark_theme \"hogwarts-dusk\" is not a theme; the default theme is used."]
+    );
 }
 
 #[test]
 fn a_user_file_is_a_theme_and_replaces_a_bundled_id() {
     let user = parse("hogwarts-dusk", DUSK).unwrap();
-    let chosen = choose(vec![user], "hogwarts-dusk", SCOUTER);
+    let chosen = choose(vec![user], "hogwarts-dusk", DEFAULT_THEME);
     assert_eq!(&*chosen.dark.accent, "#e0b25a");
     assert!(chosen.notices.is_empty());
     let replacement = parse("tokyo-night", DUSK).unwrap();
-    let chosen = choose(vec![replacement], "tokyo-night", SCOUTER);
+    let chosen = choose(vec![replacement], "tokyo-night", DEFAULT_THEME);
     assert_eq!(&*chosen.dark.accent, "#e0b25a", "the user file wins over the bundled tokyo-night");
 }
 
 #[test]
 fn a_user_file_in_the_wrong_slot_is_refused_with_a_notice() {
     let light = parse("gringotts-day", &with("mode", "light")).unwrap();
-    let chosen = choose(vec![light.clone()], "gringotts-day", SCOUTER);
+    let chosen = choose(vec![light.clone()], "gringotts-day", DEFAULT_THEME);
     assert_eq!(chosen.dark, DARK);
     assert_eq!(chosen.light, LIGHT);
-    assert_eq!(chosen.notices, ["settings.json: dark_theme \"gringotts-day\" is a light theme; scouter is used."]);
-    let chosen = choose(vec![light.clone()], SCOUTER, "gringotts-day");
+    assert_eq!(
+        chosen.notices,
+        ["settings.json: dark_theme \"gringotts-day\" is a light theme; the default theme is used."]
+    );
+    let chosen = choose(vec![light.clone()], DEFAULT_THEME, "gringotts-day");
     assert_eq!(chosen.light, light.palette);
     assert!(chosen.notices.is_empty());
 }
 
 #[test]
 fn an_id_from_settings_is_shown_without_its_control_characters() {
-    let chosen = choose(Vec::new(), "tokyo\u{1b}[2J", SCOUTER);
-    assert_eq!(chosen.notices, ["settings.json: dark_theme \"tokyo\u{fffd}[2J\" is not a theme; scouter is used."]);
+    let chosen = choose(Vec::new(), "tokyo\u{1b}[2J", DEFAULT_THEME);
+    assert_eq!(
+        chosen.notices,
+        ["settings.json: dark_theme \"tokyo\u{fffd}[2J\" is not a theme; the default theme is used."]
+    );
 }

@@ -74,7 +74,7 @@ fn a_user_file_with_a_bundled_id_replaces_that_theme() {
     let text = value.to_string();
     write(dir.path(), "nord.json", &text);
     let loaded = load(dir.path());
-    let chosen = choose(loaded.themes, "nord", "scouter");
+    let chosen = choose(loaded.themes, "nord", "default");
     assert!(chosen.notices.is_empty());
     assert_eq!(chosen.dark, catalog::parse("nord", &text).unwrap().palette);
     let bundled = catalog::bundled().into_iter().find(|theme| theme.id == "nord").unwrap();

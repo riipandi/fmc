@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- A theme catalog: 16 bundled themes (bjarneo/editor, MIT), chosen with `dark_theme` and `light_theme` in `settings.json`. `scouter` is the default and Scouter's own pair.
+- A theme catalog: 16 bundled themes (bjarneo/editor, MIT), chosen with `dark_theme` and `light_theme` in `settings.json`. `default` is the default theme, Scouter's own pair.
 - `theme_mode` in `settings.json` (`auto`, `dark`, or `light`) forces a mode; `auto` still follows the terminal.
 - User themes: a JSON file per theme in `$XDG_CONFIG_HOME/fmc/themes/` (or `~/.config/fmc/themes/`), read at start. A file with a bundled id replaces that theme; a bad file is skipped with a footer notice.
 - The Settings page on `Ctrl+,`: it lists the eight settings fmc saves, with a help line for the selected one. Enter or Space changes a value, `h` and `l` step a choice back and forward, and a number opens a dialog to type it. Esc or `q` closes the page.

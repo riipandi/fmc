@@ -901,10 +901,10 @@ Context: Scouter has one fixed pair of palettes, dark and light, and the termina
 
 Decision (owner, 2026-11-27, plan-00015 D6, D7, D8, D9, D10; agent picks A4, A7, A9, A13 to A16):
 
-- `theme_mode` is `auto` (the default), `dark`, or `light`; `dark_theme` and `light_theme` name a catalog id for each slot (default `scouter`). `auto` follows the terminal and uses the id of the mode it found (D6 a).
+- `theme_mode` is `auto` (the default), `dark`, or `light`; `dark_theme` and `light_theme` name a catalog id for each slot (default `default`). `auto` follows the terminal and uses the id of the mode it found (D6 a).
 - The catalog is 16 bundled themes, bjarneo/editor's (MIT), as JSON in `src/theme/catalog/`. A user theme is `$XDG_CONFIG_HOME/fmc/themes/<id>.json`, read once at start; a user file with a bundled id replaces that theme (D7 a).
 - A theme file is strict JSON with `mode`, an optional `name`, and bjarneo's 24 colour roles (D8 b, D10 a). fmc maps 18 roles to its tokens and derives 11 by the fixed mixes of `catalog.rs` (A9); bjarneo's `bg2`, `vis`, `cmd`, `ty`, `mac`, and `prop` are read and checked, and not mapped.
-- The id `scouter` is Scouter's pair: `DARK` in a dark slot and `LIGHT` in a light slot (A13). An id used in the other slot, or an unknown id, keeps `scouter` and adds a notice that names the key.
+- The id `default` is Scouter's pair: `DARK` in a dark slot and `LIGHT` in a light slot (A13). An id used in the other slot, or an unknown id, keeps `default` and adds a notice that names the key.
 - The page background is the terminal's background tinted 2.5%, as before (D9 a), when the chosen palette has the terminal's mode. A forced mode that differs from the terminal uses the palette's `fallback-background` (A14).
 - The palette fields are `Hex` values of seven bytes, which are `Copy` (A15). This replaces the `Cow` of A5, which would have cloned at each of about 280 reads.
 - Contrast: the thresholds of `theme_tests.rs` are unchanged. Twelve bundled themes fall short of 7:1 on a tint or a match pair, and tokyo-night-day is also short of 4.5:1 on three of its tints. Each short pair is listed in `theme_tests.rs` (`SHORT`), and the owner's decision on them is open (plan-00015, A16).

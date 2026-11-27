@@ -6,7 +6,7 @@ use serde_json::{Map, Value};
 use crate::find::Matching;
 use crate::reader::associations::Associations;
 use crate::text::display_label;
-use crate::theme::catalog::{SCOUTER, Theme, slot_ids};
+use crate::theme::catalog::{DEFAULT_THEME, Theme, slot_ids};
 use crate::theme::{Mode, ModeChoice};
 
 pub const AUTO_PREVIEW: bool = true;
@@ -25,7 +25,7 @@ pub struct Settings {
     pub file_associations: Associations,
     pub find_mode: Matching,
     pub theme_mode: ModeChoice,
-    /// A catalog id for the dark slot; `scouter` is Scouter's pair (`theme::catalog`). Checked there, not here.
+    /// A catalog id for the dark slot; `default` is Scouter's pair (`theme::catalog`). Checked there, not here.
     pub dark_theme: String,
     pub light_theme: String,
 }
@@ -40,8 +40,8 @@ impl Default for Settings {
             file_associations: Associations::default(),
             find_mode: FIND_MODE,
             theme_mode: THEME_MODE,
-            dark_theme: SCOUTER.into(),
-            light_theme: SCOUTER.into(),
+            dark_theme: DEFAULT_THEME.into(),
+            light_theme: DEFAULT_THEME.into(),
         }
     }
 }
@@ -156,11 +156,11 @@ fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeCho
 /// A theme id is any string here; `theme::catalog::choose` checks it against the catalog and its slot.
 fn theme_id(object: &Map<String, Value>, key: &str, notices: &mut Vec<String>) -> String {
     match object.get(key) {
-        None => SCOUTER.into(),
+        None => DEFAULT_THEME.into(),
         Some(Value::String(id)) => id.clone(),
         Some(_) => {
-            notices.push(format!("settings.json: {key} must be a theme id, a string; \"{SCOUTER}\" is used."));
-            SCOUTER.into()
+            notices.push(format!("settings.json: {key} must be a theme id, a string; \"{DEFAULT_THEME}\" is used."));
+            DEFAULT_THEME.into()
         }
     }
 }
@@ -261,8 +261,8 @@ impl Row {
             Row::GitGutter => "Marks changed lines in a git repository.",
             Row::FindMode => "Finder matches substring words or fuzzy.",
             Row::ThemeMode => "Follow the terminal, or force dark or light.",
-            Row::DarkTheme => "The dark palette: scouter, or a dark theme.",
-            Row::LightTheme => "The light palette: scouter, or a light theme.",
+            Row::DarkTheme => "The dark palette: default, or a dark theme.",
+            Row::LightTheme => "The light palette: default, or a light theme.",
         }
     }
 
