@@ -1,8 +1,6 @@
 //! The write layer of the file-manager phase (plan-00012, D5 and D6). Each operation takes the browsed `root` and refuses
 //! to write outside it. None overwrites: a taken name is an error. A link is created, renamed, copied, moved, and trashed
 //! as the link, never followed. Paths in, a path or an error out; the UI calls it from a worker (copy and move) or inline.
-// shortcut: nothing in the binary calls this layer until the keys land (plan-00012 phase 3); drop this allow then.
-#![allow(dead_code)]
 
 use std::fmt;
 use std::fs::{self, OpenOptions};
@@ -24,7 +22,11 @@ pub enum Error {
     /// Nothing is at the path.
     Missing,
     /// A pipe, a socket, or a device: copying it would block on a reader or writer that never comes.
+    #[allow(dead_code)] // phase 4: copy
     Unsupported,
+    /// The name is not UTF-8. The Trash names an entry by its path as text, so the entry it would move is another one
+    /// (plan-00012, D6).
+    NotUtf8,
     /// The Trash refused the entry.
     Trash(String),
     /// Any other filesystem error.
@@ -40,6 +42,7 @@ impl fmt::Display for Error {
             Error::IntoItself => write!(f, "A folder cannot go into itself."),
             Error::Missing => write!(f, "Nothing is at that path."),
             Error::Unsupported => write!(f, "Only files, folders, and links can be copied."),
+            Error::NotUtf8 => write!(f, "This name is not UTF-8, so it cannot go to the Trash."),
             Error::Trash(message) => write!(f, "Could not move to the Trash: {message}"),
             Error::Io(error) => write!(f, "{error}"),
         }
@@ -87,6 +90,7 @@ pub fn rename(root: &Path, path: &Path, name: &str) -> Result<PathBuf, Error> {
 }
 
 /// Copies `source` into `dest_dir` as `name`: a file, or a folder with everything in it. A link is copied as a link.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 pub fn copy(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<PathBuf, Error> {
     let dest = plan(root, source, dest_dir, name)?;
     copy_entry(source, &dest)?;
@@ -94,17 +98,20 @@ pub fn copy(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<P
 }
 
 /// Moves `source` into `dest_dir` as `name`. Across volumes the move is a copy, then the removal of the source.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 pub fn move_to(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<PathBuf, Error> {
     move_with(root, source, dest_dir, name, trash_path)
 }
 
 /// Moves the entry at `path` to the Trash, where Finder's Put Back restores it (plan-00012, D4).
+#[cfg_attr(test, allow(dead_code))] // the app's tests stand in for it (app/write.rs)
 pub fn trash(root: &Path, path: &Path) -> Result<(), Error> {
     trash_with(root, path, trash_path)
 }
 
 /// A free name for a paste into `dir`, as Finder names a duplicate: `name copy`, then `name copy 2`, before the
 /// extension. A folder, a dotfile, and a name with no extension take the suffix at the end.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 pub fn free_name(dir: &Path, name: &str, is_dir: bool) -> Result<String, Error> {
     segment(name.as_bytes())?;
     let (stem, ext) = split(name, is_dir);
@@ -121,6 +128,7 @@ pub fn free_name(dir: &Path, name: &str, is_dir: bool) -> Result<String, Error> 
 
 /// The stem and the extension (with its dot) of a file's name. A folder, a dotfile, and a name that ends in a dot have
 /// no extension.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn split(name: &str, is_dir: bool) -> (&str, &str) {
     match name.rfind('.') {
         Some(dot) if !is_dir && dot > 0 && dot + 1 < name.len() => name.split_at(dot),
@@ -128,6 +136,7 @@ fn split(name: &str, is_dir: bool) -> (&str, &str) {
     }
 }
 
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn move_with(
     root: &Path,
     source: &Path,
@@ -150,13 +159,16 @@ fn move_with(
 
 /// The cross-volume move: copy the entry, then remove the source. A failed copy leaves the source alone; a failed
 /// removal leaves the copy and the source, so nothing is lost.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn copy_then_remove(source: &Path, dest: &Path, remove: impl FnOnce(&Path) -> Result<(), Error>) -> Result<(), Error> {
     copy_entry(source, dest)?;
     remove(source)
 }
 
-fn trash_with(root: &Path, path: &Path, delete: impl FnOnce(&Path) -> Result<(), Error>) -> Result<(), Error> {
-    segment(path.file_name().ok_or(Error::BadName)?.as_encoded_bytes())?;
+pub fn trash_with(root: &Path, path: &Path, delete: impl FnOnce(&Path) -> Result<(), Error>) -> Result<(), Error> {
+    let name = path.file_name().ok_or(Error::BadName)?;
+    segment(name.as_encoded_bytes())?;
+    name.to_str().ok_or(Error::NotUtf8)?;
     inside(root, parent_of(path)?)?;
     fs::symlink_metadata(path)?;
     delete(path)
@@ -185,6 +197,7 @@ fn plan(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<PathB
 
 /// Copies one entry to `dest`, which must not exist. A link is copied as a link, and a folder recurses the same way. A
 /// failure removes what this call made, never a `dest` that was already there.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     let metadata = fs::symlink_metadata(source)?;
     let kind = metadata.file_type();
@@ -214,6 +227,7 @@ fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     Ok(())
 }
 
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn copy_children(source: &Path, dest: &Path) -> Result<(), Error> {
     for entry in fs::read_dir(source)? {
         let entry = entry?;
@@ -230,6 +244,7 @@ fn segment(name: &[u8]) -> Result<(), Error> {
 
 /// The source's permission bits, without setuid, setgid, or the sticky bit: a copy is the user's own file, not a new
 /// setuid one.
+#[allow(dead_code)] // phase 4: copy, cut, and paste
 fn copied_mode(metadata: &fs::Metadata) -> fs::Permissions {
     fs::Permissions::from_mode(metadata.permissions().mode() & 0o777)
 }

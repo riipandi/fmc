@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T16:50:00+07:00
+updated: 2026-11-27T17:04:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -457,7 +457,7 @@ Alternatives considered:
 
 Context: OpenTUI 0.9.9 has no menu, dialog, or modal widget (plan-00012, "Current state"). Its console overlay is an absolute view at `z_index(i32::MAX)` (`opentui-0.9.9/src/console.rs:450`). `Select` cannot disable a row, and a press on a row that is not selected only moves the selection (`opentui-0.9.9/src/widget/select.rs`, the mouse handler). A dialog must dim the page under it, which `Painter::color_matrix` does (`opentui-0.9.9/src/widget/painter.rs:207`).
 
-Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does; no key opens a dialog in this phase.
+Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does. The file keys open the same dialogs and menu (`app/write.rs`).
 
 Consequences:
 
@@ -477,6 +477,25 @@ Alternatives considered:
 - `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3. Superseded by the owner's decision O4 of `plan-00006` (1.92, for `mermaid-text`; see "Decision: Mermaid is drawn by `mermaid-text`"); `rust.md` records the floor.
 
 Note (2026-11-26, plan-00001 W5): a knock-on of the `Ctrl+q` record above. The footer hint `^q quit` is one column wider than Scouter's `q quit`, so Scouter's own fit (`scouter:src/ui/footer.ts` `fitHints`, width minus 2) drops one more hint at 80 columns; on the changes screen that is `a one file`. Accepted as a consequence of the approved key change; the key list always shows every key.
+
+### Deleted entries go to the Trash through Finder, not through a direct move
+
+Context: plan-00012 D4 makes a delete recoverable, so Finder's Put Back is the undo. The `trash` crate (5.4.0) moves a macOS entry in one of two ways: its default `DeleteMethod::Finder` runs `osascript` with `tell application "Finder" to delete { POSIX file "…" }`, and `NsFileManager` calls `trashItemAtURL` (`trash-5.4.0/src/macos/mod.rs:13-22`, `:45-47`, `:85-110`). The crate's table says only Finder gives Put Back; `NsFileManager` is faster, makes no sound, and asks for no permission.
+
+Decision: keep the default, Finder through `osascript`. Put Back is the reason D4 chose the Trash, and the plan's undo for delete depends on it. The crate passes the path as an argument with no shell and escapes `"` and `\` (`trash-5.4.0/src/macos/mod.rs:184-192`), so a file name cannot become script text. A non-UTF-8 name is refused before the call, because the crate percent-encodes such a path and names a different entry (`services/write.rs`, `Error::NotUtf8`).
+
+Consequences:
+
+- (positive) Finder's Put Back restores a deleted entry, as D4 and the confirm dialog promise.
+- (negative) Each delete runs a subprocess, `osascript`, and waits for Finder.
+- (negative) The first delete from a terminal asks macOS for Automation permission to control Finder. A refusal fails the delete with the dialog's error line, and nothing moves.
+- (negative) The delete path depends on Finder being available; a Mac without it cannot trash.
+
+Alternatives considered:
+
+- `NsFileManager` (`DeleteMethod::NsFileManager`) — rejected: no Put Back, so the delete is not undoable from Finder.
+- `std::fs::remove_*` — rejected: not recoverable (D4).
+- Calling `osascript` directly — rejected: the crate already does it with the escaping, and a second copy would be ours to keep right.
 
 ### Approved deviation: the diff chrome shows settled values after a layout change
 

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T16:24:34+07:00
-updated: 2026-11-27T16:50:00+07:00
+updated: 2026-11-27T17:04:00+07:00
 phases:
     - id: 1
       title: The write layer (no UI)
@@ -9,12 +9,12 @@ phases:
       note: the write layer, 33 tests; trash adds 5 crates on macOS
     - id: 2
       title: The overlay widgets, a context menu and a dialog
-      status: committed
+      status: committed (17aefe0)
       note: Space opens the menu; the dialog is captured by FMC_OVERLAY in debug builds; items close only
     - id: 3
       title: Create, rename, and delete from keys, the menu, and right-click
-      status: pending
-      note: —
+      status: committed
+      note: keys a, A, r, D, Delete; the menu and right-click; trash refuses a non-UTF-8 name and a swapped entry; the Finder method is kept (architecture.md)
     - id: 4
       title: Copy, cut, and paste
       status: pending
@@ -56,7 +56,7 @@ Decisions marked _(owner)_ were the agent's recommendations; the owner approved 
 - **D1 (2026-11-27): the menu and the dialog are fmc widgets on OpenTUI primitives.** An absolute view at a high z-index holds a `Select` (menu) or a bordered box with text, an `Input`, and buttons (dialog); a scrim component dims the page with `color_matrix` while a dialog is open. This is how OpenTUI's own console overlay is built, and fmc's scrollbar already uses the same pair. Cost: fmc owns the placement (flip at the screen edges, the compact tier) and the focus trap. Rejected: drawing the prompt in the footer only, as the finder does: it fits a name but not a delete confirmation with the list of paths, and a context menu needs a floating list. Rejected: waiting for an upstream widget: none is planned in the locked source.
 - **D2 (2026-11-27): the operations.** New file, new folder, rename, copy, cut, paste, delete. Each acts on the selected row; paste goes into the selected folder, or the folder of the selected file. Duplicate is paste of a copy into the same folder. Out: multi-select (D7), permanent delete, chmod, symlink creation.
 - **D3 (2026-11-27) _(owner)_: the keys, in the tree only.** `a` new file (a name ending in `/` makes a folder, as nvim-tree and yazi do), `A` new folder, `r` rename, `c` copy, `x` cut, `v` paste, `D` (Shift+d) and `Delete` delete (`d` stays the changes screen; the parser sees `shift`, `src/keys/mod.rs:16`), and `Space` opens the context menu on the selected row (free in the tree; the reader's `Space` pages and stays). Right-click on a row selects it and opens the menu at the pointer. Rejected: `y`/`p` for copy and paste as yazi does: `y` copies the path and `p` toggles the preview (`src/keys/parser.rs:183`, `:236`).
-- **D4 (2026-11-27) _(owner)_: delete goes to the macOS Trash through the `trash` crate (5.4.0).** It is recoverable with Finder's Put Back, which stands in for undo. The confirm dialog names the entries and defaults to Cancel. Cost: a new dependency (owner approval, `rules.md` "Dependencies"); phase 1 measures its crate count. Rejected: `std::fs::remove_*`: not recoverable. Rejected: shelling out to `osascript`: a subprocess per delete and path quoting.
+- **D4 (2026-11-27) _(owner)_: delete goes to the macOS Trash through the `trash` crate (5.4.0).** It is recoverable with Finder's Put Back, which stands in for undo. The confirm dialog names the entries and defaults to Cancel. Cost: a new dependency (owner approval, `rules.md` "Dependencies"); phase 1 measures its crate count. Rejected: `std::fs::remove_*`: not recoverable. The method is Finder through `osascript`, the crate's default (owner, 2026-11-27, after the phase-3 security review): Put Back needs it, the crate passes the path as an argument with no shell and escapes `"` and `\`, and the first delete asks macOS for Automation permission to control Finder. The per-delete subprocess is the cost; the record is `architecture.md`, "Deleted entries go to the Trash through Finder".
 - **D5 (2026-11-27) _(owner)_: never overwrite.** Create, rename, and move refuse an existing name with a notice and keep the dialog open for a new name. Paste into a folder that has the name adds `copy`, `copy 2`, … before the extension, as Finder does. Rejected: a Replace / Keep both / Cancel dialog: more surface for the first cut; it can follow.
 - **D6 (2026-11-27): safety rules for every write.** Every target path stays inside the browsed root after joining (no `..` escape); a name is one path segment, not empty, not `.` or `..`, with no `/` or NUL; a symlink is renamed, moved, copied, and trashed as the link, never followed; a folder copy recurses without following links and refuses to copy a folder into itself; a rename across volumes falls back to copy then trash of the source. Existence is checked right before the call; the race with another process is accepted and recorded (`shortcut:` comment) because std has no no-clobber rename without `libc`. A `security-review` pass runs before phases 1, 3, and 4 claim done.
 - **D7 (2026-11-27): one entry at a time.** No multi-select in this plan; it needs a selection model in the tree and the finder and is its own roadmap entry.

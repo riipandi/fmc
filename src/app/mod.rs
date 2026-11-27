@@ -18,6 +18,7 @@ mod scroll;
 mod search;
 mod theme;
 mod tree;
+mod write;
 
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
@@ -196,6 +197,8 @@ struct Model {
     overlay: Option<fmc::overlay::Overlay>,
     /// The cell a menu opened from the tree is anchored at.
     overlay_at: (u16, u16),
+    /// What the open menu or dialog is for (`app/write.rs`); a dialog's task is kept while it reports an error.
+    overlay_task: Option<write::Task>,
 }
 
 impl Model {
@@ -280,6 +283,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         pages: Default::default(),
         overlay: None,
         overlay_at: (0, 0),
+        overlay_task: None,
         associations: Default::default(),
         opened: root,
     }

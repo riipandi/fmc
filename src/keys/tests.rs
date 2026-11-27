@@ -31,6 +31,8 @@ fn key(spec: &str) -> Key<'_> {
                 "J" => "j",
                 "K" => "k",
                 "Q" => "q",
+                "A" => "a",
+                "D" => "d",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -183,6 +185,21 @@ fn tree_keys() {
 }
 
 #[test]
+fn file_keys_act_on_the_tree_only() {
+    assert_eq!(last(&["a"], TREE), Step::Done(Action::NewFile));
+    assert_eq!(last(&["A"], TREE), Step::Done(Action::NewFolder));
+    assert_eq!(last(&["r"], TREE), Step::Done(Action::Rename));
+    assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
+    assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
+    // Copy, cut, and paste are phase 4; the reader and the changes screen keep their own keys.
+    for key in ["c", "x", "v"] {
+        assert_eq!(last(&[key], TREE), Step::Bad, "{key} waits for phase 4");
+    }
+    assert_eq!(last(&["a"], READER), Step::Bad);
+    assert_eq!(last(&["D"], READER), Step::Bad);
+}
+
+#[test]
 fn reader_keys() {
     assert_eq!(last(&["space"], READER), Step::Done(Action::Page(1)));
     assert_eq!(last(&["b"], READER), Step::Done(Action::Page(-1)));
@@ -216,6 +233,7 @@ fn every_documented_key_is_bound() {
                     "Ctrl+." => vec!["^.".into()],
                     "Enter" => vec!["enter".into()],
                     "Backspace" => vec!["backspace".into()],
+                    "Delete" => vec!["delete".into()],
                     "Tab" => vec!["tab".into()],
                     "Esc" => vec!["esc".into()],
                     "gg" => vec!["g".into(), "g".into()],

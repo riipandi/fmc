@@ -228,6 +228,13 @@ fn tree(key: Key<'_>) -> Option<Action> {
         "[" => return Some(Action::Jump(-1)),
         _ => {}
     }
+    match (key.name, key.shift) {
+        ("a", false) => return Some(Action::NewFile),
+        ("a", true) => return Some(Action::NewFolder),
+        ("r", false) => return Some(Action::Rename),
+        ("d", true) | ("delete", _) => return Some(Action::Delete),
+        _ => {}
+    }
     match key.name {
         "return" => Some(Action::Toggle),
         "l" | "right" => Some(Action::Expand),

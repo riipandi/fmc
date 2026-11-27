@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use fmc::explorer::{Entry, Kind};
 use fmc::overlay::{Dialog, Stop};
 use opentui::testing::TestApp;
 
@@ -9,8 +10,14 @@ use super::*;
 fn screen(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    {
+        // One file listed and selected, so the menu has a row to act on.
+        let mut m = model.borrow_mut();
+        m.browser.listed(&root, vec![Entry::new(&root, "owls.txt", Kind::File)]);
+        m.browser.select(&root.join("owls.txt"));
+    }
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);
     wire_views(&model, &ui);
@@ -43,15 +50,15 @@ fn space_opens_the_menu_and_the_page_gets_no_key_while_it_is_open() {
 }
 
 #[test]
-fn the_menu_skips_a_disabled_row_and_escape_closes_it() {
+fn the_menu_skips_the_disabled_rows_and_escape_closes_it() {
     let (app, model, _) = screen(120, 40);
     app.press("space");
-    for _ in 0..4 {
+    for _ in 0..2 {
         app.press("down");
     }
-    assert_eq!(selected(&model), Some(4), "Cut is the fourth move down");
+    assert_eq!(selected(&model), Some(2), "Rename is the third row");
     app.press("down");
-    assert_eq!(selected(&model), Some(6), "Paste is skipped");
+    assert_eq!(selected(&model), Some(6), "Copy, Cut, and Paste are disabled and skipped");
     app.press("escape");
     assert!(!is_open(&model));
 }
@@ -74,7 +81,10 @@ fn a_press_on_a_disabled_row_keeps_the_menu_and_on_an_enabled_row_picks_it() {
     app.click(5, 9);
     assert!(is_open(&model), "Paste is disabled");
     app.click(5, 4);
-    assert!(!is_open(&model), "New file is picked and the menu closes");
+    assert!(
+        matches!(model.borrow().overlay, Some(Overlay::Dialog(_))),
+        "New file is picked: the menu closes and its name dialog opens"
+    );
 }
 
 #[test]

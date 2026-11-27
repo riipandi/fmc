@@ -362,6 +362,25 @@ fn trash_refuses_what_the_root_does_not_hold_and_calls_no_delete() {
 }
 
 #[test]
+fn trash_refuses_a_name_that_is_not_utf8_and_calls_no_delete() {
+    use std::ffi::OsStr;
+    use std::os::unix::ffi::OsStrExt;
+    let f = fixture();
+    // A decoy with the percent-encoded spelling: the crate would move this one if the name went through.
+    let decoy = f.root.join("caf%E9.md");
+    fs::write(&decoy, "Griphook\n").unwrap();
+    let path = f.root.join(OsStr::from_bytes(b"caf\xe9.md"));
+    let mut called = false;
+    let result = trash_with(&f.root, &path, |_| {
+        called = true;
+        Ok(())
+    });
+    assert!(matches!(result, Err(Error::NotUtf8)));
+    assert!(!called);
+    assert!(decoy.exists());
+}
+
+#[test]
 fn trash_keeps_a_link_as_the_path_it_is_given() {
     let f = fixture();
     let link = f.root.join("vault");

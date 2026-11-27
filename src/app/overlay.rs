@@ -1,16 +1,15 @@
 //! The overlays over the page (plan-00012, D1): a context menu and a dialog. While one is open it takes every key and
 //! every click, so the page under it does not act: `capture.rs` hands the keys here, and a catcher beneath the overlay
-//! takes its clicks. This phase draws them and carries nothing out: a row or a button closes the overlay.
+//! takes its clicks. What a row or a button does is the write layer's (`app/write.rs`); a press outside a menu closes it.
 
 use fmc::keys::Key;
 use fmc::layout::tier;
-use fmc::overlay::{Dialog, Item, Menu, Outcome, Overlay};
+use fmc::overlay::{Dialog, Outcome, Overlay};
 use opentui::prelude::*;
 
 use super::*;
 use crate::ui::dialog::{self, DialogView, Scrim};
 use crate::ui::menu::{self, MenuView};
-use crate::ui::tree::LIST_TOP;
 
 /// The views above the page. The catcher takes the clicks an overlay leaves; the scrim dims the page under a dialog.
 pub struct Views {
@@ -48,7 +47,7 @@ pub fn wire_views(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event| {
             cx.stop_propagation();
-            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+            if !matches!(event.kind, MouseEventKind::Down(_)) {
                 return;
             }
             let mut m = model.borrow_mut();
@@ -86,9 +85,7 @@ fn press(
         cx.stop_propagation();
         let mut m = model.borrow_mut();
         let outcome = answer(&m);
-        if matches!(outcome, Outcome::Pick(_) | Outcome::Close) {
-            close(cx.app(), &mut m);
-        }
+        apply(cx.app(), &mut m, &ui.borrow(), outcome);
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
     }
 }
@@ -96,44 +93,41 @@ fn press(
 /// A key while an overlay is open. `capture.rs` sends every key here except Ctrl+q and Ctrl+c, which quit.
 pub fn key(app: &App, m: &mut Model, ui: &Ui, key: Key<'_>) {
     let Some(overlay) = m.overlay.as_mut() else { return };
-    match overlay.key(key) {
+    let outcome = overlay.key(key);
+    apply(app, m, ui, outcome);
+}
+
+/// Carries out what a key or a press asked of the open overlay. A pick is for the write layer: a menu's act starts, and
+/// a dialog's button may keep the dialog open.
+fn apply(app: &App, m: &mut Model, ui: &Ui, outcome: Outcome) {
+    match outcome {
         Outcome::Stay => {}
-        Outcome::Close | Outcome::Pick(_) => close(app, m),
+        Outcome::Close => close(app, m),
+        Outcome::Pick(index) => write::pick(app, m, ui, index),
         Outcome::Insert(text) => {
             ui.overlay.dialog.field.insert(text);
+            clear_error(m);
         }
         Outcome::Backspace => {
             ui.overlay.dialog.field.perform(EditorAction::Backspace);
+            clear_error(m);
         }
+    }
+}
+
+/// Typing clears a dialog's error line, which named the last attempt.
+fn clear_error(m: &mut Model) {
+    if let Some(Overlay::Dialog(dialog)) = m.overlay.as_mut() {
+        dialog.error = None;
     }
 }
 
 /// Closes the overlay and gives the keyboard back: a dialog's field may hold the focus, and a key the parser leaves
 /// would otherwise type into it.
-fn close(app: &App, m: &mut Model) {
+pub fn close(app: &App, m: &mut Model) {
     m.overlay = None;
+    m.overlay_task = None;
     app.blur();
-}
-
-/// `Space` on a tree row: the context menu, anchored at the selected row's cell (plan-00012, D3).
-pub fn open_menu(m: &mut Model) {
-    let row = m.browser.selected_index().saturating_sub(m.browser.top());
-    m.overlay_at = (2, LIST_TOP + row as u16);
-    m.overlay = Some(Overlay::Menu(Menu::new(sample_items())));
-}
-
-/// The menu's rows until the file actions land: the labels the actions will have, and one that is disabled.
-fn sample_items() -> Vec<Item> {
-    let rows = [
-        ("New file…", true),
-        ("New folder…", true),
-        ("Rename…", true),
-        ("Copy", true),
-        ("Cut", true),
-        ("Paste", false),
-        ("Delete…", true),
-    ];
-    rows.into_iter().map(|(label, enabled)| Item { label: label.into(), enabled }).collect()
 }
 
 /// Opens a dialog over the page with its field empty.
@@ -144,7 +138,7 @@ fn open_dialog(m: &mut Model, ui: &Ui, dialog: Dialog) {
 }
 
 /// Opens a dialog at start, so a live run can capture one: `FMC_OVERLAY=confirm` or `FMC_OVERLAY=name`. Debug builds
-/// only, as `FMC_PANIC_AFTER_START` is; no key opens a dialog in this phase.
+/// only, as `FMC_PANIC_AFTER_START` is.
 #[cfg(debug_assertions)]
 pub fn debug_open(m: &mut Model, ui: &Ui) {
     let dialog = match std::env::var("FMC_OVERLAY").as_deref() {

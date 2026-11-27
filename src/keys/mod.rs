@@ -66,6 +66,14 @@ pub enum Action {
     Find,
     /// `Space` on a tree row: the context menu for the row (plan-00012, D3).
     ContextMenu,
+    /// `a` on a tree row: a dialog for a new file, or a folder when the name ends in `/` (plan-00012, D3).
+    NewFile,
+    /// `A` on a tree row: a dialog for a new folder.
+    NewFolder,
+    /// `r` on a tree row: a dialog that renames the row.
+    Rename,
+    /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
+    Delete,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -107,6 +115,10 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
             ("space", "context menu for the row"),
+            ("a", "new file; a name ending in / makes a folder"),
+            ("A", "new folder"),
+            ("r", "rename"),
+            ("D Delete", "move to the Trash"),
         ],
     ),
     (
@@ -156,6 +168,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
 
 pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Left click", "select file, or toggle folder"),
+    ("Right click", "context menu for the row"),
     ("Click", "focus the pane under the pointer"),
     ("Drag text", "select; y copies it"),
     ("Wheel", "scroll the pane under the pointer"),

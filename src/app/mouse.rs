@@ -28,6 +28,14 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                         act_on_row(&mut m, index, cx.app().size().0);
                     }
                 }
+                MouseEventKind::Down(MouseButton::Right) => {
+                    // A right press on a row selects it and opens its context menu at the pointer (plan-00012, D3).
+                    let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
+                    let Some(index) = row else { return };
+                    m.focus = Focus::List;
+                    m.browser.select_index(index);
+                    write::open_menu_at(&mut m, (event.x, event.y));
+                }
                 MouseEventKind::ScrollUp => m.browser.scroll(-1),
                 MouseEventKind::ScrollDown => m.browser.scroll(1),
                 _ => return,
