@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `Ctrl+F` in the file finder changes what the footer shows before a query is typed: it names `fuzzy` while fuzzy matching is on. Before, a press on an empty prompt changed nothing on screen.
+
 ## [0.1.0] - 2026-11-27
 
 The first release. fmc is a read-only terminal viewer for folders, code, Markdown, images, and git changes. It is a port of [Scouter](https://github.com/indrazm/scouter) v0.3.4 with the same screens and keys, except for the differences listed in `docs/parity.md` in the repository. It runs on macOS with Apple silicon.

@@ -78,3 +78,27 @@ fn ctrl_f_outside_the_finder_changes_nothing() {
     assert_eq!(model.borrow().matching, Matching::Substring);
     assert!(model.borrow().finder.is_none());
 }
+
+/// The bytes a terminal sends for Ctrl+F: the legacy `0x06`, and the kitty protocol's CSI u form.
+#[test]
+fn raw_ctrl_f_from_the_terminal_flips_the_match_in_either_encoding() {
+    for bytes in [&b"\x06"[..], &b"\x1b[102;5u"[..]] {
+        let dir = folder();
+        let (app, model, _ui) = finding(dir.path(), Matching::Substring);
+        app.type_text("hgw");
+        app.feed(bytes);
+        assert_eq!(model.borrow().matching, Matching::Fuzzy, "bytes {bytes:?}");
+        assert_eq!(status(&model), "fuzzy, 2 matches", "bytes {bytes:?}");
+    }
+}
+
+/// Ctrl+F before the first letter has no match count to change, so the prompt's hint must show the mode.
+#[test]
+fn raw_ctrl_f_on_an_empty_prompt_shows_the_mode_in_the_hint() {
+    let dir = folder();
+    let (app, model, _ui) = finding(dir.path(), Matching::Substring);
+    app.feed(b"\x06");
+    assert_eq!(status(&model), "fuzzy, type to find a file, Tab to search inside files");
+    app.feed(b"\x06");
+    assert_eq!(status(&model), "type to find a file, Tab to search inside files");
+}

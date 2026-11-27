@@ -68,7 +68,7 @@ Inside a git repository, the reader marks the lines that differ from `HEAD`. A s
 
 `/` in the file list opens the finder. Its matches replace the tree until you press `Esc`, and the tree returns where it was.
 
-Typing filters by name. By default (`substring`) every word of the query must appear in the path, ignoring case, and up to 200 matches are listed with the total. `Ctrl+F` switches to fuzzy matching: the whole query is one pattern whose letters must appear in order anywhere in the path, the best matches come first, and the matched letters are highlighted. `find_mode` in the settings sets the start.
+Typing filters by name. By default (`substring`) every word of the query must appear in the path, ignoring case, and up to 200 matches are listed with the total. `Ctrl+F` switches to fuzzy matching: the whole query is one pattern whose letters must appear in order anywhere in the path, the best matches come first, and the matched letters are highlighted. `find_mode` in the settings sets the start. The footer names `fuzzy` while it is on, including before the first letter.
 
 `Enter` opens the file, or reveals the folder that matched. `Tab` switches to search inside the files. From two characters on, it lists the matching lines, and the highlighted line shows in the reader. `Enter` opens that file at the line, and `n` and `N` keep stepping through the matches.
 

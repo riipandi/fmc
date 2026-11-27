@@ -286,7 +286,10 @@ fn update(m: &mut Model) {
     let Some(finder) = m.finder.as_ref() else { return };
     let (index, query, mode) = (finder.index.clone(), finder.query.clone(), finder.mode);
     if query.is_empty() {
-        set_status(m, if mode == Mode::Files { HINT_FILES } else { HINT_TEXT });
+        // The mode shows before the first letter too: a Ctrl+F pressed on an empty prompt must change what is drawn.
+        let hint = if mode == Mode::Files { HINT_FILES } else { HINT_TEXT };
+        let fuzzy = mode == Mode::Files && m.matching == fmc::find::Matching::Fuzzy;
+        set_status(m, &if fuzzy { format!("fuzzy, {hint}") } else { hint.to_string() });
         end_preview(m);
         let selected = m.browser.selected().to_path_buf();
         m.browser.show_tree(&selected);
