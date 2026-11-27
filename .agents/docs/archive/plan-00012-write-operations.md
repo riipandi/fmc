@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T16:24:34+07:00
-updated: 2026-11-27T18:30:00+07:00
+updated: 2026-11-27T17:28:46+07:00
 phases:
     - id: 1
       title: The write layer (no UI)
@@ -18,15 +18,15 @@ phases:
     - id: 4
       title: Copy, cut, and paste
       status: committed (738501b)
-      note: c, x, v in the tree; the clipboard is fmc's own; paste runs on the worker (one at a time); Esc in the list drops a copy or cut (a second x was the other option); Rex: 2000 files copied in well under two seconds, so the scroll ran but did not overlap the copy
+      note: c, x, v in the tree; fix 872fd21 after it (a replaced source is not trashed; the dialog's hover is a highlight, not the focus); the clipboard is fmc's own; paste runs on the worker (one at a time); Esc in the list drops a copy or cut (a second x was the other option); Rex: 2000 files copied in well under two seconds, so the scroll ran but did not overlap the copy
     - id: 5
       title: Docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: committed (see git log: docs: the file-manager phase and its write operations)
+      note: the docs sync, the ledger close, and handover-00008; the commit is named by its message, since its hash is its own
     - id: 6
       title: Final validation
       status: pending
-      note: —
+      note: runs after the docs commit; no commit if green; a failure gets a fix: commit
 ---
 
 ## Open the file-manager phase — create, rename, copy, move, and delete from the tree, with a context menu and dialogs

@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T17:04:00+07:00
+updated: 2026-11-27T17:29:09+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -457,7 +457,7 @@ Alternatives considered:
 
 Context: OpenTUI 0.9.9 has no menu, dialog, or modal widget (plan-00012, "Current state"). Its console overlay is an absolute view at `z_index(i32::MAX)` (`opentui-0.9.9/src/console.rs:450`). `Select` cannot disable a row, and a press on a row that is not selected only moves the selection (`opentui-0.9.9/src/widget/select.rs`, the mouse handler). A dialog must dim the page under it, which `Painter::color_matrix` does (`opentui-0.9.9/src/widget/painter.rs:207`).
 
-Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does. The file keys open the same dialogs and menu (`app/write.rs`).
+Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does. The file keys open the same dialogs and menu (`app/write.rs`). A pointer over a menu row selects it, as a key does; a pointer over a dialog button only highlights it (`Dialog.hovered`, `app/overlay.rs` `hover_button`), and the focus stays where the keys put it, so Return picks the focused button (the owner's decision on 2026-11-27).
 
 Consequences:
 
@@ -471,6 +471,54 @@ Alternatives considered:
 - OpenTUI `Select` as the menu — rejected: it has no disabled rows, and a click on an unselected row only selects it.
 - The finder's footer prompt for every dialog — rejected: it fits a name, not a confirmation that lists paths, nor a floating menu (plan-00012, D1).
 - Waiting for an upstream modal widget — rejected: none is in the locked source.
+
+### The file-manager operations are the one write path, bounded to the browsed root
+
+Context: the read-only rule (`AGENTS.md`, `rules.md`) held every write shut until the owner opened the file-manager phase. The owner approved plan-00012 on 2026-11-27, which opens it for five operations and a copy and cut, from the tree (its D2 and D3).
+
+Decision (plan-00012 D10): the read-only rule is amended, not removed. Create, rename, copy, move, and delete (to the Trash) are allowed inside the folder fmc opened, from the tree and its context menu. Any other write still needs the owner: saving a file, a write outside the browsed root, and fmc's own settings, which stay read-only (the record "a read-only `settings.json`").
+
+Consequences:
+
+- (positive) The rule names exactly what may write, so a new write can be checked against this record and `rules.md` ("Writes").
+- (negative) fmc now writes the user's files, so a defect in `services/write.rs` can lose data. The rules in `rules.md` and the tests in temporary folders carry that load.
+
+Alternatives considered:
+
+- Keep the phase closed and ship the file list alone: rejected, the owner asked for the operations (RI-4).
+- One general write API that the finder and the changes screen also call: rejected, the tree only (plan-00012 D2, out of scope).
+
+### Every write checks its path before it acts, and never overwrites
+
+Context: a link inside the browsed root can point outside it, so a write through a link would escape the root (plan-00012 D6). std has no no-clobber rename and no `O_NOFOLLOW`; both need libc.
+
+Decision (plan-00012 D5, D6): each operation runs the same checks before its one system call: the name is one segment, both folders lie inside the root after resolving, the source exists, a folder does not go into itself, and the destination is vacant. A link is operated on as the link. A file copy opens the source and compares the opened file's device and inode with the `lstat` taken before the open (`services/write.rs`, `open_seen`), so a link swapped in after the `lstat` is refused before a byte is read; this needs no libc constant. A cross-volume move takes the source's device and inode before the copy and refuses to remove the source when they changed (`Error::Changed`), leaving the copy in place.
+
+Consequences:
+
+- (positive) Each refusal and each swap has a test in a temporary folder (`services/write_tests.rs`), with the fixture names of the sample-data rule.
+- (negative) Four races remain, each a `shortcut:` comment in `services/write.rs`. The check and the create, rename, or move: std cannot refuse an existing target atomically. The directory branch of `copy_entry`: a folder swapped for a link after its `lstat` is read through the link (LOW, from the 2026-11-27 `security-review`; the upgrade is to open the folder and compare its identity before reading). The check and the Trash call. Each needs a process running as the user, which can already write there.
+- (negative) A cross-volume move refused after its copy leaves the copy at the new place and the original where it was.
+
+Alternatives considered:
+
+- A Replace, Keep both, or Cancel dialog for a taken name: rejected for the first cut (D5); more surface, and it can follow.
+- `O_NOFOLLOW` through a libc constant: rejected, it needs a new dependency or a per-OS constant that the identity check does not need.
+
+### The clipboard is fmc's own, and the footer names what it holds
+
+Context: plan-00012 D2 and D3 put copy, cut, and paste on the tree, and D8 runs a paste off the frame. A system clipboard for files (Finder's copy and paste between apps) is out of scope.
+
+Decision (owner, 2026-11-27: the footer wording is approved): the clipboard holds one path and whether it is a cut, and nothing else; it lives in the model and is lost when fmc exits. `c` and `x` set it and the footer says `Copied <name>. Paste it with v.` or `Cut <name>. Paste it with v.`. A paste runs on a worker, one at a time: a second `v` while one runs says `Still pasting. Try again when it finishes.`, and the footer says `copying` or `moving` while it runs. A cut row is dimmed in the tree until it is pasted or the cut is dropped; `Esc` in the list drops a copy or a cut (the second `x` was the other option).
+
+Consequences:
+
+- (positive) A copy and a cut are one key each in the tree, with no mode to remember.
+- (negative) The clipboard does not survive a restart and does not reach other apps.
+
+Alternatives considered:
+
+- `y` and `p`, as yazi uses: rejected, `y` copies the path here, and `p` toggles the preview (plan-00012 D3).
 
 ## Pending decisions
 

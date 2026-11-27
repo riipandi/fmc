@@ -76,6 +76,20 @@ Typing filters by name. By default (`substring`) every word of the query must ap
 
 Drag across text to select it. The selection stays on screen until you press `y`, which copies it, or `Esc`, which clears it. With nothing selected, `y` copies the path of the current file.
 
+## Managing files
+
+The file list creates, renames, copies, moves, and deletes files. Each action works on the selected row, inside the folder fmc opened.
+
+- `a` creates a file. A name ending in `/` creates a folder, and `A` creates a folder.
+- `r` renames the row.
+- `c` copies the row, and `x` cuts it. `v` pastes it into the selected folder, or beside the selected file. A cut row is dimmed until it is pasted or the cut is dropped with `Esc`.
+- `D` or `Delete` moves the row to the Trash, after a dialog that names it. The dialog selects Cancel, so Return keeps the file. Finder's Put Back restores a trashed item. The first delete asks macOS for permission to let fmc control Finder.
+- `Space`, or a right-click on a row, opens a menu with the same actions. Paste is dimmed until something is copied or cut.
+
+fmc never overwrites. A name that is taken is refused with a notice, and the dialog stays open for another name. A paste into a folder that has the same name takes `copy`, then `copy 2`, before the extension. A copy of a folder keeps its links as links, and fmc does not follow them. A paste runs in the background, and the footer says `copying` or `moving` while it runs. A second paste is refused until the first one finishes.
+
+There is no undo beyond the Trash, and no action works on more than one row at a time.
+
 ## Help
 
 `?` shows the key list as tables in the reader, in place of the document. `?` or `Esc` brings the document back, with its scroll position and search.

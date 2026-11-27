@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T16:24:34+07:00
+updated: 2026-11-27T17:28:25+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -18,7 +18,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-1 | Mermaid diagrams in Markdown | landed | plan-00006 phases 1 and 2 | 2026-11-27 |
 | RI-2 | The owner's Neovim grammar set | landed in part | plan-00006 phases 3 and 4; the rest is RI-17 | 2026-11-27 |
 | RI-3 | Fuzzy file finding | landed | plan-00006 phase 5 | 2026-11-27 |
-| RI-4 | Write operations | planned | plan-00012, approved, running | 2026-11-27 |
+| RI-4 | Write operations | landed | plan-00012 phases 1 to 5 and the fix `872fd21` | 2026-11-27 |
 | RI-5 | SQLite and DuckDB viewer | parked | owner-deferred | 2026-11-26 |
 | RI-6 | Platforms beyond macOS aarch64 | parked | owner-deferred | 2026-11-26 |
 | RI-7 | An alternate Vim-style keymap | parked | owner-deferred | 2026-11-26 |
@@ -33,6 +33,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-17 | The rest of the owner's grammar set | parked | after RI-18; unlock: a crate that loads | 2026-11-27 |
 | RI-18 | Injected highlighting | next | the owner's pick, no plan yet | 2026-11-27 |
+| RI-19 | Multi-select and bulk operations | parked | unlock: the owner asks for it (plan-00012 D7) | 2026-11-27 |
 
 ## Rendering
 
@@ -66,11 +67,19 @@ Phase 1 copies Scouter's substring AND match and order (`architecture.md`). A fu
 
 ### RI-4 — Write operations
 
-- status: planned (plan-00012-write-operations.md, approved 2026-11-27 and running; the approval opened the file-manager phase) · updated 2026-11-27
+- status: landed (plan-00012, phases 1 to 5: `047a58b` the write layer, `17aefe0` the menu and dialog, `46f13a0` create, rename, and delete, `738501b` copy, cut, and paste, `872fd21` the fix for a replaced source and the dialog hover, and the docs commit `docs: the file-manager phase and its write operations`; `architecture.md`, the records of D10, D5 and D6, and the clipboard) · updated 2026-11-27
 
 Create, rename, move, copy, delete. Ideas from `research/editor-study.md`: atomic writes through a temp file and `rename`. Candidates: `ignore` 0.4 for walks, `trash` 5.4 for delete-to-trash; `fs_extra` is stale (2023). Every write path needs a `security-review` pass (symlinks, path traversal).
 
 **Unlock:** the owner opens the file-manager phase (`rules.md`, read-only rule). **First move:** done, plan-00012 (2026-11-27): the operation list, the keys, the confirm and Trash rules, and the context menu and dialog built on OpenTUI's absolute views (OpenTUI 0.9.9 has no menu or dialog widget).
+
+### RI-19 — Multi-select and bulk operations
+
+- status: parked (unlock: the owner asks for it; plan-00012 D7 left it out) · updated 2026-11-27
+
+plan-00012 acts on one row at a time. Several rows need a selection model in the tree and in the finder, which has only the one cursor: a mark on each row, a range, and a rule for what a dialog names when several rows go to the Trash. The clipboard holds one path (`architecture.md`, "The clipboard is fmc's own"), so a multi-row copy or cut needs its shape decided too.
+
+**Unlock:** the owner asks for it. **First move:** a plan for the selection model (marks, range keys, what a dialog names) and for the clipboard's shape (one path or a list).
 
 ### RI-5 — SQLite and DuckDB viewer
 

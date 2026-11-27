@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-27T15:10:00+07:00
+updated: 2026-11-27T17:27:34+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -10,11 +10,23 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 
 - **Parity-first.** A behavior difference is a defect unless the owner approved it and the approval is recorded in `architecture.md`.
 - **Verify before porting.** Establish a Scouter behavior from its source or from a live run through Rex, never from memory or from this file. Scouter's `docs/decision/` records (0001 to 0037) and its `src/` tree (`app/`, `core/`, `explorer/`, `reader/`, `diff/`, `find/`, `ui/`) are the starting map. Record the evidence in the plan or issue that carries the port.
-- **Read-only until parity is closed.** No file-writing feature (create, rename, move, delete, save, or any other write to the user's files) until the owner opens that phase.
+- **Writes are bounded to the file-manager operations.** The owner opened the file-manager phase on 2026-11-27 (plan-00012; `architecture.md`, "The file-manager operations are the one write path"): create, rename, copy, move, and delete, from the tree only, inside the browsed root, under "Writes" below. Any other write to the user's files (saving a file, a write outside the root) still needs the owner. fmc never writes its own settings.
 - **Library source.** The UI crates `opentui` and `opentui-sys` are read from the locked version (`Cargo.lock`), in the copy under `~/.cargo/registry/src/`. Their source wins over docs, READMEs, and examples.
 - **Baseline.** fmc ports Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Every deviation record in `architecture.md` and the top of `docs/parity.md` names it once for the whole page. A commit that ports Scouter behavior ends with the trailer `Scouter-Base: v0.3.4 (434d000f)`. Moving the baseline is an owner decision; it re-checks every deviation and `research/scouter-inventory.md` against the new commit.
 - **Every deviation is documented.** An owner-approved difference lands in the same commit as its `architecture.md` record (rationale) and its `docs/parity.md` line (what users see). An unrecorded difference is a defect.
 - **Parity reference.** Scouter at commit `434d000` with `@opentui/core` bumped to 0.9.9, run from a scratch checkout outside this repository (`architecture.md`). Research snapshots of its behavior live in `research/`.
+
+## Writes
+
+The file-manager operations (plan-00012) are fmc's only writes to the user's files. `services/write.rs` enforces these rules, and `services/write_tests.rs` and `app/write_tests.rs` test each one in a temporary folder.
+
+- **Never overwrite.** A create, rename, or move to a taken name is refused with a notice, and the dialog stays open for a new name. A paste into a folder that has the name takes `copy`, `copy 2`, and so on before the extension (D5).
+- **One name, one segment.** A name is not empty, not `.` or `..`, and has no `/` or NUL (D6).
+- **Inside the root.** Every target folder is resolved after joining, and must lie inside the browsed root; a `..` or a link that leaves it is refused (D6).
+- **A link is the entry.** A link is created, renamed, copied, moved, and trashed as the link, never followed; a folder copy recurses without following links, and a folder cannot go into itself (D6).
+- **Existence is checked right before the call.** The race with another process is accepted and recorded as a `shortcut:` comment, because std has no no-clobber rename without libc (`architecture.md`, "Every write checks its path before it acts").
+- **Delete is the Trash, through Finder.** A deleted entry goes to the macOS Trash, where Finder's Put Back restores it. There is no permanent delete (`architecture.md`, "Deleted entries go to the Trash through Finder").
+- **Copy and move run on a worker.** A paste runs off the frame, one at a time, and the footer says `copying` or `moving` while it runs. Create, rename, and Trash run inline, as one call each (D8).
 
 ## Where a fact lives
 
