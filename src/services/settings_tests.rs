@@ -1,6 +1,7 @@
 use std::ffi::OsString;
 use std::fs;
 
+use fmc::reader::associations::Language;
 use fmc::settings::Settings;
 use tempfile::TempDir;
 
@@ -38,7 +39,10 @@ fn a_file_under_the_config_home_is_read() {
     fs::create_dir_all(file.parent().unwrap()).unwrap();
     fs::write(&file, r#"{"reader_jump": 8, "auto_preview": false}"#).unwrap();
     let parsed = load(&file);
-    assert_eq!(parsed.settings, Settings { auto_preview: false, sidebar_jump: 2, reader_jump: 8, git_gutter: true });
+    assert_eq!(
+        parsed.settings,
+        Settings { auto_preview: false, sidebar_jump: 2, reader_jump: 8, git_gutter: true, ..Settings::default() }
+    );
     assert!(parsed.notices.is_empty());
 }
 
@@ -61,4 +65,15 @@ fn a_path_that_cannot_be_read_is_the_defaults_with_a_notice() {
     assert_eq!(parsed.settings, Settings::default());
     assert_eq!(parsed.notices.len(), 1);
     assert!(parsed.notices[0].starts_with("settings.json could not be read: "));
+}
+
+#[test]
+fn file_associations_are_read_from_the_config_home() {
+    let dir = TempDir::new().unwrap();
+    let file = path(Some(dir.path().as_os_str().to_owned()), None).unwrap();
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(&file, r#"{"file_associations": {"*.rs.bak": "rust"}}"#).unwrap();
+    let parsed = load(&file);
+    assert!(parsed.notices.is_empty());
+    assert_eq!(parsed.settings.file_associations.language(None, "gringotts.rs.bak"), Some(Language::Filetype("rust")));
 }

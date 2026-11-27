@@ -1,4 +1,4 @@
-//! Reads `settings.json` once, before the first frame (`architecture.md`, "a read-only settings.json with three keys").
+//! Reads `settings.json` once, before the first frame (`architecture.md`, "a read-only settings.json with its keys").
 //! The UI thread never reads the file again.
 
 use std::ffi::OsString;

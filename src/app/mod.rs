@@ -130,6 +130,9 @@ struct Model {
     restore: Option<(PathBuf, usize)>,
     /// The in-file search, while there is one (Scouter `DocumentSearch`).
     search: Option<fmc::reader::search::Search>,
+    /// The `file_associations` table (`settings.json`), and the folder fmc opened: a path pattern matches from it.
+    associations: fmc::reader::associations::Associations,
+    opened: PathBuf,
     /// The file finder, while it is open (Scouter `FileFinder`).
     finder: Option<find::Finder>,
     /// The text hit Enter opened, to show at its line once its file is read (Scouter `openAt`).
@@ -265,6 +268,8 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         command: None,
         columns: app.size().0,
         pages: Default::default(),
+        associations: Default::default(),
+        opened: root,
     }
 }
 
@@ -297,6 +302,7 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         m.sidebar_jump = settings.settings.sidebar_jump;
         m.reader_jump = settings.settings.reader_jump;
         m.git_gutter = settings.settings.git_gutter;
+        m.associations = settings.settings.file_associations;
         if !settings.notices.is_empty() {
             m.message = Some(Message { text: settings.notices.join(" "), error: true });
         }
@@ -796,6 +802,9 @@ mod focus_tests;
 mod layout_tests;
 #[cfg(test)]
 mod mouse_tests;
+
+#[cfg(test)]
+mod associations_tests;
 
 #[cfg(test)]
 #[path = "mermaid_tests.rs"]

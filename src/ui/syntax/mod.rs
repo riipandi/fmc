@@ -4,6 +4,7 @@
 
 use std::path::Path;
 
+use fmc::reader::associations::{Associations, Language as Association};
 use fmc::reader::language::is_highlighted;
 use fmc::theme::Palette;
 use opentui::native::{Context, SyntaxStyle};
@@ -57,10 +58,18 @@ fn grammar(language: impl Into<Language>, highlights: &'static str) -> Option<Co
     Grammar::new(language, highlights).core_captures().compile().ok()
 }
 
-/// The filetype a path is highlighted as, if Scouter highlights it (`languageFor`).
-pub fn language_for(path: &Path) -> Option<&'static str> {
-    let filetype = filetype_for_path(&path.to_string_lossy())?;
-    is_highlighted(filetype).then_some(filetype)
+/// The filetype a path is highlighted as. A matching `file_associations` entry decides first, and plain text turns
+/// highlighting off; otherwise it is OpenTUI's filetype, kept only when Scouter highlights it (`languageFor`).
+/// `root` is the folder fmc opened, which a path pattern is matched from.
+pub fn language_for(associations: &Associations, root: &Path, path: &Path) -> Option<&'static str> {
+    match associations.language_of(path, root) {
+        Some(Association::Plain) => None,
+        Some(Association::Filetype(filetype)) => Some(filetype),
+        None => {
+            let filetype = filetype_for_path(&path.to_string_lossy())?;
+            is_highlighted(filetype).then_some(filetype)
+        }
+    }
 }
 
 /// The style of each capture name, as Scouter's `syntaxStyles()` maps them. Unlisted names take their first dotted

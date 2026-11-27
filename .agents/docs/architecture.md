@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T12:20:00+07:00
+updated: 2026-11-27T15:00:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -631,7 +631,7 @@ Consequences:
 - (positive) A middle step between one row and a page.
 - (negative) `[`/`]` mean different things on the two screens.
 
-### Decision: a read-only `settings.json` with three keys
+### Decision: a read-only `settings.json` with its keys
 
 Context: auto-preview and the `[`/`]` steps must be configurable (owner, 2026-11-27); RI-9 planned `~/.config/fmc/settings.json`.
 
@@ -997,3 +997,35 @@ Alternatives considered:
 - The inline hook with the level from `source` or the style — rejected: neither carries the level (above).
 - Parsing with `tree-sitter-md` — rejected: it needs the `tree-sitter` crate in the core, which `rules.md` does not approve.
 - Backslash escapes (`\#\#`) — rejected: they take the escape colour, so the marker would not be in the heading's style.
+
+### Approved deviation: `file_associations` in `settings.json` picks a file's filetype
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's `languageFor` reads only the extension, through OpenTUI's `pathToFiletype` (`scouter:src/reader/code-view.ts:31-34`, with `supportedLanguages` at `:14-22`), and its Markdown view is gated on the same result (`isMarkdown`, `:230-232`). A file such as `vault.rs.bak` or `louvre.env.example` is shown plain, and OpenTUI has no `dotenv` filetype (`plan-00009-file-associations.md`, the owner's request of 2026-11-27: "a setting like VS Code").
+
+Decision (owner, 2026-11-27, with the go-ahead of plan-00009):
+
+- D1. The key `file_associations` is an object of pattern to filetype name, shaped as VS Code's `files.associations`.
+- D2. A pattern with no `/` matches the file name; a pattern with `/` matches the path from the folder fmc opened. Syntax: `*`, `**`, `?`, and `{a,b}`. Case follows the filesystem (ignored on macOS and Windows). The matcher is hand-written (`reader/glob.rs`) rather than `globset`: a small function with tests, and no dependency to approve.
+- D3. Values are fmc filetype names, plus `shellscript` (bash), `jsonc` (json), and `dotenv` and `env` (bash, which reads `KEY=value` and `#` lines). The core resolves them, so no OpenTUI alias is registered. `plaintext` shows plain text. An unknown value, or a bad pattern, is skipped with a notice that names it.
+- D4. An association beats OpenTUI's lookup. Among matches, a path pattern beats a name pattern, then the longer pattern wins, then the pattern that sorts first: `serde_json` keeps no file order (no `preserve_order`), so "the last one wins" is not defined.
+- D5. `plaintext` turns highlighting off even where OpenTUI would highlight the file.
+- D6. No built-in association for env files: the owner's file decides.
+- D7. An association to `markdown` also makes `m` render the file (`reader/markdown.rs` `is_markdown` reads the same language).
+
+One lookup serves every filetype use: `ui/syntax/mod.rs` `language_for(associations, opened, path)`. The reader and the finder's preview pass the path. The changes screen passes the repository root joined with the change's path, since git's paths are repository-relative; a path pattern is matched from the folder fmc opened, so a file outside it matches by name only.
+
+Consequences:
+
+- (positive) A file is highlighted by the name the owner uses for it, in every view that shows it, and `m` follows the same rule.
+- (positive) The matcher and the table are pure and unit-tested (`glob_tests.rs`, `associations_tests.rs`); the reader's behaviour has TestApp tests (`app/associations_tests.rs`).
+- (negative) A setting is read once at start, so an edit needs a restart, as every key does.
+- (negative) A folder opened through a symlink matches path patterns in the reader but only by name on the changes screen, because git reports the real path.
+
+Alternatives considered:
+
+- `globset` — rejected: a new dependency needs the owner's approval, and the matcher is about 150 lines with tests.
+- "The last matching entry wins" — rejected: the parsed object has no order, so the rule would not be defined.
+- A once-set global for the table — rejected: tests would share it and could not set their own associations; the model carries the table instead.
+- Built-in env-file defaults — rejected by the owner's D6 choice; the file decides.

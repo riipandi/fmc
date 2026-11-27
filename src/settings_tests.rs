@@ -1,23 +1,33 @@
 use super::*;
+use crate::reader::associations::Language;
 
 #[test]
 fn an_empty_object_gives_the_defaults_without_a_notice() {
     let parsed = parse("{}");
-    assert_eq!(parsed.settings, Settings { auto_preview: true, sidebar_jump: 2, reader_jump: 5, git_gutter: true });
+    assert_eq!(
+        parsed.settings,
+        Settings { auto_preview: true, sidebar_jump: 2, reader_jump: 5, git_gutter: true, ..Settings::default() }
+    );
     assert!(parsed.notices.is_empty());
 }
 
 #[test]
 fn every_key_is_read() {
     let parsed = parse(r#"{"auto_preview": false, "sidebar_jump": 3, "reader_jump": 9, "git_gutter": false}"#);
-    assert_eq!(parsed.settings, Settings { auto_preview: false, sidebar_jump: 3, reader_jump: 9, git_gutter: false });
+    assert_eq!(
+        parsed.settings,
+        Settings { auto_preview: false, sidebar_jump: 3, reader_jump: 9, git_gutter: false, ..Settings::default() }
+    );
     assert!(parsed.notices.is_empty());
 }
 
 #[test]
 fn a_wrong_type_keeps_that_keys_default_and_notes_it() {
     let parsed = parse(r#"{"auto_preview": "yes", "sidebar_jump": 4, "reader_jump": 2.5, "git_gutter": 1}"#);
-    assert_eq!(parsed.settings, Settings { auto_preview: true, sidebar_jump: 4, reader_jump: 5, git_gutter: true });
+    assert_eq!(
+        parsed.settings,
+        Settings { auto_preview: true, sidebar_jump: 4, reader_jump: 5, git_gutter: true, ..Settings::default() }
+    );
     assert_eq!(parsed.notices.len(), 3);
     assert!(parsed.notices[0].contains("auto_preview must be true or false"));
     assert!(parsed.notices[1].contains("reader_jump must be a positive whole number"));
@@ -71,4 +81,33 @@ fn every_bad_value_is_noted_not_only_the_first() {
 fn the_git_gutter_is_on_unless_the_file_turns_it_off() {
     assert!(parse("{}").settings.git_gutter);
     assert!(!parse(r#"{"git_gutter": false}"#).settings.git_gutter);
+}
+
+#[test]
+fn file_associations_map_patterns_to_languages() {
+    let parsed =
+        parse(r#"{"file_associations": {"*.rs.bak": "rust", "*.env.example": "dotenv", "docs/**/*.txt": "markdown"}}"#);
+    assert!(parsed.notices.is_empty());
+    let associations = parsed.settings.file_associations;
+    assert_eq!(associations.language(None, "gringotts.rs.bak"), Some(Language::Filetype("rust")));
+    assert_eq!(associations.language(None, "louvre.env.example"), Some(Language::Filetype("bash")));
+    assert_eq!(associations.language(Some("docs/owls.txt"), "owls.txt"), Some(Language::Filetype("markdown")));
+}
+
+#[test]
+fn a_bad_entry_is_skipped_with_a_notice_that_names_it() {
+    let parsed = parse(r#"{"file_associations": {"*.log": "make", "docs/{a": "rust", "*.rs": 3, "*.bak": "json"}}"#);
+    assert_eq!(parsed.notices.len(), 3);
+    assert!(parsed.notices.iter().any(|n| n.contains("\"*.log\" is skipped: make is not a filetype fmc shows")));
+    assert!(parsed.notices.iter().any(|n| n.contains("\"docs/{a\" is skipped: a `{` has no matching `}`")));
+    assert!(parsed.notices.iter().any(|n| n.contains("\"*.rs\" is skipped: its value must be a filetype name")));
+    assert_eq!(parsed.settings.file_associations.language(None, "vault.bak"), Some(Language::Filetype("json")));
+}
+
+#[test]
+fn a_file_associations_value_that_is_not_an_object_sets_nothing() {
+    let parsed = parse(r#"{"file_associations": ["*.rs"]}"#);
+    assert_eq!(parsed.settings, Settings::default());
+    assert_eq!(parsed.notices.len(), 1);
+    assert!(parsed.notices[0].contains("file_associations must be an object"));
 }

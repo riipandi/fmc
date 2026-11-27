@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use fmc::reader::associations::Associations;
 use fmc::theme::DARK;
 use opentui::prelude::Attributes;
 use opentui::syntax::{has_grammar, highlights, prewarm};
@@ -31,12 +32,35 @@ fn typescript_names_a_property_as_core_does() {
 
 #[test]
 fn a_path_gets_the_filetype_scouter_names_or_none() {
-    assert_eq!(language_for(Path::new("hogwarts/Potter.rs")), Some("rust"));
-    assert_eq!(language_for(Path::new("Gringotts/vault.TSX")), Some("typescriptreact"));
-    assert_eq!(language_for(Path::new("Louvre/key.jsx")), Some("javascriptreact"));
-    assert_eq!(language_for(Path::new("CERN/config.toml")), Some("toml"));
-    assert_eq!(language_for(Path::new("CERN/Makefile")), None);
-    assert_eq!(language_for(Path::new("Diagon/owls.txt")), None);
+    assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("hogwarts/Potter.rs")), Some("rust"));
+    assert_eq!(
+        language_for(&Associations::default(), Path::new(""), Path::new("Gringotts/vault.TSX")),
+        Some("typescriptreact")
+    );
+    assert_eq!(
+        language_for(&Associations::default(), Path::new(""), Path::new("Louvre/key.jsx")),
+        Some("javascriptreact")
+    );
+    assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("CERN/config.toml")), Some("toml"));
+    assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("CERN/Makefile")), None);
+    assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("Diagon/owls.txt")), None);
+}
+
+#[test]
+fn an_association_decides_before_the_filetype_lookup() {
+    let mut associations = Associations::default();
+    associations.add("*.rs.bak", "rust").unwrap();
+    associations.add("*.env.example", "dotenv").unwrap();
+    associations.add("*.txt", "plaintext").unwrap();
+    associations.add("docs/**/*.txt", "markdown").unwrap();
+    let root = Path::new("/Hogwarts/Gringotts");
+    let at = |path: &str| language_for(&associations, root, &root.join(path));
+    assert_eq!(at("vault.rs.bak"), Some("rust"));
+    assert_eq!(at("louvre.env.example"), Some("bash"));
+    assert_eq!(at("docs/owls.txt"), Some("markdown"));
+    assert_eq!(at("owls.txt"), None);
+    assert_eq!(at("CERN/config.toml"), Some("toml"));
+    assert_eq!(language_for(&associations, root, Path::new("/Hogwarts/Diagon/vault.rs.bak")), Some("rust"));
 }
 
 #[test]

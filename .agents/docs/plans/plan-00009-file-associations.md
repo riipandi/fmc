@@ -9,7 +9,7 @@ phases:
       status: done
     - id: 2
       title: "`file_associations` setting wired into every filetype lookup"
-      status: pending
+      status: done
     - id: 3
       title: "Docs, live checks, close"
       status: pending

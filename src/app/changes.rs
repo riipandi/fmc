@@ -23,6 +23,7 @@ use crate::services::changes::{Listed, Shared};
 use crate::services::{self, Event};
 use crate::ui::footer::{DiffInfo, Message};
 use crate::ui::header::{Badge, BadgeKind, HeaderState};
+use crate::ui::syntax::language_for;
 
 /// How many paints the body may take to lay out before a jump to a file is given up.
 const JUMP_TRIES: u8 = 8;
@@ -594,7 +595,10 @@ pub fn sync(app: &App, m: &Model, ui: &Ui, p: &Palette, tint: &str) {
         return;
     }
     let key = (changes.session, changes.generation, changes.digits, m.mode);
-    ui.diff.sync(app, key, &changes.files, p);
+    let root = changes.repository.0.root();
+    ui.diff.sync(app, key, &changes.files, p, &|change| {
+        language_for(&m.associations, &m.opened, &root.join(&change.path))
+    });
     // Scouter marks the active header only in the stacked body (`activeHeaderPath`).
     let active =
         if m.diff_options.one_file { None } else { m.change_list.selected().map(|change| change.path.as_str()) };

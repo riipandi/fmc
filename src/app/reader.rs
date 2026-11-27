@@ -132,7 +132,7 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp:
     if !reveal(m, path, true) {
         return;
     }
-    let language = language_for(path);
+    let language = language_for(&m.associations, &m.opened, path);
     let markdown = language.filter(|filetype| is_markdown(filetype)).map(|_| View::default());
     m.serial += 1;
     let shown = Shown::Text {

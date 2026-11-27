@@ -19,7 +19,7 @@ Press `?` inside fmc for every key, and `Ctrl+q` or `:q` to quit. A [Nerd Font](
 
 With the file list focused, the file it selects shows in the reader. Enter opens a file and moves to the reader. `p` turns that preview off or on. `[` and `]` jump; their steps and the preview's start are set in `settings.json` (see [docs/configuration.md](docs/configuration.md)).
 
-Inside a git repository, a strip left of the line numbers marks the lines that differ from `HEAD`: green for an added line, yellow for a changed one, and a red `▁` or `▔` where lines were removed. The rendered Markdown view marks its changed blocks in the same way, beside each block. `git_gutter` in `settings.json` turns both off.
+Inside a git repository, a strip left of the line numbers marks the lines that differ from `HEAD`: green for an added line, yellow for a changed one, and a red `▁` or `▔` where lines were removed. The rendered Markdown view marks its changed blocks in the same way, beside each block. `git_gutter` in `settings.json` turns both off. `file_associations` there maps file patterns to a language, so a `.rs.bak` file highlights as Rust (see [docs/configuration.md](docs/configuration.md)).
 
 A ```` ```mermaid ```` fence in a Markdown file is drawn as a box diagram in the rendered view. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason. `m` shows the Markdown source.
 

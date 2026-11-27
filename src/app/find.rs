@@ -446,7 +446,7 @@ pub fn paint_preview(m: &Model, ui: &mut Ui, p: &Palette) {
     let text_changed = before.as_ref().is_none_or(|at| at.path != shown.path || at.query != shown.query);
     let moved = before.as_ref().is_none_or(|at| at.line != shown.line);
     if text_changed {
-        ui.preview.show(&shown.document, language_for(&shown.path));
+        ui.preview.show(&shown.document, language_for(&m.associations, &m.opened, &shown.path));
     }
     ui.preview_viewer.visible(true);
     ui.preview_viewer.set_wrap(false);

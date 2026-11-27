@@ -4,7 +4,6 @@
 //! frame, since a wrapped row count and a block's top exist only once the frame laid them out.
 
 use std::cell::{Cell, RefCell};
-use std::path::Path;
 use std::sync::Arc;
 
 use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts, widens_stack};
@@ -135,17 +134,27 @@ impl DiffBody {
         self.built.get()
     }
 
-    pub fn sync(&self, app: &App, key: Key, files: &[FilePatch], p: &Palette) {
+    /// `filetype` names each file's highlighting: the `file_associations` setting decides it, as the reader's does.
+    pub fn sync(
+        &self,
+        app: &App,
+        key: Key,
+        files: &[FilePatch],
+        p: &Palette,
+        filetype: &dyn Fn(&Change) -> Option<&'static str>,
+    ) {
         if self.built.get() == Some(key) {
             return;
         }
         self.clear();
         self.built.set(Some(key));
         let (_, _, digits, _) = key;
-        let wrap = self.wrapped.get();
-        let split = self.split.get();
-        let blocks: Vec<Block> =
-            files.iter().enumerate().map(|(index, file)| block(app, index, file, digits, wrap, split, p)).collect();
+        let layout = Layout { digits, wrap: self.wrapped.get(), split: self.split.get() };
+        let blocks: Vec<Block> = files
+            .iter()
+            .enumerate()
+            .map(|(index, file)| block(app, index, file, layout, filetype(&file.change), p))
+            .collect();
         for block in &blocks {
             block.root.min_width(Length::Cells(self.block_width(digits)));
         }
@@ -306,7 +315,23 @@ impl DiffBody {
 
 /// One file's block. Blocks after the first have a blank row above them and a hairline on their header (Scouter
 /// `createBlock`, `createHeader`).
-fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, split: bool, p: &Palette) -> Block {
+/// How the stacked body lays out a file: the line-number digits, and whether lines wrap and the diff splits.
+#[derive(Clone, Copy)]
+struct Layout {
+    digits: usize,
+    wrap: bool,
+    split: bool,
+}
+
+fn block(
+    app: &App,
+    index: usize,
+    file: &FilePatch,
+    layout: Layout,
+    language: Option<&'static str>,
+    p: &Palette,
+) -> Block {
+    let digits = layout.digits;
     let root = View::new(app).min_width(Length::percent(100.0)).column().shrink(0.0);
     if index > 0 {
         root.margin_edge(Edge::Top, 1);
@@ -323,7 +348,7 @@ fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, s
     root.add(&header);
     let body = match &file.patch {
         Patch::Text { text, .. } => {
-            let diff = diff(app, &file.change, text, digits, wrap, split, p);
+            let diff = diff(app, language, text, layout, p);
             root.add(&diff);
             Body::Diff(diff)
         }
@@ -347,11 +372,12 @@ fn block(app: &App, index: usize, file: &FilePatch, digits: usize, wrap: bool, s
 }
 
 /// A file's patch as a unified diff, with the file's syntax and the palette's line colors (Scouter `createDiff`).
-fn diff(app: &App, change: &Change, text: &str, digits: usize, wrap: bool, split: bool, p: &Palette) -> Diff {
+fn diff(app: &App, language: Option<&'static str>, text: &str, layout: Layout, p: &Palette) -> Diff {
+    let Layout { digits, wrap, split } = layout;
     let gutter = DiffGutter { padding_left: 1, min_digits: Some(digits as u32) };
     let diff = Diff::new(app)
         .view(if split { DiffView::Split } else { DiffView::Unified })
-        .filetype(syntax::language_for(Path::new(&change.path)))
+        .filetype(language)
         .syntax_theme(Arc::new(syntax::theme(p)))
         .gutter(gutter)
         .colors(colors(p))
