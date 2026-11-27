@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | none open; `plan-00005-layout-tiers.md` is archived (done: the three layout tiers) |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00006-mermaid-grammars-fuzzy.md` (draft: RI-1 Mermaid, RI-2 grammars, RI-3 fuzzy; waits for the go-ahead) |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00006-layout-tiers.md` (done: plan-00005 closed, with the owner checks on a phone); `handover-00005-phone-layout.md` (done: plan-00004 closed, with the owner checks); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
