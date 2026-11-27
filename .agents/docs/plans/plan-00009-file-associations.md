@@ -1,12 +1,12 @@
 ---
-status: draft
+status: in-progress
 created: 2026-11-27T13:30:00+07:00
 updated: 2026-11-27T13:30:00+07:00
 references: settings.rs, ui/syntax/mod.rs (language_for), reader/language.rs, reader/markdown.rs
 phases:
     - id: 1
       title: "Glob matcher and association table (core, pure)"
-      status: pending
+      status: done
     - id: 2
       title: "`file_associations` setting wired into every filetype lookup"
       status: pending
