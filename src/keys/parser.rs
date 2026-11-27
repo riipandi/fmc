@@ -228,6 +228,16 @@ fn tree(key: Key<'_>) -> Option<Action> {
         "[" => return Some(Action::Jump(-1)),
         _ => {}
     }
+    match (key.name, key.shift) {
+        ("a", false) => return Some(Action::NewFile),
+        ("a", true) => return Some(Action::NewFolder),
+        ("r", false) => return Some(Action::Rename),
+        ("d", true) | ("delete", _) => return Some(Action::Delete),
+        ("c", false) => return Some(Action::CopyFile),
+        ("x", false) => return Some(Action::CutFile),
+        ("v", false) => return Some(Action::PasteFile),
+        _ => {}
+    }
     match key.name {
         "return" => Some(Action::Toggle),
         "l" | "right" => Some(Action::Expand),
@@ -235,6 +245,7 @@ fn tree(key: Key<'_>) -> Option<Action> {
         "-" => Some(Action::GoUp),
         "p" => Some(Action::TogglePreview),
         "/" => Some(Action::Find),
+        "space" => Some(Action::ContextMenu),
         _ => boundary(key).or_else(|| list_move(key)),
     }
 }

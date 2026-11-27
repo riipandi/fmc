@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-27T15:10:00+07:00
+updated: 2026-11-27T17:25:57+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -17,7 +17,7 @@ Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cr
 
 The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and the UI"). These rules bind once `plan-00001` phase 5 creates the modules.
 
-- The core (`src/lib.rs` and its modules: `keys/`, `explorer/`, `reader/`, `find/`, `diff/`, `theme.rs`) has no I/O and does not import `opentui`. It takes values and returns values.
+- The core (`src/lib.rs` and its modules: `keys/`, `explorer/`, `reader/`, `find/`, `diff/`, `overlay.rs`, `theme.rs`) has no I/O and does not import `opentui`. It takes values and returns values.
 - A keymap returns `Action`s; `src/app/` carries them out.
 - No file I/O and no process spawn on the UI thread. Workers in `src/services/` do it and send `Event`s back.
 - Keep every file under 800 lines.
@@ -32,8 +32,13 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 ## Contracts and traps
 
+- **File operations never reach the Trash in a test.** `app/write.rs` calls `services::write::trash` in the binary and a test function in its tests, which removes the entry through `trash_with`, so the root and name checks still run and the owner's Trash is untouched. A new write test uses the same stand-in.
+- **A write is a name in a folder, never a path.** `services::write::create_dir` takes the name without a trailing `/`: the dialog strips one (`app/write.rs`), and a name that still holds a `/` is refused. Names are `&str`; a name that is not UTF-8 or holds a control character is refused before a field can show it.
 - **Terminal restore is OpenTUI's.** `App::run` enters the alternate screen and leaves it on return; the host installs a panic hook that restores the terminal before the panic message prints (`opentui-0.9.9/src/host.rs`, `install_panic_hook`). fmc adds no hook of its own. `tests/cli.rs` checks both paths; the panic path uses the debug-only `FMC_PANIC_AFTER_START` variable (`src/app/mod.rs`), compiled out of release builds.
 - **The root keeps the terminal's background.** OpenTUI's themes fill the root with a color (`#12161c` dark); Scouter draws on the default background, so `app::run` sets both themes' `background` to `Color::DEFAULT_BACKGROUND`.
+- **A paste is one worker job, and its answer is an event.** `app/write.rs` `paste` runs `services::write::paste` through `services::spawn` and sets `Model.pasting`; a second paste is refused until `Event::Pasted` answers, and `pasted` clears the flag before it reveals or refuses. The footer's status is set before the job starts, and the 2 s timer (`app/mod.rs` `clear_message_later`) leaves it alone while `pasting`. The clipboard is fmc's own: a copy stays until Esc; a cut ends with its paste.
+- **A write checks identity around each step a swapped entry could reach.** `services/write.rs` `copy_then_remove` records the source's `(dev, ino)` before the copy and refuses the removal when it changed (`Error::Changed`). `open_seen` opens a file and compares the opened file's `(dev, ino)` with the `lstat` taken before, so a link swapped in is refused before a byte is read; `File::open` follows links, so this comparison is the guard. A folder's `read_dir` follows a link too, and it has no such check yet (`shortcut:` in `copy_entry`).
+- **The dialog's field holds the keyboard only while the dialog's focus is on it.** `app/overlay.rs` `draw` focuses the field when `Dialog.focus` is `Stop::Field` and blurs it when the field still holds the focus otherwise, so the terminal cursor shows in the field alone. fmc focuses nothing else, so the blur is limited to the field. A pointer over a menu row selects it (`app/overlay.rs` `hover`); a pointer over a dialog button only highlights it (`hover_button`, `Dialog.hovered`), and the focus stays where the keys put it, so Return picks the focused button. The menu's motion needs OpenTUI's motion tracking, which `AppOptions::default()` sets (`MouseTracking::Motion`); a button's enter and leave come from `on_hover`.
 - **Keys are read in capture.** `on_key_capture` (`app/capture.rs`) sees every key before widgets, as Scouter's `keyInput` handler does; `tab_focus` is off so OpenTUI does not move focus on Tab. A key the parser hands to fmc calls `stop_propagation`: OpenTUI's keyboard focus follows the last click, not fmc's `Focus`, so the reader's scroll box would otherwise pan on a tree arrow (`app/capture_tests.rs`).
 - **The settings file is read before the UI starts, and never again.** `main.rs` calls `services::settings::load` before `app::run`, and `app::run` shows the notices once in the footer. The core's `settings::parse` takes the text and touches no disk. A value reaches the app only when the feature it sets is built (`app/mod.rs`).
 - **A preview is a timer, a generation, and its own event.** `app/preview.rs` `moved` counts each list move and starts a 100 ms timer; the timer reads the selected file only if it is still the newest move (`due`). The read comes back as `Event::Selected`, which the tree applies only while the same file is selected, so a late read never replaces a newer selection, and it never moves the focus or pushes a jump.

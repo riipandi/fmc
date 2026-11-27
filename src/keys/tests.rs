@@ -31,6 +31,8 @@ fn key(spec: &str) -> Key<'_> {
                 "J" => "j",
                 "K" => "k",
                 "Q" => "q",
+                "A" => "a",
+                "D" => "d",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -175,10 +177,29 @@ fn tree_keys() {
     assert_eq!(last(&["enter"], TREE), Step::Done(Action::Toggle));
     assert_eq!(last(&["→"], TREE), Step::Done(Action::Expand));
     assert_eq!(last(&["backspace"], TREE), Step::Done(Action::Collapse));
+    assert_eq!(last(&["space"], TREE), Step::Done(Action::ContextMenu));
     assert_eq!(last(&["-"], TREE), Step::Done(Action::GoUp));
     assert_eq!(last(&["/"], TREE), Step::Done(Action::Find));
     assert_eq!(last(&["pagedown"], TREE), Step::Done(Action::MovePage(1)));
     assert_eq!(last(&["K"], TREE), Step::Done(Action::Move(-5)));
+}
+
+#[test]
+fn file_keys_act_on_the_tree_only() {
+    assert_eq!(last(&["a"], TREE), Step::Done(Action::NewFile));
+    assert_eq!(last(&["A"], TREE), Step::Done(Action::NewFolder));
+    assert_eq!(last(&["r"], TREE), Step::Done(Action::Rename));
+    assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
+    assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
+    assert_eq!(last(&["c"], TREE), Step::Done(Action::CopyFile));
+    assert_eq!(last(&["x"], TREE), Step::Done(Action::CutFile));
+    assert_eq!(last(&["v"], TREE), Step::Done(Action::PasteFile));
+    // The reader keeps its own keys: these do nothing there.
+    for key in ["c", "x", "v"] {
+        assert_eq!(last(&[key], READER), Step::Bad, "{key} is a tree key");
+    }
+    assert_eq!(last(&["a"], READER), Step::Bad);
+    assert_eq!(last(&["D"], READER), Step::Bad);
 }
 
 #[test]
@@ -215,6 +236,7 @@ fn every_documented_key_is_bound() {
                     "Ctrl+." => vec!["^.".into()],
                     "Enter" => vec!["enter".into()],
                     "Backspace" => vec!["backspace".into()],
+                    "Delete" => vec!["delete".into()],
                     "Tab" => vec!["tab".into()],
                     "Esc" => vec!["esc".into()],
                     "gg" => vec!["g".into(), "g".into()],

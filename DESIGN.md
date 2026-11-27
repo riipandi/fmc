@@ -1,6 +1,6 @@
 ---
 name: fmc
-description: A quiet, read-only terminal viewer. The look is Scouter's, cell for cell.
+description: A quiet terminal viewer and file manager. The look is Scouter's, cell for cell; the menu and the dialog are fmc's own.
 colors:
   dark:
     text: "#d4d8de"
@@ -195,6 +195,14 @@ One band per changed file on the tinted background: the marker, a fold chevron, 
 ### Key list
 
 `?` shows the key list in the reader, in place of the document, as tables: Browse, Reader, Changes, Everywhere, and Mouse. `?` or `Esc` brings the document back, with its scroll position and search.
+
+### Context menu
+
+A rounded border in `accent` on the `tint` background, over the page at the pointer or at the selected row (`Space`, or a right-click on a row). Each row is one line: a `▎` marker in `accent` on the selected row, and the label in `text`. The selected row fills with `row-active-bg` and its label is bold. A disabled row (Paste with nothing copied) is `muted` and the selection skips it. The box is the longest label plus six columns wide and the rows plus two tall. It sits at its anchor and flips above it, or moves left, to stay on the screen. In the compact tier it is a bottom sheet across the full width, above the bottom bar. Scouter has no menu (`architecture.md`, "The context menu and the dialog are fmc views").
+
+### Dialog
+
+A rounded border in `accent` on the `tint` background, centred and at most 56 columns wide. It has a bold title in `text`, a wrapped message, an optional one-line field (the terminal cursor shows in it while the field has the focus), an error line in `error`, and buttons on the right. The focused button is filled with `accent` and its label is `accent-ink` in bold. A pointer over a button tints its label in `accent` with no fill, and does not move the focus, so Return still picks the focused button. In the compact tier the dialog spans the width less a column on each side. A scrim dims the page under it with a colour gain of 0.4, and the page takes no clicks while a dialog is open.
 
 ### Welcome
 

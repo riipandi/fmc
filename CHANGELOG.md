@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Files can be managed from the file list. `a` creates a file (a name ending in `/` makes a folder), `A` creates a folder, `r` renames, `c` copies, `x` cuts, and `v` pastes into the selected folder or beside the selected file. `D` or `Delete` moves the row to the Trash after a dialog, and Finder's Put Back restores it. `Space` and a right-click open a context menu with the same actions. A name that is taken is never overwritten.
+- A context menu and a confirm dialog, drawn over the page with a dimmed background. The dialog's Cancel is the default.
+
+### Changed
+
+- fmc is no longer read-only. Its file operations are the only writes it makes, inside the folder it opened (`docs/parity.md`, "File operations").
+- A pointer over a dialog button highlights it and leaves the focus where the keys put it, so Return picks the focused button.
+
 ## [0.1.1] - 2026-11-27
 
 ### Changed

@@ -85,25 +85,14 @@ impl Tree {
         }
     }
 
-    /// Stores a folder's sorted listing and expands it. Scouter's `load` and `expand` both end here.
+    /// Stores a folder's sorted listing and expands it. Scouter's `load` and `expand` both end here. A folder that is
+    /// listed again (a write in it, `app/write.rs`) keeps the children that stay, with their expansion.
     pub fn listed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
         if !self.nodes.contains_key(path) {
             return false;
         }
-        if let Some(old) = self.nodes.get_mut(path).and_then(|node| node.children.take()) {
-            old.iter().for_each(|child| self.forget(child));
-        }
-        let children = entries
-            .into_iter()
-            .map(|entry| {
-                let child = entry.path.clone();
-                let node = Node { entry, parent: Some(path.to_path_buf()), expanded: false, children: None };
-                self.nodes.insert(child.clone(), node);
-                child
-            })
-            .collect();
+        self.replace_children(path, entries);
         if let Some(node) = self.nodes.get_mut(path) {
-            node.children = Some(children);
             node.expanded = true;
         }
         true
@@ -114,12 +103,23 @@ impl Tree {
     /// changed; a folder that is not expanded and listed is left alone.
     pub fn refreshed(&mut self, path: &Path, entries: Vec<Entry>) -> bool {
         let Some(node) = self.nodes.get(path) else { return false };
-        if !node.expanded {
+        if !node.expanded || node.children.is_none() {
             return false;
         }
-        let Some(old) = node.children.clone() else { return false };
-        let before: Vec<(PathBuf, Kind)> =
-            old.iter().map(|child| (child.clone(), self.nodes[child].entry.kind)).collect();
+        let before = self.child_kinds(path);
+        self.replace_children(path, entries);
+        before != self.child_kinds(path)
+    }
+
+    /// The children of `path` with their kinds, in listing order.
+    fn child_kinds(&self, path: &Path) -> Vec<(PathBuf, Kind)> {
+        let children = self.nodes.get(path).and_then(|node| node.children.as_ref());
+        children.into_iter().flatten().map(|child| (child.clone(), self.nodes[child].entry.kind)).collect()
+    }
+
+    /// Replaces the children of `path` with `entries`, as [`Tree::refreshed`] describes.
+    fn replace_children(&mut self, path: &Path, entries: Vec<Entry>) {
+        let old = self.nodes.get_mut(path).and_then(|node| node.children.take()).unwrap_or_default();
         let mut previous: HashMap<PathBuf, Node> =
             old.iter().filter_map(|child| self.nodes.remove(child).map(|node| (child.clone(), node))).collect();
         let mut children = Vec::with_capacity(entries.len());
@@ -139,12 +139,9 @@ impl Tree {
         for gone in previous.values() {
             self.forget_children(gone);
         }
-        let after: Vec<(PathBuf, Kind)> =
-            children.iter().map(|child| (child.clone(), self.nodes[child].entry.kind)).collect();
         if let Some(node) = self.nodes.get_mut(path) {
             node.children = Some(children);
         }
-        before != after
     }
 
     /// The folders that are expanded, root included (Scouter `expandedPaths`).

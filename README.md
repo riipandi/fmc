@@ -1,6 +1,6 @@
 # fmc
 
-A fast, read-only file viewer for the terminal. fmc browses a folder, reads code, Markdown, and images, finds files and text, and shows what git reports as changed. It is a Rust port of [Scouter](https://github.com/indrazm/scouter) with the same screens and keys, except for [the differences](docs/parity.md). It runs on macOS with Apple silicon.
+A fast file viewer and manager for the terminal. fmc browses a folder, reads code, Markdown, and images, finds files and text, shows what git reports as changed, and creates, renames, copies, moves, and deletes files from the list. A delete goes to the Trash. It is a Rust port of [Scouter](https://github.com/indrazm/scouter) with the same screens and keys, except for [the differences](docs/parity.md). It runs on macOS with Apple silicon.
 
 ## Install
 

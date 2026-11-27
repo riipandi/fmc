@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, gutter, preview, reader};
+use super::{Model, Pending, Ui, changes, find, gutter, preview, reader, write};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -167,6 +167,13 @@ pub fn list(m: &mut Model, folder: PathBuf) {
     services::spawn(&m.proxy, move || Event::Listed { path: work.clone(), result: fs::list(&work, &parents) });
 }
 
+/// Lists `folder` again, then reveals `target` in it: a write changed the folder, so its listing is stale, and the
+/// result is selected as D9 asks (`app/write.rs`).
+pub fn relist_to(m: &mut Model, folder: PathBuf, target: PathBuf) {
+    m.pending = Some(Pending { target, expand: false, open: false });
+    list(m, folder);
+}
+
 /// Asks git for the marks of the browsed folder; the result comes back as `Event::Marks`.
 pub fn refresh_marks(m: &mut Model) {
     let root = m.browser.tree.root().to_path_buf();
@@ -246,6 +253,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             }
         }
         Event::Signed { path, serial, result } => gutter::apply(m, path, *serial, result),
+        Event::Pasted { source, into, moved, result } => write::pasted(m, source, into, *moved, result.clone()),
     }
 }
 

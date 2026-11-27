@@ -9,6 +9,7 @@ mod gutter;
 mod keys;
 mod layout;
 mod mouse;
+mod overlay;
 mod pages;
 mod poll;
 mod preview;
@@ -17,6 +18,7 @@ mod scroll;
 mod search;
 mod theme;
 mod tree;
+mod write;
 
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
@@ -89,6 +91,8 @@ struct Ui {
     bar: ScrollBar,
     narrow_bar: ScrollBar,
     footer: Footer,
+    /// The context menu and the dialog, above the page (`app/overlay.rs`).
+    overlay: overlay::Views,
 }
 
 /// A reveal in progress: list the folders on the way to `target`, then select it. `expand` also opens the target
@@ -189,6 +193,16 @@ struct Model {
     columns: u16,
     /// The page stack the compact tier draws (plan-00005, D2).
     pages: fmc::layout::Pages,
+    /// The open context menu or dialog, which takes every key and click until it closes (`app/overlay.rs`).
+    overlay: Option<fmc::overlay::Overlay>,
+    /// The cell a menu opened from the tree is anchored at.
+    overlay_at: (u16, u16),
+    /// What the open menu or dialog is for (`app/write.rs`); a dialog's task is kept while it reports an error.
+    overlay_task: Option<write::Task>,
+    /// The entry `c` or `x` put on the clipboard (`app/write.rs`); a cut row is drawn muted.
+    clipboard: Option<write::Clip>,
+    /// A copy or move runs on the worker; a second paste is refused until it answers (plan-00012, D8).
+    pasting: bool,
 }
 
 impl Model {
@@ -271,6 +285,11 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         command: None,
         columns: app.size().0,
         pages: Default::default(),
+        overlay: None,
+        overlay_at: (0, 0),
+        overlay_task: None,
+        clipboard: None,
+        pasting: false,
         associations: Default::default(),
         opened: root,
     }
@@ -312,6 +331,8 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         }
     }
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
+    #[cfg(debug_assertions)]
+    overlay::debug_open(&mut model.borrow_mut(), &ui.borrow());
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
     tree::list(&mut model.borrow_mut(), root);
     tree::refresh_marks(&mut model.borrow_mut());
@@ -348,6 +369,7 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         }
     });
     capture::wire(&app, &model, &ui);
+    overlay::wire_views(&model, &ui);
     {
         let (model, ui) = (model.clone(), ui.clone());
         let viewer = ui.borrow().viewer.widget();
@@ -486,7 +508,10 @@ fn repaint_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, tr
 fn clear_message_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let (model, ui) = (model.clone(), ui.clone());
     app.set_timeout(std::time::Duration::from_secs(2), move |cx| {
-        model.borrow_mut().message = None;
+        // A paste's status stays until its answer, whatever timer was set before it.
+        if !model.borrow().pasting {
+            model.borrow_mut().message = None;
+        }
         paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
     });
 }
@@ -537,6 +562,8 @@ fn build(app: &App, p: &Palette) -> Ui {
     panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
     layout.add(&panes).add(&footer.root);
     app.root().add(&layout);
+    let overlays = overlay::build_views(app);
+    overlay::mount(app, &overlays);
     Ui {
         browser_panel,
         browser_header,
@@ -562,6 +589,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         bar,
         narrow_bar,
         footer,
+        overlay: overlays,
     }
 }
 
@@ -621,7 +649,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     if on_changes {
         ui.changes.paint(app, &m.change_list, p);
     } else {
-        ui.tree.paint(app, &m.browser, &m.marks, p, &root);
+        let cut = m.clipboard.as_ref().filter(|clip| clip.cut).map(|clip| clip.path.as_path());
+        ui.tree.paint(app, &m.browser, &m.marks, p, &root, cut);
     }
     // A preview names its file, with a `preview` pill in place of the reader's badges (Scouter `viewerHeaderFor`).
     let previewed =
@@ -795,6 +824,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
+    overlay::draw(app, m, ui);
 }
 
 #[cfg(test)]

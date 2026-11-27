@@ -16,13 +16,13 @@ Developers who open a folder in the terminal to read it: to look at a file, to r
 
 ## Product Purpose
 
-fmc lets you look at code and documents without opening an editor. Now: a read-only viewer with the same screens and keys as Scouter. Later: a file manager that can also create, move, and delete files, and open SQLite and DuckDB files.
+fmc lets you look at code and documents without opening an editor. Now: a viewer with the same screens and keys as Scouter, and file operations in the file list: create, rename, copy, move, and delete (to the Trash). Later: open SQLite and DuckDB files.
 
 Success: a developer runs `fmc` for every "what is in this folder" and "what did I change" moment, and it opens before they finish the thought.
 
 ## Positioning
 
-A single fast binary with no runtime to install. It reads first and never changes your files until the file-manager milestone, and then only when you ask.
+A single fast binary with no runtime to install. It reads first. It changes your files only when you ask, from the file list, and only inside the folder you opened.
 
 ## Operating Context
 
@@ -35,8 +35,9 @@ Started from a shell inside a project (`fmc`, `fmc <folder>`, `fmc <file>`). Use
 - Find a file by name (substring or fuzzy), or search text inside files with a preview.
 - Changes view: every changed file as a stacked diff, unified or split, with folding and hunk navigation.
 - Light and dark palettes that follow the terminal background.
-- Read-only. No editing.
-- Not built yet: file operations, a SQLite and DuckDB viewer, platforms other than macOS on Apple silicon.
+- File operations from the list: create, rename, copy, move, and delete (to the Trash). Nothing is overwritten.
+- No editing of file contents.
+- Not built yet: a SQLite and DuckDB viewer, platforms other than macOS on Apple silicon.
 
 ## Brand Commitments
 

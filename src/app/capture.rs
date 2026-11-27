@@ -19,6 +19,14 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
     // Scouter clears the reader's error notice on every key (`src/app/app.ts:531-534`).
     m.notice = None;
     let state = m.key_state();
+    // An open menu or dialog takes every key, so the page under it does not act; Ctrl+q and Ctrl+c still quit.
+    let key = named.key();
+    if m.overlay.is_some() && !(key.ctrl && matches!(key.name, "q" | "c")) {
+        cx.stop_propagation();
+        overlay::key(cx.app(), &mut m, &ui.borrow(), key);
+        paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        return;
+    }
     // While the finder is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
     if m.finder.is_some() && named.key().plain() {
         cx.stop_propagation();
@@ -84,6 +92,8 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
         Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
         Action::Escape if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
+        // Esc in the list drops a copy or cut (plan-00012, D2); with nothing to drop it is the list's own Esc.
+        Action::Escape if m.focus == Focus::List && m.clipboard.is_some() && m.changes.is_none() => m.clipboard = None,
         Action::SwitchPane | Action::Escape => m.focus = Focus::List,
         Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
         Action::ToggleSidebar => layout::toggle_key(&mut m, cx.app().size().0),
@@ -132,6 +142,16 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         }
         Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
         Action::Find if m.focus == Focus::List => find::start(&mut m),
+        Action::ContextMenu if m.focus == Focus::List && m.changes.is_none() => write::open_menu(&mut m),
+        Action::NewFile | Action::NewFolder | Action::Rename | Action::Delete
+            if m.focus == Focus::List && m.changes.is_none() =>
+        {
+            write::key(&mut m, &ui.borrow(), action)
+        }
+        Action::CopyFile | Action::CutFile if m.focus == Focus::List && m.changes.is_none() => {
+            write::take(&mut m, action == Action::CutFile)
+        }
+        Action::PasteFile if m.focus == Focus::List && m.changes.is_none() => write::paste(&mut m),
         Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
             search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
         }

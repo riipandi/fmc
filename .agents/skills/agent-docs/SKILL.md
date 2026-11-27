@@ -65,7 +65,7 @@ A finding that outlives the turn, filed when found (`references/issue-example.md
 
 ## Roadmap
 
-Parked work with a named unlock, not work items (`references/roadmap-example.md`): status line, verified evidence, unlock, first move. When the unlock fires, the entry becomes an issue or a plan. Parked ideas live only here, not in `architecture.md`.
+Parked work with a named unlock, not work items (`references/roadmap-example.md`): status line, verified evidence, unlock, first move. A `## Status` table at the top lists every entry (ID, entry, status, where, updated); an edit to an entry's status line changes its row in the same edit. When the unlock fires, the entry becomes an issue or a plan. Parked ideas live only here, not in `architecture.md`.
 
 ## Handovers
 

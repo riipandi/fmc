@@ -64,6 +64,22 @@ pub enum Action {
     /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
     OpenCommand,
     Find,
+    /// `Space` on a tree row: the context menu for the row (plan-00012, D3).
+    ContextMenu,
+    /// `a` on a tree row: a dialog for a new file, or a folder when the name ends in `/` (plan-00012, D3).
+    NewFile,
+    /// `A` on a tree row: a dialog for a new folder.
+    NewFolder,
+    /// `r` on a tree row: a dialog that renames the row.
+    Rename,
+    /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
+    Delete,
+    /// `c` on a tree row: the row goes on fmc's clipboard to copy (plan-00012, D2).
+    CopyFile,
+    /// `x` on a tree row: the row goes on the clipboard to move, and is dimmed until a paste or Esc.
+    CutFile,
+    /// `v` in the tree: the clipboard goes into the selected folder, or the folder of the selected file.
+    PasteFile,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -104,6 +120,14 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("[ ]", "jump the list or reader"),
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
+            ("space", "context menu for the row"),
+            ("a", "new file; a name ending in / makes a folder"),
+            ("A", "new folder"),
+            ("r", "rename"),
+            ("D Delete", "move to the Trash"),
+            ("c", "copy the row"),
+            ("x", "cut the row; a paste moves it"),
+            ("v", "paste into the folder, or beside the file"),
         ],
     ),
     (
@@ -140,7 +164,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Tab", "switch panes"),
             ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
-            ("Esc", "clear selection or search, or back to the file list"),
+            ("Esc", "clear selection or search, or back to the file list; in the list, drop a copy or cut"),
             ("q", "close the open document or key list; back from the changes"),
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),
@@ -153,6 +177,8 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
 
 pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Left click", "select file, or toggle folder"),
+    ("Right click", "context menu for the row"),
+    ("Hover", "select a context-menu row; highlight a dialog button"),
     ("Click", "focus the pane under the pointer"),
     ("Drag text", "select; y copies it"),
     ("Wheel", "scroll the pane under the pointer"),

@@ -7,6 +7,7 @@ pub mod fs;
 pub mod git;
 pub mod poll;
 pub mod settings;
+pub mod write;
 
 use std::path::PathBuf;
 
@@ -55,6 +56,9 @@ pub enum Event {
     },
     /// The changes poll's answer for the listing of `session`: the listing and the stamp of the files the body shows.
     DiffPolled { session: u64, result: Result<(ChangeSet, String), String> },
+    /// A paste finished (`app/write.rs`): `source` was copied, or moved when `moved`, into `into`. `result` is the new
+    /// path, or the error the footer shows.
+    Pasted { source: PathBuf, into: PathBuf, moved: bool, result: Result<PathBuf, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

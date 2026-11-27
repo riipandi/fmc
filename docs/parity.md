@@ -67,6 +67,10 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 - Opening a file inside a collapsed folder expands every folder down to the file, so the file's row is visible. Scouter can leave the file's own folder collapsed.
 - When fmc starts on a file it cannot show (one that is not UTF-8 text), the tree still lists the file's folder. Scouter leaves the tree empty.
 
+## File operations
+
+- fmc creates, renames, copies, moves, and deletes files from the file list, and it has a context menu for them (`Space`, or a right-click). Scouter is read-only and has none of this. Writes stay inside the folder fmc opened, links are never followed, and a delete goes to the Trash (`architecture.md`, "The file-manager operations are the one write path").
+
 ## Help
 
 - `?` shows the key list as tables in the reader, with the mouse actions in a table of their own. `--help` prints the same list, so the two always agree. `?` or `Esc` brings the document back where it was. Scouter shows its key list as a card over the panes.
