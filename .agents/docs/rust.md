@@ -22,6 +22,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - No file I/O and no process spawn on the UI thread. Workers in `src/services/` do it and send `Event`s back.
 - Keep every file under 800 lines.
 - Tests go in a sibling `tests.rs` or `*_tests.rs` file, not in an inline `mod tests` block of a large file.
+- The `tree_sitter` crate is not a direct dependency: it is reached through `opentui::syntax::tree_sitter` (`opentui-0.9.9/src/syntax/highlight.rs:17`). Code that parses Markdown source with it (`ui/markdown_blocks.rs`) therefore sits in `ui/`, not in the core. `Node::kind()` borrows from the tree; copy it to a `String`.
 
 ## Code rules
 

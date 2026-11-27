@@ -1,12 +1,13 @@
 ---
-status: draft
+status: in-progress
 created: 2026-11-27T14:30:00+07:00
-updated: 2026-11-27T14:30:00+07:00
-references: plan-00008-git-gutter.md, ui/markdown.rs, app/search.rs
+updated: 2026-11-27T18:00:00+07:00
+references: plan-00008-git-gutter.md, ui/markdown.rs, app/search.rs, plan-00011 (headings rewrite, 21cb066)
 phases:
     - id: 1
       title: "Spike: map source lines to rendered blocks, and mark matches"
-      status: pending
+      status: done
+      note: "Verdict: the mapping matches OpenTUI's blocks on 10 samples at 40, 60, 80, and 120 columns, after two rules (a leading blank line disables tree-sitter's front matter; link reference definitions are dropped). The STOP condition does not hold. Numbers and the D2 correction: research/markdown-preview-mapping.md. Tests: ui/markdown_blocks_tests.rs (4 assertions, 1 ignored timing test)."
     - id: 2
       title: "Search in rendered Markdown"
       status: pending
@@ -45,7 +46,7 @@ Both are deviations from Scouter v0.3.4 (`434d000f`). Scouter refuses search in 
 ### Decisions (agent, cheap to change)
 
 - **D1.** The keys are the code view's: `/` opens the prompt, `n` goes to the next match, `N` and `p` to the previous one, and `Esc` clears. The footer shows `3/12` as it does in the code view. Counts and line motions stay refused in the rendered view.
-- **D2.** Matching runs on the rendered text, not the source. Searching `Harry Potter` finds `**Harry** Potter`, because concealed markers are not in the text. The match is case-insensitive unless the query has an upper-case letter, the same as the code view's rule. Phase 1 confirms what that rule is.
+- **D2.** Matching runs on the rendered text, not the source. Searching `Harry Potter` finds `**Harry** Potter`, because concealed markers are not in the text. The match is case-insensitive, as the code view's rule is: always, with no smart case (phase 1 refined this; `research/markdown-preview-mapping.md` section 7).
 - **D3.** Every match is drawn in the `match` colours. The current match is drawn with `target_bg`, so it stands out.
 - **D4.** A jump scrolls the block that holds the current match into view. A match inside a block taller than the viewport scrolls to the block's top plus the match's estimated row. The estimate is the match's byte offset over the block's text, times the block's rows. The plan states this precision openly, because OpenTUI does not expose a byte's row.
 - **D5.** Fenced code blocks: in the languages fmc highlights, matches are marked through a `code_block_renderer` that draws a `Code` widget with the search layer, the same as the code view. A fence in another language is searched for the count and the jump but not marked. Phase 1 confirms the renderer keeps the default look byte for byte when no search is active. If it does not, code blocks are counted and jumped to but not marked.

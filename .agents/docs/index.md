@@ -15,7 +15,7 @@ Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), t
 | `.agents/docs/rust.md` | Rust code contracts and traps for the crate. |
 | `.agents/docs/architecture.md` | Decision records, approved parity deviations, and the pending decisions. |
 | `/PRODUCT.md`, `/DESIGN.md`, `/README.md` | Human docs: product purpose and principles; palettes, layout, and components (Scouter wins during parity); overview and usage. |
-| `.agents/docs/research/` | Point-in-time research of 2026-11-26 and 2026-11-27: `scouter-inventory.md` (the parity reference, cited by every port phase), `rendering-research.md`, `opentui-binding-risk.md`, `dependency-survey.md`, `editor-study.md`, `sqltui-study.md`, `mermaid-spike.md` (2026-11-27, plan-00006 phase 1: the Mermaid engine comparison, its outputs and recommendation). The tree and the locked crates win. |
+| `.agents/docs/research/` | Point-in-time research of 2026-11-26 and 2026-11-27: `scouter-inventory.md` (the parity reference, cited by every port phase), `rendering-research.md`, `opentui-binding-risk.md`, `dependency-survey.md`, `editor-study.md`, `sqltui-study.md`, `mermaid-spike.md` (2026-11-27, plan-00006 phase 1: the Mermaid engine comparison, its outputs and recommendation), `markdown-preview-mapping.md` (2026-11-27, plan-00010 phase 1: tree-sitter-md's blocks against OpenTUI's, the two rules that align them, the inline-mark and refresh measurements). The tree and the locked crates win. |
 
 ## Terms
 

@@ -9,6 +9,8 @@ pub mod footer;
 pub mod header;
 pub mod hints;
 pub mod markdown;
+#[cfg(test)]
+pub mod markdown_blocks;
 pub mod mermaid;
 pub mod picture;
 pub mod reader;
