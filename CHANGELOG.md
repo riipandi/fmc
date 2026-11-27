@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-27
+
+fmc becomes a file manager: files can be created, renamed, copied, moved, duplicated, and moved to the Trash from the file list.
+
 ### Added
 
 - Files can be managed from the file list. `a` creates a file (a name ending in `/` makes a folder), `A` creates a folder, `r` renames, `c` copies, `x` cuts, and `v` pastes into the selected folder or beside the selected file. `D` or `Delete` moves the row to the Trash after a dialog, and Finder's Put Back restores it. `Space` and a right-click open a context menu with the same actions. A name that is taken is never overwritten.
@@ -77,6 +81,7 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/riipandi/fmc/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/riipandi/fmc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/riipandi/fmc/releases/tag/v0.1.0
