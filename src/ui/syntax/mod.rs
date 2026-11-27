@@ -40,7 +40,13 @@ pub fn register() {
     register_lazy("zig", || grammar(tree_sitter_zig::LANGUAGE, include_str!("queries/zig/highlights.scm")));
     register_lazy("json", || grammar(tree_sitter_json::LANGUAGE, include_str!("queries/json/highlights.scm")));
     register_lazy("css", || grammar(tree_sitter_css::LANGUAGE, include_str!("queries/css/highlights.scm")));
-    register_lazy("html", || grammar(tree_sitter_html::LANGUAGE, include_str!("queries/html/highlights.scm")));
+    register_lazy("html", || {
+        injected(
+            tree_sitter_html::LANGUAGE,
+            include_str!("queries/html/highlights.scm"),
+            include_str!("queries/html/injections.scm"),
+        )
+    });
     register_lazy("go", || grammar(tree_sitter_go::LANGUAGE, include_str!("queries/go/highlights.scm")));
     register_lazy("python", || grammar(tree_sitter_python::LANGUAGE, include_str!("queries/python/highlights.scm")));
     register_lazy("bash", || grammar(tree_sitter_bash::LANGUAGE, include_str!("queries/bash/highlights.scm")));
@@ -49,25 +55,59 @@ pub fn register() {
     register_lazy("c", || grammar(tree_sitter_c::LANGUAGE, include_str!("queries/c/highlights.scm")));
     register_lazy("java", || grammar(tree_sitter_java::LANGUAGE, include_str!("queries/java/highlights.scm")));
     register_lazy("diff", || grammar(tree_sitter_diff::LANGUAGE, include_str!("queries/diff/highlights.scm")));
-    register_lazy("elixir", || grammar(tree_sitter_elixir::LANGUAGE, include_str!("queries/elixir/highlights.scm")));
-    register_lazy("heex", || grammar(tree_sitter_heex::LANGUAGE, include_str!("queries/heex/highlights.scm")));
+    register_lazy("elixir", || {
+        injected(
+            tree_sitter_elixir::LANGUAGE,
+            include_str!("queries/elixir/highlights.scm"),
+            include_str!("queries/elixir/injections.scm"),
+        )
+    });
+    register_lazy("heex", || {
+        injected(
+            tree_sitter_heex::LANGUAGE,
+            include_str!("queries/heex/highlights.scm"),
+            include_str!("queries/heex/injections.scm"),
+        )
+    });
     register_lazy("hcl", || grammar(tree_sitter_hcl::LANGUAGE, include_str!("queries/hcl/highlights.scm")));
     register_lazy("jsdoc", || grammar(tree_sitter_jsdoc::LANGUAGE, include_str!("queries/jsdoc/highlights.scm")));
     register_lazy("lua", || grammar(tree_sitter_lua::LANGUAGE, include_str!("queries/lua/highlights.scm")));
     register_lazy("regex", || grammar(tree_sitter_regex::LANGUAGE, include_str!("queries/regex/highlights.scm")));
     register_lazy("sql", || grammar(tree_sitter_sequel::LANGUAGE, include_str!("queries/sql/highlights.scm")));
-    register_lazy("svelte", || grammar(tree_sitter_svelte_ng::LANGUAGE, include_str!("queries/svelte/highlights.scm")));
+    register_lazy("svelte", || {
+        injected(
+            tree_sitter_svelte_ng::LANGUAGE,
+            include_str!("queries/svelte/highlights.scm"),
+            include_str!("queries/svelte/injections.scm"),
+        )
+    });
     register_lazy("xml", || grammar(tree_sitter_xml::LANGUAGE_XML, include_str!("queries/xml/highlights.scm")));
-    register_lazy("astro", || grammar(tree_sitter_astro_next::LANGUAGE, include_str!("queries/astro/highlights.scm")));
+    register_lazy("astro", || {
+        injected(
+            tree_sitter_astro_next::LANGUAGE,
+            include_str!("queries/astro/highlights.scm"),
+            include_str!("queries/astro/injections.scm"),
+        )
+    });
     register_lazy("vim", || grammar(tree_sitter_vim::language(), include_str!("queries/vim/highlights.scm")));
     register_alias("javascriptreact", "javascript");
 }
 
 /// Overlapping captures cascade as Core's do (`core_captures`), which Scouter's highlighter applies to every grammar:
 /// without it, a TOML key takes the style of `(bare_key) @type` where Scouter shows `(pair) @property`. A grammar that
-/// does not compile leaves its files plain; the test below catches that.
+/// does not compile leaves its files plain; the test below catches that. An injection query is compiled with the
+/// highlights, so a node name it does not know drops the whole grammar too.
 fn grammar(language: impl Into<Language>, highlights: &'static str) -> Option<CompiledGrammar> {
-    Grammar::new(language, highlights).core_captures().compile().ok()
+    injected(language, highlights, "")
+}
+
+/// A grammar whose injection query hands the code inside a file to another grammar, by the filetype it names.
+fn injected(
+    language: impl Into<Language>,
+    highlights: &'static str,
+    injections: &'static str,
+) -> Option<CompiledGrammar> {
+    Grammar::new(language, highlights).injections(injections).core_captures().compile().ok()
 }
 
 /// The filetype a path is highlighted as. A matching `file_associations` entry decides first, and plain text turns

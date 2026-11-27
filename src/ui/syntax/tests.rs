@@ -2,8 +2,8 @@ use std::path::Path;
 
 use fmc::reader::associations::Associations;
 use fmc::theme::DARK;
-use opentui::prelude::Attributes;
-use opentui::syntax::{has_grammar, highlights, prewarm};
+use opentui::prelude::{Attributes, Color};
+use opentui::syntax::{has_grammar, highlight, highlights, prewarm};
 
 use super::*;
 
@@ -169,4 +169,63 @@ fn the_style_table_reads_the_palette() {
     assert_eq!(theme.get("keyword.return"), theme.get("keyword"));
     assert_eq!(theme.get("markup.raw.block"), None);
     assert_eq!(theme.get("type.builtin"), theme.get("constant"));
+}
+
+/// The foreground the reader paints the first occurrence of `token` with: the span over it, after every capture's
+/// style is layered in the order `highlight` gives.
+fn painted(source: &str, filetype: &str, token: &str) -> Option<Color> {
+    register();
+    let start = source.find(token).unwrap_or_else(|| panic!("the sample holds {token}"));
+    let mut at = 0;
+    for span in highlight(source, filetype, &theme(&DARK))? {
+        let end = at + span.content.len();
+        if at <= start && start < end {
+            return span.style.fg;
+        }
+        at = end;
+    }
+    None
+}
+
+#[test]
+fn injected_code_is_painted_in_its_own_languages_colours() {
+    let syntax = DARK.syntax;
+    // Each token takes the palette colour of the capture its own language gives it, after the host's captures.
+    let cases = [
+        ("svelte", "<script>\n  let owl = 'Hedwig';\n</script>\n", "let", syntax.keyword),
+        (
+            "svelte",
+            "<script lang=\"ts\">\n  let name: string = 'Hermione Granger';\n</script>\n",
+            "string",
+            syntax.constant,
+        ),
+        ("svelte", "<style>\n  h1 { color: red; }\n</style>\n", "color", syntax.function),
+        ("astro", "---\nconst name = 'Albus Dumbledore';\n---\n<h1>{name}</h1>\n", "const", syntax.keyword),
+        ("astro", "<script>\n  let owl = 'Hedwig';\n</script>\n", "let", syntax.keyword),
+        ("html", "<script>\n  const owl = 'Hedwig';\n</script>\n", "const", syntax.keyword),
+        ("html", "<style>\n  p { color: red; }\n</style>\n", "color", syntax.function),
+        (
+            "elixir",
+            "def render(assigns) do\n  ~H\"\"\"\n  <div class=\"vault\"></div>\n  \"\"\"\nend\n",
+            "div",
+            syntax.keyword,
+        ),
+        ("heex", "<div class=\"vault\"><%= if Hogwarts.open?() do %>vault<% end %></div>\n", "if", syntax.keyword),
+        ("elixir", "def query, do: ~SQL\"\"\"\nSELECT name FROM vaults;\n\"\"\"\n", "SELECT", syntax.keyword),
+        ("elixir", "def pattern, do: ~r/^[A-Z]+$/\n", "[", syntax.punctuation),
+    ];
+    for (filetype, sample, token, expected) in cases {
+        let got = painted(sample, filetype, token);
+        assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
+    }
+}
+
+#[test]
+fn injections_leave_what_no_grammar_is_registered_for_plain() {
+    // scss is not registered, and neither is a script in an unknown language: the host's `none` clears the body.
+    let style = "<style lang=\"scss\">\n  $owl: red;\n</style>\n";
+    let script = "<script lang=\"js\">\n  let owl = 'Hedwig';\n</script>\n";
+    for (sample, token) in [(style, "$owl"), (script, "let")] {
+        assert_eq!(painted(sample, "svelte", token), Some(color(DARK.text)), "svelte: {token}");
+    }
 }
