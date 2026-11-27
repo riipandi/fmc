@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A pointer over a dialog button highlights it and leaves the focus where the keys put it, so Return picks the focused button.
 - The welcome screen calls fmc a terminal file manager, and its closing line names the menu key: `Space opens the file menu.` It said `a quiet, read-only file viewer` and `No editing. Just reading.` (`architecture.md`, "the welcome screen names fmc a file manager").
 
+### Fixed
+
+- A folder that is swapped for a link during a copy or move is refused, not copied from the link's target. The check runs before the folder is created, so nothing outside the root is written.
+
 ## [0.1.1] - 2026-11-27
 
 ### Changed

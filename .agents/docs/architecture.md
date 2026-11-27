@@ -492,17 +492,17 @@ Alternatives considered:
 
 Context: a link inside the browsed root can point outside it, so a write through a link would escape the root (plan-00012 D6). std has no no-clobber rename and no `O_NOFOLLOW`; both need libc.
 
-Decision (plan-00012 D5, D6): each operation runs the same checks before its one system call: the name is one segment, both folders lie inside the root after resolving, the source exists, a folder does not go into itself, and the destination is vacant. A link is operated on as the link. A file copy opens the source and compares the opened file's device and inode with the `lstat` taken before the open (`services/write.rs`, `open_seen`), so a link swapped in after the `lstat` is refused before a byte is read; this needs no libc constant. A cross-volume move takes the source's device and inode before the copy and refuses to remove the source when they changed (`Error::Changed`), leaving the copy in place.
+Decision (plan-00012 D5, D6): each operation runs the same checks before its one system call: the name is one segment, both folders lie inside the root after resolving, the source exists, a folder does not go into itself, and the destination is vacant. A link is operated on as the link. A file copy opens the source and compares the opened file's device and inode with the `lstat` taken before the open (`services/write.rs`, `open_seen`), so a link swapped in after the `lstat` is refused before a byte is read; this needs no libc constant. A folder copy makes the same check before it creates the destination or reads a child (`copy_seen`). A cross-volume move takes the source's device and inode before the copy and refuses to remove the source when they changed (`Error::Changed`), leaving the copy in place.
 
 Consequences:
 
 - (positive) Each refusal and each swap has a test in a temporary folder (`services/write_tests.rs`), with the fixture names of the sample-data rule.
-- (negative) Four races remain, each a `shortcut:` comment in `services/write.rs`. The check and the create, rename, or move: std cannot refuse an existing target atomically. The directory branch of `copy_entry`: a folder swapped for a link after its `lstat` is read through the link (LOW, from the 2026-11-27 `security-review`; the upgrade is to open the folder and compare its identity before reading). The check and the Trash call. Each needs a process running as the user, which can already write there.
+- (negative) The races that remain are each a `shortcut:` comment in `services/write.rs`. The check and the create, rename, or move: std cannot refuse an existing target atomically. The folder copy: its identity is checked before its children are read, so a folder swapped for a link before the check is refused (LOW, from the 2026-11-27 `security-review`). A swap in the gap between that check and `read_dir` still copies the outside folder (the upgrade reads the checked descriptor, `fdopendir`, a libc call). The check and the Trash call. Each needs a process running as the user, which can already write there.
 - (negative) A cross-volume move refused after its copy leaves the copy at the new place and the original where it was.
 
 Alternatives considered:
 
-- A Replace, Keep both, or Cancel dialog for a taken name: rejected for the first cut (D5); more surface, and it can follow.
+- A Replace, Keep both, or Cancel dialog for a taken name: rejected for the first cut (D5); more surface, and it can follow. The owner kept it deferred on 2026-11-27: a paste into a folder that has the name keeps the automatic `copy` names (`services/write.rs`, `free_name`).
 - `O_NOFOLLOW` through a libc constant: rejected, it needs a new dependency or a per-OS constant that the identity check does not need.
 
 ### The clipboard is fmc's own, and the footer names what it holds

@@ -10,8 +10,8 @@ use std::process::Command;
 use tempfile::TempDir;
 
 use super::{
-    Error, copy, copy_entry, copy_then_remove, create_dir, create_file, free_name, move_to, move_with, open_seen,
-    paste, rename, trash_with,
+    Error, copy, copy_entry, copy_seen, copy_then_remove, create_dir, create_file, free_name, move_to, move_with,
+    open_seen, paste, rename, trash_with,
 };
 
 /// The browsed root, with Harry Potter and Dan Brown names, and a folder outside it that a link can point at.
@@ -351,6 +351,26 @@ fn a_link_swapped_in_after_the_lstat_is_refused_before_it_is_read() {
     assert!(open_seen(&readme, &fs::symlink_metadata(&readme).unwrap()).is_ok());
 }
 
+#[test]
+fn a_folder_swapped_for_a_link_after_its_lstat_is_refused_before_anything_is_copied() {
+    let f = fixture();
+    let hall = f.root.join("hogwarts/great-hall");
+    // The lstat sees the folder; then the folder is replaced by a link to the folder outside the root, which holds
+    // vault-713.txt. Copying through the link would copy that file.
+    let seen = fs::symlink_metadata(&hall).unwrap();
+    fs::remove_dir_all(&hall).unwrap();
+    symlink(&f.outside, &hall).unwrap();
+    let dest = f.root.join("Gringotts/great-hall");
+    assert!(matches!(copy_seen(&hall, &dest, &seen), Err(Error::Changed)));
+    assert!(fs::symlink_metadata(&dest).is_err(), "nothing is made, so the outside folder is not copied");
+    // The same call on a folder the lstat still describes copies it, with its children.
+    let portraits = f.root.join("portraits");
+    fs::create_dir(&portraits).unwrap();
+    fs::write(portraits.join("Fat Lady.md"), "Sir Cadogan\n").unwrap();
+    let seen = fs::symlink_metadata(&portraits).unwrap();
+    copy_seen(&portraits, &f.root.join("Gringotts/portraits"), &seen).unwrap();
+    assert!(f.root.join("Gringotts/portraits/Fat Lady.md").is_file());
+}
 #[test]
 fn the_cross_volume_fallback_keeps_both_when_the_removal_fails() {
     let f = fixture();

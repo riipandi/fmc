@@ -222,20 +222,28 @@ fn plan(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<PathB
     Ok(dest)
 }
 
-/// Copies one entry to `dest`, which must not exist. A link is copied as a link, and a folder recurses the same way. A
-/// failure removes what this call made, never a `dest` that was already there.
+/// Copies one entry to `dest`, which must not exist. A link is copied as a link, and a folder recurses the same way.
 fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     let metadata = fs::symlink_metadata(source)?;
+    copy_seen(source, dest, &metadata)
+}
+
+/// `copy_entry` for an entry whose `lstat` was taken before: `metadata` is that `lstat`, and an entry that is no longer
+/// the one it describes is refused. A failure removes what this call made, never a `dest` that was already there.
+fn copy_seen(source: &Path, dest: &Path, metadata: &fs::Metadata) -> Result<(), Error> {
     let kind = metadata.file_type();
     if kind.is_symlink() {
         symlink(fs::read_link(source)?, dest)?;
     } else if kind.is_dir() {
-        // shortcut: `read_dir` follows a link, so a folder swapped for a link after the `symlink_metadata` above copies the
-        // outside folder's entries; upgrade by opening the folder and comparing its identity with `metadata` before reading
-        // it, as `open_seen` does for files.
+        // Refused before anything is made, as a file is: the open follows a link, so a folder swapped for one is not
+        // read from its target.
+        open_seen(source, metadata)?;
+        // shortcut: `read_dir` follows a link too, and it runs after the check above, so a folder swapped for a link in
+        // that gap copies the outside folder's entries; upgrade by reading the children from the checked descriptor
+        // (`fdopendir`, a libc call).
         fs::create_dir(dest)?;
         let copied = copy_children(source, dest)
-            .and_then(|()| fs::set_permissions(dest, copied_mode(&metadata)).map_err(Error::from));
+            .and_then(|()| fs::set_permissions(dest, copied_mode(metadata)).map_err(Error::from));
         if let Err(error) = copied {
             let _ = fs::remove_dir_all(dest);
             return Err(error);
@@ -243,9 +251,9 @@ fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     } else if kind.is_file() {
         // shortcut: the kind check and the open are two calls, so a pipe swapped in between blocks the copy until a
         // writer opens it; `O_NONBLOCK` (a libc constant) closes that.
-        let mut from = open_seen(source, &metadata)?;
+        let mut from = open_seen(source, metadata)?;
         let mut to = OpenOptions::new().write(true).create_new(true).open(dest)?;
-        if let Err(error) = io::copy(&mut from, &mut to).and_then(|_| to.set_permissions(copied_mode(&metadata))) {
+        if let Err(error) = io::copy(&mut from, &mut to).and_then(|_| to.set_permissions(copied_mode(metadata))) {
             drop(to);
             let _ = fs::remove_file(dest);
             return Err(error.into());
