@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T21:18:11+07:00
+updated: 2026-11-27T23:40:00+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -34,6 +34,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-17 | The rest of the owner's grammar set | parked | unlock: a crate that loads | 2026-11-27 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
+| RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
 
 ## Rendering
 
@@ -134,6 +135,14 @@ Scouter has no configuration by design (`research/scouter-inventory.md` §15), s
 User themes as JSON files, one per theme, each with a dark and a light variant or a declared mode, selected from settings (RI-9). The starting catalog comes from bjarneo/editor (MIT; keep its notice): editor dark, Catppuccin Mocha and Latte, Tokyo Night and Tokyo Night Day, Gruvbox and Gruvbox Light, Everforest, Kanagawa, Nord, One Dark and One Light, Flexoki Light, and, as the source has them, Rosé Pine, Rosé Pine Dawn, and editor light (source: `src/theme.rs` in github.com/bjarneo/editor). Each theme maps onto fmc's palette tokens (`DESIGN.md`, `src/theme/catalog.rs`). Twelve of the sixteen fall short of 7:1 on a tint or a match pair; the pairs are listed in `src/theme/theme_tests.rs` (plan-00015, A16), and the owner has not yet decided on them.
 
 **Unlock:** RI-9 landed. **First move:** map editor's theme fields onto fmc's tokens and list the tokens with no source value.
+
+### RI-20 — The Settings page on `Ctrl+,`
+
+- status: landed (plan-00015 phase 3, `d68af26`; the grouped layout `883577d`, the owner's request on 2026-11-27; `architecture.md`, "Approved deviation: the Settings page edits settings.json on Ctrl+, and saves each change at once") · updated 2026-11-27
+
+The owner asked on 2026-11-27 for a settings UI opened with `Ctrl+,`, and only that key (plan-00015 D12). The page edits the eight saved keys of RI-9 and RI-10 in two groups, Browsing and Appearance; each change applies and saves at once (D5). It is not in RI-9's text, so it has its own entry. Left out: rebinding keys on the page (RI-13 stays file-only, D11), a mouse on the page (A21), and a route for a terminal without the kitty keyboard protocol, which cannot send `Ctrl+,`.
+
+**Unlock:** none; landed. **Follow-ups:** the owner's live check of `Ctrl+,` in Ghostty and Terminal.app; footer hints that follow `keymap.json`.
 
 ## Layout
 
