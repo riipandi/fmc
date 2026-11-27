@@ -124,3 +124,28 @@ fn the_overlay_hands_a_key_to_its_own_kind() {
     let mut overlay = Overlay::Dialog(Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1));
     assert_eq!(overlay.key(key("a", "a")), Outcome::Insert("a".into()));
 }
+
+#[test]
+fn a_pointer_over_an_enabled_row_selects_it_and_over_a_disabled_row_does_nothing() {
+    let mut menu = menu();
+    assert!(menu.point(2), "Cut is enabled, so the pointer selects it");
+    assert_eq!(menu.selected(), 2);
+    assert!(!menu.point(2), "a row already selected changes nothing");
+    assert!(!menu.point(3), "Paste is disabled, so the selection stays");
+    assert_eq!(menu.selected(), 2);
+    assert!(!menu.point(9), "a row past the items is nothing");
+}
+
+#[test]
+fn a_pointer_over_a_button_moves_the_focus_to_it() {
+    let mut dialog = Dialog::new("Move to Trash?", "Gone.", false, &["Cancel", "Delete"], 0);
+    assert!(dialog.point(1));
+    assert_eq!(dialog.focus, Stop::Button(1));
+    assert!(!dialog.point(1));
+    assert!(!dialog.point(2), "a button the dialog does not have is nothing");
+    // Typing a name returns the focus to the field, so a pointer left on a button does not take the text.
+    let mut named = Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1);
+    named.point(0);
+    assert_eq!(named.key(key("a", "a")), Outcome::Insert("a".into()));
+    assert_eq!(named.focus, Stop::Field);
+}

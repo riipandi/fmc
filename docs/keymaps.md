@@ -94,6 +94,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | --- | --- |
 | `Left` `click` | select file, or toggle folder |
 | `Right` `click` | context menu for the row |
+| `Hover` | select a context-menu row or a dialog button |
 | `Click` | focus the pane under the pointer |
 | `Drag` `text` | select; y copies it |
 | `Wheel` | scroll the pane under the pointer |

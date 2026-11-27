@@ -114,7 +114,11 @@ impl DialogView {
         let bold = Seg { text: dialog.title.clone(), fg: Some(p.text), bg: None, bold: true };
         self.title.set_text(content(&[bold], p.text));
         self.message.set_text(content(&[Seg::new(dialog.message.clone(), p.text)], p.text));
-        self.field.visible(dialog.field).colors(color(p.text), color(background));
+        // The same colors focused or not: the cursor is the only sign that the field holds the keyboard.
+        self.field
+            .visible(dialog.field)
+            .colors(color(p.text), color(background))
+            .focused_colors(color(p.text), color(background));
         let error = dialog.error.clone().unwrap_or_default();
         self.error.set_text(content(&[Seg::new(error, p.error)], p.error));
         for (index, button) in self.buttons.iter().enumerate() {

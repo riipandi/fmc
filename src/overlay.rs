@@ -32,6 +32,18 @@ impl Menu {
         self.selected
     }
 
+    /// The pointer moved over row `index`: the row is selected when it is enabled, as the keys select it. Returns whether
+    /// the selection changed.
+    pub fn point(&mut self, index: usize) -> bool {
+        match self.items.get(index) {
+            Some(item) if item.enabled && index != self.selected => {
+                self.selected = index;
+                true
+            }
+            _ => false,
+        }
+    }
+
     /// A click on row `index`: picks it when it is enabled.
     pub fn pick(&self, index: usize) -> Outcome {
         match self.items.get(index) {
@@ -110,6 +122,16 @@ impl Dialog {
     fn stops(&self) -> Vec<Stop> {
         let field = self.field.then_some(Stop::Field);
         field.into_iter().chain((0..self.buttons.len()).map(Stop::Button)).collect()
+    }
+
+    /// The pointer moved over button `index`: the focus moves to it, so the button is marked as a key would mark it.
+    /// Returns whether the focus changed.
+    pub fn point(&mut self, index: usize) -> bool {
+        if index >= self.buttons.len() || self.focus == Stop::Button(index) {
+            return false;
+        }
+        self.focus = Stop::Button(index);
+        true
     }
 
     /// A press on button `index`: picks it when the dialog has that button.

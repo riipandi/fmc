@@ -147,6 +147,19 @@ impl Browsing {
         paint(self.app.app(), &mut self.model.borrow_mut(), &mut self.ui.borrow_mut());
     }
 
+    /// Whether the dialog's field holds the keyboard, which is what shows the terminal cursor in it.
+    fn field_focused(&self) -> bool {
+        let field = self.ui.borrow().overlay.dialog.field.clone();
+        self.app.app().focused().is_some_and(|widget| widget.is(&field))
+    }
+
+    fn menu_selected(&self) -> Option<usize> {
+        match &self.model.borrow().overlay {
+            Some(Overlay::Menu(menu)) => Some(menu.selected()),
+            _ => None,
+        }
+    }
+
     /// The label and enabled state of the open menu's row `label`.
     fn menu_row(&self, label: &str) -> Option<bool> {
         self.menu()?.iter().find(|(text, _)| text == label).map(|(_, enabled)| *enabled)
@@ -618,4 +631,49 @@ fn an_entry_swapped_after_the_confirm_opens_is_not_trashed() {
     assert_eq!(fs::read_to_string(b.root.join("robert-langdon.md")).unwrap(), "Griphook\n", "the new entry stays");
     assert!(b.has("keep-langdon.md"), "the old one is not trashed either");
     b.await_selected("robert-langdon.md");
+}
+
+#[test]
+fn the_name_field_holds_the_cursor_until_tab_moves_the_focus_to_a_button() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("a");
+    assert!(b.field_focused(), "the field has the keyboard, so the cursor shows in it");
+    b.app.press("tab");
+    assert!(!b.field_focused(), "Cancel has the focus, and the cursor leaves the field");
+    assert_eq!(b.dialog().map(|d| d.focus), Some(Stop::Button(0)));
+    // The stops run field, Cancel, OK: the third Tab returns the cursor to the field.
+    b.app.press("tab");
+    b.app.press("tab");
+    assert!(b.field_focused(), "the Tab after OK returns the cursor to the field");
+    b.app.press("escape");
+    assert!(b.app.app().focused().is_none(), "a closed dialog leaves nothing focused");
+}
+
+#[test]
+fn a_pointer_over_a_menu_row_selects_it_and_a_disabled_row_is_not_selected() {
+    let b = browsing(&["robert-langdon.md"]);
+    let (x, y) = b.row(0);
+    b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
+    b.app.render();
+    assert_eq!(b.menu_selected(), Some(0), "the first enabled row is selected when the menu opens");
+    b.app.hover(x + 2, y + 1 + 3);
+    assert_eq!(b.menu_selected(), Some(3), "Copy is selected under the pointer");
+    // Paste is row 5 and disabled with nothing copied: the pointer over it leaves the selection where it was.
+    b.app.hover(x + 2, y + 1 + 5);
+    assert_eq!(b.menu_selected(), Some(3));
+}
+
+#[test]
+fn a_pointer_over_a_dialog_button_moves_the_focus_onto_it() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("D");
+    b.app.render();
+    assert_eq!(b.dialog().map(|d| d.focus), Some(Stop::Button(0)));
+    let text = b.app.text();
+    let (y, line) =
+        text.lines().enumerate().find(|(_, line)| line.contains("Delete")).expect("the Delete button is drawn");
+    let column = line.find("Delete").map(|byte| line[..byte].chars().count()).unwrap_or(0);
+    b.app.hover(column as u16 + 1, y as u16);
+    assert_eq!(b.dialog().map(|d| d.focus), Some(Stop::Button(1)), "Delete is focused under the pointer");
+    assert!(!b.field_focused());
 }

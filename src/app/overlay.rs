@@ -4,7 +4,7 @@
 
 use fmc::keys::Key;
 use fmc::layout::tier;
-use fmc::overlay::{Dialog, Outcome, Overlay};
+use fmc::overlay::{Dialog, Outcome, Overlay, Stop};
 use opentui::prelude::*;
 
 use super::*;
@@ -62,12 +62,39 @@ pub fn wire_views(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             Some(Overlay::Menu(menu)) => menu.pick(index),
             _ => Outcome::Stay,
         }));
+        row.on_mouse(hover(model, ui, move |m| match &mut m.overlay {
+            Some(Overlay::Menu(menu)) => menu.point(index),
+            _ => false,
+        }));
     }
     for (index, button) in views.dialog.buttons.iter().enumerate() {
         button.on_mouse(press(model, ui, move |m| match &m.overlay {
             Some(Overlay::Dialog(dialog)) => dialog.pick(index),
             _ => Outcome::Stay,
         }));
+        button.on_mouse(hover(model, ui, move |m| match &mut m.overlay {
+            Some(Overlay::Dialog(dialog)) => dialog.point(index),
+            _ => false,
+        }));
+    }
+}
+
+/// A pointer that moves over a row or a button selects it, as a key does: the keys and the pointer share one selection.
+/// `point` says whether the selection changed; the frame is painted only then.
+fn hover(
+    model: &Rc<RefCell<Model>>,
+    ui: &Rc<RefCell<Ui>>,
+    point: impl Fn(&mut Model) -> bool + 'static,
+) -> impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static {
+    let (model, ui) = (model.clone(), ui.clone());
+    move |cx, event| {
+        if event.kind != MouseEventKind::Moved {
+            return;
+        }
+        let mut m = model.borrow_mut();
+        if point(&mut m) {
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
     }
 }
 
@@ -182,6 +209,14 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
             views.dialog.show(dialog, rect, p, &tint);
         }
         None => {}
+    }
+    // The field holds the keyboard, and so the terminal cursor, while the dialog's focus is on it. A focus on a button
+    // (Tab, or a pointer) takes it away. Nothing else is focused by fmc, so a field that lost focus is the only one to blur.
+    let on_field = matches!(open, Some(Overlay::Dialog(dialog)) if dialog.focus == Stop::Field);
+    if on_field {
+        app.focus(&views.dialog.field);
+    } else if app.focused().is_some_and(|widget| widget.is(&views.dialog.field)) {
+        app.blur();
     }
 }
 
