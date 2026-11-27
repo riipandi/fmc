@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-27
+
+fmc gets a Settings page on `Ctrl+,`, a theme catalog, and a keymap file, and each change on the page is saved to `settings.json`.
+
 ### Added
 
 - A theme catalog: 16 bundled themes (bjarneo/editor, MIT), chosen with `dark_theme` and `light_theme` in `settings.json`. `default` is the default theme, Scouter's own pair.
@@ -116,7 +120,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/riipandi/fmc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/riipandi/fmc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/riipandi/fmc/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/riipandi/fmc/compare/v0.1.0...v0.1.1
