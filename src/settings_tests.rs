@@ -311,3 +311,17 @@ fn shown_gives_the_word_the_file_uses() {
     assert_eq!(settings.shown(Row::AutoPreview), "true");
     assert_eq!(settings.shown(Row::DarkTheme), SCOUTER);
 }
+
+#[test]
+fn each_page_group_is_one_run_of_rows_and_every_row_has_a_title() {
+    let sections: Vec<&str> = Row::ALL.iter().map(|row| row.section()).collect();
+    let mut seen: Vec<&str> = Vec::new();
+    for section in &sections {
+        if seen.last() != Some(section) {
+            assert!(!seen.contains(section), "{section} is split: {sections:?}");
+            seen.push(section);
+        }
+    }
+    assert_eq!(seen, ["Browsing", "Appearance"]);
+    assert!(Row::ALL.iter().all(|row| !row.title().is_empty()));
+}

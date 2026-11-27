@@ -217,7 +217,7 @@ A rounded border in `accent` on the `tint` background, centred and at most 56 co
 
 ### Settings page
 
-A post-parity addition: Scouter has no settings page (`architecture.md`, "the Settings page edits settings.json"). It fills the content area as the changes screen does, and in the compact tier it is a page of the stack. One row per setting: the key's word in `muted` in a 13-column label column, then the value in `accent-soft`. The selected row fills with `row-active-bg`. One help line under the rows, in `muted`, says what the selected row does. There are no switches, boxes, or Save button: Enter or Space changes a row, and the change saves at once.
+A post-parity addition: Scouter has no settings page (`architecture.md`, "the Settings page edits settings.json"). It fills the content area as the changes screen does, and in the compact tier it is a page of the stack. The rows sit in two groups, Browsing and Appearance, each under an uppercase heading in bold `dim`, with a blank row above the page and between the groups. One row per setting, indented four columns: its name (`Auto preview`) in `muted` in an 18-column label column, then the value. An on-or-off value is `● on` in `accent` or `○ off` in `muted`; a number is in `accent-soft`; a choice is in `accent-soft` between `‹ ›`, which are `dim`, or `muted` on the selected row. The selected row fills with `row-active-bg` and its name is bold in `text`. Under the rows, after a blank row: `settings.json` and the selected row's key in `dim`, then its help line in `muted`. There are no boxes or Save button: Enter or Space changes a row, and the change saves at once.
 
 ### Welcome
 

@@ -97,7 +97,7 @@ There is no undo beyond the Trash. `r`, `R`, and `a` work on one row; the copy, 
 
 ## Settings
 
-`Ctrl+,` opens the Settings page in the content area. It lists the eight settings fmc saves, each with its value, and a line of help for the selected row. The keys are described in [Configuration](configuration.md).
+`Ctrl+,` opens the Settings page in the content area. It lists the eight settings fmc saves in two groups, Browsing and Appearance, each with its value. Under the list it names the selected setting's key in `settings.json` and says what it does. The keys are described in [Configuration](configuration.md).
 
 - `j` and `k`, or the arrows, move between the rows.
 - `Enter` or `Space` changes the selected row. A setting that is on or off flips. A choice, such as `theme_mode` or `find_mode`, moves to its next value. `h` and `←` step a choice back, and `l` and `→` step it forward. A choice stops at its first and last value.

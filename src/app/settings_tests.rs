@@ -124,9 +124,15 @@ fn the_page_draws_each_row_with_its_value_and_the_help_of_the_selected_row() {
     p.open();
     p.app.render();
     let screen = p.app.text();
-    for key in ["auto_preview", "sidebar_jump", "reader_jump", "git_gutter", "find_mode", "theme_mode", "light_theme"] {
-        assert!(screen.contains(key), "the page lacks {key}");
+    for row in Row::ALL {
+        assert!(screen.contains(row.title()), "the page lacks {}", row.title());
     }
+    for heading in ["BROWSING", "APPEARANCE"] {
+        assert!(screen.contains(heading), "the page lacks the {heading} heading");
+    }
+    assert!(screen.contains("● on"), "an on-or-off row shows its dot");
+    assert!(screen.contains("‹ auto ›"), "a choice shows between its arrows");
+    assert!(screen.contains("settings.json  auto_preview"), "the selected row's key is named");
     assert!(screen.contains(Row::AutoPreview.help()), "the help of the selected row is drawn");
 }
 

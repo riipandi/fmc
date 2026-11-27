@@ -225,6 +225,33 @@ impl Row {
         }
     }
 
+    /// The row's name on the page; the help line names its `settings.json` key.
+    pub fn title(self) -> &'static str {
+        match self {
+            Row::AutoPreview => "Auto preview",
+            Row::SidebarJump => "List jump",
+            Row::ReaderJump => "Reader jump",
+            Row::GitGutter => "Git gutter",
+            Row::FindMode => "Find mode",
+            Row::ThemeMode => "Theme mode",
+            Row::DarkTheme => "Dark theme",
+            Row::LightTheme => "Light theme",
+        }
+    }
+
+    /// The group the row sits in on the page: the rows of a group are adjacent in `ALL`.
+    pub fn section(self) -> &'static str {
+        match self {
+            Row::ThemeMode | Row::DarkTheme | Row::LightTheme => "Appearance",
+            _ => "Browsing",
+        }
+    }
+
+    /// A row whose value is on or off.
+    pub fn toggle(self) -> bool {
+        matches!(self, Row::AutoPreview | Row::GitGutter)
+    }
+
     /// The row's one-line help, under the list while the row is selected.
     pub fn help(self) -> &'static str {
         match self {
