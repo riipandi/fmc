@@ -388,3 +388,24 @@ fn the_tree_thumb_reaches_the_bottom_after_the_terminal_shrinks() {
     assert!(last.contains("owl-59.txt"), "the list is at its end: {rows:#?}");
     assert!(last.contains('▐') || last.contains('▗'), "the thumb reaches the last row: {rows:#?}");
 }
+
+/// A click on a change row in the split view selects it and keeps the focus on the list, as a tree click does. Below 80
+/// columns the open diff hides the list, so the widths here are wide.
+#[test]
+fn a_change_row_click_keeps_the_focus_on_the_list_in_the_split_view() {
+    // Short names, so the counts beside them leave the whole name drawn in a medium-width sidebar.
+    let names: Vec<String> = (0..10).map(|i| format!("owl-{i}.md")).collect();
+    for columns in [80, 120] {
+        let (app, model, _ui, _dir) = changes_of(columns, &names);
+        let row = LIST_TOP + 1;
+        let drawn = name_on(&app, row, &names).unwrap_or_else(|| panic!("{columns}: no change on row {row}"));
+        app.click(4, row);
+        assert!(
+            selected_change(&model).is_some_and(|path| path.ends_with(drawn.as_str())),
+            "{columns}: selects {drawn}"
+        );
+        assert_eq!(model.borrow().focus, Focus::List, "{columns}: the focus stays on the list");
+        // The patches arrive on a worker; the body would take the focus then if the click asked for it.
+        assert!(!model.borrow().changes.as_ref().unwrap().focus_when_ready, "{columns}: no focus move is queued");
+    }
+}

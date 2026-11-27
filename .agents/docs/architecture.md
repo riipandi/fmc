@@ -902,3 +902,18 @@ Alternatives considered:
 
 - Clip the diagram or pan it sideways — rejected: rendered Markdown has no horizontal pan, and a clipped diagram loses its arrows.
 - Scale the diagram down to fit — rejected: the engine already compacts within its budget, and a diagram that still does not fit is a fallback.
+
+### Approved deviation: a change-row click keeps the focus on the list
+
+Context: in Scouter, a click on a change row selects it and focuses the diff body (`ChangeList` `onMouseDown` → `openSelected`, Scouter v0.3.4 `434d000f`). The owner asked, on 2026-11-27, for the changes list to behave like the file tree's sidebar: a click there selects and previews but leaves the focus on the list ("Auto-preview in the sidebar").
+
+Decision: in the medium and wide tiers, a click on a change row selects it and shows its file in the body (the one-file body reads it, and the stacked body jumps to it), and the focus stays on the list. Enter, `l`, and `→` still focus the body. In compact the list and the body are separate pages, so a tap opens the body, as Enter does and as a tap on a file in the tree does (`src/app/changes.rs` `click_row`).
+
+Consequences:
+
+- (positive) Clicking through the list keeps `j`/`k` on the list, and the two sidebars act the same.
+- (negative) Reaching the body takes Enter, Tab, or a click in the body.
+
+Alternatives considered:
+
+- Keep Scouter's focus move — rejected by the owner.

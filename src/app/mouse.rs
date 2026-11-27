@@ -59,7 +59,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 }
                 MouseEventKind::Up(MouseButton::Left) => {
                     if let Some(index) = pressed.take().filter(|_| done) {
-                        changes::click_row(&mut m, index);
+                        changes::click_row(&mut m, index, cx.app().size().0);
                     }
                     cx.stop_propagation();
                 }

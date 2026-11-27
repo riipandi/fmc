@@ -11,6 +11,7 @@ use fmc::diff::{
     line_at, split_path, step, totals, within_folder,
 };
 use fmc::keys::{Action, Focus};
+use fmc::layout::{Tier, tier};
 use fmc::text::display_label;
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -341,12 +342,16 @@ pub fn move_list(m: &mut Model, action: Action) {
     }
 }
 
-/// A click on a change row selects it and opens its file (Scouter `ChangeList` `onMouseDown`).
-pub fn click_row(m: &mut Model, index: usize) {
+/// A click on a change row selects it and shows its file, and the focus stays on the list, as a click in the file tree
+/// does (owner request, architecture.md "A change-row click keeps the focus"); Scouter's `ChangeList` `onMouseDown` also
+/// focuses the body. In compact the list and the body are separate pages, so a tap opens the body as Enter does.
+pub fn click_row(m: &mut Model, index: usize, columns: u16) {
     if m.change_list.select_index(index) {
         selection_moved(m);
     }
-    activate(m);
+    if tier(columns) == Tier::Compact {
+        activate(m);
+    }
 }
 
 /// The list's selection moved: the stacked body scrolls to the file, and the one-file body reads it (Scouter `select`).
