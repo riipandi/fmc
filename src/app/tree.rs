@@ -49,6 +49,14 @@ pub fn activate(m: &mut Model) {
     open(m, path);
 }
 
+/// `s`: marks the selected row and moves down one row, so a run of rows takes one key each (plan-00014, D1). The mark is
+/// the browser's, so it survives scrolling and collapse.
+pub fn toggle_mark(m: &mut Model) {
+    let Some(entry) = m.browser.selected_entry() else { return };
+    m.browser.toggle_mark(&entry.path);
+    m.browser.move_by(1);
+}
+
 /// `]` and `[`: the list moves by the settings' sidebar jump (architecture.md, "`[` and `]` jump in the sidebar").
 pub fn jump(m: &mut Model, step: i8) {
     let rows = isize::try_from(m.sidebar_jump).unwrap_or(isize::MAX);

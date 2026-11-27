@@ -18,13 +18,15 @@ use super::styled::{Seg, color, content};
 pub const LIST_TOP: u16 = 3;
 
 /// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`). A cut row is
-/// muted until its paste or Esc (plan-00012, D2), even when it is selected, so the cut stays visible.
+/// muted until its paste or Esc (plan-00012, D2), even when it is selected, so the cut stays visible. A marked row
+/// takes a `✓` in the bar's cell; its background still shows the selection (plan-00014, D3).
 pub fn row_segments(
     row: &Row<'_>,
     selected: bool,
     ignored: bool,
     name_first: bool,
     cut: bool,
+    marked: bool,
     p: &Palette,
 ) -> Vec<Seg> {
     if let Some((line, snippet)) = row.hit {
@@ -54,7 +56,12 @@ pub fn row_segments(
     } else {
         icon_color(row.entry, folder, p)
     };
-    let mut segments = vec![Seg::new(if selected { "▎" } else { " " }, p.accent)];
+    let bar = match (marked, selected) {
+        (true, _) => Seg::new("✓", p.accent_soft),
+        (false, true) => Seg::new("▎", p.accent),
+        (false, false) => Seg::new(" ", p.accent),
+    };
+    let mut segments = vec![bar];
     if row.depth > 0 {
         segments.push(Seg::new("│ ".repeat(row.depth), p.ignored));
     }
@@ -337,6 +344,8 @@ impl TreeView {
                         marks.is_ignored(&key),
                         browser.is_flat() && narrow,
                         cut == Some(row.entry.path.as_path()),
+                        // The finder's rows take no marks: the set is the tree's (plan-00014, D10).
+                        !browser.is_flat() && browser.is_marked(&row.entry.path),
                         p,
                     ),
                     selected,

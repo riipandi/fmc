@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T17:29:09+07:00
+updated: 2026-11-27T21:30:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -519,6 +519,25 @@ Consequences:
 Alternatives considered:
 
 - `y` and `p`, as yazi uses: rejected, `y` copies the path here, and `p` toggles the preview (plan-00012 D3).
+
+### Marks are a set of paths in the browser, and Esc drops them after the clipboard
+
+Context: plan-00012 D7 left multi-select out: the tree has one cursor, and each write acts on one row. A mark kept by row index would name another entry once a folder collapses or a listing changes (plan-00014, "Current state").
+
+Decision (owner, 2026-11-27: `s` marks and moves down, `S` clears; plan-00014 D1 to D3, D9, D10, D14): the browser holds the marked paths in a `BTreeSet` (`explorer/browser.rs`). A listing that drops an entry drops its mark, and a new root starts with none. The tree draws `✓` in the bar's cell and the footer counts the marks; the finder and the changes screen draw and count none. Esc in the list drops the clipboard first, then the marks.
+
+Consequences:
+
+- (positive) The set follows the entries: scrolling, folding, and a relisting keep the marks that still exist, and a renamed or trashed entry leaves its mark.
+- (negative) A mark under a collapsed folder is not drawn, but the footer counts it, and the confirm of an action names it (plan-00014, D6). A hidden dotfile keeps its mark for the same reason.
+- (negative) Marks are not saved: they are lost on exit, as the clipboard is.
+
+Alternatives considered:
+
+- A mark on a row index: rejected, a collapse moves the rows under it.
+- A background tint for a mark: rejected, the selection already uses that tint.
+- Ctrl+click or Cmd+click: rejected, terminals do not send them; Shift+click is the terminal's own selection (the owner, 2026-11-27).
+- Space to mark: rejected, Space opens the menu (plan-00012, D3).
 
 ## Pending decisions
 

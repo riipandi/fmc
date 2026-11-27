@@ -749,3 +749,43 @@ fn capital_r_with_no_row_opens_nothing() {
     assert!(b.dialog().is_none());
     assert!(b.menu().is_none());
 }
+
+#[test]
+fn s_marks_the_row_and_moves_down_and_capital_s_clears_every_mark() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md", "leigh-teabing.md"]);
+    b.select("leigh-teabing.md");
+    b.app.press("s");
+    assert_eq!(b.selected(), "robert-langdon.md", "the selection moves down one row");
+    b.app.press("s");
+    b.app.press("s");
+    assert_eq!(b.selected(), "sophie-neveu.md", "the last row keeps the selection");
+    assert_eq!(b.model.borrow().browser.marked().len(), 3);
+    assert!(b.app.text().contains("3 marked"), "the footer counts the marks:\n{}", b.app.text());
+    assert!(b.app.text().contains('✓'), "a marked row takes a check:\n{}", b.app.text());
+    b.app.press("S");
+    assert!(b.model.borrow().browser.marked().is_empty());
+    assert!(!b.app.text().contains("marked"), "no count without marks:\n{}", b.app.text());
+}
+
+#[test]
+fn a_second_s_on_a_marked_row_unmarks_it() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("s");
+    b.select("robert-langdon.md");
+    b.app.press("s");
+    assert!(b.model.borrow().browser.marked().is_empty());
+}
+
+#[test]
+fn escape_drops_the_clipboard_first_and_then_the_marks() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("c");
+    b.app.press("s");
+    b.app.press("escape");
+    assert!(b.model.borrow().clipboard.is_none(), "the first Esc drops the copy");
+    assert_eq!(b.model.borrow().browser.marked().len(), 1, "and keeps the marks");
+    b.app.press("escape");
+    assert!(b.model.borrow().browser.marked().is_empty(), "the second Esc drops the marks");
+}

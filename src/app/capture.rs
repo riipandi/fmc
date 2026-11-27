@@ -94,6 +94,10 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::Escape if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
         // Esc in the list drops a copy or cut (plan-00012, D2); with nothing to drop it is the list's own Esc.
         Action::Escape if m.focus == Focus::List && m.clipboard.is_some() && m.changes.is_none() => m.clipboard = None,
+        // Esc drops the marks once the clipboard is empty (plan-00014, D9).
+        Action::Escape if m.focus == Focus::List && !m.browser.marked().is_empty() && m.changes.is_none() => {
+            m.browser.clear_marks()
+        }
         Action::SwitchPane | Action::Escape => m.focus = Focus::List,
         Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
         Action::ToggleSidebar => layout::toggle_key(&mut m, cx.app().size().0),
@@ -152,6 +156,8 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
             write::take(&mut m, action == Action::CutFile)
         }
         Action::PasteFile if m.focus == Focus::List && m.changes.is_none() => write::paste(&mut m),
+        Action::ToggleMark if m.focus == Focus::List && m.changes.is_none() => tree::toggle_mark(&mut m),
+        Action::ClearMarks if m.focus == Focus::List && m.changes.is_none() => m.browser.clear_marks(),
         Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
             search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
         }
@@ -198,6 +204,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
                 | Action::GoUp
                 | Action::Jump(_)
                 | Action::TogglePreview
+                | Action::ToggleMark
         );
     drop(m);
     if previews {

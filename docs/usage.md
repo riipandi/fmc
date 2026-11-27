@@ -85,6 +85,7 @@ The file list creates, renames, copies, moves, and deletes files. Each action wo
 - `c` copies the row, and `x` cuts it. `v` pastes it into the selected folder, or beside the selected file. A cut row is dimmed until it is pasted or the cut is dropped with `Esc`.
 - `D` or `Delete` moves the row to the Trash, after a dialog that names it. The dialog selects Cancel, so Return keeps the file. Finder's Put Back restores a trashed item. The first delete asks macOS for permission to let fmc control Finder.
 - `Space`, or a right-click on a row, opens a menu with the same actions, and Duplicate. Paste is dimmed until something is copied or cut.
+- `s` marks the row and moves down one row, and `S` clears every mark. A marked row shows `✓`, and the footer counts the marks. Marks stay while you scroll or fold a folder, and an entry that leaves the folder takes its mark with it. `Esc` drops a copy or cut first, then the marks. The finder and the changes screen have no marks.
 
 fmc never overwrites. A name that is taken is refused with a notice, and the dialog stays open for another name. A paste into a folder that has the same name takes `copy`, then `copy 2`, before the extension. A copy of a folder keeps its links as links, and fmc does not follow them. A paste runs in the background, and the footer says `copying` or `moving` while it runs. A second paste is refused until the first one finishes.
 

@@ -237,6 +237,8 @@ fn tree(key: Key<'_>) -> Option<Action> {
         ("c", false) => return Some(Action::CopyFile),
         ("x", false) => return Some(Action::CutFile),
         ("v", false) => return Some(Action::PasteFile),
+        ("s", false) => return Some(Action::ToggleMark),
+        ("s", true) => return Some(Action::ClearMarks),
         _ => {}
     }
     match key.name {

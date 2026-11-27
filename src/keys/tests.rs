@@ -34,6 +34,7 @@ fn key(spec: &str) -> Key<'_> {
                 "A" => "a",
                 "D" => "d",
                 "R" => "r",
+                "S" => "s",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -194,6 +195,10 @@ fn file_keys_act_on_the_tree_only() {
     assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["c"], TREE), Step::Done(Action::CopyFile));
+    assert_eq!(last(&["s"], TREE), Step::Done(Action::ToggleMark));
+    assert_eq!(last(&["S"], TREE), Step::Done(Action::ClearMarks));
+    assert_eq!(last(&["s"], READER), Step::Bad, "the reader has no marks");
+    assert_eq!(last(&["s"], CHANGES), Step::Done(Action::ToggleSplit), "the changes screen keeps its split");
     assert_eq!(last(&["x"], TREE), Step::Done(Action::CutFile));
     assert_eq!(last(&["v"], TREE), Step::Done(Action::PasteFile));
     // The reader keeps its own keys: these do nothing there.

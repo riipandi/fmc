@@ -821,6 +821,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         sidebar_hidden: !layout::shown(m, columns),
         page: m.pages.top(),
         prompt_text,
+        // The marks are the tree's: the finder and the changes screen show none (plan-00014, D10).
+        marked: if m.finder.is_none() && m.changes.is_none() { m.browser.marked().len() } else { 0 },
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);

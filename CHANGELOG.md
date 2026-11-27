@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `s` marks the selected row and moves down one row, and `S` clears the marks. A marked row shows `✓`, and the footer counts the marks. `Esc` drops a copy or cut first, then the marks.
+
 ## [0.2.0] - 2026-11-27
 
 fmc becomes a file manager: files can be created, renamed, copied, moved, duplicated, and moved to the Trash from the file list.

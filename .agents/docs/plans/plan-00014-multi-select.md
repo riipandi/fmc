@@ -10,8 +10,8 @@ phases:
       note: a set of marked paths in the browser, pruned as listings change; 8 tests in explorer/tests.rs
     - id: 2
       title: Mark rows with s, clear them with S
-      status: pending
-      note: the keys, the mark glyph, the footer count, Esc; Rex capture at 120x40 and 45x30
+      status: committed (feat(tree): mark rows with s and clear them with S)
+      note: the keys, the mark glyph, the footer count, Esc; Rex capture at 120x40 and 45x30 (marks, count, Esc, 45x30 bar)
     - id: 3
       title: Copy, cut, and paste several marked rows
       status: pending
