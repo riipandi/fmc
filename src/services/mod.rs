@@ -7,6 +7,7 @@ pub mod fs;
 pub mod git;
 pub mod poll;
 pub mod settings;
+pub mod write;
 
 use std::path::PathBuf;
 

@@ -91,6 +91,14 @@ Decision D4 of `plan-00006-mermaid-grammars-fuzzy.md`: the fuzzy name match of t
 | --- | --- | --- | --- |
 | `neo_frizbee` | `=0.13.3` | default (`std`) | Fuzzy name matching in the finder; MIT; MSRV 1.89 |
 
+### Approved for plan-00012 phase 1 (owner, 2026-11-27)
+
+Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS Trash, where Finder's Put Back restores them. The lock gains five packages on the macOS build (`trash`, `objc2`, `objc2-encode`, `objc2-foundation`, `percent-encoding`; `cargo tree` for `aarch64-apple-darwin`) and twelve more for the other targets the lock covers.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `trash` | `=5.4.0` | default | Move to the Trash (`src/services/write.rs`); MIT |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.

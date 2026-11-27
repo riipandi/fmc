@@ -5,8 +5,8 @@ updated: 2026-11-27T16:24:34+07:00
 phases:
     - id: 1
       title: The write layer (no UI)
-      status: pending
-      note: —
+      status: committed
+      note: committed
     - id: 2
       title: The overlay widgets, a context menu and a dialog
       status: pending
