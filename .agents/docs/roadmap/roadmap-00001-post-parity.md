@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T17:28:25+07:00
+updated: 2026-11-27T18:56:00+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -32,7 +32,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-15 | Open the project folder in Finder or an editor | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-17 | The rest of the owner's grammar set | parked | after RI-18; unlock: a crate that loads | 2026-11-27 |
-| RI-18 | Injected highlighting | next | the owner's pick, no plan yet | 2026-11-27 |
+| RI-18 | Injected highlighting | planned (plan-00013) | plan-00013 phases 1 to 4 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | parked | unlock: the owner asks for it (plan-00012 D7) | 2026-11-27 |
 
 ## Rendering
@@ -208,10 +208,10 @@ Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture
 
 ### RI-18 — Injected highlighting for the owner's grammars
 
-- status: next (owner, 2026-11-27: RI-18 before RI-17) · updated 2026-11-27
+- status: planned (plan-00013; owner go-ahead 2026-11-27: RI-18 before RI-17) · updated 2026-11-27
 
 The owner set RI-18 as the next grammar work on 2026-11-27, ahead of RI-17. It improves files fmc already highlights (a Svelte `<script>` and `<style>` body, HEEx inside Elixir, JSDoc, and regex) and adds no dependency: the injection queries run on the grammars already pinned. RI-17 needs new crates, several of which pin another `tree-sitter`.
 
 The owner's grammars highlight their own tokens, but not the code they hold: heex inside elixir, jsdoc inside JavaScript, regex inside JavaScript and Python, and a Svelte `<script>` body, which the spike's sample showed plain (`research/grammar-load-spike.md`, section 3). OpenTUI takes an injection query per grammar (`Grammar::injections`, `opentui-0.9.9/src/syntax/highlight.rs:65`); the Markdown fences already use one. A fence in one of the new languages is highlighted by its name, without an injection.
 
-**Unlock:** the owner's choice of RI-18 next (2026-11-27). **First move:** the injection query for one pair, checked against the palette on a sample.
+**Unlock:** the owner's choice of RI-18 next (2026-11-27), done: `plan-00013-injected-highlighting.md` (in progress). **First move:** the injection query for one pair, checked against the palette on a sample.
