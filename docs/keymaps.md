@@ -16,6 +16,7 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `[` `]` | jump the list or reader |
 | `gg` `G` | top / bottom |
 | `Ctrl+←` `→` | resize the list, or drag its edge |
+| `space` | context menu for the row |
 
 The file the list selects shows in the reader after a short pause, and the focus stays in the list. `p` turns that preview off or on for the session, and `auto_preview` in the settings sets the start. In the list, `[` and `]` move the selection by `sidebar_jump` rows and scroll the reader by `reader_jump` lines. On the changes screen they step through the hunks. See [Configuration](configuration.md).
 

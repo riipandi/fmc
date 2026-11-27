@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-27T15:10:00+07:00
+updated: 2026-11-27T16:50:00+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -17,7 +17,7 @@ Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cr
 
 The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and the UI"). These rules bind once `plan-00001` phase 5 creates the modules.
 
-- The core (`src/lib.rs` and its modules: `keys/`, `explorer/`, `reader/`, `find/`, `diff/`, `theme.rs`) has no I/O and does not import `opentui`. It takes values and returns values.
+- The core (`src/lib.rs` and its modules: `keys/`, `explorer/`, `reader/`, `find/`, `diff/`, `overlay.rs`, `theme.rs`) has no I/O and does not import `opentui`. It takes values and returns values.
 - A keymap returns `Action`s; `src/app/` carries them out.
 - No file I/O and no process spawn on the UI thread. Workers in `src/services/` do it and send `Event`s back.
 - Keep every file under 800 lines.

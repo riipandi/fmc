@@ -235,6 +235,7 @@ fn tree(key: Key<'_>) -> Option<Action> {
         "-" => Some(Action::GoUp),
         "p" => Some(Action::TogglePreview),
         "/" => Some(Action::Find),
+        "space" => Some(Action::ContextMenu),
         _ => boundary(key).or_else(|| list_move(key)),
     }
 }

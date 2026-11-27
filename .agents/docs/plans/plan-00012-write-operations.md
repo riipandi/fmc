@@ -1,16 +1,16 @@
 ---
 status: in-progress
 created: 2026-11-27T16:24:34+07:00
-updated: 2026-11-27T16:24:34+07:00
+updated: 2026-11-27T16:50:00+07:00
 phases:
     - id: 1
       title: The write layer (no UI)
-      status: committed
-      note: committed
+      status: committed (047a58b)
+      note: the write layer, 33 tests; trash adds 5 crates on macOS
     - id: 2
       title: The overlay widgets, a context menu and a dialog
-      status: pending
-      note: —
+      status: committed
+      note: Space opens the menu; the dialog is captured by FMC_OVERLAY in debug builds; items close only
     - id: 3
       title: Create, rename, and delete from keys, the menu, and right-click
       status: pending

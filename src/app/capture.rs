@@ -19,6 +19,14 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
     // Scouter clears the reader's error notice on every key (`src/app/app.ts:531-534`).
     m.notice = None;
     let state = m.key_state();
+    // An open menu or dialog takes every key, so the page under it does not act; Ctrl+q and Ctrl+c still quit.
+    let key = named.key();
+    if m.overlay.is_some() && !(key.ctrl && matches!(key.name, "q" | "c")) {
+        cx.stop_propagation();
+        overlay::key(cx.app(), &mut m, &ui.borrow(), key);
+        paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        return;
+    }
     // While the finder is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
     if m.finder.is_some() && named.key().plain() {
         cx.stop_propagation();
@@ -132,6 +140,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         }
         Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
         Action::Find if m.focus == Focus::List => find::start(&mut m),
+        Action::ContextMenu if m.focus == Focus::List && m.changes.is_none() => overlay::open_menu(&mut m),
         Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
             search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
         }

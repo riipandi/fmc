@@ -9,6 +9,7 @@ mod gutter;
 mod keys;
 mod layout;
 mod mouse;
+mod overlay;
 mod pages;
 mod poll;
 mod preview;
@@ -89,6 +90,8 @@ struct Ui {
     bar: ScrollBar,
     narrow_bar: ScrollBar,
     footer: Footer,
+    /// The context menu and the dialog, above the page (`app/overlay.rs`).
+    overlay: overlay::Views,
 }
 
 /// A reveal in progress: list the folders on the way to `target`, then select it. `expand` also opens the target
@@ -189,6 +192,10 @@ struct Model {
     columns: u16,
     /// The page stack the compact tier draws (plan-00005, D2).
     pages: fmc::layout::Pages,
+    /// The open context menu or dialog, which takes every key and click until it closes (`app/overlay.rs`).
+    overlay: Option<fmc::overlay::Overlay>,
+    /// The cell a menu opened from the tree is anchored at.
+    overlay_at: (u16, u16),
 }
 
 impl Model {
@@ -271,6 +278,8 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         command: None,
         columns: app.size().0,
         pages: Default::default(),
+        overlay: None,
+        overlay_at: (0, 0),
         associations: Default::default(),
         opened: root,
     }
@@ -312,6 +321,8 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         }
     }
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
+    #[cfg(debug_assertions)]
+    overlay::debug_open(&mut model.borrow_mut(), &ui.borrow());
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
     tree::list(&mut model.borrow_mut(), root);
     tree::refresh_marks(&mut model.borrow_mut());
@@ -348,6 +359,7 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         }
     });
     capture::wire(&app, &model, &ui);
+    overlay::wire_views(&model, &ui);
     {
         let (model, ui) = (model.clone(), ui.clone());
         let viewer = ui.borrow().viewer.widget();
@@ -537,6 +549,8 @@ fn build(app: &App, p: &Palette) -> Ui {
     panes.add(&browser_panel).add(&viewer_panel).add(&handle).add(&mark.root);
     layout.add(&panes).add(&footer.root);
     app.root().add(&layout);
+    let overlays = overlay::build_views(app);
+    overlay::mount(app, &overlays);
     Ui {
         browser_panel,
         browser_header,
@@ -562,6 +576,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         bar,
         narrow_bar,
         footer,
+        overlay: overlays,
     }
 }
 
@@ -795,6 +810,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     ui.footer.set_background(&tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
+    overlay::draw(app, m, ui);
 }
 
 #[cfg(test)]

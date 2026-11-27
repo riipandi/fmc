@@ -175,6 +175,7 @@ fn tree_keys() {
     assert_eq!(last(&["enter"], TREE), Step::Done(Action::Toggle));
     assert_eq!(last(&["→"], TREE), Step::Done(Action::Expand));
     assert_eq!(last(&["backspace"], TREE), Step::Done(Action::Collapse));
+    assert_eq!(last(&["space"], TREE), Step::Done(Action::ContextMenu));
     assert_eq!(last(&["-"], TREE), Step::Done(Action::GoUp));
     assert_eq!(last(&["/"], TREE), Step::Done(Action::Find));
     assert_eq!(last(&["pagedown"], TREE), Step::Done(Action::MovePage(1)));

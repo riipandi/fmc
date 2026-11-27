@@ -3,6 +3,7 @@
 pub mod bars;
 pub mod binary;
 pub mod changes;
+pub mod dialog;
 pub mod diff;
 pub mod find;
 pub mod footer;
@@ -12,6 +13,7 @@ pub mod markdown;
 pub mod markdown_blocks;
 pub mod markdown_search;
 pub mod markdown_signs;
+pub mod menu;
 pub mod mermaid;
 pub mod picture;
 pub mod reader;

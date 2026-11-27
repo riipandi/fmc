@@ -64,6 +64,8 @@ pub enum Action {
     /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
     OpenCommand,
     Find,
+    /// `Space` on a tree row: the context menu for the row (plan-00012, D3).
+    ContextMenu,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -104,6 +106,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("[ ]", "jump the list or reader"),
             ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
+            ("space", "context menu for the row"),
         ],
     ),
     (
