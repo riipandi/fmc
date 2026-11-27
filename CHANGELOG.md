@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- A Mermaid diagram in rendered Markdown sits on a panel tone over its box, so it reads as one block. It follows the reader's width on a resize.
+- A Mermaid diagram in rendered Markdown sits on a panel tone across the reader's width, so it reads as one block. It follows the reader's width on a resize.
 
 ### Fixed
 

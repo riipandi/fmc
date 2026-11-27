@@ -109,7 +109,8 @@ fn a_reason_longer_than_the_width_ends_in_an_ellipsis() {
 fn a_frame_breaks_its_source_between_words() {
     let source = "    Hat -->|Gryffindor| Tower[Gryffindor Tower]";
     let frame = framed(source, "too wide", Some(24));
-    let body: Vec<&str> = frame[1..frame.len() - 2].iter().map(|row| row.trim_matches(|c| c == '│' || c == ' ')).collect();
+    let body: Vec<&str> =
+        frame[1..frame.len() - 2].iter().map(|row| row.trim_matches(|c| c == '│' || c == ' ')).collect();
     assert!(body.iter().any(|row| row.ends_with("Tower[Gryffindor")), "{frame:#?}");
     assert!(body.iter().any(|row| row.starts_with("Tower]")), "words stay whole: {frame:#?}");
     assert!(columns(&frame) <= 24, "{frame:?}");

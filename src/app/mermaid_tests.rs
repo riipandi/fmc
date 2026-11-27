@@ -112,7 +112,7 @@ fn a_diagram_sits_on_the_panel_tone_at_each_width_and_follows_a_resize() {
         let ((left, top), (right, _)) = box_corners(&app);
         let capture = app.render();
         assert_eq!(capture.cell(left + 1, top + 1).map(|cell| cell.bg), Some(panel), "inside the box at {columns}");
-        assert_ne!(capture.cell(right + 1, top + 1).map(|cell| cell.bg), Some(panel), "past the box at {columns}");
+        assert_fill_spans(&capture, panel, right, top + 1, u32::from(columns), columns);
     }
     let (app, model, _ui) = reading_markdown(120, &fenced(SMALL_FLOWCHART));
     let panel = crate::ui::styled::color(model.borrow().palette().fallback_background);
@@ -121,5 +121,23 @@ fn a_diagram_sits_on_the_panel_tone_at_each_width_and_follows_a_resize() {
     let ((left, top), (right, _)) = box_corners(&app);
     let capture = app.render();
     assert_eq!(capture.cell(left + 1, top + 1).map(|cell| cell.bg), Some(panel), "inside after the resize");
-    assert_ne!(capture.cell(right + 1, top + 1).map(|cell| cell.bg), Some(panel), "past the box after the resize");
+    assert_fill_spans(&capture, panel, right, top + 1, 70, "the resize");
+}
+
+/// The fill runs past the diagram's right edge to the reader's text edge: the two padding cells and the border stay
+/// clear (owner request: a full-width diagram block).
+fn assert_fill_spans(
+    capture: &opentui::testing::Capture,
+    panel: Color,
+    right: u32,
+    row: u32,
+    columns: u32,
+    at: impl std::fmt::Display,
+) {
+    let last = (0..capture.width)
+        .rev()
+        .find(|&x| capture.cell(x, row).is_some_and(|cell| cell.bg == panel))
+        .unwrap_or_else(|| panic!("no fill on row {row} at {at}"));
+    assert!(last > right, "the fill runs past the box at {at}");
+    assert_eq!(last, columns - 4, "the fill stops at the reader's padding at {at}");
 }
