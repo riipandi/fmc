@@ -158,11 +158,11 @@ fn the_closing_line_breaks_at_its_separator_below_80_and_stays_whole_at_80() {
         let (app, _, _) = panes(columns);
         let lines = rows(&app);
         let at = lines.iter().position(|row| row.contains("Press ? for every key.")).unwrap();
-        assert!(!lines[at].contains("No editing"), "{columns}: the key line stands alone");
-        assert!(lines[at + 1].contains("No editing. Just reading."), "{columns}: the reading line is next");
+        assert!(!lines[at].contains("Space opens"), "{columns}: the key line stands alone");
+        assert!(lines[at + 1].contains("Space opens the file menu."), "{columns}: the reading line is next");
     }
     let (app, _, _) = panes(100);
-    assert!(rows(&app).iter().any(|row| row.contains("Press ? for every key.  ·  No editing. Just reading.")));
+    assert!(rows(&app).iter().any(|row| row.contains("Press ? for every key.  ·  Space opens the file menu.")));
 }
 
 #[test]
@@ -245,8 +245,21 @@ fn the_welcome_card_goes_at_medium_widths_when_the_reader_is_narrower_than_it() 
         let (app, _, _) = panes(columns);
         let text = screen(&app);
         assert_eq!(text.contains("open file or folder"), card, "{columns}: the card");
-        assert!(text.contains("a quiet, read-only file viewer"), "{columns}: the tagline stays");
+        assert!(text.contains("a quiet terminal file manager"), "{columns}: the tagline stays");
         assert!(text.contains("█▀▀ █▀▄▀█ █▀▀"), "{columns}: the wordmark stays");
         assert!(text.contains("Select a file and press Enter."), "{columns}: the prompt stays");
     }
+}
+
+#[test]
+fn the_welcome_tagline_and_menu_line_draw_at_80_and_60_by_24() {
+    let (app, _, _) = panes(80);
+    let lines = rows(&app);
+    assert!(lines.iter().any(|row| row.contains("a quiet terminal file manager")), "80: the tagline is whole");
+    // The closing line is cut at the reader's edge at 80 columns, as Scouter's is (scouter-inventory.md, section 18).
+    assert!(lines.iter().any(|row| row.contains("Press ? for every key.  ·  Space")), "80: the closing line starts");
+    let (app, _, _) = panes(60);
+    let lines = rows(&app);
+    assert!(lines.iter().any(|row| row.contains("a quiet terminal file manager")), "60: the tagline is whole");
+    assert!(lines.iter().any(|row| row.contains("Space opens the file menu.")), "60: the menu line is whole");
 }

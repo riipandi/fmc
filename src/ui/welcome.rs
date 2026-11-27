@@ -36,6 +36,11 @@ fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
 }
 
 const PROMPT: &str = "Select a file and press Enter.";
+/// The tagline, after the wordmark: fmc is a file manager as well as a viewer (owner, 2026-11-27; Scouter says
+/// `a quiet, read-only file viewer`, `src/ui/welcome.ts:46`).
+const TAGLINE: &str = "a quiet terminal file manager";
+/// The closing line after `Press ? for every key.`; Scouter says `No editing. Just reading.` (`src/ui/welcome.ts:80`).
+const MENU_HINT: &str = "Space opens the file menu.";
 
 /// The welcome screen: its key card, its prompt, and its closing lines. The compact tier has no welcome screen.
 pub struct Welcome {
@@ -78,10 +83,7 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
     for (row, fg) in WORDMARK.iter().zip(p.wordmark) {
         view.add(&line(app, &[Seg::new(*row, fg)], p, 0));
     }
-    let tagline = [
-        Seg::new("a quiet, read-only file viewer", p.muted),
-        Seg::new(format!("  v{}", env!("CARGO_PKG_VERSION")), p.dim),
-    ];
+    let tagline = [Seg::new(TAGLINE, p.muted), Seg::new(format!("  v{}", env!("CARGO_PKG_VERSION")), p.dim)];
     let tagline = line(app, &tagline, p, 1);
     let prompt = line(app, &[Seg::new(PROMPT, p.accent_soft)], p, 1);
     view.add(&tagline).add(&prompt);
@@ -101,15 +103,12 @@ pub fn welcome(app: &App, p: &Palette) -> Welcome {
         card.add(&line(app, &row, p, 0));
     }
     view.add(&card);
-    let closing = [
-        Seg::new("Press ? for every key.", p.accent_soft),
-        Seg::new("  ·  ", p.ignored),
-        Seg::new("No editing. Just reading.", p.dim),
-    ];
+    let closing =
+        [Seg::new("Press ? for every key.", p.accent_soft), Seg::new("  ·  ", p.ignored), Seg::new(MENU_HINT, p.dim)];
     let closing = line(app, &closing, p, 1);
     let parts = [
         line(app, &[Seg::new("Press ? for every key.", p.accent_soft)], p, 1),
-        line(app, &[Seg::new("No editing. Just reading.", p.dim)], p, 0),
+        line(app, &[Seg::new(MENU_HINT, p.dim)], p, 0),
     ];
     view.add(&closing).add(&parts[0]).add(&parts[1]);
     Welcome { root: view, prompt, closing, closing_parts: parts, card }
