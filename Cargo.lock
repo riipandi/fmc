@@ -201,6 +201,7 @@ dependencies = [
  "icu_collator",
  "imagesize",
  "mermaid-text",
+ "neo_frizbee",
  "opentui",
  "opentui-sys",
  "serde_json",
@@ -517,6 +518,15 @@ dependencies = [
  "ascii-dag",
  "chrono",
  "unicode-width",
+]
+
+[[package]]
+name = "neo_frizbee"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb0dd0e69b342eaddb657120a21a56f3e887ddc505fac780cf430dbbbb3aed26"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

@@ -60,4 +60,4 @@ Every action has a key. Both palettes keep readable text contrast, checked by a 
 
 ## Roadmap
 
-Parity with Scouter, then Mermaid diagrams, more languages, fuzzy finding, file operations, a SQLite and DuckDB viewer, and more platforms.
+Parity with Scouter, then file operations, a SQLite and DuckDB viewer, and more platforms.

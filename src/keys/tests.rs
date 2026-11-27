@@ -82,6 +82,13 @@ fn a_period_and_ctrl_period_toggle_dotfiles_but_a_prompt_types_the_period() {
 }
 
 #[test]
+fn ctrl_f_flips_the_finder_match_and_is_unbound_in_the_tree() {
+    let finding = State { typing: true, ..TREE };
+    assert_eq!(last(&["^f"], finding), Step::Done(Action::ToggleFuzzy));
+    assert_eq!(last(&["^f"], TREE), Step::Bad);
+}
+
+#[test]
 fn g_and_gg_go_to_the_top() {
     assert_eq!(run(&["g", "g"], TREE), [Step::Done(Action::Top), Step::Done(Action::Top)]);
     assert_eq!(last(&["G"], READER), Step::Done(Action::Bottom));

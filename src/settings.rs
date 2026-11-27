@@ -3,12 +3,14 @@
 
 use serde_json::{Map, Value};
 
+use crate::find::Matching;
 use crate::reader::associations::Associations;
 
 pub const AUTO_PREVIEW: bool = true;
 pub const SIDEBAR_JUMP: u32 = 2;
 pub const READER_JUMP: u32 = 5;
 pub const GIT_GUTTER: bool = true;
+pub const FIND_MODE: Matching = Matching::Substring;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Settings {
@@ -17,6 +19,7 @@ pub struct Settings {
     pub reader_jump: u32,
     pub git_gutter: bool,
     pub file_associations: Associations,
+    pub find_mode: Matching,
 }
 
 impl Default for Settings {
@@ -27,6 +30,7 @@ impl Default for Settings {
             reader_jump: READER_JUMP,
             git_gutter: GIT_GUTTER,
             file_associations: Associations::default(),
+            find_mode: FIND_MODE,
         }
     }
 }
@@ -63,6 +67,7 @@ pub fn parse(text: &str) -> Parsed {
         reader_jump: whole(&object, "reader_jump", READER_JUMP, notices),
         git_gutter: boolean(&object, "git_gutter", GIT_GUTTER, notices),
         file_associations: associations(&object, notices),
+        find_mode: finding(&object, notices),
     };
     parsed
 }
@@ -87,6 +92,18 @@ fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Assoc
         Some(_) => notices.push("settings.json: file_associations must be an object; no association is used.".into()),
     }
     table
+}
+
+/// `find_mode`: the name matching the finder starts with (plan-00006 D6). Any other value keeps Scouter's substring match
+/// and says so, as the other keys do.
+fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
+    match object.get("find_mode") {
+        None => FIND_MODE,
+        Some(value) => value.as_str().and_then(Matching::named).unwrap_or_else(|| {
+            notices.push("settings.json: find_mode must be \"substring\" or \"fuzzy\"; \"substring\" is used.".into());
+            FIND_MODE
+        }),
+    }
 }
 
 fn boolean(object: &Map<String, Value>, key: &str, default: bool, notices: &mut Vec<String>) -> bool {

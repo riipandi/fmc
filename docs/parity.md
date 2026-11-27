@@ -58,6 +58,10 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - Opening a file inside a collapsed folder expands every folder down to the file, so the file's row is visible. Scouter can leave the file's own folder collapsed.
 - When fmc starts on a file it cannot show (not UTF-8 text), the tree still lists the file's folder. Scouter leaves the tree empty.
 
+## Finder
+
+- `Ctrl+F` in the finder flips the name matching between substring and fuzzy for the run, and `find_mode` in the settings file sets the start (`substring` by default, Scouter's match). With fuzzy on, the query is one needle matched in order anywhere in the path, the rows rank by the match score, and the matched letters take the match colour. Scouter has no fuzzy match. Recorded in `architecture.md`, "Approved deviation: the finder can match fuzzily, from `find_mode` and `Ctrl+F`" (Scouter v0.3.4, `434d000f`; owner, 2026-11-27).
+
 ## Help
 
 - `?` shows the key list as tables in the reader, with the mouse actions in their own table. `--help` describes the same key list, so the two always agree. `?` or `Esc` brings the document back where it was. The key list is Markdown, so `/` searches it in the rendered view, as in any rendered Markdown file (see Reader).

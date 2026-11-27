@@ -64,6 +64,8 @@ pub enum Action {
     /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
     OpenCommand,
     Find,
+    /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
+    ToggleFuzzy,
     FocusDiff,
     Scroll(i32),
     Pan(i32),
@@ -96,7 +98,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Enter", "open file, toggle folder"),
             ("l →", "expand a folder"),
             ("h ← Backspace", "collapse a folder or go back"),
-            ("/", "find a file by name; Tab: text in files"),
+            ("/", "find a file by name; Tab: text in files; Ctrl+F: fuzzy on or off"),
             ("-", "open the folder above"),
             ("p", "auto-preview on or off"),
             ("[ ]", "jump the list or reader"),

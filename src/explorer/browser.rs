@@ -8,16 +8,18 @@ use std::path::{Path, PathBuf};
 use super::{Entry, Kind, Row, Tree};
 use crate::find::text::Snippet;
 
-/// One row of the finder's list: a path, and for a text hit the line it matched and the snippet to show.
+/// One row of the finder's list: a path, and for a text hit the line it matched and the snippet to show. `matched` holds
+/// the character positions a fuzzy name match landed on, which the row draws in the match colour.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Flat {
     pub entry: Entry,
     pub hit: Option<(usize, Snippet)>,
+    pub matched: Vec<usize>,
 }
 
 impl Flat {
     pub fn name(entry: Entry) -> Self {
-        Self { entry, hit: None }
+        Self { entry, hit: None, matched: Vec::new() }
     }
 }
 
@@ -87,6 +89,7 @@ impl Browser {
                     folder: flat.entry.kind == Kind::Directory,
                     expanded: false,
                     hit: flat.hit.as_ref().map(|(line, snippet)| (*line, snippet)),
+                    matched: &flat.matched,
                 })
                 .collect(),
             None => self.tree.rows(),

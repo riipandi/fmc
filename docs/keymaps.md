@@ -10,7 +10,7 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | `Enter` | open file, toggle folder |
 | `l` `→` | expand a folder |
 | `h` `←` `Backspace` | collapse a folder or go back |
-| `/` | find a file by name; Tab: text in files |
+| `/` | find a file by name; Tab: text in files; Ctrl+F: fuzzy on or off |
 | `-` | open the folder above |
 | `p` | auto-preview on or off |
 | `[` `]` | jump the list or reader |
@@ -25,7 +25,8 @@ With the list focused, the file it selects shows in the reader after a short pau
 
 | Keys | Action |
 | --- | --- |
-| type | filter by name: every word must appear in the path; in text search, the lines that contain the text |
+| type | filter by name: every word must appear in the path (or, when fuzzy is on, the whole query in order); in text search, the lines that contain the text |
+| `Ctrl+F` | flip name matching between substring and fuzzy for this session; the footer says `fuzzy` when it is on |
 | `Backspace` | delete a character |
 | `Tab` | switch between file names and text in files |
 | `↑` `↓` | move the highlight; on a text hit the reader shows its line in a preview |
@@ -33,6 +34,8 @@ With the list focused, the file it selects shows in the reader after a short pau
 | `Esc` | close the finder; the tree is back where it was |
 
 Text search starts at two characters and lists at most 200 hits, ten from one file.
+
+Fuzzy matching (`find_mode` in the settings file, `configuration.md`) takes the query as one needle, spaces included, and matches its letters in order anywhere in the path, ignoring case; the best matches come first, and the matched letters are drawn in the match colour.
 
 ## Reader
 

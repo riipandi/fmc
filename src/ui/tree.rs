@@ -53,12 +53,54 @@ pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, name_first: bo
         Some((parent, label)) if name_first => (Some(parent), label),
         _ => (None, row.entry.name.as_str()),
     };
-    let name = Seg::new(format!("{}{}", display_label(label), if folder { "/" } else { "" }), name_fg);
-    segments.push(if selected { name.bold() } else { name });
+    // The label is the path's last part, so its first character is the path's count less the label's.
+    let label_at = row.entry.name.chars().count() - label.chars().count();
+    let slash = if folder { "/" } else { "" };
+    for seg in marked_text("", label, slash, label_at, row.matched, name_fg, p) {
+        segments.push(if selected { seg.bold() } else { seg });
+    }
     if let Some(parent) = parent {
-        segments.push(Seg::new(format!("  {}/", display_label(parent)), p.dim));
+        segments.extend(marked_text("  ", parent, "/", 0, row.matched, p.dim, p));
     }
     segments
+}
+
+/// A name's text as segments. The characters of `text` that a fuzzy match landed on (`matched`, positions in the whole
+/// path, from `first`) take the match colour in bold; the rest, and the `lead` and `tail` around them, take `fg`. An
+/// unmatched name is one segment, as it was before matches were drawn.
+fn marked_text(
+    lead: &str,
+    text: &str,
+    tail: &str,
+    first: usize,
+    matched: &[usize],
+    fg: &'static str,
+    p: &Palette,
+) -> Vec<Seg> {
+    let characters = lead
+        .chars()
+        .map(|c| (c, false))
+        .chain(text.chars().enumerate().map(|(at, c)| (c, matched.binary_search(&(first + at)).is_ok())))
+        .chain(tail.chars().map(|c| (c, false)));
+    let mut segments = Vec::new();
+    let mut run = String::new();
+    let mut run_marked = false;
+    for (character, marked) in characters {
+        if marked != run_marked && !run.is_empty() {
+            segments.push(run_seg(&run, run_marked, fg, p));
+            run.clear();
+        }
+        run_marked = marked;
+        run.push(character);
+    }
+    if !run.is_empty() {
+        segments.push(run_seg(&run, run_marked, fg, p));
+    }
+    segments
+}
+
+fn run_seg(text: &str, marked: bool, fg: &'static str, p: &Palette) -> Seg {
+    if marked { Seg::new(display_label(text), p.accent_soft).bold() } else { Seg::new(display_label(text), fg) }
 }
 
 /// A text hit's row: the file's name and line, the snippet with the match in accent, and the folder dimmed at the end

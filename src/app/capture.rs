@@ -88,6 +88,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
         Action::ToggleSidebar => layout::toggle_key(&mut m, cx.app().size().0),
         Action::ToggleDotfiles => tree::toggle_dotfiles(&mut m),
+        Action::ToggleFuzzy => find::toggle_fuzzy(&mut m),
         // The changes body has no Markdown view of its own: `m` is for the reader's document.
         Action::ToggleMarkdown if !body => {
             reader::toggle_markdown(&mut m);

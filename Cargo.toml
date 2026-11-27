@@ -20,6 +20,8 @@ imagesize = "0.15"
 # Mermaid diagrams in rendered Markdown (`src/reader/mermaid.rs`); pinned exactly, its own dependencies come with it.
 mermaid-text = "=0.58.0"
 unicode-width = "0.2.3"
+# Fuzzy name matching in the finder (`src/find/mod.rs`, `Matching::Fuzzy`; plan-00006 D4). Pinned exactly; no other crate.
+neo_frizbee = "=0.13.3"
 # The grammars Scouter vendors beyond OpenTUI's bundled set (Rust comes with `opentui`'s `tree-sitter` feature).
 # Pinned exactly: their highlight queries are Scouter's `grammars/*/highlights.scm`.
 tree-sitter-json = "=0.24.8"

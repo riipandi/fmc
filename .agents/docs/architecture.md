@@ -213,6 +213,8 @@ Alternatives considered:
 
 ### The finder matches like Scouter: substring AND words, no fuzzy ranking
 
+Superseded in part by "Approved deviation: the finder can match fuzzily, from `find_mode` and `Ctrl+F`" (plan-00006 O3, 2026-11-27). Scouter's substring match stays the default.
+
 Context: Scouter's finder is a substring AND match with a fixed order (`scouter:src/find/search.ts:56-87`). `fff-search` is typo-tolerant fuzzy ranking with frecency, 96 crates, three C builds, and an effective MSRV of 1.91 (`research/dependency-survey.md`).
 
 Decision: implement Scouter's matcher and order with std.
@@ -1051,3 +1053,25 @@ Alternatives considered:
 - Scouter's sixteen only: rejected by the owner (O2).
 - Register the injections now: deferred. Each injection query needs its own review against the palette, and the spike measured no injected case. The follow-up is in the spike report.
 - Wait for the nine missing grammars: not taken. The twelve load and compile their queries today; the seven are parked in the roadmap.
+
+### Approved deviation: the finder can match fuzzily, from `find_mode` and `Ctrl+F`
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's finder matches a name by substring: every word of the query must appear in the lowercase path, in a fixed order (`scouter:src/find/search.ts:56-87`). RI-3 (`roadmap-00001-post-parity.md`) asked for a fuzzy option, and the owner chose how it starts and how it is switched (O3, plan-00006, 2026-11-27).
+
+Decision (owner, O3; D4 to D6 of the plan): `find_mode` in `settings.json` is `"substring"`, the default and Scouter's match, or `"fuzzy"`. `Ctrl+F` in the finder flips it for the rest of the run and runs the open query again. Fuzzy is `neo_frizbee` 0.13.3 (D4), with the whole query as one needle, spaces included (D5). Case is ignored, typos are off (`max_typos` 0), and the rows rank by the match's score, then by Scouter's order on a tie (the shorter path, then UTF-16 code units; `find/mod.rs` `fuzzy`). The matched characters take `accent_soft` in bold, the colour the text hits use for their match (`ui/tree.rs` `marked_text`). The footer's status puts the mode first, `fuzzy, 11 matches`, so a narrow sidebar still shows it; the first live run had the count first and cut the mode. A value that is not `"substring"` or `"fuzzy"` keeps substring and shows a notice (D6). Text search, under `Tab`, is unchanged.
+
+Consequences:
+
+- (positive) Scouter's match and order stay the default, so nothing changes for a user who does not opt in.
+- (negative) With fuzzy on, the rows and their order differ from Scouter's. Recorded in `docs/parity.md` (Finder).
+- (negative) A sidebar narrower than the status cuts the count (at 26 columns, `fuzzy, 11 matc`). The mode leads, so it survives; the count is the part that is cut.
+- (negative) The matcher is a dependency with its own `unsafe` SIMD code. The owner approved it as D4 named it.
+
+Alternatives considered:
+
+- `nucleo-matcher`: rejected; MPL-2.0 is not in the allowlist (`deny.toml`, `rules.md`).
+- `fff-search`: rejected; a large tree, LMDB frecency, and a different result set (`research/dependency-survey.md`).
+- `frizbee`: the same code under its old name; `neo_frizbee` is the newer release (D4).
+- A setting alone, or a key alone: rejected by O3, which asks for both.

@@ -83,6 +83,14 @@ Decision O2 of `plan-00006-mermaid-grammars-fuzzy.md`: every grammar crate that 
 | `tree-sitter-astro-next` | `=0.1.1` | default | Astro (`.astro`); MIT or Apache-2.0 |
 | `tree-sitter-vim` | `=0.4.0` | default | Vim script (`.vim`, `.vimrc`); MIT; depends on `tree-sitter` directly (`>=0.21`), which resolves to 0.27.2 |
 
+### Approved for plan-00006 phase 5 (owner, 2026-11-27)
+
+Decision D4 of `plan-00006-mermaid-grammars-fuzzy.md`: the fuzzy name match of the finder (`src/find/mod.rs`, `Matching::Fuzzy`). The owner approved `neo_frizbee` as a dependency on 2026-11-27. It has no required dependencies (its `serde` is optional and off), so the lock gains this one package.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `neo_frizbee` | `=0.13.3` | default (`std`) | Fuzzy name matching in the finder; MIT; MSRV 1.89 |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.

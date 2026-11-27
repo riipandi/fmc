@@ -170,6 +170,16 @@ pub fn indexed(m: &mut Model, session: u64, index: Index) {
     update(m);
 }
 
+/// `Ctrl+F` in the finder (plan-00006 D5): flips the name matching for the rest of the session, and runs the open query
+/// again with it. Outside the finder it does nothing.
+pub fn toggle_fuzzy(m: &mut Model) {
+    if m.finder.is_none() {
+        return;
+    }
+    m.matching = m.matching.flipped();
+    update(m);
+}
+
 /// A plain key while the finder is open (Scouter `FileFinder.handleKey`): typing edits the query, the arrows move the
 /// highlight, Tab switches the search, and Enter and Esc end the finder. Other plain keys do nothing.
 pub fn prompt_key(m: &mut Model, key: Key<'_>) {
@@ -294,10 +304,14 @@ fn update(m: &mut Model) {
 }
 
 fn show_names(m: &mut Model, index: &Index, query: &str) {
-    let found = find::matches(&index.entries, query);
-    set_status(m, &find::names_status(found.total, index.truncated));
+    let found = find::matches(&index.entries, query, m.matching);
+    set_status(m, &find::names_status(found.total, index.truncated, m.matching));
     end_preview(m);
-    let rows: Vec<Flat> = found.entries.into_iter().map(|entry| Flat::name(entry.clone())).collect();
+    let rows: Vec<Flat> = found
+        .entries
+        .into_iter()
+        .map(|row| Flat { entry: row.entry.clone(), hit: None, matched: row.matched })
+        .collect();
     let first = rows.first().map(|row| row.entry.path.clone()).unwrap_or_default();
     m.browser.show(rows, &first);
 }
@@ -321,6 +335,7 @@ fn show_text(m: &mut Model, query: &str) {
         .map(|hit| Flat {
             entry: Entry { name: hit.relative.clone(), path: hit.path.clone(), kind: Kind::File },
             hit: Some((hit.line, hit.snippet.clone())),
+            matched: Vec::new(),
         })
         .collect();
     // The selection stays on its file while the file still has a hit (Scouter `showText`).

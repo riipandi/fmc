@@ -15,6 +15,7 @@ fmc reads one optional file when it starts, and never writes it.
 | `reader_jump` | whole number, 1 or more | `5` | How many lines `[` and `]` scroll the reader. |
 | `git_gutter` | `true` or `false` | `true` | Whether the reader marks the lines of a file in a git repository that differ from `HEAD`: in a strip left of the line numbers, and beside the changed blocks of the rendered Markdown view. |
 | `file_associations` | object of pattern to filetype name | none | Which filetype a file is highlighted as, and whether `m` renders it as Markdown. See [File associations](#file-associations). |
+| `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it for the session. See [Finder](#finder). |
 
 A key that is not listed is ignored.
 
@@ -44,6 +45,12 @@ A file that is not valid JSON, or whose top level is not an object, sets nothing
 - When several patterns match a file, a path pattern wins over a name pattern, then the longer pattern wins, then the pattern that sorts first.
 - An association decides the highlighting in the reader, in the finder's preview, and on the changes screen. A file with a `markdown` association opens rendered, and `m` shows its source.
 - fmc has no built-in association for env files: the file above is an example, not a default.
+
+## Finder
+
+`find_mode` sets how the file finder (`/`) matches a name at start. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one needle, spaces included, and matches its letters in order anywhere in the path, ignoring case, with no typos. The best matches come first, and the letters that matched are drawn in the match colour.
+
+`Ctrl+F` in the finder flips the match for the rest of the run, and the query runs again; the footer names `fuzzy` while it is on. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
 
 ## Changes
 

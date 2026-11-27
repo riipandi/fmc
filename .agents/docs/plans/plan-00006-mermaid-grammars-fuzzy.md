@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T15:25:00+07:00
+updated: 2026-11-27T16:30:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
@@ -22,7 +22,8 @@ phases:
       note: "Twelve grammars registered and =-pinned (src/ui/syntax/mod.rs), queries and LICENSE files under queries/<filetype>/. Captures renamed to the names the palette styles (lua, sql, xml markup to none); CAPTURE_NAMES +12; HIGHLIGHTED 18 to 30; reader/language.rs EXTENSIONS maps heex, hcl, tf, tfvars. Injections not registered (follow-up in the roadmap, RI-2). Tests: the load test covers all twelve, a capture-name check, and a styled token per language. Live: HCL, SQL, Elixir in the reader, and a sql fence in rendered Markdown, colours read from rex capture --format=vt. Records: architecture (Approved deviation: the owner's extra grammars are highlighted), parity, rules (Dependencies, Licenses), rust, shape, README, CHANGELOG, configuration, PRODUCT. Citation fix: Scouter supportedLanguages is code-view.ts:20-29."
     - id: 5
       title: "Fuzzy finding: matcher, `find_mode` setting, Ctrl+F in the finder"
-      status: pending
+      status: done
+      note: "neo_frizbee =0.13.3 (rules.md, phase 5 approval). find::Matching (Substring default, Fuzzy): the whole query as one needle, no typos, case ignored, ranked by score then Scouter's order; find::matches dispatches on it. settings.rs find_mode (invalid: substring and a notice). Ctrl+F in the finder (Action::ToggleFuzzy, parser binds it while a prompt is open) flips it for the run and re-runs the query. Footer: `fuzzy, N matches`, the mode first (a 26-column sidebar cut the mode after the count in the first live run). Matched characters: accent_soft, bold. Tests: 6 find, the key, settings, tree row, and 3 TestApp finder tests. Live (new tabs, own session): fuzzy from settings (11 matches for mermd, match colour checked in VT), Ctrl+F flip from substring, the invalid-value notice. Records: architecture (Approved deviation: the finder can match fuzzily), parity (Finder), configuration, keymaps, README, CHANGELOG, rules, rust, shape, PRODUCT."
     - id: 6
       title: "Docs, roadmap close, handover, final validation"
       status: pending

@@ -11,12 +11,12 @@ fn entry(name: &str, kind: Kind) -> Entry {
 }
 
 fn row<'a>(entry: &'a Entry, depth: usize, folder: bool, expanded: bool) -> Row<'a> {
-    Row { entry, depth, folder, expanded, hit: None }
+    Row { entry, depth, folder, expanded, hit: None, matched: &[] }
 }
 
 /// A text hit's row on Scouter's line: the name and line, the snippet, and the folder dimmed at the end.
 fn hit_row<'a>(entry: &'a Entry, line: usize, snippet: &'a Snippet) -> Row<'a> {
-    Row { entry, depth: 0, folder: false, expanded: false, hit: Some((line, snippet)) }
+    Row { entry, depth: 0, folder: false, expanded: false, hit: Some((line, snippet)), matched: &[] }
 }
 
 fn text(segments: &[Seg]) -> String {
@@ -110,4 +110,19 @@ fn a_finder_row_names_the_file_first_and_its_folder_dimmed_after_it() {
     assert!(text(&narrow).find("marauder-map.png") < text(&narrow).find("assets/"));
     let wide = row_segments(&row(&marauder, 0, false, false), false, false, false, &DARK);
     assert!(text(&wide).contains("assets/marauder-map.png"), "a row at 80 columns keeps its path");
+}
+
+#[test]
+fn a_fuzzy_match_colours_its_characters_in_the_name_and_the_folder_and_keeps_the_text() {
+    let owls = entry("hogwarts/owls.md", Kind::File);
+    let plain = row_segments(&row(&owls, 0, false, false), false, false, true, &DARK);
+    let matched = Row { matched: &[1, 3, 9, 10], ..row(&owls, 0, false, false) };
+    let marked = row_segments(&matched, false, false, true, &DARK);
+    assert_eq!(text(&marked), text(&plain), "a match changes the colour, not the text");
+    let coloured: Vec<&Seg> = marked
+        .iter()
+        .filter(|seg| seg.fg == Some(DARK.accent_soft) && seg.text.chars().all(char::is_alphanumeric))
+        .collect();
+    assert_eq!(coloured.iter().map(|seg| seg.text.as_str()).collect::<Vec<_>>(), ["ow", "o", "w"]);
+    assert!(coloured.iter().all(|seg| seg.bold));
 }

@@ -172,6 +172,8 @@ struct Model {
     auto_preview: bool,
     /// Counts the list's moves, so a preview is read only for the newest move (`app/preview.rs`).
     preview_generation: u64,
+    /// How the finder matches names: `find_mode` in `settings.json` sets the start, and `Ctrl+F` flips it for the session.
+    matching: fmc::find::Matching,
     /// The rows `]` and `[` move the list by, and the lines they scroll the reader by (`settings.json`).
     sidebar_jump: u32,
     reader_jump: u32,
@@ -260,6 +262,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         diff_jump: None,
         auto_preview: fmc::settings::AUTO_PREVIEW,
         preview_generation: 0,
+        matching: fmc::settings::FIND_MODE,
         sidebar_jump: fmc::settings::SIDEBAR_JUMP,
         reader_jump: fmc::settings::READER_JUMP,
         git_gutter: fmc::settings::GIT_GUTTER,
@@ -303,6 +306,7 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         m.reader_jump = settings.settings.reader_jump;
         m.git_gutter = settings.settings.git_gutter;
         m.associations = settings.settings.file_associations;
+        m.matching = settings.settings.find_mode;
         if !settings.notices.is_empty() {
             m.message = Some(Message { text: settings.notices.join(" "), error: true });
         }
@@ -813,6 +817,10 @@ mod mermaid_tests;
 #[cfg(test)]
 #[path = "search_tests.rs"]
 mod search_tests;
+
+#[cfg(test)]
+#[path = "find_tests.rs"]
+mod find_tests;
 
 #[cfg(test)]
 #[path = "rendered_signs_tests.rs"]
