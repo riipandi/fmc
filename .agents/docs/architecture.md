@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T21:30:00+07:00
+updated: 2026-11-27T22:30:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -99,7 +99,7 @@ Context: Scouter's `src/` splits into `app`, `core`, `diff`, `explorer`, `find`,
 
 Decision: one crate with this layout:
 
-- `src/lib.rs` is the pure core, with no I/O and no `opentui`: `keys/` (the key table and the pending-key parser), `explorer/` (tree model, ICU sort), `reader/` (motions, jump history, in-file search), `find/` (finder matching and order), `diff/` (patch parsing, change list, marks), `theme.rs` (palettes, brightness, tint).
+- `src/lib.rs` is the pure core, with no I/O and no `opentui`: `keys/` (the key table and the pending-key parser), `explorer/` (tree model, ICU sort), `reader/` (motions, jump history, in-file search), `find/` (finder matching and order), `diff/` (patch parsing, change list, marks), `theme/` (palettes, brightness, tint, the theme catalog in `catalog.rs`).
 - `src/services/{git,fs,poll}.rs` are I/O workers. They run off the UI thread and send `Event`s back. No file I/O or process spawn happens on the UI thread.
 - `src/app/` holds the `opentui` loop and dispatch: a keymap returns `Action`s, and the app carries them out.
 - `src/ui/` holds the views, one per screen or component.
@@ -233,7 +233,9 @@ Alternatives considered:
 
 Context: Scouter keeps a keymap for `?` and `--help` (`scouter:src/core/keymap.ts:3-55`) but writes footer hints by hand (`scouter:src/ui/footer-hints.ts`), which let the help card drift from the real keys (`research/scouter-inventory.md` §4.7). The modal editor studied in `research/editor-study.md` uses a pure parser that returns `More`, `Bad`, or `Done` over pending keys.
 
-Decision: one key table drives dispatch, the `?` card, and `--help`; a pure parser over pending keys (counts included) returns `More | Bad | Done`, tested with key-sequence tables. The keys and dispatch order are Scouter's (`research/scouter-inventory.md` §4).
+Decision: one key table drives dispatch and the `?` card (`--help` lists no keys since 2026-11-27); a pure parser over pending keys (counts included) returns `More | Bad | Done`, tested with key-sequence tables. The keys and dispatch order are Scouter's (`research/scouter-inventory.md` §4).
+
+Correction (plan-00015 phase 4): the table is true from that phase, in code (`keys/bindings.rs`), read through the merged keymap (`keys/keymap.rs`). Before it, dispatch was the `match` arms of `keys/parser.rs`, and the card and `--help` were hand-written, so this record's claim was not yet true.
 
 Consequences:
 
@@ -243,6 +245,76 @@ Consequences:
 Alternatives considered:
 
 - A Neovim-style grammar — rejected: `Tab`, `?`, `q`, `w`, `d`, `y`, `m` mean other things in Scouter (`research/editor-study.md` §4); parked as an alternate keymap in the roadmap.
+
+### The default keys are one table, and keymap.json merges over it
+
+Context: Scouter's keys are a fixed list (`scouter:src/core/keymap.ts:3-55`), and its dispatch is a chain of checks (`scouter:src/app/app.ts:760-800`, `handleBrowserKey`, `handleViewerKey`, `handleDiffKey`). fmc's dispatch was the `match` arms of `keys/parser.rs`, so the card and the dispatch could drift. RI-13 asks for user keys in `keymap.json`; the owner chose a file read at start and edited by hand (plan-00015, D11 (a)).
+
+Decision: the default keys are rows of `keys/bindings.rs` (`DEFAULTS`: context, key, typing, action). `keys/keymap.rs` merges the file over them: a user row comes first, a user row at the same context and key replaces the default, and `null` removes it. The parser walks the merged rows (plan-00015, A8), and a pending sequence reads the same rows, so a longer binding that starts with a default key makes that key wait. Count digits and `z` stay in code. The defaults were checked against the old arms with a differential run over 945,024 key, state, and key-pair cases (2026-11-27): no `Step` differs, and `keys/tests.rs` passes unchanged.
+
+Consequences:
+
+- (positive) The defaults and the card read one table, so a key is bound in one place.
+- (positive) A rebound key works in the parser and on the card, with no second list to edit.
+- (negative) Each row carries its modifier rule in data (`ctrl-`, `alt-`, `*-`, Shift on a letter); a new row needs the rule that its old arm had (`rust.md`, "A key is bound in one row").
+- (negative) Count digits and `z` cannot be rebound.
+
+Alternatives considered:
+
+- A second parser beside the match arms — rejected (plan-00015, A8): the card and the dispatch would drift again.
+- An in-UI rebinding with a key-capture step (plan-00015, D11 (b)) — rejected for this plan: the legacy encoding cannot send some keys, so a capture cannot finish for them; the owner chose the file.
+
+### Approved deviation: the keys can be changed in keymap.json
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's keys are fixed (`scouter:src/core/keymap.ts:3-55`), and it has no configuration file (`scouter:docs/decision/0001-read-only-and-minimal.md:7`).
+
+Decision: `$XDG_CONFIG_HOME/fmc/keymap.json`, or `~/.config/fmc/keymap.json`, rebinds keys. Each entry is `"<context>.<key>": "<action>"` to bind, or `null` to unbind a default. The file is read at start and never written. The default keys are unchanged, and the card and `--help` show the merged keys. The owner approved the file on 2026-11-27 (plan-00015, D11 (a) and D13 (a); RI-13). The shape and names are in `docs/keymaps.md` and `docs/configuration.md`.
+
+Consequences:
+
+- (positive) A key a terminal cannot send, or one that clashes with a terminal's own, can move to another key.
+- (negative) A restart applies a change; a rebind is not checked against other keys beyond the rule that the first matching row wins.
+- (negative) A bad entry is skipped with a notice, so a typo costs one key, and the owner must read the footer or the stderr line to see it.
+
+Alternatives considered:
+
+- In-UI rebinding with a key-capture step (D11 (b)) — rejected: the owner chose the file (see the record above).
+- JSONC with comments (D10 (b)) — rejected: strict JSON, as the settings file (D10 (a)).
+
+### A bad keymap entry is skipped with a notice that names its line, and the rest apply
+
+Context: a user file can name an unknown action or context, or a key name fmc does not know. RI-13 asks that a bad file is not applied; the owner's answer (plan-00015, A11) is that only the bad entry is skipped. The bad-file rule of the settings file (a file that is not a JSON object keeps every default) applies to a file that is not an object or not JSON.
+
+Decision: each entry is checked alone (`keys/keymap.rs` `parse`). A skipped entry gives one notice, `keymap.json line N: "<entry>": <reason>.`, where N is the entry's line in the file; the other entries apply. A file that is not a JSON object, or is not JSON, keeps every default and gives one notice. The file is read by `services/mod.rs` `read_config`, which refuses a file past 1 MiB and a FIFO before it is opened; the settings file, the theme files, and `keymap.json` all read through it (plan-00015 phase 6). The notices show in the footer at start, after the settings' and the themes' notices (A18). `--help` prints them to stderr.
+
+Consequences:
+
+- (positive) One typo costs one key, and the notice names the line to fix.
+- (negative) `serde_json` keeps no line numbers, so a skipped entry's line is found by searching the text, once per skipped entry (`keys/keymap.rs` `line_of`).
+- (negative) A FIFO put in place between the check and the open could still block the startup read; only someone who can write the config folder can do that.
+
+Alternatives considered:
+
+- Refusing the whole file at the first bad entry — rejected (A11): one typo would drop every rebind.
+- A JSON parser that keeps line numbers — rejected: it needs a dependency the rules do not approve.
+
+### The `?` card shows the merged keys
+
+Context: the card used a hand-written list (`keys/mod.rs` `KEY_SECTIONS`). A rebound key would show its old label, and a new key would show nowhere (plan-00015, A10).
+
+Decision: each card row with actions (`ROW_ACTIONS`) lists the merged keys of those actions. A row keeps its fixed label while its keys are still the defaults, so the card with no file is the card of the previous phase. A binding of an action that has a row joins that row, so a rebound key shows on its action's row. A binding of an action with no row (for example `move_page_down`, which no row names) gets a row of its own under its context's section. Rows without actions (`120G`, `zz`, `: q`) stay fixed text. Read this way, plan-00015 A10's "a new binding gets its own row" applies to actions with no row; the owner may want the other reading.
+
+Consequences:
+
+- (positive) A rebound key shows on the row the user looks at. `--help` lists no keys, so it cannot disagree (the owner, 2026-11-27).
+- (negative) A row whose keys are all unbound reads `unbound`.
+- (negative) A second key for a documented action joins its row rather than getting its own, which is the reading above.
+
+Alternatives considered:
+
+- A separate "custom keys" section — rejected (A10): it repeats what the table already says.
 
 ### Approved deviation: revealing a file expands its immediate parent folder
 
@@ -476,7 +548,7 @@ Alternatives considered:
 
 Context: the read-only rule (`AGENTS.md`, `rules.md`) held every write shut until the owner opened the file-manager phase. The owner approved plan-00012 on 2026-11-27, which opens it for five operations and a copy and cut, from the tree (its D2 and D3).
 
-Decision (plan-00012 D10): the read-only rule is amended, not removed. Create, rename, copy, move, and delete (to the Trash) are allowed inside the folder fmc opened, from the tree and its context menu. Any other write still needs the owner: saving a file, a write outside the browsed root, and fmc's own settings, which stay read-only (the record "a read-only `settings.json`").
+Decision (plan-00012 D10): the read-only rule is amended, not removed. Create, rename, copy, move, and delete (to the Trash) are allowed inside the folder fmc opened, from the tree and its context menu. Any other write still needs the owner: saving a file, a write outside the browsed root, and fmc's own `settings.json`, which only the settings save path writes (plan-00015 D1; "fmc writes its settings.json, atomically").
 
 Consequences:
 
@@ -766,9 +838,93 @@ Consequences:
 
 ### Decision: a read-only `settings.json` with its keys
 
+Superseded in part by "fmc writes its settings.json, atomically" (plan-00015, D1): the read, the keys, and the notices below stand; the "never writes the file" part does not.
+
 Context: auto-preview and the `[`/`]` steps must be configurable (owner, 2026-11-27); RI-9 planned `~/.config/fmc/settings.json`.
 
 Decision: fmc reads `~/.config/fmc/settings.json` (under `$XDG_CONFIG_HOME/fmc/` when set) once at start. Keys: `auto_preview` (bool, default `true`), `sidebar_jump` (positive integer, default 2), `reader_jump` (positive integer, default 5). A missing file means the defaults. A file that fails to parse, or a key with a wrong type or a value below 1, is not applied: fmc keeps the defaults for the bad keys and shows a notice once. Unknown keys are ignored. fmc never writes the file in this step; saving UI state and the theme override stay in RI-9. Crate: `serde_json` only (the parse reads a `Value`; `serde` derive, also approved, is not needed). Approved by the owner on 2026-11-27.
+
+### fmc writes its settings.json, atomically, and never over text it cannot read
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Scouter has no configuration file (`scouter:docs/decision/0001-read-only-and-minimal.md:7`), so this is a post-parity deviation, approved by the owner on 2026-11-27 (plan-00015, D1 (a)). RI-9 asks for saved settings, and the Settings page (plan-00015 phase 3) edits them; the read-only rule for fmc's own settings (the record above) is amended to allow that one file.
+
+Context: a save must never lose the file the owner keeps. A hand-edited file may hold keys fmc does not know, a dotfile manager may link it, and a crash can happen mid-write. `serde_json` keeps no file order (no `preserve_order`, `Cargo.toml`).
+
+Decision: the only write to fmc's own config is `services/settings.rs` `save`, called by `update` on the Settings page's worker (`app/settings.rs`), and the text it writes is `settings::merged` over the file as it is now (A2). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
+
+Consequences:
+
+- (positive) A save never truncates the file before the new bytes exist, and never replaces a file with an unreadable one; a hand edit made after start is kept, since the save re-reads the file.
+- (positive) The write path is a plain function with tests in temporary folders (`services/settings_tests.rs`: a missing file, a link, a read-only folder); no test touches `~/.config/fmc`.
+- (negative) A save drops the file's key order and any formatting it had; a commented file is refused by the parser, so comments cannot be lost to a save.
+- (negative) A dangling link is an error, not a new file (`fs::canonicalize` on the link fails).
+
+Alternatives considered:
+
+- `fs::write` — rejected: it truncates the file before the new bytes exist, so a crash loses it.
+- `tempfile::persist` — rejected: `tempfile` is a dev dependency (`Cargo.toml`), and production code would need the owner's approval (plan-00015, D15).
+- Writing the whole in-memory `Settings` — rejected: it drops unknown keys and the hand edits made after start.
+- Enabling `preserve_order` for the key order — rejected: a new feature on a pinned dependency, for a cosmetic gain.
+- Writing the whole config folder, so the page could also write theme and keymap files — rejected: the owner chose D1 (a); a file the owner did not name would be written.
+
+### Approved deviation: the Settings page edits settings.json on Ctrl+, and saves each change at once
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has no configuration and no settings page (`scouter:docs/decision/0001-read-only-and-minimal.md:7`, "no configuration file"). RI-9 asks for saved settings, and the owner asked for a page that edits them (2026-11-27, plan-00015).
+
+Decision: `Ctrl+,` opens the Settings page over the content area (`app/settings.rs`, drawn by `ui/settings.rs`), and in the compact tier it is a page of the stack (`Page::Settings`). The page edits eight keys: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme` (plan-00015, D2 (a)); `file_associations` is not on it. Each row is fmc's own, drawn like a tree row with a value column, not OpenTUI's `Select` (A6). Enter or Space changes a row: a setting flips, a choice steps to its next value, and a number opens the existing dialog's field, where a whole number of 1 or more is typed (D4 (a), D5 (a)). Left and Right (`h`, `l`) step a choice back and forward (plan-00015, A19). A choice stops at its ends and does not wrap (`fmc::settings::Settings::step`).
+
+Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::settings::save` (A1, D14). After start, the UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3). The UI state RI-9 also names (the sidebar's width and visibility, wrap, the changes screen's split and context lines, dotfiles) is not saved: the owner chose D3 (a) on 2026-11-27, and saving it needs its own decision (`docs/configuration.md`).
+
+While the page is open it takes every key, except Ctrl+q and Ctrl+c, and it takes the clicks too: the catcher a dialog uses covers the screen, so the panes beneath do not act (plan-00015, A21). Ctrl+, is the only key for the page (D12, owner): a plain `,` is unbound on every page and `:settings` is not added. Only the kitty keyboard protocol sends `Ctrl+,` (`opentui-0.9.9/src/host.rs:147`, `input-parser.zig:1269-1300`), so a terminal without it has no route to the page; the owner accepted that.
+
+Consequences:
+
+- (positive) A row shows the word the file uses, and a change applies and saves at once; a save the file refuses leaves the file as it was.
+- (positive) The rows, their steps, and their ends are pure and tested (`settings_tests.rs`); the keys and the saves are tested through `TestApp` in a temporary config folder (`app/settings_tests.rs`).
+- (negative) A save sorts the keys and drops comments (A3, D10), so a hand-ordered file is reordered by its first save.
+- (negative) A terminal without the kitty keyboard protocol cannot open the page.
+
+Alternatives considered:
+
+- A dialog-sized overlay built on the menu (D4 (b)) — rejected: the menu closes on a pick, so a value could not stay on screen, and eight rows with a value and a help line do not fit its 16-row limit.
+- A Save row at the end (D5 (c)), or preview on move with Esc to revert and Enter to save (D5 (b)) — rejected: each needs a revert path for every row, and a theme could not preview until saved.
+- A `:settings` command and a plain `,` (D12) — rejected by the owner, who chose `Ctrl+,` only.
+- A watcher that re-reads the file (D13 (c)) — rejected: RI-8 is parked; a restart applies a hand edit.
+
+### Approved deviation: fmc offers a theme catalog, chosen in settings.json
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has one fixed pair of palettes, dark and light, and the terminal alone picks between them (`scouter:src/ui/theme.ts:115-127`, `palettes: { dark, light }` and `setThemeMode`; `scouter:src/app/app.ts:202`, `setThemeMode(mode)` from the terminal's reading). RI-10 asked for a catalog, and the owner asked for the choice to live in `settings.json` (plan-00015, phase 2).
+
+Decision (owner, 2026-11-27, plan-00015 D6, D7, D8, D9, D10; agent picks A4, A7, A9, A13 to A16):
+
+- `theme_mode` is `auto` (the default), `dark`, or `light`; `dark_theme` and `light_theme` name a catalog id for each slot (default `default`). `auto` follows the terminal and uses the id of the mode it found (D6 a).
+- The catalog is 16 bundled themes, bjarneo/editor's (MIT), as JSON in `src/theme/catalog/`. A user theme is `$XDG_CONFIG_HOME/fmc/themes/<id>.json`, read once at start; a user file with a bundled id replaces that theme (D7 a).
+- A theme file is strict JSON with `mode`, an optional `name`, and bjarneo's 24 colour roles (D8 b, D10 a). fmc maps 18 roles to its tokens and derives 11 by the fixed mixes of `catalog.rs` (A9); bjarneo's `bg2`, `vis`, `cmd`, `ty`, `mac`, and `prop` are read and checked, and not mapped.
+- The id `default` is Scouter's pair: `DARK` in a dark slot and `LIGHT` in a light slot (A13). An id used in the other slot, or an unknown id, keeps `default` and adds a notice that names the key.
+- The page background is the terminal's background tinted 2.5%, as before (D9 a), when the chosen palette has the terminal's mode. A forced mode that differs from the terminal uses the palette's `fallback-background` (A14).
+- The palette fields are `Hex` values of seven bytes, which are `Copy` (A15). This replaces the `Cow` of A5, which would have cloned at each of about 280 reads.
+- Contrast: the thresholds of `theme_tests.rs` are unchanged. Twelve bundled themes fall short of 7:1 on a tint or a match pair, and tokyo-night-day is also short of 4.5:1 on three of its tints. Each short pair is listed in `theme_tests.rs` (`SHORT`), and the owner's decision on them is open (plan-00015, A16).
+
+Consequences:
+
+- (positive) The default looks as before: `DARK` and `LIGHT` keep their values, and `design_md_lists_the_same_colors` still pins them to `DESIGN.md`.
+- (positive) A theme is one file; the bundled and the user files go through one parser, so the bundled files test it, and a bad file is skipped with a notice that names it.
+- (positive) The palette and the segments own their colours, with no leak and no allocation per read.
+- (negative) A theme is read once at start, so a change needs a restart, as every key does.
+- (negative) Eleven values are fmc's formulas, not the theme author's, and they are not in the source files.
+- (negative) Most bundled themes meet the contrast of Scouter's palettes on text, but not all of them meet it on the selection, the tints, and the match colours (above).
+
+Alternatives considered:
+
+- `Box::leak` for a user theme's strings — rejected: a shortcut with no limit, and it hides the lifetime (plan-00015, A5).
+- `Arc<Palette>` with `String` fields — rejected: it rewrites `DARK` and `LIGHT`, which `theme_tests.rs` pins to `DESIGN.md`.
+- `Cow<'static, str>` palette fields — rejected for A15: every palette read would clone or borrow a `Cow`, about 280 sites, where `Hex` is copied.
+- One `theme` id, and the theme's own mode decides — rejected (D6 b): a dark terminal could not pair a dark and a light theme.
+- A theme file that names its own id — rejected: the file name is the id, so a file cannot disagree with its name.
 
 ### Approved deviation: `:q` quits, as in Neovim
 

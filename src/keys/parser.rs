@@ -1,7 +1,9 @@
-//! Turns one key press into an action, in Scouter's dispatch order (`src/app/app.ts` `onKeyPress`): quit, count
-//! digits, global commands, changes-screen keys, then the focused pane. The search prompt reads keys before this
-//! parser does.
+//! Turns one key press into an action by walking the merged key table (`bindings.rs`, `keymap.rs`), in Scouter's
+//! dispatch order: quit, count digits, the rows of the state, then the focused pane. The search prompt reads keys before
+//! this parser does. Count digits and `z` are not rows, so they stay here.
 
+use super::bindings::{Binding, Context, Press};
+use super::keymap::Keymap;
 use super::{Action, Key};
 
 /// The largest count a run of digits can build (Scouter `MAX_COUNT`).
@@ -35,21 +37,45 @@ pub struct State {
 /// The parser's answer for one key.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Step {
-    /// The key started or extended a sequence (`z`, count digits); wait for the next one.
+    /// The key started or extended a sequence (`z`, count digits, a multi-key binding); wait for the next one.
     More,
     /// No binding: the key does nothing.
     Bad,
     Done(Action),
 }
 
-/// Pending keys between presses: a count and a first `z`.
-#[derive(Debug, Default)]
+/// What the table says about the keys pressed so far.
+enum Found {
+    /// A binding continues these keys.
+    Prefix,
+    Action(Action),
+    Nothing,
+}
+
+/// The keys of the merged table, the count typed so far, a first `z`, and a sequence in progress.
+#[derive(Debug)]
 pub struct Parser {
+    keymap: Keymap,
     count: u32,
     z_pending: bool,
+    pending: Vec<Press>,
+}
+
+impl Default for Parser {
+    fn default() -> Parser {
+        Parser::new(Keymap::defaults())
+    }
 }
 
 impl Parser {
+    pub fn new(keymap: Keymap) -> Parser {
+        Parser { keymap, count: 0, z_pending: false, pending: Vec::new() }
+    }
+
+    pub fn keymap(&self) -> &Keymap {
+        &self.keymap
+    }
+
     /// The count typed so far, for the footer.
     pub fn pending_count(&self) -> Option<u32> {
         (self.count > 0).then_some(self.count)
@@ -57,30 +83,57 @@ impl Parser {
 
     pub fn feed(&mut self, key: Key<'_>, state: State) -> Step {
         let after_z = std::mem::take(&mut self.z_pending);
+        let press = Press::of(key);
 
-        // Ctrl+q and Ctrl+c quit; a plain `q` does nothing (approved deviation, architecture.md).
-        if (key.name == "q" || key.name == "c") && key.ctrl {
-            return Step::Done(Action::Quit);
+        // A sequence in progress takes this key. A key that cannot continue it is read on its own (below).
+        if !self.pending.is_empty() {
+            let mut keys = std::mem::take(&mut self.pending);
+            keys.push(press.clone());
+            match self.lookup(&keys, state) {
+                Found::Prefix => {
+                    self.pending = keys;
+                    return Step::More;
+                }
+                Found::Action(action) => return self.done(action),
+                Found::Nothing => {}
+            }
         }
         if self.absorb_count(key, state) {
             return Step::More;
         }
-        let count = std::mem::take(&mut self.count);
+        match self.lookup(std::slice::from_ref(&press), state) {
+            Found::Prefix => {
+                self.pending = vec![press];
+                return Step::More;
+            }
+            Found::Action(action) => return self.done(action),
+            Found::Nothing => {}
+        }
 
-        if let Some(action) = global(key, state) {
-            return Step::Done(action);
-        }
-        if state.screen == Screen::Changes
-            && let Some(action) = changes(key)
+        // `z` and `zz` (Scouter's centre keys) are not rows: the reader keeps them, after the table has had its turn.
+        self.count = 0;
+        if state.focus == Focus::Reader
+            && state.screen == Screen::Browse
+            && key.plain()
+            && key.name == "z"
+            && !key.shift
         {
-            return Step::Done(action);
+            if after_z {
+                return Step::Done(Action::Centre);
+            }
+            self.z_pending = true;
+            return Step::More;
         }
-        let action = match (state.focus, state.screen) {
-            (Focus::Reader, _) => return self.reader(key, state, count, after_z),
-            (Focus::List, Screen::Changes) => change_list(key),
-            (Focus::List, Screen::Browse) => tree(key),
-        };
-        action.map_or(Step::Bad, Step::Done)
+        Step::Bad
+    }
+
+    /// A count takes the next `G` as its line (`120G`); every other action drops it.
+    fn done(&mut self, action: Action) -> Step {
+        let count = std::mem::take(&mut self.count);
+        match action {
+            Action::Bottom if count > 0 => Step::Done(Action::GoToLine(count)),
+            action => Step::Done(action),
+        }
     }
 
     fn absorb_count(&mut self, key: Key<'_>, state: State) -> bool {
@@ -100,195 +153,36 @@ impl Parser {
         true
     }
 
-    fn reader(&mut self, key: Key<'_>, state: State, count: u32, after_z: bool) -> Step {
-        if key.alt {
-            return Step::Bad;
+    /// The rows of the state that bind `keys`. A row that continues them wins, so a longer binding (`g x` in a file)
+    /// makes `g` wait for its next key, as the table says.
+    fn lookup(&self, keys: &[Press], state: State) -> Found {
+        let live: Vec<&Binding> = self
+            .keymap
+            .bindings()
+            .iter()
+            .filter(|b| active(b.context, state) && b.typing.is_none_or(|typing| typing == state.typing))
+            .collect();
+        let binds = |b: &Binding, n: usize| b.keys.iter().zip(keys).take(n).all(|(chord, press)| chord.matches(press));
+        if live.iter().any(|b| b.keys.len() > keys.len() && binds(b, keys.len())) {
+            return Found::Prefix;
         }
-        if let Some(action) = scroll(key) {
-            return Step::Done(action);
-        }
-        if key.ctrl {
-            return Step::Bad;
-        }
-        if state.screen == Screen::Browse {
-            match (key.name, key.shift) {
-                ("/", _) => return Step::Done(Action::Search),
-                ("n", false) => return Step::Done(Action::NextMatch),
-                ("n", true) | ("p", _) => return Step::Done(Action::PreviousMatch),
-                _ => {}
-            }
-            if key.plain() {
-                if after_z && key.name == "z" && !key.shift {
-                    return Step::Done(Action::Centre);
-                }
-                if !after_z && key.name == "z" && !key.shift {
-                    self.z_pending = true;
-                    return Step::More;
-                }
-                match key.text {
-                    "{" => return Step::Done(Action::Paragraph(-1)),
-                    "}" => return Step::Done(Action::Paragraph(1)),
-                    "]" => return Step::Done(Action::Jump(1)),
-                    "[" => return Step::Done(Action::Jump(-1)),
-                    _ => {}
-                }
-            }
-        }
-        match boundary(key) {
-            Some(Action::Bottom) if count > 0 => Step::Done(Action::GoToLine(count)),
-            Some(action) => Step::Done(action),
-            None => Step::Bad,
+        match live.iter().find(|b| b.keys.len() == keys.len() && binds(b, keys.len())) {
+            Some(binding) => Found::Action(binding.action),
+            None => Found::Nothing,
         }
     }
 }
 
-fn global(key: Key<'_>, state: State) -> Option<Action> {
-    match key.name {
-        "tab" => return Some(Action::SwitchPane),
-        "escape" => return Some(Action::Escape),
-        _ => {}
-    }
-    if key.text == "?" && key.plain() {
-        return Some(Action::Help);
-    }
-    if key.text == ":" && key.plain() {
-        return Some(Action::OpenCommand);
-    }
-    if key.ctrl && !key.alt {
-        match key.name {
-            "left" => return Some(Action::Resize(-1)),
-            "right" => return Some(Action::Resize(1)),
-            "o" if !state.typing => return Some(Action::JumpBack),
-            // `Ctrl+_` is the legacy `0x1F` (phase 1 note); a prompt takes the key as nothing (plan-00002).
-            "/" | "_" if !state.typing => return Some(Action::ToggleSidebar),
-            // `Ctrl+F` flips the finder's name matching (plan-00006 D5); a prompt that is not the finder has no use for it.
-            "f" if state.typing => return Some(Action::ToggleFuzzy),
-            // A prompt takes a plain `.` as text; `Ctrl+.` is not text, so the finder rebuilds its index with it.
-            "." => return Some(Action::ToggleDotfiles),
-            _ => {}
-        }
-    }
-    if key.alt && !key.ctrl && key.name == "i" && !state.typing {
-        return Some(Action::JumpForward);
-    }
-    if !key.plain() || key.shift {
-        return None;
-    }
-    match key.name {
-        "." if !state.typing => Some(Action::ToggleDotfiles),
-        "w" => Some(Action::ToggleWrap),
-        "q" => Some(Action::Close),
-        "m" => Some(Action::ToggleMarkdown),
-        "d" => Some(Action::ToggleChanges),
-        "y" => Some(Action::Copy),
-        _ => None,
-    }
-}
-
-fn changes(key: Key<'_>) -> Option<Action> {
-    if !key.plain() {
-        return None;
-    }
-    Some(match (key.name, key.shift) {
-        ("s", _) => Action::ToggleSplit,
-        ("a", _) => Action::ToggleScope,
-        ("c", _) => Action::ToggleFold,
-        ("x", _) => Action::ToggleContext,
-        ("r", _) => Action::Reload,
-        ("o", _) => Action::OpenChanged,
-        ("n", false) => Action::Hunk(1),
-        ("n", true) | ("p", _) => Action::Hunk(-1),
-        _ if key.text == "]" => Action::Hunk(1),
-        _ if key.text == "[" => Action::Hunk(-1),
-        _ => return None,
-    })
-}
-
-/// `j k ↑ ↓` move one row, five with Shift; Page Up and Page Down move a screen (Scouter `handleListKey`).
-fn list_move(key: Key<'_>) -> Option<Action> {
-    if !key.plain() {
-        return None;
-    }
-    let step = if key.shift { 5 } else { 1 };
-    match key.name {
-        "j" | "down" => Some(Action::Move(step)),
-        "k" | "up" => Some(Action::Move(-step)),
-        "pagedown" => Some(Action::MovePage(1)),
-        "pageup" => Some(Action::MovePage(-1)),
-        _ => None,
-    }
-}
-
-fn tree(key: Key<'_>) -> Option<Action> {
-    if !key.plain() {
-        return None;
-    }
-    match key.text {
-        "]" => return Some(Action::Jump(1)),
-        "[" => return Some(Action::Jump(-1)),
-        _ => {}
-    }
-    match (key.name, key.shift) {
-        ("a", false) => return Some(Action::NewFile),
-        ("a", true) => return Some(Action::NewFolder),
-        ("r", true) => return Some(Action::Duplicate),
-        ("r", false) => return Some(Action::Rename),
-        ("d", true) | ("delete", _) => return Some(Action::Delete),
-        ("c", false) => return Some(Action::CopyFile),
-        ("x", false) => return Some(Action::CutFile),
-        ("v", false) => return Some(Action::PasteFile),
-        ("s", false) => return Some(Action::ToggleMark),
-        ("s", true) => return Some(Action::ClearMarks),
-        _ => {}
-    }
-    match key.name {
-        "return" => Some(Action::Toggle),
-        "l" | "right" => Some(Action::Expand),
-        "h" | "left" | "backspace" => Some(Action::Collapse),
-        "-" => Some(Action::GoUp),
-        "p" => Some(Action::TogglePreview),
-        "/" => Some(Action::Find),
-        "space" => Some(Action::ContextMenu),
-        _ => boundary(key).or_else(|| list_move(key)),
-    }
-}
-
-fn change_list(key: Key<'_>) -> Option<Action> {
-    if !key.plain() {
-        return None;
-    }
-    match key.name {
-        "return" | "l" | "right" => Some(Action::FocusDiff),
-        _ => boundary(key).or_else(|| list_move(key)),
-    }
-}
-
-/// `g` and Home go to the top, `G` and End to the bottom (Scouter `boundaryOf`).
-fn boundary(key: Key<'_>) -> Option<Action> {
-    match key.name {
-        "g" if key.shift => Some(Action::Bottom),
-        "g" | "home" => Some(Action::Top),
-        "end" => Some(Action::Bottom),
-        _ => None,
-    }
-}
-
-/// Reader scrolling (Scouter `scrollByKey`): lines, four-column pans, 0.9 pages, and half pages with Ctrl.
-fn scroll(key: Key<'_>) -> Option<Action> {
-    if key.ctrl {
-        return match key.name {
-            "d" => Some(Action::HalfPage(1)),
-            "u" => Some(Action::HalfPage(-1)),
-            _ => None,
-        };
-    }
-    match key.name {
-        "h" | "left" => Some(Action::Pan(-4)),
-        "l" | "right" => Some(Action::Pan(4)),
-        "j" | "down" => Some(Action::Scroll(1)),
-        "k" | "up" => Some(Action::Scroll(-1)),
-        "pagedown" | "space" => Some(Action::Page(1)),
-        "pageup" | "b" => Some(Action::Page(-1)),
-        _ => None,
+/// Which rows apply in a state: `everywhere` in all, the others by screen and focus (`bindings.rs` `Context`).
+fn active(context: Context, state: State) -> bool {
+    let browse = state.screen == Screen::Browse;
+    let reader = state.focus == Focus::Reader;
+    match context {
+        Context::Everywhere => true,
+        Context::Browse => browse && !reader,
+        Context::Reader => browse && reader,
+        Context::Changes => !browse,
+        Context::ChangesList => !browse && !reader,
+        Context::ChangesReader => !browse && reader,
     }
 }

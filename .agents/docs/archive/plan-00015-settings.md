@@ -1,33 +1,33 @@
 ---
-status: approved
+status: done
 created: 2026-11-27T20:05:31+07:00
-updated: 2026-11-27T20:05:31+07:00
+updated: 2026-11-27T21:18:11+07:00
 references: roadmap-00001-post-parity.md (RI-9, RI-10, RI-13), architecture.md ("a read-only settings.json with its keys", "Keys are dispatched from one key table", "The context menu and the dialog are fmc views", plan-00012 D10), rules.md ("Writes", "Dependencies", "Licenses"), plan-00012-write-operations.md, plan-00014-multi-select.md
 phases:
     - id: 1
       title: The settings write path (a library function with no caller)
-      status: pending
-      note: —
+      status: committed
+      note: "3f5673c; no caller until phase 3"
     - id: 2
       title: Theme mode and the theme catalog
-      status: pending
-      note: —
+      status: committed
+      note: "64c7aea; deviations A16 and A17"
     - id: 3
       title: The Settings page on Ctrl+,
-      status: pending
-      note: —
+      status: committed
+      note: "d68af26; agent decisions A19 to A21 (2026-11-27)"
     - id: 4
       title: The keymap file over the defaults
-      status: pending
-      note: —
+      status: committed
+      note: "1b37a2e; agent decisions A22 to A29 (2026-11-27)"
     - id: 5
       title: Docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: committed
+      note: "this commit (docs: settings, themes, and the keymap file)"
     - id: 6
       title: Final validation
-      status: pending
-      note: —
+      status: done
+      note: "final validation, see handover-00011-settings.md; its two defects are fixed in the phase 6 commit `fix(settings): read settings.json with the same cap and file check as the other files, and sanitise the file_associations notice`"
 ---
 
 ## Settings, themes, and keys from files — a Settings page, a theme catalog, and a keymap file, in six phases
@@ -88,13 +88,30 @@ These picks are the agent's, dated 2026-11-27. Each is one line to change; the o
 - **A2 (2026-11-27): a save merges into the file as it is now.** The save re-reads the file, parses it as an object, sets only the keys the page changed, keeps every other key, and refuses when the text does not parse (the bytes stay as they were, and the page shows a notice). Rejected: writing the whole in-memory `Settings`, which drops unknown keys and hand edits made after start.
 - **A3 (2026-11-27): a save sorts the keys.** A `serde_json::Map` has no file order (`Cargo.toml`, no `preserve_order`), so the first save sorts the keys alphabetically; the phase 3 record says so. Rejected: enabling `preserve_order`, a new feature on a pinned dependency, which would need the owner's approval for a cosmetic gain.
 - **A4 (2026-11-27): the bundled catalog is JSON.** The bundled themes are JSON files in `src/theme/catalog/`, embedded with `include_str!`, parsed by the same function as a user file. Each set carries bjarneo's MIT `LICENSE` beside it, as the highlight queries do (`rules.md`, "Licenses").
-- **A5 (2026-11-27): the palette fields become `Cow<'static, str>`.** Built-in palettes stay `const` (`Cow::Borrowed`); a user theme owns its strings (`Cow::Owned`). Rejected: `Box::leak` (a shortcut with no limit, and it hides the lifetime), and `Arc<Palette>` with `String` fields (it rewrites `DARK` and `LIGHT`, which `theme_tests.rs:55-70` pins to `DESIGN.md`).
+- **A5 (2026-11-27): the palette fields become `Cow<'static, str>`.** Built-in palettes stay `const` (`Cow::Borrowed`); a user theme owns its strings (`Cow::Owned`). Rejected: `Box::leak` (a shortcut with no limit, and it hides the lifetime), and `Arc<Palette>` with `String` fields (it rewrites `DARK` and `LIGHT`, which `theme_tests.rs:55-70` pins to `DESIGN.md`). Amended by A15: the fields are `Hex`, not `Cow`; the rejections stand.
 - **A6 (2026-11-27): the page draws its rows like the tree.** `ui/settings.rs` draws each row with fmc's segments, the way `ui/tree.rs` draws a row, not with OpenTUI `Select`; a row shows a value column that `Select`'s name and description do not give. A spike in phase 3 may overturn this, and the phase commit says which.
 - **A7 (2026-11-27): the settings keys are these names.** `theme_mode` (`auto` | `dark` | `light`), `dark_theme`, `light_theme` (catalog ids, default `scouter`). An unknown id or mode keeps the default and shows a notice, as `find_mode` does (`src/settings.rs:99-106`). The page's row labels and the key names are the same words.
 - **A8 (2026-11-27): the key table is data, and the defaults reproduce the match arms.** Phase 4 moves the bindings into `keys/bindings.rs` as a list of (context, key, action). The defaults give the same `Step` for every key in `keys/tests.rs`, unchanged. Rejected: a second parser beside the match arms, which would let the help and the dispatch drift again.
 - **A9 (2026-11-27): the bjarneo roles map to fmc's values as follows.** Source values (role index, in the order `bjarneo/editor` `src/theme.rs:41-43` gives): `bg` (0) to `fallback-background`; `bg3` (2) to `row-active-bg` and `hover` ("the cursor line and hovers", `bjarneo/editor` `src/theme.rs:10-11`); `bd` (3) to `border`; `fg` (4) to `text`; `fg2` (5) to `muted`; `fg3` (6) to `dim`; `ac` (7) to `accent`; `on` (23) to `accent-ink` ("text drawn on an accent fill"); `sel` (22) to `selection-bg`; `err` (21) to `error`; `kw` (11), `fun` (12), `str` (13), `num` (14), `com` (17), `pun` (18) to the six `syntax-*` values. Candidates, not source values: `err` to `removed`, `warn` (20) to `modified` and `match-bg`, `ins` (8) to `added`, `bg` to `match-fg`. No source value (fmc derives them under D8 (b), or the file must give them under D8 (a)): `accent-soft`, `ignored`, `folder`, `added-bg`, `removed-bg`, `added-gutter`, `removed-gutter`, `target-bg`, `target-gutter`, and the three `wordmark` values. Unused by fmc: `bg2` (1), `vis` (9), `cmd` (10), `ty` (15), `mac` (16), `prop` (19).
 - **A10 (2026-11-27): a user binding shows in `?`.** The card (`?` and `--help`) reads the merged table: each default row's keys change to the user's keys for its action, and a new binding gets its own row under its context. Rejected: a separate "custom keys" section, which would repeat what the table already says.
 - **A11 (2026-11-27): a bad keymap entry is skipped, the rest apply.** An unknown action or context, or a key name the parser does not know, skips that entry with a notice that names the line (RI-13's rule). A `null` value unbinds the default key. A user binding that shadows a prefix (`g` in `gg`) takes effect in the parser's `More` state, which reads the merged table (RI-13's trap).
+- **A13 (2026-11-27): the id `scouter` is Scouter's pair.** In a dark slot it is `DARK`, in a light slot it is `LIGHT`. A bundled or user id names one mode and is used only in its own slot; a wrong-slot id keeps that slot's `scouter` and adds a notice, and an unknown id does the same (A7).
+- **A14 (2026-11-27): a forced mode that differs from the terminal uses the palette's background.** The page background is the terminal's background tinted (`tinted_background`) only when the palette's mode is the terminal's; otherwise, and when the terminal did not answer, it is the palette's `fallback-background`. `page_background` in `theme/mod.rs` holds the rule, and its test pins both cases.
+- **A15 (2026-11-27): the palette fields are `Hex`, not `Cow`.** `theme::Hex` is seven bytes (`#rrggbb`, lowercase), `Copy`, with a `const fn` constructor for the built-in consts (`Hex::new`), a fallible `Hex::parse` for files, `Deref<Target = str>`, and an RGB constructor for derived values. `Seg.fg` and `Seg.bg` are `Option<Hex>`. Reason: `Seg` colours are read about 280 times as `Some(p.x)` or by value, and `Cow` would need a clone at each read; `Copy` keeps them. This amends A5.
+- **A16 (2026-11-27): the bundled themes that fall short are listed, not hidden.** The contrast thresholds of `theme_tests.rs` stay as they are. Found when the catalog was added: twelve bundled themes fall short of 7:1 on a tint (`text/added-bg`, `text/removed-bg`, `text/target-bg`, `text/row-active-bg`, `text/selection-bg`) or on `match-fg/match-bg`, and tokyo-night-day also falls below 4.5:1 on three of its tints (`text/added-bg` 4.36:1, `text/removed-bg` 4.11:1, `text/target-bg` 4.02:1; the lowest is 3.85:1 on `text/selection-bg`). `SHORT` in `theme_tests.rs` lists each pair, and the test fails on a new shortfall or on a listed pair that passes. The owner decides: keep the colours and the list, change a colour, or change a threshold.
+- **A17 (2026-11-27): a theme file's id is its file name, and `parse` takes it.** `catalog::parse(id, text)` takes the id, so the name defaults to it; the phase text's `parse(text, base)` took no id and no base, since the derived values come from the roles (D8 b). A file named `scouter.json` is refused with a notice, because `scouter` is built in.
+- **A18 (2026-11-27): the footer shows the notices in their order.** The settings file's notices come first, then the theme files', then the palette choice's (`app/mod.rs` `run`), joined on one line as the settings notices were. A long line is cut at the footer's width, as any footer text is.
+- **A19 (2026-11-27): Left and Right step a choice back and forward.** Enter and Space step forward, as the plan's keys say. Left (and `h`) step back and Right (and `l`) step forward, because a choice with no way back would be a one-way walk through the theme ids. Rejected: a Shift or Backspace binding, which a terminal may not send.
+- **A20 (2026-11-27): one save is in flight at a time.** A change made while a write runs waits in a queue, and the next write takes the queue as one batch (`app/settings.rs` `start`). A refused batch takes back itself and the queue, last first. Rejected: refusing a change while a save runs (a held key would be refused), and one write per change in parallel (two writes would race on the file, and the second would lose the first's key).
+- **A21 (2026-11-27): the page is modal to the mouse.** While the page is open the dialog's catcher covers the screen (`app/overlay.rs` `draw`), so a click or a wheel step on the list or the reader does nothing, as it does under a dialog. The rows take keys only. Open for the owner: whether a click should select a row, which the plan does not name.
+- **A22 (2026-11-27): the keymap file is one flat object.** Each entry is `"<context>.<key>": "<action>"` to bind, or `"<context>.<key>": null` to unbind the default in that context. Contexts are `everywhere`, `browse`, `reader`, `changes`, `changes_list`, and `changes_reader`; a key is one chord or several separated by spaces (a sequence). Rejected: a nested object per context (a second level for one key), Zed's array of blocks (ordered blocks with a predicate, more syntax than RI-13 needs), and JSONC (D10 (a)). The smallest shape that the notices (A11) need: the line of an entry is found in the text, since serde_json keeps no lines.
+- **A23 (2026-11-27): action names are the variants in snake_case, one name per parameter a row uses.** `move_down` and `move_up` are `Move(1)` and `Move(-1)`, `move_down_five` is `Move(5)`, `jump_next` is `Jump(1)`, `next_hunk` is `Hunk(1)`, and so on through `ACTION_NAMES` (68 names, `keys/bindings.rs`). `GoToLine` has no name, because a count is not a key. The names are listed in `docs/keymaps.md`.
+- **A24 (2026-11-27): the table matches modifiers as the old arms did.** `ctrl-` and `alt-` rows ignore Shift; `*-` ignores every modifier (Tab, Escape, as the old arms did); a named key or a symbol ignores Shift, except that a `shift-down` or `shift-up` row comes before its plain row; `.` checks Shift, because the old `.` arm does (`!key.shift`), so a Shift+`.` (a kitty terminal can send `>` that way) is not dotfiles. A differential run of the old `match` (from HEAD) against the table gave no difference over 945,024 cases (every key, modifier set, state, and key pair); the run was a scratch test outside the tree, and `keys/tests.rs` passes unchanged.
+- **A25 (2026-11-27): a sequence waits, and the defaults have none.** A row longer than the keys pressed so far makes them wait (`More`), and the longer row wins over a shorter one that matches the same keys. A key that cannot continue the wait cancels it and is read alone, so the cancelled keys do not run. The defaults have no sequence: `g` is Top on its own (`keys/tests.rs` pins it), and `gg` is the card's label for it. Only a user sequence that starts with `g` makes `g` wait.
+- **A26 (2026-11-27): the card reads A10 as "a row shows its actions' keys".** A card row lists the merged keys of its actions, and keeps its fixed label while they are the defaults. A binding of an action with a row joins that row, so a rebound key shows on its action's row. A binding of an action with no row gets its own row under its context's section. Read this way, A10's "a new binding gets its own row" applies to actions with no row. Open for the owner: the other reading (every added binding its own row, with the default row showing only the default keys).
+- **A27 (2026-11-27): the keymap notices follow the theme notices, and `--help` reads the file.** The footer order is settings, themes, keymap, then the palette choice (extends A18). `fmc --help` loads the same file and prints its notices to the error stream, before the help text.
+- **A28 (2026-11-27): one config-file read, capped at 1 MiB.** `services/mod.rs` `read_config` (with `MAX_CONFIG_BYTES`) serves the theme files and `keymap.json`; a FIFO or device is refused by its metadata before it is opened. Residual: a FIFO put in place between that check and the open could still block the startup read, which needs write access to the config folder.
+- **A29 (2026-11-27): the CLI tests run with no config.** `tests/cli.rs` sets `XDG_CONFIG_HOME` to a folder that does not exist (A12), so no test reads the owner's files; the help test with a rebound key sets its own folder.
 - **A12 (2026-11-27): a live run uses a temporary config folder.** Every live run sets `XDG_CONFIG_HOME` to a temp folder (`src/services/settings.rs:12-18` reads it), so the owner's `~/.config/fmc` is never touched by a test.
 
 ### Parity and records (what each feature needs)

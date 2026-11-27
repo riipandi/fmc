@@ -6,13 +6,24 @@ use std::process::Command;
 use assert_cmd::cargo::cargo_bin;
 use assert_cmd::prelude::*;
 
+/// A config folder that does not exist: no test reads the owner's `~/.config/fmc`, and every file is missing (A12).
+const NO_CONFIG: &str = "/nonexistent-fmc-test-config";
+
 fn fmc() -> Command {
-    Command::new(cargo_bin("fmc"))
+    let mut command = Command::new(cargo_bin("fmc"));
+    command.env("XDG_CONFIG_HOME", NO_CONFIG);
+    command
 }
 
 /// Runs fmc on a pseudo-terminal, so the interactive-terminal check passes. Output arrives with `\r\n`.
 fn fmc_on_tty(arg: &str) -> std::process::Output {
-    Command::new("script").args(["-q", "/dev/null"]).arg(cargo_bin("fmc")).arg(arg).output().unwrap()
+    Command::new("script")
+        .args(["-q", "/dev/null"])
+        .arg(cargo_bin("fmc"))
+        .arg(arg)
+        .env("XDG_CONFIG_HOME", NO_CONFIG)
+        .output()
+        .unwrap()
 }
 
 #[test]
@@ -28,7 +39,7 @@ fn help_prints_usage_and_points_to_the_keys() {
      Options:\n  \
        -h, --help           Print this help.\n  \
        -v, --version        Print the version.\n\n\
-     Press ? inside fmc for the keys.\n\
+     Press ? inside fmc for the keys, and Ctrl+, for the settings.\n\
      Settings: $XDG_CONFIG_HOME/fmc/settings.json, or ~/.config/fmc/settings.json.\n\
      Docs: https://github.com/riipandi/fmc/tree/main/docs\n";
     assert_eq!(text, expected);

@@ -230,18 +230,19 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
     let views = &ui.overlay;
     let open = m.overlay.as_ref();
     let dialog_open = matches!(open, Some(Overlay::Dialog(_)));
-    views.catcher.visible(open.is_some());
+    // The Settings page is modal too: the catcher takes its clicks, so the panes beneath it do not act (plan-00015, A21).
+    views.catcher.visible(open.is_some() || m.settings.page.is_some());
     views.scrim.visible(dialog_open);
     views.menu.root.visible(matches!(open, Some(Overlay::Menu(_))));
     views.dialog.root.visible(dialog_open);
     match open {
         Some(Overlay::Menu(menu)) => {
             let rect = menu::frame(menu.items(), m.overlay_at, screen, tier(columns));
-            views.menu.show(menu, rect, p, &tint);
+            views.menu.show(menu, rect, p, tint);
         }
         Some(Overlay::Dialog(dialog)) => {
             let rect = dialog::frame(screen, tier(columns), &dialog.message, dialog.field);
-            views.dialog.show(dialog, rect, p, &tint);
+            views.dialog.show(dialog, rect, p, tint);
         }
         None => {}
     }

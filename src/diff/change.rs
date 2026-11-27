@@ -3,7 +3,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::theme::Palette;
+use crate::theme::{Hex, Palette};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ChangeKind {
@@ -54,7 +54,7 @@ impl ChangeKind {
         }
     }
 
-    pub fn color(self, p: &Palette) -> &'static str {
+    pub fn color(self, p: &Palette) -> Hex {
         match self {
             Self::Modified => p.modified,
             Self::Added => p.added,

@@ -18,6 +18,7 @@ pub mod mermaid;
 pub mod picture;
 pub mod reader;
 pub mod scrollbar;
+pub mod settings;
 pub mod sidebar;
 pub mod styled;
 pub mod syntax;

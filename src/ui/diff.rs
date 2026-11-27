@@ -7,7 +7,7 @@ use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
 use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts, widens_stack};
-use fmc::theme::{Mode, Palette};
+use fmc::theme::{Hex, Mode, Palette};
 use opentui::native::{TextView, Viewport};
 use opentui::prelude::*;
 use opentui::widget::{DiffColors, DiffGutter, DiffView};
@@ -175,7 +175,7 @@ impl DiffBody {
 
     /// Paints each header's title for the active file and its fold (Scouter `paintHeader`), its tint, and each body's
     /// visibility. A title is set only when its state changed.
-    pub fn paint_headers(&self, files: &[FilePatch], active: Option<&str>, folds: &Folds, tint: &str, p: &Palette) {
+    pub fn paint_headers(&self, files: &[FilePatch], active: Option<&str>, folds: &Folds, tint: Hex, p: &Palette) {
         for (block, file) in self.blocks.borrow().iter().zip(files) {
             block.header.bg(color(tint));
             let is_active = active == Some(file.change.path.as_str());

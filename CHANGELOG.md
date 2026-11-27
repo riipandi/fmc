@@ -7,10 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A theme catalog: 16 bundled themes (bjarneo/editor, MIT), chosen with `dark_theme` and `light_theme` in `settings.json`. `default` is the default theme, Scouter's own pair.
+- `theme_mode` in `settings.json` (`auto`, `dark`, or `light`) forces a mode; `auto` still follows the terminal.
+- User themes: a JSON file per theme in `$XDG_CONFIG_HOME/fmc/themes/` (or `~/.config/fmc/themes/`), read at start. A file with a bundled id replaces that theme; a bad file is skipped with a footer notice.
+- The Settings page on `Ctrl+,`: it lists the eight settings fmc saves, with a help line for the selected one. Enter or Space changes a value, `h` and `l` step a choice back and forward, and a number opens a dialog to type it. Esc or `q` closes the page.
+- Each change on the Settings page applies at once and saves to `settings.json` at once. A save sets only its key, keeps the other keys, and is refused, with the value put back, when the file does not parse.
+- Keys can be changed in `$XDG_CONFIG_HOME/fmc/keymap.json` (or `~/.config/fmc/keymap.json`), read at start: `"<context>.<key>": "<action>"` binds a key, and `null` unbinds the default. A bad entry is skipped with a footer notice that names its line. The defaults are unchanged; see [Keys](docs/keymaps.md#changing-the-keys).
+- The `?` list shows the keys the file sets, and a key bound to an action with no row gets a row of its own.
+
 ### Changed
 
+- `docs/configuration.md` no longer calls the settings file read-only: the Settings page writes it.
 - The `?` key list shows the action first and the key second, groups related acts together, and lists the file acts in a Files section of their own.
-- `fmc --help` no longer lists the keys. It prints the usage, the arguments, and the options, and says where the keys (`?`), the settings file, and the docs are.
+- `fmc --help` no longer lists the keys. It prints the usage, the arguments, and the options, and says where the keys (`?`), the settings (`Ctrl+,`), and the docs are.
 - The context menu shows each row's key at its right edge, separates its groups with a rule, and colours Delete as a destructive act.
 
 ## [0.3.0] - 2026-11-27

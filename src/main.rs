@@ -34,6 +34,12 @@ impl Drop for RemoveCopies {
     }
 }
 
+/// The keys the keymap file sets, with its notices, read once at start (`services/keymap.rs`).
+fn keymap() -> fmc::keys::Parsed {
+    let (config_home, home) = (std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"));
+    services::keymap::path(config_home, home).as_deref().map(services::keymap::load).unwrap_or_default()
+}
+
 fn run() -> Result<(), String> {
     let _copies = RemoveCopies;
     match args::parse(std::env::args_os().skip(1))? {
@@ -46,10 +52,13 @@ fn run() -> Result<(), String> {
             let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
             let target = args::open_target(path, &cwd)?;
             // Read before the first frame, so a bad value's notice is the first thing the footer shows.
-            let settings = services::settings::path(std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"))
-                .map(|path| services::settings::load(&path))
-                .unwrap_or_default();
-            app::run(&target, settings).map_err(|e| e.to_string())?;
+            let (config_home, home) = (std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"));
+            let path = services::settings::path(config_home.clone(), home.clone());
+            let settings = path.as_deref().map(services::settings::load).unwrap_or_default();
+            let themes =
+                services::theme::folder(config_home, home).map(|dir| services::theme::load(&dir)).unwrap_or_default();
+            let keys = keymap();
+            app::run(&target, settings, themes, keys, path).map_err(|e| e.to_string())?;
         }
     }
     Ok(())

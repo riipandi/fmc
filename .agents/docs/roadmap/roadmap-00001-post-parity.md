@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T20:05:31+07:00
+updated: 2026-11-27T23:40:00+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -23,17 +23,18 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-6 | Platforms beyond macOS aarch64 | parked | owner-deferred | 2026-11-26 |
 | RI-7 | An alternate Vim-style keymap | parked | owner-deferred | 2026-11-26 |
 | RI-8 | Event-based file watching | parked | unlock: a measured polling cost and MSRV 1.91 | 2026-11-26 |
-| RI-9 | Persistent settings | planned | plan-00015 phases 1 to 3 (the write path, the theme mode, the Settings page); `settings.json` is read, never written, until phase 1 lands (`architecture.md`, "a read-only settings.json"); saving UI state waits for D3 | 2026-11-27 |
-| RI-10 | Theme catalog | planned | plan-00015 phase 2 | 2026-11-27 |
+| RI-9 | Persistent settings | landed in part | plan-00015 phases 1 to 4 (`3f5673c`, `64c7aea`, `d68af26`): the Settings page writes `settings.json`; the UI state (sidebar, wrap, split, context lines, dotfiles) is not saved (D3 (a)) | 2026-11-27 |
+| RI-10 | Theme catalog | landed | plan-00015 phase 2 (`64c7aea`): 16 bundled themes, the theme mode, `dark_theme`, `light_theme`, and the `themes/` folder | 2026-11-27 |
 | RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
 | RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
-| RI-13 | Configurable keymap | planned | plan-00015 phase 4 | 2026-11-27 |
+| RI-13 | Configurable keymap | landed | plan-00015 phase 4 (`1b37a2e`): keys in `keymap.json`; in-UI rebinding is not part of it (D11 (a)) | 2026-11-27 |
 | RI-14 | Open an unsupported file with the default app | parked | owner-deferred | 2026-11-27 |
 | RI-15 | Open the project folder in Finder or an editor | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-17 | The rest of the owner's grammar set | parked | unlock: a crate that loads | 2026-11-27 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
+| RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
 
 ## Rendering
 
@@ -121,7 +122,7 @@ Scouter polls (`research/scouter-inventory.md` §12) and fmc copies it. `notify`
 
 ### RI-9 — Persistent settings in `~/.config/fmc/settings.json`
 
-- status: planned (plan-00015, approved by the owner 2026-11-27; phase 1 adds the write path, phase 2 the theme mode, phase 3 the Settings page on `Ctrl+,`). Landed so far: fmc reads `settings.json` and never writes it (`architecture.md`, "a read-only settings.json"). Saving UI state waits for plan-00015 D3 · updated 2026-11-27
+- status: landed in part (plan-00015 phases 1 to 4, `3f5673c`, `64c7aea`, `d68af26`: the Settings page on `Ctrl+,` saves each change to `settings.json` through a temp file and a rename, and the theme keys are in the file). Not landed: the saved UI state (sidebar width and visibility, wrap, split, context lines, dotfiles). The owner chose not to save it in plan-00015 (D3 (a)), so that part needs its own decision (`architecture.md`, "fmc writes its settings.json, atomically") · updated 2026-11-27
 
 Scouter has no configuration by design (`research/scouter-inventory.md` §15), so this is a post-parity deviation the owner asked for on 2026-11-26. fmc remembers the UI state the user changes: sidebar width, reader wrap, diff layout (unified or split), diff context (`x`), and the theme mode (`auto` follows the terminal as Scouter does, or `dark`, `light`). Path: `~/.config/fmc/settings.json` (owner's choice). Crates approved for this item: `serde` with `derive` and `serde_json` (`rules.md`, "Dependencies"). The write is fmc's own file, not a user file: temp file plus `rename`; a file that fails to parse is never overwritten, fmc starts with defaults and shows a notice.
 
@@ -129,11 +130,19 @@ Scouter has no configuration by design (`research/scouter-inventory.md` §15), s
 
 ### RI-10 — Theme catalog in `~/.config/fmc/themes/*.json`
 
-- status: planned (plan-00015 phase 2, approved by the owner 2026-11-27; the owner's 2026-11-26 deferral is lifted on 2026-11-27 with RI-9) · updated 2026-11-27
+- status: landed (plan-00015 phase 2, `64c7aea`: 16 bundled themes, the theme mode, `dark_theme` and `light_theme` in `settings.json`, and user themes in `themes/`; `architecture.md`, "fmc offers a theme catalog") · updated 2026-11-27
 
-User themes as JSON files, one per theme, each with a dark and a light variant or a declared mode, selected from settings (RI-9). The starting catalog comes from bjarneo/editor (MIT; keep its notice): editor dark, Catppuccin Mocha and Latte, Tokyo Night and Tokyo Night Day, Gruvbox and Gruvbox Light, Everforest, Kanagawa, Nord, One Dark and One Light, Flexoki Light (source: `src/theme.rs` in github.com/bjarneo/editor). Each theme maps onto fmc's palette tokens (`DESIGN.md`, `theme.rs`) and passes the contrast tests the Scouter palettes pass.
+User themes as JSON files, one per theme, each with a dark and a light variant or a declared mode, selected from settings (RI-9). The starting catalog comes from bjarneo/editor (MIT; keep its notice): editor dark, Catppuccin Mocha and Latte, Tokyo Night and Tokyo Night Day, Gruvbox and Gruvbox Light, Everforest, Kanagawa, Nord, One Dark and One Light, Flexoki Light, and, as the source has them, Rosé Pine, Rosé Pine Dawn, and editor light (source: `src/theme.rs` in github.com/bjarneo/editor). Each theme maps onto fmc's palette tokens (`DESIGN.md`, `src/theme/catalog.rs`). Twelve of the sixteen fall short of 7:1 on a tint or a match pair; the pairs are listed in `src/theme/theme_tests.rs` (plan-00015, A16), and the owner has not yet decided on them.
 
 **Unlock:** RI-9 landed. **First move:** map editor's theme fields onto fmc's tokens and list the tokens with no source value.
+
+### RI-20 — The Settings page on `Ctrl+,`
+
+- status: landed (plan-00015 phase 3, `d68af26`; the grouped layout `883577d`, the owner's request on 2026-11-27; `architecture.md`, "Approved deviation: the Settings page edits settings.json on Ctrl+, and saves each change at once") · updated 2026-11-27
+
+The owner asked on 2026-11-27 for a settings UI opened with `Ctrl+,`, and only that key (plan-00015 D12). The page edits the eight saved keys of RI-9 and RI-10 in two groups, Browsing and Appearance; each change applies and saves at once (D5). It is not in RI-9's text, so it has its own entry. Left out: rebinding keys on the page (RI-13 stays file-only, D11), a mouse on the page (A21), and a route for a terminal without the kitty keyboard protocol, which cannot send `Ctrl+,`.
+
+**Unlock:** none; landed. **Follow-ups:** the owner's live check of `Ctrl+,` in Ghostty and Terminal.app; footer hints that follow `keymap.json`.
 
 ## Layout
 
@@ -168,9 +177,9 @@ Trap: `Ctrl+.` has no legacy encoding; only terminals with the kitty keyboard pr
 
 ### RI-13 — Configurable keymap in `~/.config/fmc/keymap.json`
 
-- status: planned (plan-00015 phase 4, approved by the owner 2026-11-27; the keymap file reads over the defaults, and editing in the UI is D11) · updated 2026-11-27
+- status: landed (plan-00015 phase 4, `1b37a2e`: the default keys are one table, and `keymap.json`, read at start, binds and unbinds over it; the `?` card and `--help` show the merged keys; in-UI rebinding is not part of it, D11 (a)) · updated 2026-11-27
 
-The owner asked on 2026-11-26 for user keybindings in the style of Zed, persisted at `~/.config/fmc/keymap.json`. Zed's shape is a JSON array of blocks, each with an optional `context` predicate and a `bindings` map from a key sequence (`"ctrl-q"`, `"g g"`) to an action name; user blocks override the defaults, and `null` unbinds a key. fmc already dispatches every key from one table through a pure pending-key parser (`architecture.md`, "Keys are dispatched from one key table"), so the file maps onto it: contexts are the table's focus and screen values, actions are its `Action` names. The defaults stay Scouter's keys plus the approved deviations; `--help`, the `?` card, and the footer hints keep reading the merged table. Crates: `serde` and `serde_json` (approved for after parity, `rules.md`). A file that fails to parse or names an unknown action or context is not applied: fmc keeps the defaults and shows a notice naming the line.
+The owner asked on 2026-11-26 for user keybindings in the style of Zed, persisted at `~/.config/fmc/keymap.json`. The file is one flat JSON object, `"<context>.<key>": "<action>"` to bind and `null` to unbind a default, not Zed's array of blocks (plan-00015, A22). fmc dispatches every key from one table through a pure pending-key parser (`architecture.md`, "Keys are dispatched from one key table"), so the file edits that table: contexts are the table's focus and screen values, actions are its `Action` names. The defaults stay Scouter's keys plus the approved deviations; the `?` card and `--help` read the merged table, and the footer hints keep their own list. Crates: `serde_json` only, already declared; `serde` is approved but not used. A file that fails to parse keeps the defaults. A bad entry (an unknown context, action, or key name) is skipped with a notice that names its line, and the other entries apply (plan-00015, A11).
 
 Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.`; RI-11, RI-12) need a per-terminal note; a user binding can shadow a prefix (`g`), so the parser's `More` state must follow the merged table.
 

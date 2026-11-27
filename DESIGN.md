@@ -102,6 +102,15 @@ Two complete palettes, dark and light, in the frontmatter. fmc picks one from th
 - Accent (indigo) marks focus: the focused panel border, pills, the selected row marker `▎`, prompt marks.
 - Git states always pair a colour with a letter: `M` modified, `A` added, `D` deleted, `R` renamed, `T` type change, `U` conflict, `?` untracked.
 
+### Catalog
+
+Scouter's pair above is the default for both modes, and `theme_mode`, `dark_theme`, and `light_theme` in the settings file choose another (`docs/configuration.md`, "Themes"). The catalog holds 16 bundled themes, from bjarneo/editor (MIT): nine dark and seven light. Each has 24 colour roles, and fmc takes its tokens from them:
+
+- `bg` to `fallback-background` and `match-fg`; `fg` to `text`; `fg2` to `muted`; `fg3` to `dim`; `bd` to `border`; `bg3` to `row-active-bg` and `hover`; `ac` to `accent`; `on` to `accent-ink`; `sel` to `selection-bg`; `err` to `error` and `removed`; `warn` to `modified` and `match-bg`; `ins` to `added`; and `kw`, `fn`, `str`, `num`, `com`, and `pun` to the six syntax tokens.
+- The other tokens are mixes of two roles, with fmc's own weights: `accent-soft`, `ignored`, `folder`, `added-bg`, `removed-bg`, `added-gutter`, `removed-gutter`, `target-bg`, `target-gutter`, and the first and last `wordmark`. The middle `wordmark` is `accent`.
+
+The page background is the terminal's, tinted as above. Not every bundled theme reaches the contrast Scouter's pair does on its selection, tints, and match colours; `src/theme/theme_tests.rs` lists which pairs fall short.
+
 ## Typography
 
 The terminal font is the user's. Emphasis is bold and colour; comments are italic. File icons are Nerd Font glyphs, not emoji.
@@ -204,7 +213,11 @@ A rounded border in `accent` on the `tint` background, over the page at the poin
 
 ### Dialog
 
-A rounded border in `accent` on the `tint` background, centred and at most 56 columns wide. It has a bold title in `text`, a wrapped message, an optional one-line field (the terminal cursor shows in it while the field has the focus), an error line in `error`, and buttons on the right. The focused button is filled with `accent` and its label is `accent-ink` in bold. A pointer over a button tints its label in `accent` with no fill, and does not move the focus, so Return still picks the focused button. In the compact tier the dialog spans the width less a column on each side. A scrim dims the page under it with a colour gain of 0.4, and the page takes no clicks while a dialog is open.
+A rounded border in `accent` on the `tint` background, centred and at most 56 columns wide. It has a bold title in `text`, a wrapped message, an optional one-line field (the terminal cursor shows in it while the field has the focus), an error line in `error`, and buttons on the right. The focused button is filled with `accent` and its label is `accent-ink` in bold. A pointer over a button tints its label in `accent` with no fill, and does not move the focus, so Return still picks the focused button. In the compact tier the dialog spans the width less a column on each side. A scrim dims the page under it with a colour gain of 0.4, and the page takes no clicks while a dialog or the Settings page is open.
+
+### Settings page
+
+A post-parity addition: Scouter has no settings page (`architecture.md`, "the Settings page edits settings.json"). It fills the content area as the changes screen does, and in the compact tier it is a page of the stack. The rows sit in two groups, Browsing and Appearance, each under an uppercase heading in bold `dim`, with a blank row above the page and between the groups. One row per setting, indented four columns: its name (`Auto preview`) in `muted` in an 18-column label column, then the value. An on-or-off value is `● on` in `accent` or `○ off` in `muted`; a number is in `accent-soft`; a choice is in `accent-soft` between `‹ ›`, which are `dim`, or `muted` on the selected row. The selected row fills with `row-active-bg` and its name is bold in `text`. Under the rows, after a blank row: `settings.json` and the selected row's key in `dim`, then its help line in `muted`. There are no boxes or Save button: Enter or Space changes a row, and the change saves at once.
 
 ### Welcome
 

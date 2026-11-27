@@ -1,5 +1,7 @@
 //! Text made safe for one terminal line (Scouter `src/core/files.ts`, `displayText` and `displayLabel`).
 
+use crate::theme::Hex;
+
 /// Normalizes line ends and replaces control and bidi-override characters with U+FFFD.
 pub fn display_text(text: &str) -> String {
     text.replace("\r\n", "\n")
@@ -24,13 +26,13 @@ pub fn display_label(text: &str) -> String {
 pub struct Seg {
     pub text: String,
     /// `None` is the view's default text color.
-    pub fg: Option<&'static str>,
-    pub bg: Option<&'static str>,
+    pub fg: Option<Hex>,
+    pub bg: Option<Hex>,
     pub bold: bool,
 }
 
 impl Seg {
-    pub fn new(text: impl Into<String>, fg: &'static str) -> Self {
+    pub fn new(text: impl Into<String>, fg: Hex) -> Self {
         Self { text: text.into(), fg: Some(fg), bg: None, bold: false }
     }
 
@@ -44,7 +46,7 @@ impl Seg {
         self
     }
 
-    pub fn on(mut self, bg: &'static str) -> Self {
+    pub fn on(mut self, bg: Hex) -> Self {
         self.bg = Some(bg);
         self
     }

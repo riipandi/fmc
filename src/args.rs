@@ -34,7 +34,7 @@ pub fn help_text() -> String {
      Options:\n  \
        -h, --help           Print this help.\n  \
        -v, --version        Print the version.\n\n\
-     Press ? inside fmc for the keys.\n\
+     Press ? inside fmc for the keys, and Ctrl+, for the settings.\n\
      Settings: $XDG_CONFIG_HOME/fmc/settings.json, or ~/.config/fmc/settings.json.\n\
      Docs: https://github.com/riipandi/fmc/tree/main/docs"
         .to_owned()

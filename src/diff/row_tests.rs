@@ -2,7 +2,7 @@
 
 use super::*;
 use crate::diff::ChangeKind;
-use crate::theme::DARK;
+use crate::theme::{DARK, Hex};
 
 fn change(path: &str, kind: ChangeKind) -> Change {
     Change { kind, ..Change::untracked(path) }
@@ -16,7 +16,7 @@ fn text(segments: &[Seg]) -> String {
     segments.iter().map(|segment| segment.text.as_str()).collect()
 }
 
-fn bars(change: &Change) -> Vec<(String, Option<&'static str>)> {
+fn bars(change: &Change) -> Vec<(String, Option<Hex>)> {
     stat_bar(change, &DARK).into_iter().map(|segment| (segment.text, segment.fg)).collect()
 }
 

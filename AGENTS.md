@@ -17,7 +17,7 @@ Always-on rules. Detail lives in `.agents/docs/` (map: `index.md`). Before a cha
 
 - **Scouter is the reference.** Phase 1 goal: 100% visual and functional parity with Scouter (<https://github.com/indrazm/scouter>). A behavior difference is a defect unless the owner approved it and the approval is recorded in `architecture.md` and listed in `docs/parity.md`, both naming the Scouter baseline (v0.3.4, `434d000f`). Port commits carry the trailer `Scouter-Base: v0.3.4 (434d000f)` (`rules.md`, "Parity with Scouter").
 - **Verify Scouter before porting.** Establish each Scouter behavior from its source or from a live run through Rex (`rex` skill), never from memory. Cite the evidence: a `file:line` in Scouter, or the captured terminal output.
-- **Writes are bounded.** The owner opened the file-manager phase (2026-11-27): create, rename, copy, move, and delete from the tree, inside the browsed root (`rules.md`, "Writes"). Any other write (saving a file, fmc's own settings, a write outside the root) waits for the owner to open its phase.
+- **Writes are bounded.** The owner opened the file-manager phase (2026-11-27): create, rename, copy, move, and delete from the tree, inside the browsed root (`rules.md`, "Writes"). fmc's own `settings.json` is written only by the Settings page (`Ctrl+,`), atomically (plan-00015, D1; `rules.md`, "Writes"). Any other write (saving a file, another config file, a write outside the root) waits for the owner to open its phase.
 - **The `opentui` locked source wins over docs.** Read the API of `opentui` and `opentui-sys` from the version in `Cargo.lock`; a README, doc page, or example that disagrees with the source is the wrong one.
 
 ## Ambiguous decisions

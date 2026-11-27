@@ -10,7 +10,7 @@
 
 use std::cell::RefCell;
 
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::styled::{Seg, content};
@@ -87,12 +87,15 @@ impl ScrollBar {
             cells.push(cell);
         }
         // The gap is blank, drawn in Scouter's default foreground so the captures agree cell for cell.
-        let gap = Seg::new(" ".repeat(self.gap), "#ffffff");
+        let gap = Seg::new(" ".repeat(self.gap), Hex::new("#ffffff"));
         for (index, cell) in cells.iter().enumerate() {
             // Cells past `height` are left from a taller frame; shown, they would squeeze the column (`ui/tree.rs`).
             cell.visible(index < height);
-            let thumb =
-                glyphs.get(index).copied().flatten().map_or_else(|| Seg::new(" ", "#ffffff"), |g| Seg::new(g, p.muted));
+            let thumb = glyphs
+                .get(index)
+                .copied()
+                .flatten()
+                .map_or_else(|| Seg::new(" ", Hex::new("#ffffff")), |g| Seg::new(g, p.muted));
             cell.set_text(content(&[gap.clone(), thumb], p.text));
         }
     }

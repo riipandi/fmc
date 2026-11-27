@@ -7,7 +7,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use fmc::layout::{Page, Tier, tier};
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::bars;
@@ -161,7 +161,7 @@ impl FooterState {
         }
         let location = match self.mode {
             Mode::Diff => self.diff.as_ref().map_or("", |d| d.location.as_str()),
-            Mode::Browse => self.location.as_str(),
+            Mode::Browse | Mode::Settings => self.location.as_str(),
         };
         let shown = fit_end(location, columns, measure);
         // The folder part is dim and the last name in `text`; a trailing `/` stays with the name (JS
@@ -210,7 +210,7 @@ impl FooterState {
                 facts.push(Fact { key: "language", segments: muted(language.clone()) });
                 facts.push(Fact { key: "encoding", segments: muted("UTF-8".into()) });
             }
-            (Mode::Browse, None, _) => {}
+            (Mode::Browse, None, _) | (Mode::Settings, ..) => {}
         }
         let index = usize::from(self.mode == Mode::Diff);
         if let Some(position) = &self.positions[index] {
@@ -348,7 +348,7 @@ impl Footer {
         Self { root, band, left, right, hints, targets: RefCell::new(Vec::new()) }
     }
 
-    pub fn set_background(&self, hex: &str) {
+    pub fn set_background(&self, hex: Hex) {
         self.band.bg(super::styled::color(hex));
     }
 

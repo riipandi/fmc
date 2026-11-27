@@ -6,7 +6,7 @@ use std::path::Path;
 
 use fmc::reader::associations::{Associations, Language as Association};
 use fmc::reader::language::{extension_filetype, is_highlighted};
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::native::{Context, SyntaxStyle};
 use opentui::prelude::{Result, Style};
 use opentui::syntax::tree_sitter::Language;
@@ -145,7 +145,7 @@ pub fn language_for(associations: &Associations, root: &Path, path: &Path) -> Op
 /// The style of each capture name, as Scouter's `syntaxStyles()` maps them. Unlisted names take their first dotted
 /// part's style, as Core's `SyntaxStyle.getStyle` does.
 pub fn theme(p: &Palette) -> SyntaxTheme {
-    let fg = |hex: &str| Style::new().fg(color(hex));
+    let fg = |hex: Hex| Style::new().fg(color(hex));
     let s = &p.syntax;
     let (keyword, string, comment) = (fg(s.keyword), fg(s.string), fg(s.comment).italic());
     let (constant, function, punctuation) = (fg(s.constant), fg(s.function), fg(s.punctuation));

@@ -14,9 +14,11 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 - `:q` then Enter quits too, as in Neovim. `:q!`, `:qa`, and `:quit` work as well, and `Esc` cancels the `:` prompt.
 - Only Enter opens a file, and it moves the focus to the reader. `l` and `→` only expand folders; in Scouter they also open a file.
 - `]` and `[` move the list selection by two rows and scroll the reader by five lines. Both amounts are set in the [settings](configuration.md). Scouter uses them only on the changes screen.
+- `Ctrl+,` opens the Settings page, which fmc adds. Scouter has no settings page, and its decision record 0001 keeps it read-only and without configuration (`scouter:docs/decision/0001-read-only-and-minimal.md:7`). Only a terminal with the kitty keyboard protocol can send `Ctrl+,`, so a terminal without it cannot open the page.
 - `Ctrl+/` shows or hides the sidebar. `Ctrl+.` shows or hides dotfiles in the tree and the finder, and `.` does the same for terminals that cannot send `Ctrl+.`, such as Terminal.app. Dotfiles are shown by default, as in Scouter. Scouter has none of these keys.
 - `Ctrl+F` in the finder switches name matching to fuzzy (see Finder).
 - The footer at 80 columns can drop one more hint than Scouter's does, on the changes screen `a one file`, because `^q quit` is one column wider than `q quit`. The key list always shows every key.
+- The keys can be changed in `keymap.json`, which is read at start (plan-00015). Scouter's keys are fixed (`scouter:src/core/keymap.ts:3-55`). The defaults are Scouter's keys with the differences above, and `architecture.md` records the file ("Approved deviation: the keys can be changed in keymap.json"). The file is described in [Keys](keymaps.md#changing-the-keys).
 
 ## Mouse and focus
 
@@ -37,7 +39,8 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 ## Settings
 
-- fmc reads a settings file (see [Configuration](configuration.md)). Scouter has no settings file, and the values fmc reads from it are fixed in Scouter.
+- fmc reads a settings file and writes it from the Settings page (see [Configuration](configuration.md)). Each change saves at once. Scouter has no settings file, and the values fmc reads from it are fixed in Scouter.
+- Scouter has one fixed palette pair, dark and light, and the terminal picks between them. fmc offers a catalog of 16 themes and a theme mode, chosen in the settings file; the default is Scouter's own pair ([Configuration](configuration.md), "Themes").
 
 ## Reader
 

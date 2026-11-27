@@ -262,6 +262,8 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         }
         Event::Signed { path, serial, result } => gutter::apply(m, path, *serial, result),
         Event::Written { kind, source, result } => write::written(m, *kind, source, result.clone()),
+        // `app/settings.rs` answers it: a refused save takes a colour back, which needs the UI.
+        Event::SettingsSaved { .. } => {}
     }
 }
 

@@ -4,7 +4,7 @@
 use std::collections::{HashMap, HashSet};
 
 use super::change::{Change, ChangeKind, MAX_CHANGES, order};
-use crate::theme::Palette;
+use crate::theme::{Hex, Palette};
 
 /// What git reported for the repository that holds the browsed folder.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -20,7 +20,7 @@ pub struct Listing {
 /// A status letter and its color, drawn at the right edge of a row.
 pub struct Mark {
     pub letter: &'static str,
-    pub color: &'static str,
+    pub color: Hex,
 }
 
 /// The git marks of the browsed folder, keyed by path relative to it.

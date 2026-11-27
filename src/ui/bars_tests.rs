@@ -1,5 +1,5 @@
 use fmc::layout::Page;
-use fmc::theme::{Mode, palette};
+use fmc::theme::DARK;
 
 use super::*;
 
@@ -42,7 +42,7 @@ fn the_cells_are_equal_to_within_one_column() {
 
 #[test]
 fn a_tap_on_a_cell_presses_its_segments_key_and_a_separator_presses_nothing() {
-    let p = palette(Mode::Dark);
+    let p = &DARK;
     let segments = page_segments(Page::Files, false, true, false);
     for columns in [40, 49, 59] {
         let (_, targets) = render(&segments, columns, p);
@@ -93,7 +93,7 @@ fn the_key_page_has_only_back() {
 
 #[test]
 fn a_prompt_bar_cancels_with_esc_in_its_first_cell_and_shows_the_prompt_after_it() {
-    let p = palette(Mode::Dark);
+    let p = &DARK;
     let text_seg = Seg::new("/ hedwig", p.text);
     let (drawn, targets) = prompt(&[text_seg], 40, p);
     assert!(text(&drawn).trim_start().starts_with("Cancel"), "{:?}", text(&drawn));
@@ -103,7 +103,7 @@ fn a_prompt_bar_cancels_with_esc_in_its_first_cell_and_shows_the_prompt_after_it
 
 #[test]
 fn the_segment_labels_are_centred_in_their_cells() {
-    let p = palette(Mode::Dark);
+    let p = &DARK;
     let (drawn, _) = render(&page_segments(Page::Files, false, true, false), 40, p);
     let line = text(&drawn);
     assert_eq!(line.chars().count(), 40, "{line:?}");
