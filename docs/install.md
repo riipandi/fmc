@@ -20,7 +20,7 @@ tar -xzf fmc-<version>-aarch64-apple-darwin.tar.gz
 mv fmc-<version>-aarch64-apple-darwin/fmc ~/.local/bin/
 ```
 
-The check prints `OK` when the archive is intact. The archive unpacks into a folder of the same name. It holds the `fmc` binary, the README, the changelog, the licenses, and a list of the third-party licenses. Move `fmc` into a folder on your `PATH`, such as `~/.local/bin` if that folder is on yours, then run `fmc --version` to check.
+The check prints `OK` when the archive is intact. The archive unpacks into a folder of the same name. It holds the `fmc` binary, the README, the changelog, the licenses, and `THIRD_PARTY_LICENSES.html`, the licenses of the code fmc includes. Move `fmc` into a folder on your `PATH`, such as `~/.local/bin` if that folder is on yours, then run `fmc --version` to check.
 
 ## Build from source
 
