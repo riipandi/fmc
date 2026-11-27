@@ -26,7 +26,7 @@ Scouter (<https://github.com/indrazm/scouter>, MIT) is the reference: a read-onl
 | A path, tool, or command | `shape.md` |
 | A dependency approved, or a license rule | this file ("Dependencies", "Licenses") |
 | A new or moved agent document | `index.md` |
-| A user-visible behavior | `docs/` (`cli.md`, `keymaps.md`, `development.md` as the plan lands them), `README.md`, and the `[Unreleased]` section of `CHANGELOG.md` (Keep a Changelog) |
+| A user-visible behavior | the `docs/` page it belongs to (`usage.md` for a screen, `keymaps.md` for a key, `configuration.md` for a settings key, `cli.md` for an argument, `parity.md` for a difference from Scouter, `install.md` or `development.md` for setup and releases; `docs/index.md` lists them), `README.md` when the front page changes, and the `[Unreleased]` section of `CHANGELOG.md` (Keep a Changelog) |
 | Product purpose, users, principles | `PRODUCT.md` |
 | A palette token, layout metric, or component look | `DESIGN.md` (describes Scouter's look during parity; Scouter wins on disagreement) and `theme.rs` once it exists |
 

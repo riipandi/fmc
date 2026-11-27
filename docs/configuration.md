@@ -1,6 +1,6 @@
 # Configuration
 
-fmc reads one optional file when it starts, and never writes it.
+fmc reads one optional settings file when it starts. It never writes that file. Edit it by hand, then start fmc again.
 
 ## Location
 
@@ -21,11 +21,11 @@ A key that is not listed is ignored.
 
 ## Errors
 
-A file that is not valid JSON, or whose top level is not an object, sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file is the defaults with no message.
+A file that is not valid JSON, or whose top level is not an object, sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
 
 ## File associations
 
-`file_associations` works as VS Code's `files.associations`: each key is a pattern, and each value the filetype a matching file is shown as.
+`file_associations` works like VS Code's `files.associations`: each key is a pattern, and each value is the filetype a matching file is shown as.
 
 ```json
 {
@@ -41,17 +41,13 @@ A file that is not valid JSON, or whose top level is not an object, sets nothing
 - A pattern with no `/` matches the file name, in any folder. A pattern with a `/` matches the path from the folder fmc opened. A file outside that folder matches by its name only.
 - `*` matches any run of characters within one name or folder, `**` any number of folders (`docs/**/*.txt` matches `docs/owls.txt` too), `?` one character, and `{a,b}` either alternative.
 - Case follows the filesystem: a pattern ignores case on macOS and Windows, and matches case exactly elsewhere.
-- Values are fmc's filetype names, such as `rust`, `bash`, `json`, `markdown`, or `typescriptreact`. Beyond Scouter's languages, fmc highlights `astro`, `diff`, `elixir`, `heex`, `hcl`, `jsdoc`, `lua`, `regex`, `sql`, `svelte`, `vim`, and `xml`. `shellscript` means `bash`, `jsonc` means `json`, and `dotenv` and `env` mean `bash`, which reads `KEY=value` and `#` comments. `plaintext` shows the file as plain text, with no highlighting. A name fmc does not know is skipped with a notice that names the pattern.
+- Values are fmc's filetype names, such as `rust`, `bash`, `json`, `markdown`, or `typescriptreact`. Besides the languages Scouter colours, fmc highlights `astro`, `diff`, `elixir`, `heex`, `hcl`, `jsdoc`, `lua`, `regex`, `sql`, `svelte`, `vim`, and `xml`. `shellscript` means `bash`, `jsonc` means `json`, and `dotenv` and `env` mean `bash`, which reads `KEY=value` and `#` comments. `plaintext` shows the file as plain text, with no highlighting. A name fmc does not know is skipped with a notice that names the pattern.
 - When several patterns match a file, a path pattern wins over a name pattern, then the longer pattern wins, then the pattern that sorts first.
 - An association decides the highlighting in the reader, in the finder's preview, and on the changes screen. A file with a `markdown` association opens rendered, and `m` shows its source.
-- fmc has no built-in association for env files: the file above is an example, not a default.
+- fmc has no built-in association for env files. The example above is only an example.
 
 ## Finder
 
-`find_mode` sets how the file finder (`/`) matches a name at start. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one needle, spaces included, and matches its letters in order anywhere in the path, ignoring case, with no typos. The best matches come first, and the letters that matched are drawn in the match colour.
+`find_mode` sets how the file finder (`/`) matches a name when it opens. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one pattern, spaces included, and matches its letters in order anywhere in the path, ignoring case. The best matches come first, and the letters that matched are highlighted.
 
 `Ctrl+F` in the finder flips the match for the rest of the run, and the query runs again; the footer names `fuzzy` while it is on. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
-
-## Changes
-
-fmc reads the file only at start. Edit it by hand, then start fmc again.

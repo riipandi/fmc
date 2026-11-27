@@ -31,12 +31,12 @@ Started from a shell inside a project (`fmc`, `fmc <folder>`, `fmc <file>`). Use
 ## Capabilities and Constraints
 
 - File tree with git status marks, icons, and ignored files dimmed.
-- Reader for text with syntax colours in Scouter's languages and the owner's extra ones, Markdown rendered or as source, images, and a notice for binary files.
-- Find a file by name, or search text inside files with a preview.
+- Reader for text with syntax colours for Scouter's languages and fmc's extra ones, Markdown rendered (with Mermaid diagrams) or as source, images, and a notice for binary files.
+- Find a file by name (substring or fuzzy), or search text inside files with a preview.
 - Changes view: every changed file as a stacked diff, unified or split, with folding and hunk navigation.
 - Light and dark palettes that follow the terminal background.
 - Read-only. No editing.
-- Not built yet: Mermaid diagrams, fuzzy finding, file operations, a database viewer, platforms other than macOS on Apple silicon.
+- Not built yet: file operations, a SQLite and DuckDB viewer, platforms other than macOS on Apple silicon.
 
 ## Brand Commitments
 
@@ -60,4 +60,4 @@ Every action has a key. Both palettes keep readable text contrast, checked by a 
 
 ## Roadmap
 
-Parity with Scouter, then file operations, a SQLite and DuckDB viewer, and more platforms.
+Parity with Scouter is done. Next: file operations, a SQLite and DuckDB viewer, and more platforms.

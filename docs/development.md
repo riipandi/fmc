@@ -4,8 +4,8 @@ fmc builds on macOS with Apple silicon. Other platforms come later.
 
 ## Prerequisites
 
-- Rust. `rustup` installs the pinned version from `rust-toolchain.toml` the first time you run `cargo`.
-- Zig 0.17.1 (`brew install zig`). fmc uses it once per OpenTUI version to build the native library.
+- Rust 1.92 or newer. `rustup` installs the pinned toolchain from `rust-toolchain.toml` the first time you run `cargo`.
+- Zig 0.17.1, exactly. fmc uses it once per OpenTUI version to build the native library, and the build stops on any other version. `brew install zig` may not give that version, so check with `zig version`.
 - [kache](https://github.com/kunobi-ninja/kache) (`cargo install kache --locked`), the compiler cache the just tasks use. Optional with `KACHE=false`.
 - Git.
 - [just](https://just.systems) (`brew install just`), for the task shortcuts. Optional: every task is a plain command you can run yourself.
@@ -24,7 +24,7 @@ With just, `just build` does both. `just` alone lists every task.
 
 To put fmc on your `PATH`, run `just install`. It builds a release binary and copies it to `~/.local/bin/fmc`. `just install debug` installs a debug build as `fmc-debug`. Set `INSTALL_DIR` to use another folder.
 
-The script builds the library without video support, so the fmc binary contains no FFmpeg code. The first run takes a few minutes. It keeps the result in `~/.cache/fmc/opentui-native/<version>`, so later runs and other checkouts finish at once.
+The native library is built without video support, so the fmc binary contains no FFmpeg code. The first run takes a few minutes. The result is kept in `~/.cache/fmc/opentui-native/<version>`, so later runs and other checkouts finish at once.
 
 ## Build cache
 
@@ -40,15 +40,17 @@ KACHE=false just verify
 
 ## Checks
 
-Run these before you send a change, or run `just verify`:
+Run `just verify` before you send a change. It runs these, and it checks the Markdown format with `rumdl` when that tool is installed:
 
 ```sh
 cargo fmt --check
+cargo check --all-targets
 cargo clippy --all-targets -- -D warnings
 cargo test
-cargo build
 cargo deny check licenses
 ```
+
+Run `cargo build` too before a commit that changes code.
 
 `cargo deny` and `cargo about` are separate tools:
 
@@ -69,7 +71,7 @@ scripts/demo-repo.sh /tmp/fmc-demo
 
 Run it again at any time to get the same repository back. The script only replaces a folder it made itself, or an empty one.
 
-## Run the parity reference
+## Parity reference
 
 fmc copies Scouter's screens and keys. To compare the two, run Scouter on the same OpenTUI version as fmc (0.9.9). You need [Bun](https://bun.sh).
 
@@ -83,4 +85,17 @@ cd /tmp/fmc-demo
 bun --config=/dev/null --no-env-file /tmp/scouter/src/index.ts .
 ```
 
-Open fmc on the same folder in a terminal of the same size, press the same keys, and compare the two screens.
+Open fmc on the same folder in a terminal of the same size, press the same keys, and compare the two screens. [Differences from Scouter](parity.md) lists what should differ.
+
+## Releasing
+
+A release is a version number, a changelog section, and a tag. The tag starts the `release` workflow, which builds the macOS archive and publishes the GitHub Release.
+
+1. Set the new version in `version` under `[package]` in `Cargo.toml`, for example `0.1.1`. Run `cargo build` so `Cargo.lock` takes the same version.
+2. In `CHANGELOG.md`, move the entries under `## [Unreleased]` into a new section, `## [0.1.1] - YYYY-MM-DD`. Keep an empty `## [Unreleased]` above it, and update the compare and tag links at the bottom. The workflow uses that section as the release notes, so it must make sense on its own.
+3. Run `just verify`, then commit `Cargo.toml`, `Cargo.lock`, and `CHANGELOG.md`.
+4. Merge the change into `main`.
+5. On `main`, create the tag and push it: `git tag v0.1.1` and `git push origin v0.1.1`.
+6. The `release` workflow stops unless the tag matches the version in `Cargo.toml` and the changelog has a `## [0.1.1]` section. When it passes, it builds `fmc-0.1.1-aarch64-apple-darwin.tar.gz` and its `.sha256` file, and creates the GitHub Release with both and the notes.
+7. Update the Homebrew formula in `riipandi/homebrew-tap`, file `Formula/fmc.rb`: its `version`, its `url` (the new archive), and its `sha256` (the value in the `.sha256` file). The release does not do this yet. Automation needs a `HOMEBREW_TAP_TOKEN` secret in this repository, which is not set up.
+8. Install from the tap on a clean Mac, or from the archive, and run `fmc --version`.

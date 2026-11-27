@@ -20,7 +20,7 @@ Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), t
 ## Terms
 
 - **Agent docs**: `.agents/docs/` (this ledger and the core documents), `AGENTS.md`, and the project skills in `.agents/skills/`. Written for agents, English, with `file:line` evidence.
-- **Human docs**: `README.md`, `PRODUCT.md`, `DESIGN.md`, and `docs/` (created by `plan-00001` phase 2).
+- **Human docs**: `README.md`, `PRODUCT.md`, `DESIGN.md`, and `docs/` (the user pages, starting at `docs/index.md`).
 - **Scouter**: the parity reference, <https://github.com/indrazm/scouter>. Its behavior is verified from its source or a live run (`rules.md`).
 
 ## Docs sync

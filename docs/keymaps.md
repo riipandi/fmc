@@ -1,6 +1,6 @@
 # Keys
 
-Press `?` inside fmc to see this list as tables in the reader, or run `fmc --help`.
+Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the same list in the terminal. The screens are explained in [Usage](usage.md).
 
 ## Browse
 
@@ -17,11 +17,11 @@ Press `?` inside fmc to see this list as tables in the reader, or run `fmc --hel
 | `gg` `G` | top / bottom |
 | `Ctrl+←` `→` | resize the list, or drag its edge |
 
-With the list focused, the file it selects shows in the reader after a short pause, without moving the focus (auto-preview). A folder selection leaves the reader as it is. `p` turns auto-preview off or on for this session, and `auto_preview` in the settings file sets the start (`configuration.md`). `]` and `[` move the list by `sidebar_jump` rows, and scroll the reader by `reader_jump` lines; on the changes screen they step through the hunks.
+The file the list selects shows in the reader after a short pause, and the focus stays in the list. `p` turns that preview off or on for the session, and `auto_preview` in the settings sets the start. In the list, `[` and `]` move the selection by `sidebar_jump` rows and scroll the reader by `reader_jump` lines. On the changes screen they step through the hunks. See [Configuration](configuration.md).
 
 ## Find a file
 
-`/` in the file list opens the finder. Its matches take the place of the tree until it closes.
+`/` in the file list opens the finder. Its matches replace the tree until it closes.
 
 | Keys | Action |
 | --- | --- |
@@ -34,8 +34,6 @@ With the list focused, the file it selects shows in the reader after a short pau
 | `Esc` | close the finder; the tree is back where it was |
 
 Text search starts at two characters and lists at most 200 hits, ten from one file.
-
-Fuzzy matching (`find_mode` in the settings file, `configuration.md`) takes the query as one needle, spaces included, and matches its letters in order anywhere in the path, ignoring case; the best matches come first, and the matched letters are drawn in the match colour.
 
 ## Reader
 
@@ -80,7 +78,7 @@ Fuzzy matching (`find_mode` in the settings file, `configuration.md`) takes the 
 | `:` `q` | quit |
 | `^q` `^c` | quit |
 
-`:` opens a command line in the footer, as in Neovim. `:q`, `:q!`, `:qa`, `:qa!`, and `:quit` quit; Esc or an empty Enter cancels; any other command shows `Not a command`.
+`:` opens a command line in the footer, as in Neovim. `:q`, `:q!`, `:qa`, `:qa!`, and `:quit` quit. `Esc`, or Enter on an empty line, cancels; any other command shows `Not a command`.
 
 ## Mouse
 
@@ -92,19 +90,7 @@ Fuzzy matching (`find_mode` in the settings file, `configuration.md`) takes the 
 | `Wheel` | scroll the pane under the pointer |
 | `Drag` `edge` | resize the list |
 | `Click` `«»` | show / hide the sidebar, from its mark |
-| `Click` header | fold / unfold the file, on release; a drag does not |
-| `Click` row (file list, finder, changes) | open or select, on release; a drag or swipe over the row does nothing |
-| `Click` the `›` or the title beside it, at the reader header, at 60 to 79 columns | show the hidden file list and focus it |
-| `Click` the `‹` or the title beside it, at the list header, at 60 to 79 columns | hide the file list |
-| `Click` file, below 60 columns | open the file: the reader page takes the screen |
-| `q` or `Esc`, on a page below 60 columns | go back a page (Reader, Keys, Changes, Find) |
-| `Click` the `‹` or the title beside it, below 60 columns, on a page other than Files | go back a page, as `q` does |
-| `Click` a bottom-bar word, below 60 columns | press its key: `Find` is `/`, `Changes` is `d`, `Keys` is `?`, `Back` is `q`, `Search` is `/`, `All` or `One` is `a`, `Split` is `s`, `Copy` is `y`, and `Cancel` is `Esc` |
-| `Click` a footer hint, below 80 columns | press the hint's key (`^q` has no tap) |
-| `Click` `Copy`, below 80 columns | copy the selection, as `y` does |
 
-The `«` and `»` marks are drawn at 80 columns and wider only; below 80 the `‹` and `›` chevrons at the start of the header titles do their work, and the title beside each does the same. Below 60 columns the `‹` at the start of a page's header (every page but Files) goes back, and the title beside it does the same. At 80 columns and wider, a click on the file list while another pane has the focus only moves the focus there; the next click selects the row. Below 80 columns the first tap on a row acts, since a phone shows no focus to aim with. At 60 columns and wider a click selects a file but does not open it: Enter does. Below 60 columns the list and the reader are pages: the list fills the screen, a file opens the reader page, and `q`, `Esc`, or Tab goes back to the list. There is no welcome screen and no preview below 60 columns. Between 60 and 79 columns the `‹` chevron hides the list beside a document, so it can be hidden by touch there.
+Clicks and taps in the narrow layouts, the header chevrons, and the bottom bar's words are described in [Usage](usage.md#layouts-by-width). A click on a diff file's header folds it, and a row in the file list, the finder, or the changes list acts when the button is released, so a drag over a row does nothing. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps there, and the wheel over a bar scrolls one row.
 
-From 60 to 79 columns the footer keeps the keys that leave the current state first (`Copy` while text is selected, `Esc`, `^/`, `q`), then `?`, `/`, `d`, `Enter`, and `Tab`, and a row that is too short drops the rest from its end. At 80 columns and wider the footer keeps Scouter's order. Below 60 columns the footer is one row of words, and each word is a tap; an open prompt or a notice takes that row.
-
-Some keys work but are not in the list: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, `[` and `]` step through hunks, and `Shift+n` goes to the previous hunk on the changes screen. Dragging a scrollbar's thumb scrolls its pane, a click on the track jumps to that row, and the wheel over a bar scrolls one row.
+Some keys work but are not in the lists above: `J` and `K` move five rows, Page Up and Page Down move a screen, Home and End go to the top and bottom, and `Shift+n` goes to the previous hunk on the changes screen.
