@@ -19,6 +19,7 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `space` | context menu for the row |
 | `a` | new file; a name ending in / makes a folder |
 | `A` | new folder |
+| `R` | duplicate the row under a new name |
 | `r` | rename |
 | `D` `Delete` | move to the Trash |
 | `c` | copy the row |

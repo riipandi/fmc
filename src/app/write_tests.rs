@@ -406,6 +406,7 @@ fn the_menu_on_a_file_row_lists_the_acts_with_paste_disabled_until_a_copy() {
             ("Copy", true),
             ("Cut", true),
             ("Paste", false),
+            ("Duplicate…", true),
             ("Delete…", true),
         ]
     );
@@ -446,7 +447,8 @@ fn a_click_on_the_delete_row_asks_for_the_trash() {
     b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
     b.app.render();
     assert!(b.menu().is_some(), "a right-click opens the menu");
-    b.app.click(x + 2, y + 1 + 6);
+    // Delete is the eighth row: after the new items, Rename, Copy, Cut, Paste, and Duplicate.
+    b.app.click(x + 2, y + 1 + 7);
     assert_eq!(b.dialog().map(|d| d.title), Some("Move to Trash?".into()));
 }
 
@@ -680,4 +682,70 @@ fn a_pointer_over_a_dialog_button_highlights_it_and_return_still_picks_the_focus
     b.app.press("return");
     assert!(b.dialog().is_none(), "Return picked the focused Cancel, and the dialog closed");
     assert!(b.has("robert-langdon.md"), "nothing was trashed");
+}
+
+#[test]
+fn capital_r_asks_for_a_copy_name_and_the_copy_is_revealed() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("R");
+    let dialog = b.dialog().expect("the duplicate dialog opens");
+    assert_eq!(dialog.title, "Duplicate");
+    assert_eq!(b.field(), "robert-langdon copy.md", "the name a paste would give");
+    b.app.press("return");
+    b.await_selected("robert-langdon copy.md");
+    assert_eq!(fs::read_to_string(b.root.join("robert-langdon copy.md")).unwrap(), "Hedwig\n");
+    assert!(b.has("robert-langdon.md"), "the original stays");
+    assert!(b.dialog().is_none());
+}
+
+#[test]
+fn a_duplicate_of_a_folder_keeps_its_links_as_links() {
+    let b = browsing(&["hogsmeade/", "robert-langdon.md"]);
+    let hogsmeade = b.root.join("hogsmeade");
+    fs::write(hogsmeade.join("owls.txt"), "Hedwig\n").unwrap();
+    symlink("../robert-langdon.md", hogsmeade.join("letters")).unwrap();
+    b.select("hogsmeade");
+    b.app.press("R");
+    assert_eq!(b.field(), "hogsmeade copy");
+    b.app.press("return");
+    b.await_selected("hogsmeade copy");
+    let copy = b.root.join("hogsmeade copy");
+    assert_eq!(fs::read_to_string(copy.join("owls.txt")).unwrap(), "Hedwig\n");
+    assert!(fs::symlink_metadata(copy.join("letters")).unwrap().file_type().is_symlink());
+}
+
+#[test]
+fn a_duplicate_to_a_taken_name_keeps_the_dialog_with_its_error_and_writes_nothing() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("R");
+    b.clear_field();
+    b.type_name("leigh-teabing.md");
+    b.app.press("return");
+    assert_eq!(b.error().as_deref(), Some("An item with that name already exists."));
+    assert!(b.dialog().is_some(), "the dialog stays open for another name");
+    let mut names: Vec<String> =
+        fs::read_dir(&b.root).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+    names.sort();
+    assert_eq!(names, ["leigh-teabing.md", "robert-langdon.md"]);
+}
+
+#[test]
+fn a_duplicate_while_a_paste_runs_is_refused_in_the_dialog() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("R");
+    // No copy is in flight in this test, so the flag stands in for one that is.
+    b.model.borrow_mut().pasting = true;
+    b.app.press("return");
+    assert_eq!(b.error().as_deref(), Some("Still pasting. Try again when it finishes."));
+    assert!(b.dialog().is_some(), "the dialog stays open until the paste finishes");
+    assert!(!b.has("robert-langdon copy.md"), "nothing is copied");
+}
+
+#[test]
+fn capital_r_with_no_row_opens_nothing() {
+    let b = browsing(&[]);
+    b.app.press("R");
+    assert!(b.dialog().is_none());
+    assert!(b.menu().is_none());
 }

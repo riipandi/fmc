@@ -33,6 +33,7 @@ fn key(spec: &str) -> Key<'_> {
                 "Q" => "q",
                 "A" => "a",
                 "D" => "d",
+                "R" => "r",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -189,6 +190,7 @@ fn file_keys_act_on_the_tree_only() {
     assert_eq!(last(&["a"], TREE), Step::Done(Action::NewFile));
     assert_eq!(last(&["A"], TREE), Step::Done(Action::NewFolder));
     assert_eq!(last(&["r"], TREE), Step::Done(Action::Rename));
+    assert_eq!(last(&["R"], TREE), Step::Done(Action::Duplicate));
     assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["c"], TREE), Step::Done(Action::CopyFile));
@@ -200,6 +202,7 @@ fn file_keys_act_on_the_tree_only() {
     }
     assert_eq!(last(&["a"], READER), Step::Bad);
     assert_eq!(last(&["D"], READER), Step::Bad);
+    assert_eq!(last(&["R"], READER), Step::Bad);
 }
 
 #[test]

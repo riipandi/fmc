@@ -24,6 +24,7 @@ pub enum Act {
     Copy,
     Cut,
     Paste,
+    Duplicate,
     Delete,
 }
 
@@ -47,6 +48,11 @@ pub enum Task {
     Rename {
         path: PathBuf,
     },
+    /// A copy of `source` in its folder `dir`, under the name the dialog holds.
+    Duplicate {
+        source: PathBuf,
+        dir: PathBuf,
+    },
     /// The entry to trash, the row to select after it (the next row, or the previous one when it was last), and the
     /// entry's device and inode when the dialog opened: an entry swapped since then is not trashed.
     Delete {
@@ -65,6 +71,7 @@ fn menu_rows(row: bool, pastable: bool) -> Vec<(Act, &'static str, bool)> {
     }
     rows.push((Act::Paste, "Paste", pastable));
     if row {
+        rows.push((Act::Duplicate, "Duplicate…", true));
         rows.push((Act::Delete, "Delete…", true));
     }
     rows
@@ -92,6 +99,7 @@ pub fn key(m: &mut Model, ui: &Ui, action: Action) {
         Action::NewFile => Act::NewFile,
         Action::NewFolder => Act::NewFolder,
         Action::Rename => Act::Rename,
+        Action::Duplicate => Act::Duplicate,
         Action::Delete => Act::Delete,
         _ => return,
     };
@@ -140,6 +148,26 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
             let dialog = Dialog::new("Move to Trash?", &message, false, &["Cancel", "Delete"], 0);
             let task = Task::Delete { path: entry.path.clone(), next: successor(m), identity };
             ask(m, ui, task, dialog, "");
+        }
+        Act::Duplicate => {
+            let Some(entry) = entry else { return };
+            // The field types the name as text, as a rename does. The copy is named as a paste names one (D5).
+            let Some(name) = entry.path.file_name().and_then(|name| name.to_str()) else {
+                return refuse(m, "This name is not UTF-8, so fmc cannot duplicate it.");
+            };
+            if display_text(name) != name {
+                return refuse(m, "This name has a control character, so fmc cannot duplicate it.");
+            }
+            let root = m.browser.tree.root().to_path_buf();
+            let dir = parent_of(&entry.path, &root);
+            let is_dir = fs::symlink_metadata(&entry.path).is_ok_and(|metadata| metadata.is_dir());
+            let copy = match store::free_name(&dir, name, is_dir) {
+                Ok(copy) => copy,
+                Err(error) => return refuse(m, &error.to_string()),
+            };
+            let dialog =
+                Dialog::new("Duplicate", "Name the copy. It goes in the same folder.", true, &["Cancel", "OK"], 1);
+            ask(m, ui, Task::Duplicate { source: entry.path, dir }, dialog, &copy);
         }
         Act::Copy => take(m, false),
         Act::Cut => take(m, true),
@@ -268,6 +296,7 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
             }
             trash(&root, path).map(|()| (parent.clone(), next.clone().unwrap_or(parent)))
         }
+        Task::Duplicate { source, dir } => return duplicate(app, m, &root, &typed, source, dir),
         Task::Menu(_) => return overlay::close(app, m),
     };
     match done {
@@ -282,6 +311,30 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
             }
         }
     }
+}
+
+/// Starts a duplicate. The name is checked here, so a taken name or a paste that is running keeps the dialog open with its
+/// line; the copy runs on the paste worker, and `pasted` reveals it (D9).
+fn duplicate(app: &App, m: &mut Model, root: &Path, typed: &str, source: &Path, dir: &Path) {
+    let refused = if m.pasting {
+        Some("Still pasting. Try again when it finishes.".to_owned())
+    } else {
+        store::check_copy(root, source, dir, typed).err().map(|error| error.to_string())
+    };
+    if let Some(text) = refused {
+        if let Some(Overlay::Dialog(dialog)) = m.overlay.as_mut() {
+            dialog.error = Some(display_label(&text));
+        }
+        return;
+    }
+    overlay::close(app, m);
+    m.pasting = true;
+    m.message = Some(Message { text: format!("copying {}…", label(source)), error: false });
+    let (root, source, dir, name) = (root.to_path_buf(), source.to_path_buf(), dir.to_path_buf(), typed.to_owned());
+    crate::services::spawn(&m.proxy, move || {
+        let result = store::copy(&root, &source, &dir, &name).map_err(|error| error.to_string());
+        Event::Pasted { source, into: dir, moved: false, result }
+    });
 }
 
 /// Moves the entry to the Trash, where Finder's Put Back restores it (plan-00012, D4).

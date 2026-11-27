@@ -73,6 +73,8 @@ pub enum Action {
     NewFile,
     /// `A` on a tree row: a dialog for a new folder.
     NewFolder,
+    /// `R` on a tree row: a name dialog for a copy of the row in its folder (plan-00012, D9).
+    Duplicate,
     /// `r` on a tree row: a dialog that renames the row.
     Rename,
     /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
@@ -126,6 +128,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("space", "context menu for the row"),
             ("a", "new file; a name ending in / makes a folder"),
             ("A", "new folder"),
+            ("R", "duplicate the row under a new name"),
             ("r", "rename"),
             ("D Delete", "move to the Trash"),
             ("c", "copy the row"),

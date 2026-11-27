@@ -112,6 +112,12 @@ pub fn copy(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<P
     Ok(dest)
 }
 
+/// The checks `copy` makes, with nothing written. The app runs the copy on a worker, so it asks first, and a refusal
+/// keeps its dialog open.
+pub fn check_copy(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<(), Error> {
+    plan(root, source, dest_dir, name).map(|_| ())
+}
+
 /// Moves `source` into `dest_dir` as `name`. Across volumes the move is a copy, then the removal of the source.
 pub fn move_to(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Result<PathBuf, Error> {
     move_with(root, source, dest_dir, name, trash_path)
