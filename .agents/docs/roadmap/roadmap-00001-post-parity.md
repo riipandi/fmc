@@ -1,13 +1,38 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T16:45:00+07:00
+updated: 2026-11-27T16:24:34+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
 # Roadmap — after Scouter parity
 
 Parked work that the owner named during the planning of `plan-00001`. None of it runs before parity closes. When an unlock fires, the entry becomes a plan.
+
+## Status
+
+One row per entry; the entry's own `status` line carries the evidence. Statuses: `landed` (done, with its commits or plan), `landed in part` (what is left names the follow-up entry), `planned` (a plan exists, waiting for the owner's approval or running), `next` (the owner picked it to start next, no plan yet), `parked` (waiting on its unlock). A change to an entry's status line changes its row here in the same edit.
+
+| ID | Entry | Status | Where | Updated |
+| --- | --- | --- | --- | --- |
+| RI-1 | Mermaid diagrams in Markdown | landed | plan-00006 phases 1 and 2 | 2026-11-27 |
+| RI-2 | The owner's Neovim grammar set | landed in part | plan-00006 phases 3 and 4; the rest is RI-17 | 2026-11-27 |
+| RI-3 | Fuzzy file finding | landed | plan-00006 phase 5 | 2026-11-27 |
+| RI-4 | Write operations | planned | plan-00012, approved, running | 2026-11-27 |
+| RI-5 | SQLite and DuckDB viewer | parked | owner-deferred | 2026-11-26 |
+| RI-6 | Platforms beyond macOS aarch64 | parked | owner-deferred | 2026-11-26 |
+| RI-7 | An alternate Vim-style keymap | parked | owner-deferred | 2026-11-26 |
+| RI-8 | Event-based file watching | parked | unlock: a measured polling cost and MSRV 1.91 | 2026-11-26 |
+| RI-9 | Persistent settings | landed in part | `settings.json` is read, never written (`architecture.md`, "a read-only settings.json"); saving UI state and the theme mode are left | 2026-11-27 |
+| RI-10 | Theme catalog | parked | unlock: RI-9 | 2026-11-26 |
+| RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
+| RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
+| RI-13 | Configurable keymap | parked | unlock: RI-9 | 2026-11-26 |
+| RI-14 | Open an unsupported file with the default app | parked | owner-deferred | 2026-11-27 |
+| RI-15 | Open the project folder in Finder or an editor | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
+| RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
+| RI-17 | The rest of the owner's grammar set | parked | after RI-18; unlock: a crate that loads | 2026-11-27 |
+| RI-18 | Injected highlighting | next | the owner's pick, no plan yet | 2026-11-27 |
 
 ## Rendering
 
@@ -41,11 +66,11 @@ Phase 1 copies Scouter's substring AND match and order (`architecture.md`). A fu
 
 ### RI-4 — Write operations
 
-- status: parked (owner-deferred 2026-11-26; unlock: the owner opens the file-manager phase) · updated 2026-11-26
+- status: planned (plan-00012-write-operations.md, approved 2026-11-27 and running; the approval opened the file-manager phase) · updated 2026-11-27
 
 Create, rename, move, copy, delete. Ideas from `research/editor-study.md`: atomic writes through a temp file and `rename`. Candidates: `ignore` 0.4 for walks, `trash` 5.4 for delete-to-trash; `fs_extra` is stale (2023). Every write path needs a `security-review` pass (symlinks, path traversal).
 
-**Unlock:** the owner opens the file-manager phase (`rules.md`, read-only rule). **First move:** a plan with the operation list, the keymap additions, and the confirm and undo rules.
+**Unlock:** the owner opens the file-manager phase (`rules.md`, read-only rule). **First move:** done, plan-00012 (2026-11-27): the operation list, the keys, the confirm and Trash rules, and the context menu and dialog built on OpenTUI's absolute views (OpenTUI 0.9.9 has no menu or dialog widget).
 
 ### RI-5 — SQLite and DuckDB viewer
 
@@ -87,7 +112,7 @@ Scouter polls (`research/scouter-inventory.md` §12) and fmc copies it. `notify`
 
 ### RI-9 — Persistent settings in `~/.config/fmc/settings.json`
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+- status: landed in part (2026-11-27: fmc reads `settings.json`, never writes it; `architecture.md`, "a read-only settings.json"; saving UI state and the theme mode are left, unlock: the owner asks) · updated 2026-11-27
 
 Scouter has no configuration by design (`research/scouter-inventory.md` §15), so this is a post-parity deviation the owner asked for on 2026-11-26. fmc remembers the UI state the user changes: sidebar width, reader wrap, diff layout (unified or split), diff context (`x`), and the theme mode (`auto` follows the terminal as Scouter does, or `dark`, `light`). Path: `~/.config/fmc/settings.json` (owner's choice). Crates approved for this item: `serde` with `derive` and `serde_json` (`rules.md`, "Dependencies"). The write is fmc's own file, not a user file: temp file plus `rename`; a file that fails to parse is never overwritten, fmc starts with defaults and shows a notice.
 
