@@ -71,7 +71,7 @@ The owner approved D1 to D16 on 2026-11-27, with one change: D12 binds `Ctrl+,` 
 - A24: modifiers match as the old arms did. A differential run over 945,024 cases showed no difference; the run was a scratch test outside the tree.
 - A25: a sequence waits (`More`), and the defaults have none.
 - A26: a card row lists the merged keys of its actions (open, owner check 5).
-- A27: the notice order is settings, themes, keymap, then the palette choice. `--help` reads the file and prints its notices to stderr.
+- A27: the notice order is settings, themes, keymap, then the palette choice. `--help` read the file and printed its notices to stderr until the merge with the shorter `--help` (2026-11-27); it no longer reads the keymap.
 - A28: config reads are capped at 1 MiB, and a FIFO is refused by its metadata before it opens. The residuals are in owner check 7.
 - A29: `tests/cli.rs` sets `XDG_CONFIG_HOME` to a folder that does not exist.
 

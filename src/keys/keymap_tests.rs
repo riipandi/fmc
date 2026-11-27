@@ -4,8 +4,7 @@
 use crate::keys::bindings::{ACTION_NAMES, Chord, DEFAULTS};
 use crate::keys::keymap::parse;
 use crate::keys::{
-    Action, Focus, Key, Keymap, Parser, Screen, State, Step, key_list_text_with, key_page_markdown,
-    key_page_markdown_with, key_sections,
+    Action, Focus, Key, Keymap, Parser, Screen, State, Step, key_page_markdown, key_page_markdown_with, key_sections,
 };
 
 const TREE: State =
@@ -96,12 +95,11 @@ fn ctrl_comma_is_a_table_entry_that_a_user_can_rebind() {
 }
 
 #[test]
-fn the_card_and_help_show_a_rebound_key_on_its_action_row() {
+fn the_card_shows_a_rebound_key_on_its_action_row() {
     let parsed = parse(r#"{"everywhere.ctrl-,": null, "everywhere.ctrl-s": "open_settings"}"#);
     let page = key_page_markdown_with(&parsed.keymap);
-    assert!(page.contains("| `Ctrl+s` | the Settings page; each change saves to settings.json |"), "{page}");
+    assert!(page.contains("| the Settings page; each change saves to settings.json | `Ctrl+s` |"), "{page}");
     assert!(!page.contains("`Ctrl+,`"), "the old key is gone from the card");
-    assert!(key_list_text_with(&parsed.keymap).contains("Ctrl+s"));
 }
 
 #[test]
@@ -110,7 +108,7 @@ fn a_binding_of_an_action_with_no_row_gets_its_own_row_under_its_context() {
     let sections = key_sections(&parsed.keymap);
     let browse = section(&sections, "Browse");
     assert!(browse.contains(&("z".to_string(), "move page down".to_string())), "{browse:?}");
-    assert!(key_page_markdown_with(&parsed.keymap).contains("| `z` | move page down |"));
+    assert!(key_page_markdown_with(&parsed.keymap).contains("| move page down | `z` |"));
 }
 
 #[test]

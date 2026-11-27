@@ -43,13 +43,7 @@ fn keymap() -> fmc::keys::Parsed {
 fn run() -> Result<(), String> {
     let _copies = RemoveCopies;
     match args::parse(std::env::args_os().skip(1))? {
-        Command::Help => {
-            let keys = keymap();
-            for notice in &keys.notices {
-                eprintln!("fmc: {notice}");
-            }
-            println!("{}", args::help_text(&keys.keymap));
-        }
+        Command::Help => println!("{}", args::help_text()),
         Command::Version => println!("{}", args::version_text()),
         Command::Open(path) => {
             if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {

@@ -233,7 +233,7 @@ Alternatives considered:
 
 Context: Scouter keeps a keymap for `?` and `--help` (`scouter:src/core/keymap.ts:3-55`) but writes footer hints by hand (`scouter:src/ui/footer-hints.ts`), which let the help card drift from the real keys (`research/scouter-inventory.md` §4.7). The modal editor studied in `research/editor-study.md` uses a pure parser that returns `More`, `Bad`, or `Done` over pending keys.
 
-Decision: one key table drives dispatch, the `?` card, and `--help`; a pure parser over pending keys (counts included) returns `More | Bad | Done`, tested with key-sequence tables. The keys and dispatch order are Scouter's (`research/scouter-inventory.md` §4).
+Decision: one key table drives dispatch and the `?` card (`--help` lists no keys since 2026-11-27); a pure parser over pending keys (counts included) returns `More | Bad | Done`, tested with key-sequence tables. The keys and dispatch order are Scouter's (`research/scouter-inventory.md` §4).
 
 Correction (plan-00015 phase 4): the table is true from that phase, in code (`keys/bindings.rs`), read through the merged keymap (`keys/keymap.rs`). Before it, dispatch was the `match` arms of `keys/parser.rs`, and the card and `--help` were hand-written, so this record's claim was not yet true.
 
@@ -254,7 +254,7 @@ Decision: the default keys are rows of `keys/bindings.rs` (`DEFAULTS`: context, 
 
 Consequences:
 
-- (positive) The defaults, the card, and `--help` read one table, so a key is bound in one place.
+- (positive) The defaults and the card read one table, so a key is bound in one place.
 - (positive) A rebound key works in the parser and on the card, with no second list to edit.
 - (negative) Each row carries its modifier rule in data (`ctrl-`, `alt-`, `*-`, Shift on a letter); a new row needs the rule that its old arm had (`rust.md`, "A key is bound in one row").
 - (negative) Count digits and `z` cannot be rebound.
@@ -300,15 +300,15 @@ Alternatives considered:
 - Refusing the whole file at the first bad entry — rejected (A11): one typo would drop every rebind.
 - A JSON parser that keeps line numbers — rejected: it needs a dependency the rules do not approve.
 
-### The `?` card and `--help` show the merged keys
+### The `?` card shows the merged keys
 
-Context: the card and `--help` used a hand-written list (`keys/mod.rs` `KEY_SECTIONS`). A rebound key would show its old label, and a new key would show nowhere (plan-00015, A10).
+Context: the card used a hand-written list (`keys/mod.rs` `KEY_SECTIONS`). A rebound key would show its old label, and a new key would show nowhere (plan-00015, A10).
 
 Decision: each card row with actions (`ROW_ACTIONS`) lists the merged keys of those actions. A row keeps its fixed label while its keys are still the defaults, so the card with no file is the card of the previous phase. A binding of an action that has a row joins that row, so a rebound key shows on its action's row. A binding of an action with no row (for example `move_page_down`, which no row names) gets a row of its own under its context's section. Rows without actions (`120G`, `zz`, `: q`) stay fixed text. Read this way, plan-00015 A10's "a new binding gets its own row" applies to actions with no row; the owner may want the other reading.
 
 Consequences:
 
-- (positive) A rebound key shows on the row the user looks at, and `--help` matches the card.
+- (positive) A rebound key shows on the row the user looks at. `--help` lists no keys, so it cannot disagree (the owner, 2026-11-27).
 - (negative) A row whose keys are all unbound reads `unbound`.
 - (negative) A second key for a documented action joins its row rather than getting its own, which is the reading above.
 
@@ -496,7 +496,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter's `?` draws a centred help card over the panes and consumes the next key (`scouter:src/ui/help.ts`, `src/app/app.ts:746-750`).
 
-Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` with the key table's own sections (Scouter's card groups: Browse, Reader, Changes, Everywhere, Mouse), generated from the key table, so `--help` and the page share one source and `--help` stays Scouter's text and drawn with the Markdown table renderer. `?` moves focus to the reader so the reader keys scroll the page; `?` or `Esc` restores the previous document, its scroll position, and the previous focus. Search follows rendered Markdown (Scouter refuses `/` there, `scouter:src/app/app.ts:999-1005`): `/` works in the key page's rendered view too, as in any rendered Markdown file (approved deviation, plan-00010, 2026-11-27). This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
+Decision: `?` opens a "Keys" page in the reader pane: tables of `Action | Key` with the key table's own sections (Scouter's card groups, Browse, Reader, Changes, Everywhere, and Mouse, with Files split from Browse), each section's rows grouped by act (the owner, 2026-11-27: action column first, related acts together; `--help` keeps the keys first), generated from the key table and drawn with the Markdown table renderer. `--help` no longer lists the keys: it prints the usage, the arguments, the options, and where the keys, the settings, and the docs are (`args.rs` `help_text`; the owner, 2026-11-27, who found the key list in `--help` of little use). Scouter's `--help` lists every key. `?` moves focus to the reader so the reader keys scroll the page; `?` or `Esc` restores the previous document, its scroll position, and the previous focus. Search follows rendered Markdown (Scouter refuses `/` there, `scouter:src/app/app.ts:999-1005`): `/` works in the key page's rendered view too, as in any rendered Markdown file (approved deviation, plan-00010, 2026-11-27). This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
 
 Consequences:
 
@@ -529,7 +529,7 @@ Alternatives considered:
 
 Context: OpenTUI 0.9.9 has no menu, dialog, or modal widget (plan-00012, "Current state"). Its console overlay is an absolute view at `z_index(i32::MAX)` (`opentui-0.9.9/src/console.rs:450`). `Select` cannot disable a row, and a press on a row that is not selected only moves the selection (`opentui-0.9.9/src/widget/select.rs`, the mouse handler). A dialog must dim the page under it, which `Painter::color_matrix` does (`opentui-0.9.9/src/widget/painter.rs:207`).
 
-Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does. The file keys open the same dialogs and menu (`app/write.rs`). A pointer over a menu row selects it, as a key does; a pointer over a dialog button only highlights it (`Dialog.hovered`, `app/overlay.rs` `hover_button`), and the focus stays where the keys put it, so Return picks the focused button (the owner's decision on 2026-11-27).
+Decision: the menu is a bordered absolute view at `z_index(i32::MAX)` with fmc's own rows (`ui/menu.rs`). The dialog is the same kind of view with a title, a wrapped message, an `Input`, an error line, and buttons (`ui/dialog.rs`). A catcher view at `i32::MAX - 1` covers the screen beneath both. It takes every mouse event, and a press closes a menu. A dialog adds a scrim, a `Custom` component that dims the page with `ColorMatrix::gain(0.4)`. While an overlay is open, `app/capture.rs` gives every key to it before the parser, except Ctrl+q and Ctrl+c. Placement is pure: a menu sits at its anchor cell, flips above it or moves left to stay on screen, and in the compact tier is a bottom sheet across the width above the bottom bar. A dialog is centred, 56 columns at most, and spans the width less a column each side in the compact tier. The menu's own rows are the one reason to draw them rather than use `Select`: a disabled row and a single press that picks are what a context menu needs. Each row shows its tree key (`Act::hint`, `app/write.rs`), Delete takes `error`, and a rule opens each group after the first (`Act::group`); a rule is its own `Text` above the row in a slot, so the rows stay indexed by item for the pointer (the owner's request on 2026-11-27). A debug build opens a dialog at start for a live capture, `FMC_OVERLAY=confirm` or `name` (`app/overlay.rs`, `debug_open`), as `FMC_PANIC_AFTER_START` does. The file keys open the same dialogs and menu (`app/write.rs`). A pointer over a menu row selects it, as a key does; a pointer over a dialog button only highlights it (`Dialog.hovered`, `app/overlay.rs` `hover_button`), and the focus stays where the keys put it, so Return picks the focused button (the owner's decision on 2026-11-27).
 
 Consequences:
 

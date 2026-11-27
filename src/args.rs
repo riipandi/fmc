@@ -23,13 +23,21 @@ pub enum Command {
     Open(Option<OsString>),
 }
 
-pub fn help_text(keymap: &fmc::keys::Keymap) -> String {
-    format!(
-        "fmc — a minimal terminal file manager\n\n\
-         Usage: fmc [file-or-directory]\n       fmc --version\n\n\
-         Defaults to the current directory. UTF-8 text files show their first megabyte.\n\n{}\n",
-        fmc::keys::key_list_text_with(keymap)
-    )
+/// The usage, the arguments, and where the keys and the settings are. The keys themselves are on the `?` page, not
+/// here (the owner, 2026-11-27).
+pub fn help_text() -> String {
+    "fmc — a minimal terminal file manager\n\n\
+     Usage: fmc [file-or-directory]\n\n\
+     Arguments:\n  \
+       [file-or-directory]  The folder to browse, or a file to open in the reader.\n                       \
+       Defaults to the current folder.\n\n\
+     Options:\n  \
+       -h, --help           Print this help.\n  \
+       -v, --version        Print the version.\n\n\
+     Press ? inside fmc for the keys, and Ctrl+, for the settings.\n\
+     Settings: $XDG_CONFIG_HOME/fmc/settings.json, or ~/.config/fmc/settings.json.\n\
+     Docs: https://github.com/riipandi/fmc/tree/main/docs"
+        .to_owned()
 }
 
 pub fn version_text() -> String {

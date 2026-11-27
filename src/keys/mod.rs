@@ -119,32 +119,39 @@ pub enum Action {
     Hunk(i8),
 }
 
-/// One help row: the keys, then what they do.
+/// One help row: the keys, then what they do. The Keys page and `docs/keymaps.md` show the action first.
 pub type KeyRow = (&'static str, &'static str);
 
+/// The sections, each in groups of related acts: moving, then opening, then finding and viewing; in Files, the menu,
+/// creating, changing, the clipboard, deleting, then the marks.
 pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
     (
         "Browse",
         &[
             ("j k ↑ ↓", "move"),
+            ("gg G", "top / bottom"),
+            ("[ ]", "jump the list or reader"),
             ("Enter", "open file, toggle folder"),
             ("l →", "expand a folder"),
             ("h ← Backspace", "collapse a folder or go back"),
-            ("/", "find a file by name; Tab: text in files; Ctrl+F: fuzzy on or off"),
             ("-", "open the folder above"),
+            ("/", "find a file by name; Tab: text in files; Ctrl+F: fuzzy on or off"),
             ("p", "auto-preview on or off"),
-            ("[ ]", "jump the list or reader"),
-            ("gg G", "top / bottom"),
             ("Ctrl+← →", "resize the list, or drag its edge"),
+        ],
+    ),
+    (
+        "Files",
+        &[
             ("space", "context menu for the row"),
             ("a", "new file; a name ending in / makes a folder"),
             ("A", "new folder"),
-            ("R", "duplicate the row under a new name"),
             ("r", "rename"),
-            ("D Delete", "move the marked rows, or the row, to the Trash"),
+            ("R", "duplicate the row under a new name"),
             ("c", "copy the marked rows, or the row"),
             ("x", "cut the marked rows, or the row; a paste moves them"),
             ("v", "paste into the folder, or beside the file"),
+            ("D Delete", "move the marked rows, or the row, to the Trash"),
             ("s", "mark the row and move down"),
             ("S", "clear the marks"),
         ],
@@ -153,12 +160,12 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
         "Reader",
         &[
             ("j k", "scroll"),
-            ("/", "search the file; Enter next, Esc keeps it for n N"),
-            ("n N p", "next / previous match"),
             ("space b ^d ^u", "page / half a page"),
             ("gg G", "top / bottom"),
             ("120G", "go to line 120"),
             ("{ }", "previous / next paragraph"),
+            ("/", "search the file; Enter next, Esc keeps it for n N"),
+            ("n N p", "next / previous match"),
             ("zz", "centre the match, or the middle line"),
             ("w", "wrap long lines"),
             ("m", "Markdown: rendered / source"),
@@ -169,20 +176,20 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
         &[
             ("d", "show / hide the changes screen"),
             ("n N p", "next / previous hunk"),
+            ("o", "open the file at the current hunk"),
             ("a", "all files / one file"),
             ("s", "split / unified"),
             ("c", "collapse / expand file diff"),
             ("x", "more / normal context lines"),
             ("r", "reload"),
-            ("o", "open the file at the current hunk"),
         ],
     ),
     (
         "Everywhere",
         &[
             ("Tab", "switch panes"),
-            ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
+            ("y", "copy selection, or the current path"),
             (
                 "Esc",
                 "clear selection or search, or back to the file list; in the list, drop a copy or cut, then the marks",
@@ -200,11 +207,11 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
 
 pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Left click", "select file, or toggle folder"),
+    ("Click", "focus the pane under the pointer"),
+    ("Wheel", "scroll the pane under the pointer"),
+    ("Drag text", "select; y copies it"),
     ("Right click", "context menu for the row"),
     ("Hover", "select a context-menu row; highlight a dialog button"),
-    ("Click", "focus the pane under the pointer"),
-    ("Drag text", "select; y copies it"),
-    ("Wheel", "scroll the pane under the pointer"),
     ("Drag edge", "resize the list"),
     ("Click «»", "show / hide the sidebar, from its mark"),
 ];
@@ -222,17 +229,17 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Browse", "[ ]", &[Action::Jump(-1), Action::Jump(1)]),
     ("Browse", "gg G", &[Action::Top, Action::Bottom]),
     ("Browse", "Ctrl+← →", &[Action::Resize(-1), Action::Resize(1)]),
-    ("Browse", "space", &[Action::ContextMenu]),
-    ("Browse", "a", &[Action::NewFile]),
-    ("Browse", "A", &[Action::NewFolder]),
-    ("Browse", "R", &[Action::Duplicate]),
-    ("Browse", "r", &[Action::Rename]),
-    ("Browse", "D Delete", &[Action::Delete]),
-    ("Browse", "c", &[Action::CopyFile]),
-    ("Browse", "x", &[Action::CutFile]),
-    ("Browse", "v", &[Action::PasteFile]),
-    ("Browse", "s", &[Action::ToggleMark]),
-    ("Browse", "S", &[Action::ClearMarks]),
+    ("Files", "space", &[Action::ContextMenu]),
+    ("Files", "a", &[Action::NewFile]),
+    ("Files", "A", &[Action::NewFolder]),
+    ("Files", "R", &[Action::Duplicate]),
+    ("Files", "r", &[Action::Rename]),
+    ("Files", "D Delete", &[Action::Delete]),
+    ("Files", "c", &[Action::CopyFile]),
+    ("Files", "x", &[Action::CutFile]),
+    ("Files", "v", &[Action::PasteFile]),
+    ("Files", "s", &[Action::ToggleMark]),
+    ("Files", "S", &[Action::ClearMarks]),
     ("Reader", "j k", &[Action::Scroll(1), Action::Scroll(-1)]),
     ("Reader", "/", &[Action::Search]),
     ("Reader", "n N p", &[Action::NextMatch, Action::PreviousMatch]),
@@ -313,11 +320,11 @@ pub fn key_sections(keymap: &Keymap) -> Vec<(String, Vec<(String, String)>)> {
     sections
 }
 
-/// The Keys page (`?`): a Markdown table per section, Mouse last, from the same rows as `--help`.
+/// The Keys page (`?`): a Markdown table per section, Mouse last, from the merged keys.
 pub fn key_page_markdown_with(keymap: &Keymap) -> String {
     let sections = key_sections(keymap).into_iter().map(|(title, rows)| {
-        let rows: Vec<String> = rows.iter().map(|(keys, action)| format!("| `{keys}` | {action} |")).collect();
-        format!("## {title}\n\n| Key | Action |\n| --- | --- |\n{}", rows.join("\n"))
+        let rows: Vec<String> = rows.iter().map(|(keys, action)| format!("| {action} | `{keys}` |")).collect();
+        format!("## {title}\n\n| Action | Key |\n| --- | --- |\n{}", rows.join("\n"))
     });
     sections.collect::<Vec<_>>().join("\n\n") + "\n"
 }
@@ -325,26 +332,6 @@ pub fn key_page_markdown_with(keymap: &Keymap) -> String {
 /// The Keys page with the default keys.
 pub fn key_page_markdown() -> String {
     key_page_markdown_with(&Keymap::defaults())
-}
-
-/// Width of the key column, in characters.
-pub const KEY_COLUMN: usize = 15;
-
-/// Every section, then Mouse, as plain text (`--help`).
-pub fn key_list_text_with(keymap: &Keymap) -> String {
-    key_sections(keymap)
-        .iter()
-        .map(|(title, rows)| {
-            let rows = rows.iter().map(|(keys, action)| format!("  {keys:<KEY_COLUMN$}{action}"));
-            std::iter::once(title.clone()).chain(rows).collect::<Vec<_>>().join("\n")
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n")
-}
-
-/// `--help` with the default keys.
-pub fn key_list_text() -> String {
-    key_list_text_with(&Keymap::defaults())
 }
 
 #[cfg(test)]
