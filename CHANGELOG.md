@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fmc is no longer read-only. Its file operations are the only writes it makes, inside the folder it opened (`docs/parity.md`, "File operations").
 - A pointer over a dialog button highlights it and leaves the focus where the keys put it, so Return picks the focused button.
-- The welcome screen calls fmc a terminal file manager, and its closing line names the menu key: `Space opens the file menu.` It said `a quiet, read-only file viewer` and `No editing. Just reading.` (`architecture.md`, "the welcome screen names fmc a file manager").
+- The welcome screen calls fmc a terminal file manager, and its closing line names the menu key: `Space opens the menu.` It said `a quiet, read-only file viewer` and `No editing. Just reading.`. `fmc --help` calls it a terminal file manager too.
 
 ### Fixed
 

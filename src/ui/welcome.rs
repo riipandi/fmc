@@ -40,7 +40,7 @@ const PROMPT: &str = "Select a file and press Enter.";
 /// `a quiet, read-only file viewer`, `src/ui/welcome.ts:46`).
 const TAGLINE: &str = "a quiet terminal file manager";
 /// The closing line after `Press ? for every key.`; Scouter says `No editing. Just reading.` (`src/ui/welcome.ts:80`).
-const MENU_HINT: &str = "Space opens the file menu.";
+const MENU_HINT: &str = "Space opens the menu.";
 
 /// The welcome screen: its key card, its prompt, and its closing lines. The compact tier has no welcome screen.
 pub struct Welcome {

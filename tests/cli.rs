@@ -19,7 +19,7 @@ fn fmc_on_tty(arg: &str) -> std::process::Output {
 fn help_prints_usage_and_every_key() {
     let out = fmc().args(["the-louvre", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(out).unwrap();
-    assert!(text.starts_with("fmc — a minimal read-only terminal file viewer\n\nUsage: fmc [file-or-directory]\n"));
+    assert!(text.starts_with("fmc — a minimal terminal file manager\n\nUsage: fmc [file-or-directory]\n"));
     assert!(text.contains("\nBrowse\n  j k ↑ ↓        move\n"));
     assert!(text.ends_with("Mouse\n  Left click     select file, or toggle folder\n  Right click    context menu for the row\n  Hover          select a context-menu row; highlight a dialog button\n  Click          focus the pane under the pointer\n  Drag text      select; y copies it\n  Wheel          scroll the pane under the pointer\n  Drag edge      resize the list\n  Click «»       show / hide the sidebar, from its mark\n\n"));
 }

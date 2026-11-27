@@ -1172,7 +1172,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter's welcome says it is a read-only viewer: the tagline `a quiet, read-only file viewer` (`scouter:src/ui/welcome.ts:46`) and the closing line `No editing. Just reading.` (`scouter:src/ui/welcome.ts:80`). fmc now creates, renames, copies, moves, and deletes files (the record "The file-manager operations are the one write path"), so both lines are false for fmc.
 
-Decision (owner, 2026-11-27): the tagline reads `a quiet terminal file manager`, and the closing line reads `Space opens the file menu.`, which names the key that opens the menu (`Space`, plan-00012). The stacked welcome below 80 columns uses the same two parts. The rest of the welcome stays Scouter's: the wordmark, the prompt, the key card, and the layout. The 80-column closing line is cut at the reader's edge, as Scouter's is (`research/scouter-inventory.md`, section 18); the new line is cut after `file me` where Scouter's was cut after `Just readin`.
+Decision (owner, 2026-11-27): the tagline reads `a quiet terminal file manager`, and the closing line reads `Space opens the menu.`, which names the key that opens the menu (`Space`, plan-00012). The stacked welcome below 80 columns uses the same two parts. The rest of the welcome stays Scouter's: the wordmark, the prompt, the key card, and the layout. At 80 columns Scouter's closing line is cut after `Just readin` (`research/scouter-inventory.md`, section 18); the new line is shorter and fits whole. The `--help` banner says `a minimal terminal file manager` for the same reason.
 
 Consequences:
 
@@ -1183,4 +1183,4 @@ Consequences:
 Alternatives considered:
 
 - Keep Scouter's text: rejected by the owner, since it says fmc does not write.
-- `Space: file menu.`, which fits at 80 columns: not taken; it changes the approved wording.
+- `Space: file menu.`: not taken; `Space opens the menu.` also fits at 80 columns and reads as a sentence.

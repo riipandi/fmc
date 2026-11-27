@@ -159,10 +159,10 @@ fn the_closing_line_breaks_at_its_separator_below_80_and_stays_whole_at_80() {
         let lines = rows(&app);
         let at = lines.iter().position(|row| row.contains("Press ? for every key.")).unwrap();
         assert!(!lines[at].contains("Space opens"), "{columns}: the key line stands alone");
-        assert!(lines[at + 1].contains("Space opens the file menu."), "{columns}: the reading line is next");
+        assert!(lines[at + 1].contains("Space opens the menu."), "{columns}: the reading line is next");
     }
     let (app, _, _) = panes(100);
-    assert!(rows(&app).iter().any(|row| row.contains("Press ? for every key.  ·  Space opens the file menu.")));
+    assert!(rows(&app).iter().any(|row| row.contains("Press ? for every key.  ·  Space opens the menu.")));
 }
 
 #[test]
@@ -261,5 +261,5 @@ fn the_welcome_tagline_and_menu_line_draw_at_80_and_60_by_24() {
     let (app, _, _) = panes(60);
     let lines = rows(&app);
     assert!(lines.iter().any(|row| row.contains("a quiet terminal file manager")), "60: the tagline is whole");
-    assert!(lines.iter().any(|row| row.contains("Space opens the file menu.")), "60: the menu line is whole");
+    assert!(lines.iter().any(|row| row.contains("Space opens the menu.")), "60: the menu line is whole");
 }
