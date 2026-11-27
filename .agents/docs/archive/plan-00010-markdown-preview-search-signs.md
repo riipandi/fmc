@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T14:30:00+07:00
-updated: 2026-11-27T18:00:00+07:00
+updated: 2026-11-27T20:00:00+07:00
 references: plan-00008-git-gutter.md, ui/markdown.rs, app/search.rs, plan-00011 (headings rewrite, 21cb066)
 phases:
     - id: 1
@@ -18,7 +18,8 @@ phases:
       note: "Signs per D6 and D7: `reader/rendered_signs.rs` maps the file's signs to the blocks (6 core tests after the phase's own mapping tests), `ui/markdown_signs.rs` draws them in an absolute column over the viewer's left edge at each paint. Refinements (D6): a bar is the strongest sign of the block's lines (modified over added); a deletion is drawn under the block that holds its line, or the block above a blank line, and a deletion above line 1 over the first block; an added blank line between blocks draws nothing. Records: architecture.md, 'Approved deviation: the rendered view shows git change signs beside its blocks'; parity.md Reader; README; configuration; CHANGELOG; DESIGN.md. Tests: 4 temporary-repository app tests (an edited paragraph, an added section, a deletion, the setting off) and a scroll test. Live (Rex, a scratch repository under /tmp, 70 and 120 columns): an edited paragraph and an appended section drawn modified and added (#e5b880, #8fd3a8); a commit cleared them; a deleted section drew `▁` under the block above. just verify: 462 tests, 1 ignored. Refinement to the mapping test: its frame is 1200 rows (DESIGN.md at 40 columns is taller than 400)."
     - id: 4
       title: "Docs, live checks, close"
-      status: pending
+      status: done
+      note: "The records, parity lines, CHANGELOG, DESIGN.md, README, and configuration landed with phases 2 and 3, because a deviation's record lands with its behaviour (rules.md). This commit archives the plan and updates index.md. The phase 2 commit (dafc20b) recorded a longer keymaps row that the key-list test does not carry; d8a96ae restores the row. Owner checks are in the run report."
 ---
 
 ## Search and git signs in the rendered Markdown view
