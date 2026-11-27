@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-27T20:10:00+07:00
+updated: 2026-11-27T19:18:34+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -122,6 +122,7 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 - One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
 - The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
+- An `injections.scm` beside a highlight query (plan-00013) is the grammar crate's own file, copied under the crate's licence (the header of each file names the crate and version), or fmc's own where no crate ships one (MIT, the project's licence). The Elixir highlights differ from the crate's by one rule, and the JavaScript, TypeScript, and TSX highlights differ from Core's by three host rules that leave injected text to its injection (`rust.md`, "Contracts and traps").
 - The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.
 
 ## Sample data

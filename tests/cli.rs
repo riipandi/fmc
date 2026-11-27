@@ -109,6 +109,8 @@ fn quit_restores_the_terminal() {
     assert!(out[entered..].contains("\x1b[?1049l"), "alternate screen left");
 }
 
+// The panic hook is debug-only (`FMC_PANIC_AFTER_START`); a release fmc never panics and the session waits forever.
+#[cfg(debug_assertions)]
 #[test]
 fn a_panic_restores_the_terminal_before_its_message() {
     let out = session(&[("FMC_PANIC_AFTER_START", "1")], "");

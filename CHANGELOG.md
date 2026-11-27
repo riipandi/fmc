@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The code inside some files is coloured as its own language: a Svelte or Astro `<script>` and `<style>` block, an Astro frontmatter, a HEEx template, the HTML of an Elixir `~H` sigil, and the body of Elixir's `~r`, `~SQL`, `~MD`, `~PY`, and `~JS` sigils. HTML's `<script>` and `<style>` blocks are coloured too (`docs/parity.md`).
+- In JavaScript, TypeScript, and Python, regex literals and the patterns of Python's `re` functions are coloured as patterns, and the JSDoc tags of a `/** */` comment are coloured as tags.
+
 ## [0.2.0] - 2026-11-27
 
 fmc becomes a file manager: files can be created, renamed, copied, moved, duplicated, and moved to the Trash from the file list.
