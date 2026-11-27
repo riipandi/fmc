@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T00:10:25+07:00
+updated: 2026-11-27T16:45:00+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -13,7 +13,7 @@ Parked work that the owner named during the planning of `plan-00001`. None of it
 
 ### RI-1 — Mermaid diagrams in Markdown
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+- status: landed (plan-00006 phases 1 and 2, 2026-11-27; `architecture.md`, the Mermaid records) · updated 2026-11-27
 
 Scouter draws a `mermaid` fence as plain text (`research/scouter-inventory.md` §7), and upstream OpenTUI has no Mermaid renderer. The binding exposes a code-block renderer hook for a fence language (`research/rendering-research.md`, `markdown.rs:631` upstream). Candidate: `mermaid-text` 0.58 (flowcharts only, box drawing); `mermaid-rs-renderer` needs SVG rasterising.
 
@@ -21,7 +21,7 @@ Scouter draws a `mermaid` fence as plain text (`research/scouter-inventory.md` �
 
 ### RI-2 — The owner's Neovim grammar set
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+- status: landed in part (plan-00006 phases 3 and 4, 2026-11-27): twelve grammars are highlighted, `architecture.md`, "the owner's extra grammars". The seven without a crate are RI-17; the injections are RI-18 · updated 2026-11-27
 
 The owner's Neovim config (`~/.config/nvim/lua/plugin_treesitter.lua:14-50`) adds, beyond Scouter's 16: astro, diff, eex, elixir, hcl, heex, jsdoc, json5, just, lua, luadoc, luap, query, regex, sql, svelte, vim, vimdoc, xml. On crates.io (2026-11-26): no crate for astro or eex; `tree-sitter-sequel` 0.3.13 for SQL; old crates that need an ABI check against `tree-sitter` 0.27: `tree-sitter-diff` 0.1.0, `tree-sitter-svelte-ng` 1.0.2, `tree-sitter-xml` 0.7.0; `luadoc`, `luap`, `query`, `json5` crates are barely used. Each grammar also needs a `highlights.scm` that uses the palette's capture names.
 
@@ -31,7 +31,7 @@ The owner's Neovim config (`~/.config/nvim/lua/plugin_treesitter.lua:14-50`) add
 
 ### RI-3 — Fuzzy file finding
 
-- status: parked (owner-deferred 2026-11-26; unlock: plan-00001 done) · updated 2026-11-26
+- status: landed (plan-00006 phase 5, 2026-11-27; `find_mode` and `Ctrl+F`, `architecture.md`) · updated 2026-11-27
 
 Phase 1 copies Scouter's substring AND match and order (`architecture.md`). A fuzzy toggle could use `neo_frizbee` (1 crate, MIT, MSRV 1.89; the matcher inside fff) or `nucleo-matcher` (MPL-2.0). `fff-search` (96 crates, LMDB frecency, git signals, MSRV 1.91) only if its grep or index is wanted (`research/dependency-survey.md`).
 
@@ -161,3 +161,21 @@ The owner asked on 2026-11-27 for an action that opens the browsed folder in Fin
 - status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
 
 The owner asked on 2026-11-27 for `Open With …` on text, code, and other supported files: a picker of relevant apps, or the ones set in `settings.json`. Open points: how relevant apps are found on macOS (Launch Services) versus a configured list per extension, and the picker's UI. Shares the launch code and the security rules (no shell interpolation of paths) with RI-14 and RI-15.
+
+## Grammars and highlighting (the owner's set, after plan-00006)
+
+### RI-17 — The rest of the owner's Neovim grammar set
+
+- status: parked (unlock: a crate that loads on the locked `tree-sitter` 0.27, per language) · updated 2026-11-27
+
+Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Seven have no crate that loads. Six have a crate that pins another `tree-sitter` (json5, luadoc, luap, and query pin 0.20; just and vimdoc pin 0.25), which clashes on the `links` key with 0.27. eex has no published crate. Each also needs a highlight query for fmc's capture names. Nothing is dropped from a loaded set: the phase 3 spike dropped none (`research/grammar-load-spike.md`, section 5).
+
+**Unlock:** a crate for one of the seven that loads with `Grammar::compile`, and the owner's go-ahead for its dependency. **First move:** load the candidate with its query, as the spike did.
+
+### RI-18 — Injected highlighting for the owner's grammars
+
+- status: parked (unlock: the owner names the injections to add) · updated 2026-11-27
+
+The owner's grammars highlight their own tokens, but not the code they hold: heex inside elixir, jsdoc inside JavaScript, regex inside JavaScript and Python, and a Svelte `<script>` body, which the spike's sample showed plain (`research/grammar-load-spike.md`, section 3). OpenTUI takes an injection query per grammar (`Grammar::injections`, `opentui-0.9.9/src/syntax/highlight.rs:65`); the Markdown fences already use one. A fence in one of the new languages is highlighted by its name, without an injection.
+
+**Unlock:** the owner names the injection to add. **First move:** the injection query for one pair, checked against the palette on a sample.

@@ -55,7 +55,7 @@ Notes:
 
 ## 5. Parked for the roadmap
 
-Not candidates in this spike, because no crate that loads exists (RI-2's research, `roadmap-00001-post-parity.md`): json5, just, luadoc, luap, query (only an unreviewed fork), vimdoc (pins `tree-sitter` 0.25), and eex (no published crate). The roadmap gets one parked entry for these and for any grammar that a later phase drops. Dropped in phase 3: none.
+Not candidates in this spike, because no crate loads: json5 (`tree-sitter` ~0.20), just (~0.25.5), luadoc (~0.20.10), luap (~0.20.10), query (0.20.9), vimdoc (0.25.10), and eex (no published crate). Each version was read from the crate archive on 2026-11-27, after the spike; they are the reason the seven are parked (RI-17). The roadmap gets one parked entry for these and for any grammar that a later phase drops. Dropped in phase 3: none.
 
 ## 6. Unverified
 

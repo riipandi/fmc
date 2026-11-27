@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T16:30:00+07:00
+updated: 2026-11-27T17:10:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
@@ -26,7 +26,8 @@ phases:
       note: "neo_frizbee =0.13.3 (rules.md, phase 5 approval). find::Matching (Substring default, Fuzzy): the whole query as one needle, no typos, case ignored, ranked by score then Scouter's order; find::matches dispatches on it. settings.rs find_mode (invalid: substring and a notice). Ctrl+F in the finder (Action::ToggleFuzzy, parser binds it while a prompt is open) flips it for the run and re-runs the query. Footer: `fuzzy, N matches`, the mode first (a 26-column sidebar cut the mode after the count in the first live run). Matched characters: accent_soft, bold. Tests: 6 find, the key, settings, tree row, and 3 TestApp finder tests. Live (new tabs, own session): fuzzy from settings (11 matches for mermd, match colour checked in VT), Ctrl+F flip from substring, the invalid-value notice. Records: architecture (Approved deviation: the finder can match fuzzily), parity (Finder), configuration, keymaps, README, CHANGELOG, rules, rust, shape, PRODUCT."
     - id: 6
       title: "Docs, roadmap close, handover, final validation"
-      status: pending
+      status: done
+      note: "Roadmap: RI-1 and RI-3 landed, RI-2 landed in part; RI-17 (the seven grammars with no crate that loads: six pin another tree-sitter, eex has none) and RI-18 (injections) parked. Archived; handover-00007 has the owner checks. cargo build --release passes; live runs of a Mermaid flowchart and a sql fence in a new tab at 100, 70, and 49 columns (rex capture). just verify: 509 tests."
 ---
 
 ## Mermaid diagrams, the owner's grammar set, and fuzzy file finding
