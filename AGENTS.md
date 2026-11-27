@@ -63,6 +63,7 @@ A skill advises; this file and `.agents/docs/` win. Project skills live in `.age
 
 ## Git
 
+- New work never starts on `main` or another protected branch. Run `git branch --show-current` before the first edit; on `main` or a protected branch, create a branch for the work (`feat/…`, `fix/…`, `docs/…`, `release/vX.Y.Z`) and work there. Subagents stay on the branch the brief names. The work reaches `main` through a pull request.
 - Stage explicit paths and check `git status`; never `git add -A` or `git add .`.
 - Message: `{feat,fix,docs,refactor,test,chore}[(scope)]: <concise message>`. Never push unasked.
 - Commit only when asked; a plan go-ahead covers its phases' commits. Otherwise recommend the message and paths.
