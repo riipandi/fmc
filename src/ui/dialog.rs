@@ -126,9 +126,17 @@ impl DialogView {
             button.visible(label.is_some());
             let Some(label) = label else { continue };
             let focused = dialog.focus == Stop::Button(index);
+            // The pointer's button is tinted in the accent, and the focused one is filled: Return acts on the filled one.
+            let hovered = dialog.hovered == Some(index);
             let seg = Seg {
                 text: format!(" {label} "),
-                fg: Some(if focused { p.accent_ink } else { p.text }),
+                fg: Some(if focused {
+                    p.accent_ink
+                } else if hovered {
+                    p.accent
+                } else {
+                    p.text
+                }),
                 bg: focused.then_some(p.accent),
                 bold: focused,
             };

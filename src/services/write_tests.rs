@@ -10,7 +10,8 @@ use std::process::Command;
 use tempfile::TempDir;
 
 use super::{
-    Error, copy, copy_then_remove, create_dir, create_file, free_name, move_to, move_with, paste, rename, trash_with,
+    Error, copy, copy_entry, copy_then_remove, create_dir, create_file, free_name, move_to, move_with, open_seen,
+    paste, rename, trash_with,
 };
 
 /// The browsed root, with Harry Potter and Dan Brown names, and a folder outside it that a link can point at.
@@ -286,7 +287,7 @@ fn the_cross_volume_fallback_copies_then_removes_the_source() {
     symlink(f.outside.join("vault-713.txt"), f.root.join("hogwarts/owl-post")).unwrap();
     let source = f.root.join("hogwarts");
     let dest = f.root.join("Gringotts/hogwarts");
-    copy_then_remove(&source, &dest, drop_entry).unwrap();
+    copy_then_remove(&source, &dest, copy_entry, drop_entry).unwrap();
     assert_eq!(fs::read_to_string(dest.join("great-hall/Albus Dumbledore.md")).unwrap(), "Albus Dumbledore\n");
     assert!(fs::symlink_metadata(dest.join("owl-post")).unwrap().file_type().is_symlink());
     assert!(!source.exists());
@@ -299,7 +300,7 @@ fn the_cross_volume_fallback_keeps_the_source_when_the_copy_fails() {
     let dest = f.root.join("Gringotts/README.md");
     fs::write(&dest, "Leigh Teabing\n").unwrap();
     let removed = Cell::new(false);
-    let err = copy_then_remove(&source, &dest, |_| {
+    let err = copy_then_remove(&source, &dest, copy_entry, |_| {
         removed.set(true);
         Ok(())
     })
@@ -310,11 +311,52 @@ fn the_cross_volume_fallback_keeps_the_source_when_the_copy_fails() {
 }
 
 #[test]
+fn the_cross_volume_fallback_keeps_the_source_when_it_is_replaced_during_the_copy() {
+    let f = fixture();
+    let source = f.root.join("README.md");
+    let dest = f.root.join("Gringotts/README.md");
+    let removed = Cell::new(false);
+    let err = copy_then_remove(
+        &source,
+        &dest,
+        |from, to| {
+            copy_entry(from, to)?;
+            // The old file is moved aside first, so its inode is not freed and reused for the new file.
+            fs::rename(from, f.root.join("kept-aside.md"))?;
+            fs::write(from, "Sirius Black\n")?;
+            Ok(())
+        },
+        |_| {
+            removed.set(true);
+            Ok(())
+        },
+    )
+    .unwrap_err();
+    assert!(matches!(err, Error::Changed), "{err}");
+    assert!(!removed.get(), "the replacement is not trashed");
+    assert_eq!(fs::read_to_string(&source).unwrap(), "Sirius Black\n");
+    assert_eq!(fs::read_to_string(&dest).unwrap(), "Robert Langdon\n", "the copy is left in place");
+}
+
+#[test]
+fn a_link_swapped_in_after_the_lstat_is_refused_before_it_is_read() {
+    let f = fixture();
+    let link = f.root.join("hogwarts/owl-post");
+    symlink(f.outside.join("vault-713.txt"), &link).unwrap();
+    // The lstat saw the link; the open follows it to the file outside the root.
+    let seen = fs::symlink_metadata(&link).unwrap();
+    assert!(matches!(open_seen(&link, &seen), Err(Error::Changed)));
+    // The file the lstat saw is opened as before.
+    let readme = f.root.join("README.md");
+    assert!(open_seen(&readme, &fs::symlink_metadata(&readme).unwrap()).is_ok());
+}
+
+#[test]
 fn the_cross_volume_fallback_keeps_both_when_the_removal_fails() {
     let f = fixture();
     let source = f.root.join("README.md");
     let dest = f.root.join("Gringotts/README.md");
-    let err = copy_then_remove(&source, &dest, |_| Err(Error::Trash("Trash is full".into()))).unwrap_err();
+    let err = copy_then_remove(&source, &dest, copy_entry, |_| Err(Error::Trash("Trash is full".into()))).unwrap_err();
     assert!(matches!(err, Error::Trash(_)));
     assert!(source.is_file() && dest.is_file());
 }

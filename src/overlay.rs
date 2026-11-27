@@ -98,6 +98,8 @@ pub struct Dialog {
     pub buttons: Vec<String>,
     pub default: usize,
     pub focus: Stop,
+    /// The button under the pointer: drawn highlighted, and not the focus, so Return still picks the focused button.
+    pub hovered: Option<usize>,
     /// The line under the field; the caller sets it and clears it.
     pub error: Option<String>,
 }
@@ -114,6 +116,7 @@ impl Dialog {
             buttons: buttons.iter().map(|b| (*b).into()).collect(),
             default,
             focus,
+            hovered: None,
             error: None,
         }
     }
@@ -124,13 +127,14 @@ impl Dialog {
         field.into_iter().chain((0..self.buttons.len()).map(Stop::Button)).collect()
     }
 
-    /// The pointer moved over button `index`: the focus moves to it, so the button is marked as a key would mark it.
-    /// Returns whether the focus changed.
-    pub fn point(&mut self, index: usize) -> bool {
-        if index >= self.buttons.len() || self.focus == Stop::Button(index) {
+    /// The pointer entered (`on`) or left button `index`. A highlight only: the focus stays where the keys put it.
+    /// Returns whether the highlight changed.
+    pub fn hover(&mut self, index: usize, on: bool) -> bool {
+        let next = if on { Some(index) } else { self.hovered.filter(|&hovered| hovered != index) };
+        if next == self.hovered {
             return false;
         }
-        self.focus = Stop::Button(index);
+        self.hovered = next;
         true
     }
 

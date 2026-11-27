@@ -6,7 +6,7 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io;
-use std::os::unix::fs::{PermissionsExt, symlink};
+use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
 /// Why a write was refused or failed. The UI shows it as a short message (`Display`).
@@ -22,6 +22,8 @@ pub enum Error {
     IntoItself,
     /// Nothing is at the path.
     Missing,
+    /// The entry was replaced while it was copied, so it was not removed. Any copy is left at the new place.
+    Changed,
     /// A pipe, a socket, or a device: copying it would block on a reader or writer that never comes.
     Unsupported,
     /// The name is not UTF-8. The Trash and a paste name an entry by its path as text, so the entry they would use is
@@ -41,6 +43,7 @@ impl fmt::Display for Error {
             Error::Outside => write!(f, "That place is outside the folder fmc opened."),
             Error::IntoItself => write!(f, "A folder cannot go into itself."),
             Error::Missing => write!(f, "Nothing is at that path."),
+            Error::Changed => write!(f, "The item changed while it was copied, so the original is kept."),
             Error::Unsupported => write!(f, "Only files, folders, and links can be copied."),
             Error::NotUtf8 => write!(f, "This name is not UTF-8, so fmc cannot use it."),
             Error::Trash(message) => write!(f, "Could not move to the Trash: {message}"),
@@ -158,7 +161,7 @@ fn move_with(
     match fs::rename(source, &dest) {
         Ok(()) => Ok(dest),
         Err(error) if error.kind() == io::ErrorKind::CrossesDevices => {
-            copy_then_remove(source, &dest, remove)?;
+            copy_then_remove(source, &dest, copy_entry, remove)?;
             Ok(dest)
         }
         Err(error) => Err(error.into()),
@@ -166,10 +169,27 @@ fn move_with(
 }
 
 /// The cross-volume move: copy the entry, then remove the source. A failed copy leaves the source alone; a failed
-/// removal leaves the copy and the source, so nothing is lost.
-fn copy_then_remove(source: &Path, dest: &Path, remove: impl FnOnce(&Path) -> Result<(), Error>) -> Result<(), Error> {
-    copy_entry(source, dest)?;
+/// removal leaves the copy and the source, so nothing is lost. The removal acts on the path, so it runs only while the
+/// path still holds the entry that was copied: a replacement during the copy is kept, not trashed.
+fn copy_then_remove(
+    source: &Path,
+    dest: &Path,
+    copy: impl FnOnce(&Path, &Path) -> Result<(), Error>,
+    remove: impl FnOnce(&Path) -> Result<(), Error>,
+) -> Result<(), Error> {
+    let before = identity(&fs::symlink_metadata(source)?);
+    copy(source, dest)?;
+    if fs::symlink_metadata(source).map(|now| identity(&now)).ok() != Some(before) {
+        return Err(Error::Changed);
+    }
+    // shortcut: the check and the Trash call are two calls, so an entry swapped into the gap is trashed; the threat is
+    // another process running as the user, which can already delete there.
     remove(source)
+}
+
+/// The device and inode of an entry: what tells one file from another that took its name.
+fn identity(metadata: &fs::Metadata) -> (u64, u64) {
+    (metadata.dev(), metadata.ino())
 }
 
 pub fn trash_with(root: &Path, path: &Path, delete: impl FnOnce(&Path) -> Result<(), Error>) -> Result<(), Error> {
@@ -210,6 +230,9 @@ fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     if kind.is_symlink() {
         symlink(fs::read_link(source)?, dest)?;
     } else if kind.is_dir() {
+        // shortcut: `read_dir` follows a link, so a folder swapped for a link after the `symlink_metadata` above copies the
+        // outside folder's entries; upgrade by opening the folder and comparing its identity with `metadata` before reading
+        // it, as `open_seen` does for files.
         fs::create_dir(dest)?;
         let copied = copy_children(source, dest)
             .and_then(|()| fs::set_permissions(dest, copied_mode(&metadata)).map_err(Error::from));
@@ -220,7 +243,7 @@ fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
     } else if kind.is_file() {
         // shortcut: the kind check and the open are two calls, so a pipe swapped in between blocks the copy until a
         // writer opens it; `O_NONBLOCK` (a libc constant) closes that.
-        let mut from = fs::File::open(source)?;
+        let mut from = open_seen(source, &metadata)?;
         let mut to = OpenOptions::new().write(true).create_new(true).open(dest)?;
         if let Err(error) = io::copy(&mut from, &mut to).and_then(|_| to.set_permissions(copied_mode(&metadata))) {
             drop(to);
@@ -231,6 +254,14 @@ fn copy_entry(source: &Path, dest: &Path) -> Result<(), Error> {
         return Err(Error::Unsupported);
     }
     Ok(())
+}
+
+/// Opens `source` and refuses it unless the file opened is the one `seen` was taken from. The open follows a link, so a
+/// link swapped in after the `symlink_metadata` call would be read from its target; the identity check stops it before
+/// a byte is read. std has no `O_NOFOLLOW` without libc, so this is the check that needs no constant.
+fn open_seen(source: &Path, seen: &fs::Metadata) -> Result<fs::File, Error> {
+    let file = fs::File::open(source)?;
+    if identity(&file.metadata()?) == identity(seen) { Ok(file) } else { Err(Error::Changed) }
 }
 
 fn copy_children(source: &Path, dest: &Path) -> Result<(), Error> {

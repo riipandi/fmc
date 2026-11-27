@@ -664,7 +664,7 @@ fn a_pointer_over_a_menu_row_selects_it_and_a_disabled_row_is_not_selected() {
 }
 
 #[test]
-fn a_pointer_over_a_dialog_button_moves_the_focus_onto_it() {
+fn a_pointer_over_a_dialog_button_highlights_it_and_return_still_picks_the_focused_one() {
     let b = browsing(&["robert-langdon.md"]);
     b.app.press("D");
     b.app.render();
@@ -674,6 +674,10 @@ fn a_pointer_over_a_dialog_button_moves_the_focus_onto_it() {
         text.lines().enumerate().find(|(_, line)| line.contains("Delete")).expect("the Delete button is drawn");
     let column = line.find("Delete").map(|byte| line[..byte].chars().count()).unwrap_or(0);
     b.app.hover(column as u16 + 1, y as u16);
-    assert_eq!(b.dialog().map(|d| d.focus), Some(Stop::Button(1)), "Delete is focused under the pointer");
+    assert_eq!(b.dialog().map(|d| d.hovered), Some(Some(1)), "Delete is highlighted under the pointer");
+    assert_eq!(b.dialog().map(|d| d.focus), Some(Stop::Button(0)), "the focus stays on Cancel");
     assert!(!b.field_focused());
+    b.app.press("return");
+    assert!(b.dialog().is_none(), "Return picked the focused Cancel, and the dialog closed");
+    assert!(b.has("robert-langdon.md"), "nothing was trashed");
 }

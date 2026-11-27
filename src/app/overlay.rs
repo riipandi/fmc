@@ -72,15 +72,12 @@ pub fn wire_views(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             Some(Overlay::Dialog(dialog)) => dialog.pick(index),
             _ => Outcome::Stay,
         }));
-        button.on_mouse(hover(model, ui, move |m| match &mut m.overlay {
-            Some(Overlay::Dialog(dialog)) => dialog.point(index),
-            _ => false,
-        }));
+        button.on_hover(hover_button(model, ui, index));
     }
 }
 
-/// A pointer that moves over a row or a button selects it, as a key does: the keys and the pointer share one selection.
-/// `point` says whether the selection changed; the frame is painted only then.
+/// A pointer that moves over a menu row selects it, as a key does: the keys and the pointer share one selection. `point`
+/// says whether the selection changed; the frame is painted only then.
 fn hover(
     model: &Rc<RefCell<Model>>,
     ui: &Rc<RefCell<Ui>>,
@@ -93,6 +90,26 @@ fn hover(
         }
         let mut m = model.borrow_mut();
         if point(&mut m) {
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    }
+}
+
+/// A pointer that enters or leaves a dialog button highlights it. The focus stays where the keys put it, so Return still
+/// picks the focused button.
+fn hover_button(
+    model: &Rc<RefCell<Model>>,
+    ui: &Rc<RefCell<Ui>>,
+    index: usize,
+) -> impl FnMut(&mut Cx<'_>, bool) + 'static {
+    let (model, ui) = (model.clone(), ui.clone());
+    move |cx, entered| {
+        let mut m = model.borrow_mut();
+        let changed = match &mut m.overlay {
+            Some(Overlay::Dialog(dialog)) => dialog.hover(index, entered),
+            _ => false,
+        };
+        if changed {
             paint(cx.app(), &mut m, &mut ui.borrow_mut());
         }
     }

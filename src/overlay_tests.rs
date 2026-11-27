@@ -137,15 +137,19 @@ fn a_pointer_over_an_enabled_row_selects_it_and_over_a_disabled_row_does_nothing
 }
 
 #[test]
-fn a_pointer_over_a_button_moves_the_focus_to_it() {
+fn a_pointer_over_a_button_highlights_it_and_leaves_the_focus_alone() {
     let mut dialog = Dialog::new("Move to Trash?", "Gone.", false, &["Cancel", "Delete"], 0);
-    assert!(dialog.point(1));
-    assert_eq!(dialog.focus, Stop::Button(1));
-    assert!(!dialog.point(1));
-    assert!(!dialog.point(2), "a button the dialog does not have is nothing");
+    assert!(dialog.hover(1, true));
+    assert_eq!(dialog.hovered, Some(1));
+    assert_eq!(dialog.focus, Stop::Button(0), "the focus stays on Cancel");
+    assert_eq!(dialog.key(key("return", "")), Outcome::Pick(0), "Return still picks the focused button");
+    assert!(!dialog.hover(1, true), "a button already highlighted changes nothing");
+    assert!(dialog.hover(1, false));
+    assert_eq!(dialog.hovered, None);
+    assert!(!dialog.hover(0, false), "leaving a button the pointer is not on changes nothing");
     // Typing a name returns the focus to the field, so a pointer left on a button does not take the text.
     let mut named = Dialog::new("New file", "Name it.", true, &["Cancel", "OK"], 1);
-    named.point(0);
+    named.hover(0, true);
     assert_eq!(named.key(key("a", "a")), Outcome::Insert("a".into()));
     assert_eq!(named.focus, Stop::Field);
 }
