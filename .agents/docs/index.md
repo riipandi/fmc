@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00006-mermaid-grammars-fuzzy.md` (in-progress: RI-1 Mermaid, RI-2 grammars, RI-3 fuzzy; phases 1 and 2 done, Mermaid landed; phases 3 to 6 wait for the go-ahead); `plan-00008-git-gutter.md` (draft: git change signs in the reader gutter, `git_gutter` setting) |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | Run order approved 2026-11-27: `plan-00008-git-gutter.md` (approved: git change signs in the reader gutter), `plan-00011-heading-markers.md` (approved: `#` markers on rendered headings), `plan-00010-markdown-preview-search-signs.md` (approved: search and git signs in rendered Markdown), `plan-00009-file-associations.md` (approved: `file_associations` setting), then `plan-00006-mermaid-grammars-fuzzy.md` phases 3 to 6 (in-progress: phases 1 and 2 done, Mermaid landed) |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00006-layout-tiers.md` (done: plan-00005 closed, with the owner checks on a phone); `handover-00005-phone-layout.md` (done: plan-00004 closed, with the owner checks); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
