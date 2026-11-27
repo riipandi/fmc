@@ -78,10 +78,9 @@ impl Diagram {
 impl Component for Diagram {
     fn paint(&self, painter: &mut Painter<'_>) {
         let drawn = self.fitted(painter.width() as usize);
-        // The fill goes first, and stops at the last glyph of the widest row: the engine pads rows with spaces, and the
-        // measure counts them. A text run without a background keeps the cell's colour, so the text sits on the fill.
-        let fill = drawn.rows.iter().map(|row| painter.text_width(row.trim_end())).max().unwrap_or(0);
-        painter.fill(0, 0, fill, painter.height(), self.colors.fill);
+        // The fill goes first and spans the reader's width (owner request), so the diagram reads as one block like a code
+        // block. A text run without a background keeps the cell's colour, so the text sits on the fill.
+        painter.fill(0, 0, painter.width(), painter.height(), self.colors.fill);
         let last = drawn.rows.len().saturating_sub(1);
         for (y, row) in drawn.rows.iter().enumerate() {
             let reason = drawn.fallback && y == last;
@@ -104,7 +103,9 @@ impl Component for Diagram {
             Constraint::Unbounded => None,
         };
         let drawn = self.drawn(width);
-        (mermaid::columns(&drawn.rows) as f32, drawn.rows.len() as f32)
+        // A bounded width is taken whole, so the fill spans the reader; unbounded, the diagram's own width.
+        let columns = width.unwrap_or_else(|| mermaid::columns(&drawn.rows));
+        (columns as f32, drawn.rows.len() as f32)
     }
 }
 

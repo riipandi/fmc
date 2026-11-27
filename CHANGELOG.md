@@ -7,12 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-27
+
 ### Changed
 
-- A Mermaid diagram in rendered Markdown sits on a panel tone over its box, so it reads as one block. It follows the reader's width on a resize.
+- A Mermaid diagram in rendered Markdown sits on a panel tone across the reader's width, so it reads as one block. It follows the reader's width on a resize.
 
 ### Fixed
 
+- A Mermaid diagram too wide for the reader shows its source in a frame, and long source lines now break between words instead of in the middle of one.
 - `Ctrl+F` in the file finder changes what the footer shows before a query is typed: it names `fuzzy` while fuzzy matching is on. Before, a press on an empty prompt changed nothing on screen.
 
 ## [0.1.0] - 2026-11-27
@@ -57,5 +60,6 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/riipandi/fmc/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/riipandi/fmc/releases/tag/v0.1.0

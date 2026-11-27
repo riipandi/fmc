@@ -186,7 +186,7 @@ Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `S
 
 ### Mermaid diagram
 
-A `mermaid` fence in the rendered view is drawn on `fallback-background`, over the diagram's box: the fill runs to the last glyph of the widest row, so the engine's trailing padding stays plain. Box lines take `border`, labels `text`, and a fallback's reason `muted`; a fallback's framed source sits on the same fill. Scouter draws the fence as plain text, so this is an approved deviation (`architecture.md`, "a Mermaid fence in rendered Markdown is drawn as a diagram").
+A `mermaid` fence in the rendered view is drawn on `fallback-background`, across the reader's text width, the same span a code block takes, with the diagram at its left. Box lines take `border`, labels `text`, and a fallback's reason `muted`; a fallback's framed source sits on the same fill. Scouter draws the fence as plain text, so this is an approved deviation (`architecture.md`, "a Mermaid fence in rendered Markdown is drawn as a diagram").
 
 ### Diff file band
 
