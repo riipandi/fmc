@@ -6,7 +6,7 @@ references: services/git.rs, ui/reader.rs, settings.rs
 phases:
     - id: 1
       title: "Line signs from a zero-context patch (core, pure)"
-      status: pending
+      status: done
     - id: 2
       title: "Signs in the reader gutter, the `git_gutter` setting, refresh"
       status: pending
