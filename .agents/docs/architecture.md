@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T19:18:34+07:00
+updated: 2026-11-27T19:27:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1186,7 +1186,7 @@ Consequences:
 
 - (positive) A JSDoc tag reads as a keyword and its type as a constant, a regex as its own grammar's colours (an escape as a constant, a class's `-` as an operator), and a Python pattern in `re.compile` the same way.
 - (negative) A JavaScript, TypeScript, or Python file, and a Markdown fence in one of them, is coloured where Scouter shows its comments and regex literals plain. The difference is on `docs/parity.md`.
-- (negative) Cost: the first 1,000,000 bytes of Scouter's `node_modules` JavaScript, a bundle dense in regex literals and comments, highlight in about 1.4 times the time without the injections (medians of seven debug runs, three interleaved pairs on a machine at load 15 to 20: 1.12 to 1.19 s without, 1.57 to 1.61 s with; `plan-00013` phase 2). A 222,000-byte TypeScript file shows no measurable change (288 to 308 ms without, 300 ms with).
+- (negative) Cost: the first 1,000,000 bytes of Scouter's `node_modules` JavaScript, a bundle dense in regex literals and comments, highlight in about 1.4 times the time without the injections (medians of seven debug runs, three interleaved pairs on a machine at load 15 to 20: 1.12 to 1.19 s without, 1.55 to 1.58 s with the per-layer rules as committed; `plan-00013` phase 2). A 222,000-byte TypeScript file shows no measurable change (288 to 308 ms without, 300 ms with).
 
 Alternatives considered:
 
