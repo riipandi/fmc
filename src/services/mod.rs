@@ -56,9 +56,9 @@ pub enum Event {
     },
     /// The changes poll's answer for the listing of `session`: the listing and the stamp of the files the body shows.
     DiffPolled { session: u64, result: Result<(ChangeSet, String), String> },
-    /// A paste finished (`app/write.rs`): `source` was copied, or moved when `moved`, into `into`. `result` is the new
-    /// path, or the error the footer shows.
-    Pasted { source: PathBuf, into: PathBuf, moved: bool, result: Result<PathBuf, String> },
+    /// One item of a run finished (`app/write.rs`): `source` was copied, moved, or trashed as `kind` says. `result` is the
+    /// new path, or the error the footer shows.
+    Written { kind: write::Kind, source: PathBuf, result: Result<PathBuf, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

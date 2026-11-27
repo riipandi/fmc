@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `s` marks the selected row and moves down one row, and `S` clears the marks. A marked row shows `✓`, and the footer counts the marks. `Esc` drops a copy or cut first, then the marks.
+- `c`, `x`, and `v` work on every marked row. A paste of several rows runs one at a time and shows `copying 2 of 5…`; the first error stops it, and the footer says how many rows landed. The menu's Copy, Cut, and Paste say how many rows they take.
 
 ## [0.2.0] - 2026-11-27
 

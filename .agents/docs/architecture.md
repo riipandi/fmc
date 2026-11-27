@@ -509,7 +509,7 @@ Alternatives considered:
 
 Context: plan-00012 D2 and D3 put copy, cut, and paste on the tree, and D8 runs a paste off the frame. A system clipboard for files (Finder's copy and paste between apps) is out of scope.
 
-Decision (owner, 2026-11-27: the footer wording is approved): the clipboard holds one path and whether it is a cut, and nothing else; it lives in the model and is lost when fmc exits. `c` and `x` set it and the footer says `Copied <name>. Paste it with v.` or `Cut <name>. Paste it with v.`. A paste runs on a worker, one at a time: a second `v` while one runs says `Still pasting. Try again when it finishes.`, and the footer says `copying` or `moving` while it runs. A cut row is dimmed in the tree until it is pasted or the cut is dropped; `Esc` in the list drops a copy or a cut (the second `x` was the other option).
+Decision (owner, 2026-11-27: the footer wording is approved; plan-00014 D11 amends the one-path clause): the clipboard holds the paths of the entries `c` or `x` took, each with its device and inode at that moment, and whether they are a cut, and nothing else; a run leaves an entry alone when its device and inode have changed since, and says so in the footer (the security review of phase 3, finding 1); it lives in the model and is lost when fmc exits. The footer says `Copied <name>. Paste it with v.` or `Cut <name>. Paste it with v.` for one entry, and `Copied 3 items. Paste them with v.` for several. A paste runs as a bulk run on the worker (the record below): a second `v` while one runs says `Still working. Try again when it finishes.`, and the footer says `copying` or `moving` while it runs. A cut row is dimmed in the tree until it is pasted or the cut is dropped; `Esc` in the list drops a copy or a cut (the second `x` was the other option).
 
 Consequences:
 
@@ -538,6 +538,24 @@ Alternatives considered:
 - A background tint for a mark: rejected, the selection already uses that tint.
 - Ctrl+click or Cmd+click: rejected, terminals do not send them; Shift+click is the terminal's own selection (the owner, 2026-11-27).
 - Space to mark: rejected, Space opens the menu (plan-00012, D3).
+
+### A bulk run goes to the worker one item at a time, and stops at its first error
+
+Context: plan-00012 D8 ran one paste on the worker. Several marked entries (plan-00014) need a run that the footer can count, that stops at the first error, and that does not race two writes in one folder.
+
+Decision (plan-00014 D7, D12, D13): a run is a queue in the model (`app/write.rs`, `Bulk`). Each item is one job on the worker (`services::spawn`), and it answers with `Event::Written`; the UI starts the next item when the answer arrives, so the footer says `copying 2 of 5…`. The first error stops the run and says how many landed (`Copied 2 of 5. <error>`), and the items the run did not reach stay where they are. A run's marks clear only when every item landed. Copy, move, and duplicate use the queue, and a single entry is a queue of one.
+
+Consequences:
+
+- (positive) One write is in flight at a time, so two items never race each other, and a second write waits (`Still working`).
+- (positive) No new thread or channel: the worker and the event path that a paste already used carry each item.
+- (negative) A run pays one round trip through the event loop per item. A run of many small entries is slower than one bulk call would be.
+- (negative) No cancel key is offered: a run ends at its next answer or at its last item.
+
+Alternatives considered:
+
+- One worker job for the whole run: rejected, the footer could not count the items without a stream, and the stop at the error would live on the worker, away from the tree's relisting.
+- Items in parallel: rejected, two writes into one folder race, and the footer cannot count them.
 
 ## Pending decisions
 

@@ -1,7 +1,7 @@
 //! The file tree's rows and scrollbar (Scouter `src/explorer/explorer.ts` `paintRow`, `src/ui/styled.ts` scrollbar).
 //! The row text comes from `row_segments` and the thumb from `thumb`; both are pure, so tests run without a terminal.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use fmc::diff::Marks;
 use fmc::explorer::{Browser, Entry, Kind, Row, relative};
@@ -279,9 +279,17 @@ impl TreeView {
         self.track.clone()
     }
 
-    /// Paints the visible rows; `cut` is the row on the clipboard to move, which is muted. Before the root is listed the
+    /// Paints the visible rows; `cut` holds the rows on the clipboard to move, which are muted. Before the root is listed the
     /// list is empty (no flash of a collapsed root).
-    pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path, cut: Option<&Path>) {
+    pub fn paint(
+        &mut self,
+        app: &App,
+        browser: &Browser,
+        marks: &Marks,
+        p: &Palette,
+        root: &Path,
+        cut: Option<&[PathBuf]>,
+    ) {
         // The finder's rows need no listed root; the tree does (Scouter draws nothing before the root lists).
         let lines = if browser.is_flat() || browser.tree.is_listed(root) {
             self.lines(browser, marks, p, root, tier(app.size().0) != Tier::Wide, cut)
@@ -324,7 +332,7 @@ impl TreeView {
         p: &Palette,
         root: &Path,
         narrow: bool,
-        cut: Option<&Path>,
+        cut: Option<&[PathBuf]>,
     ) -> Vec<Line> {
         let visible = browser.visible_rows();
         let thumbs = thumb(browser.row_count(), browser.height(), browser.top(), visible.len());
@@ -343,7 +351,7 @@ impl TreeView {
                         selected,
                         marks.is_ignored(&key),
                         browser.is_flat() && narrow,
-                        cut == Some(row.entry.path.as_path()),
+                        cut.is_some_and(|paths| paths.contains(&row.entry.path)),
                         // The finder's rows take no marks: the set is the tree's (plan-00014, D10).
                         !browser.is_flat() && browser.is_marked(&row.entry.path),
                         p,

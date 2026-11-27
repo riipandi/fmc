@@ -14,8 +14,8 @@ phases:
       note: the keys, the mark glyph, the footer count, Esc; Rex capture at 120x40 and 45x30 (marks, count, Esc, 45x30 bar)
     - id: 3
       title: Copy, cut, and paste several marked rows
-      status: pending
-      note: the clipboard holds a list; one bulk queue on the worker; the menu counts; Rex run
+      status: committed (feat(tree): copy, cut, and paste several marked rows)
+      note: the clipboard holds a list with each device and inode; one bulk queue on the worker; the menu counts; a swapped entry is skipped and stops the run (security review, finding 1); Rex run at 120x40 and 45x30; 56 write tests
     - id: 4
       title: Delete several marked rows to the Trash
       status: pending

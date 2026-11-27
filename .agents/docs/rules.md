@@ -26,7 +26,7 @@ The file-manager operations (plan-00012) are fmc's only writes to the user's fil
 - **A link is the entry.** A link is created, renamed, copied, moved, and trashed as the link, never followed; a folder copy recurses without following links, and a folder cannot go into itself (D6).
 - **Existence is checked right before the call.** The race with another process is accepted and recorded as a `shortcut:` comment, because std has no no-clobber rename without libc (`architecture.md`, "Every write checks its path before it acts").
 - **Delete is the Trash, through Finder.** A deleted entry goes to the macOS Trash, where Finder's Put Back restores it. There is no permanent delete (`architecture.md`, "Deleted entries go to the Trash through Finder").
-- **Copy, move, and duplicate run on a worker.** A paste or a duplicate runs off the frame, one at a time, and the footer says `copying` or `moving` while it runs. Create, rename, and Trash run inline, as one call each (D8). A duplicate checks its name first, so a taken name keeps its dialog open.
+- **Copy, move, and duplicate run on a worker, one item at a time.** A paste or a duplicate runs off the frame, and the footer says `copying` or `moving` while it runs, with `copying 2 of 5…` for several entries. The first error stops a run, and the marks clear only when every item landed (plan-00014, D7 and D13). Create, rename, and Trash run inline, as one call each (D8). A duplicate checks its name first, so a taken name keeps its dialog open.
 
 ## Where a fact lives
 

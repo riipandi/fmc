@@ -9,6 +9,13 @@ use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
+/// What a worker does with one item of a run: a copy, a move, or a move to the Trash (plan-00014, D12).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    Copy,
+    Move,
+}
+
 /// Why a write was refused or failed. The UI shows it as a short message (`Display`).
 #[derive(Debug)]
 pub enum Error {

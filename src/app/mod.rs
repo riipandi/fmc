@@ -199,10 +199,11 @@ struct Model {
     overlay_at: (u16, u16),
     /// What the open menu or dialog is for (`app/write.rs`); a dialog's task is kept while it reports an error.
     overlay_task: Option<write::Task>,
-    /// The entry `c` or `x` put on the clipboard (`app/write.rs`); a cut row is drawn muted.
+    /// The entries `c` or `x` put on the clipboard (`app/write.rs`); cut rows are drawn muted.
     clipboard: Option<write::Clip>,
-    /// A copy or move runs on the worker; a second paste is refused until it answers (plan-00012, D8).
-    pasting: bool,
+    /// The run on the worker, while one is going: a second write is refused until it ends (plan-00012, D8; plan-00014,
+    /// D7).
+    bulk: Option<write::Bulk>,
 }
 
 impl Model {
@@ -289,7 +290,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         overlay_at: (0, 0),
         overlay_task: None,
         clipboard: None,
-        pasting: false,
+        bulk: None,
         associations: Default::default(),
         opened: root,
     }
@@ -508,8 +509,8 @@ fn repaint_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, tr
 fn clear_message_later(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let (model, ui) = (model.clone(), ui.clone());
     app.set_timeout(std::time::Duration::from_secs(2), move |cx| {
-        // A paste's status stays until its answer, whatever timer was set before it.
-        if !model.borrow().pasting {
+        // A run's status stays until its answer, whatever timer was set before it.
+        if model.borrow().bulk.is_none() {
             model.borrow_mut().message = None;
         }
         paint(cx.app(), &mut model.borrow_mut(), &mut ui.borrow_mut())
@@ -649,7 +650,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     if on_changes {
         ui.changes.paint(app, &m.change_list, p);
     } else {
-        let cut = m.clipboard.as_ref().filter(|clip| clip.cut).map(|clip| clip.path.as_path());
+        let cut = m.clipboard.as_ref().filter(|clip| clip.cut).map(|clip| clip.paths.as_slice());
         ui.tree.paint(app, &m.browser, &m.marks, p, &root, cut);
     }
     // A preview names its file, with a `preview` pill in place of the reader's badges (Scouter `viewerHeaderFor`).

@@ -261,7 +261,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             }
         }
         Event::Signed { path, serial, result } => gutter::apply(m, path, *serial, result),
-        Event::Pasted { source, into, moved, result } => write::pasted(m, source, into, *moved, result.clone()),
+        Event::Written { kind, source, result } => write::written(m, *kind, source, result.clone()),
     }
 }
 
