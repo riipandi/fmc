@@ -576,6 +576,12 @@ Consequences:
 - (negative) The first delete from a terminal asks macOS for Automation permission to control Finder. A refusal fails the delete with the dialog's error line, and nothing moves.
 - (negative) The delete path depends on Finder being available; a Mac without it cannot trash.
 
+Amended (plan-00014, D12 and D15): the Trash runs in the bulk queue on the worker, one entry per job, as copy and move do. A single delete is a run of one. The method stays Finder through `osascript`. Each entry's device and inode are checked before the first call, and again on the worker before each one (a changed entry is skipped and stops the run, with the footer naming it). Errors go to the footer, not to the dialog, which has closed by then.
+
+Links (plan-00014, D16; a live check on 2026-11-27): Finder refuses to delete a symbolic link, dangling or not, with error -5000 (`osascript -e 'tell application "Finder" to delete { POSIX file "…/link" }'`), while a plain file in the same folder goes to the Trash. So fmc refuses a link before its confirm and moves nothing. This amends plan-00012 D6, which said a link is trashed as the link. The owner's options: (1) `NsFileManager` for links only, which the crate's table says gives no Put Back (not checked here); (2) keep the refusal, the current state; (3) another route to the Trash for a link. The owner picks; until then the refusal stands.
+
+The checks before Finder and the Finder call are separate steps. The shortcut in `services/write.rs` (`trash_with`) records that a same-user process can swap an entry or a parent in between (the security review of phase 4, findings 1 and 2).
+
 Alternatives considered:
 
 - `NsFileManager` (`DeleteMethod::NsFileManager`) — rejected: no Put Back, so the delete is not undoable from Finder.

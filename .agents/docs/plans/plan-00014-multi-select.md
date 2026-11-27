@@ -18,8 +18,8 @@ phases:
       note: the clipboard holds a list with each device and inode; one bulk queue on the worker; the menu counts; a swapped entry is skipped and stops the run (security review, finding 1); Rex run at 120x40 and 45x30; 56 write tests
     - id: 4
       title: Delete several marked rows to the Trash
-      status: pending
-      note: the confirm names the entries; the Trash joins the queue; security review; the full Rex scenario
+      status: committed (feat(tree): delete several marked rows to the Trash)
+      note: the confirm names five entries and counts the rest; the Trash joins the queue; a link is refused (Finder cannot trash one, error -5000, plan-00014 D16); the security review's findings 1 and 2 are a recorded shortcut; the Rex scenario at 120x40 and 45x30 trashed two files each, and the link check; 63 write tests
     - id: 5
       title: Docs sync, ledger close, handover
       status: pending
@@ -71,6 +71,7 @@ Decisions marked _(owner)_ are the owner's, given on 2026-11-27 ("kerjakan RI-19
 - **D13 _(agent)_: marks clear only when a bulk op finishes with every item done.** A copy's marks clear when all copies succeed; a move's and a Trash's marks clear the same way (the moved and trashed entries have left, so their marks are pruned anyway). A partial run keeps the marks, so a retry picks up the rest. `c` and `x` do not clear the marks; they copy the marked list into the clipboard, and the marks stay until a bulk op ends. Rejected: clearing at `c`: the user may want to paste somewhere else and still see what they marked.
 - **D14 _(agent)_: `-` clears the marks, and a dotfile toggle keeps them.** `-` rebuilds the browser, so the set starts empty for the new root (`src/app/tree.rs` `go_up`). Hiding dotfiles keeps a mark on a hidden entry: the confirm names every marked entry, so a hidden mark is named before it is trashed. Rejected: pruning on hide: a user who hides dotfiles to tidy the list would lose marks without a sign.
 - **D15 _(owner)_: writes stay in the tree, inside the root.** Every marked path comes from a row under the browsed root. Each item still runs the write layer's checks (`services/write.rs` `plan`, `trash_with`): the root, the name, the vacant destination, and a folder into itself. The Trash confirm rechecks each item's device and inode before the first call, as a single delete does now (plan-00012 D6).
+- **D16 _(agent, 2026-11-27, a live check)**: a link cannot go to the Trash. Finder refuses to delete a symbolic link, dangling or not, with error -5000, and it trashes a plain file in the same folder. The delete refuses a link before its confirm, with a footer line, and moves nothing. This amends plan-00012 D6's "trashed as the link", which the owner must confirm: the options are `NsFileManager` for links only (unverified Put Back), the refusal, or another route (`architecture.md`, "Deleted entries go to the Trash through Finder").
 
 ### Shape and enforcement points
 

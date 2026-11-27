@@ -22,6 +22,9 @@ const BUSY: &str = "Still working. Try again when it finishes.";
 /// What a run says for an entry that was replaced since it was taken: the run stops there, and the item is left alone.
 const CHANGED: &str = "An item changed after it was copied or cut, so it was skipped.";
 
+/// The entries a delete confirm names before `and K more`.
+const LISTED: usize = 5;
+
 /// What the tree's keys and the context menu ask for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
@@ -95,12 +98,11 @@ pub enum Task {
         source: PathBuf,
         dir: PathBuf,
     },
-    /// The entry to trash, the row to select after it (the next row, or the previous one when it was last), and the
-    /// entry's device and inode when the dialog opened: an entry swapped since then is not trashed.
+    /// The entries to trash, each with its device and inode when the dialog opened (an entry swapped since then is not
+    /// trashed, plan-00014 D15), and the row to select after them: the next row, or the one before it when it was last.
     Delete {
-        path: PathBuf,
+        items: Vec<(PathBuf, (u64, u64))>,
         next: Option<PathBuf>,
-        identity: (u64, u64),
     },
 }
 
@@ -119,7 +121,7 @@ fn menu_rows(row: bool, clipped: usize, acted: usize) -> Vec<(Act, String, bool)
     rows.push((Act::Paste, counted("Paste", clipped), clipped > 0));
     if row {
         rows.push((Act::Duplicate, "Duplicate…".into(), true));
-        rows.push((Act::Delete, "Delete…".into(), true));
+        rows.push((Act::Delete, format!("{}…", counted("Delete", acted)), true));
     }
     rows
 }
@@ -189,18 +191,38 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
             ask(m, ui, Task::Rename { path: entry.path }, dialog, &name);
         }
         Act::Delete => {
-            let Some(entry) = entry else { return };
-            // The Trash names the entry by its path as text (plan-00012, D6), as the write layer refuses.
-            if entry.path.file_name().and_then(|name| name.to_str()).is_none() {
+            let paths = acted_paths(m);
+            // The Trash names each entry by its path as text (plan-00012, D6), as the write layer refuses.
+            if paths.iter().any(|path| path.file_name().and_then(|name| name.to_str()).is_none()) {
                 return refuse(m, "This name is not UTF-8, so fmc cannot move it to the Trash.");
             }
-            let Some(identity) = entry_identity(&entry.path) else {
-                return refuse(m, &store::Error::Missing.to_string());
+            let items = acted_on(m);
+            if items.is_empty() {
+                // Entries that are all gone are a refusal, not a silent no-op; no row and no mark is nothing to delete.
+                if !paths.is_empty() {
+                    refuse(m, &store::Error::Missing.to_string());
+                }
+                return;
+            }
+            // Finder refuses a link to the Trash (error -5000, checked on macOS 27 with a link and a dangling link), so a
+            // link stops the delete before the dialog, and nothing moves.
+            if items.iter().any(|(path, _)| fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_symlink()))
+            {
+                return refuse(m, "A link cannot go to the Trash through Finder, so nothing was moved.");
+            }
+            // The row to select afterwards is kept out of the run: a trashed row cannot be revealed.
+            let next = successor(m).filter(|next| !items.iter().any(|(path, _)| path == next));
+            let names: Vec<String> = items.iter().map(|(path, _)| label(path)).collect();
+            let (title, message) = if names.len() == 1 {
+                ("Move to Trash?".to_owned(), format!("{} goes to the Trash. Finder's Put Back restores it.", names[0]))
+            } else {
+                (
+                    format!("Move {} items to the Trash?", names.len()),
+                    format!("These go to the Trash. Finder's Put Back restores them:\n{}", listed(&names)),
+                )
             };
-            let message = format!("{} goes to the Trash. Finder's Put Back restores it.", display_label(&entry.name));
-            let dialog = Dialog::new("Move to Trash?", &message, false, &["Cancel", "Delete"], 0);
-            let task = Task::Delete { path: entry.path.clone(), next: successor(m), identity };
-            ask(m, ui, task, dialog, "");
+            let dialog = Dialog::new(&title, &message, false, &["Cancel", "Delete"], 0);
+            ask(m, ui, Task::Delete { items, next }, dialog, "");
         }
         Act::Duplicate => {
             let Some(entry) = entry else { return };
@@ -231,11 +253,16 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
 /// The entries `c`, `x`, and `D` act on: the marked entries in path order, or the selected row when none is marked
 /// (plan-00014, D4). A mark on an entry that is gone from disk is left out, so it cannot stop a run.
 fn acted_on(m: &Model) -> Vec<(PathBuf, (u64, u64))> {
+    acted_paths(m).into_iter().filter_map(with_id).collect()
+}
+
+/// The paths `c`, `x`, and `D` mean before the check that they are still there: the marked paths, or the selected row.
+fn acted_paths(m: &Model) -> Vec<PathBuf> {
     let marked = m.browser.targets();
     if marked.is_empty() {
-        return m.browser.selected_entry().and_then(|entry| with_id(entry.path)).into_iter().collect();
+        return m.browser.selected_entry().map(|entry| entry.path).into_iter().collect();
     }
-    marked.into_iter().filter_map(with_id).collect()
+    marked
 }
 
 /// A path with its device and inode, or `None` when nothing is there.
@@ -301,6 +328,7 @@ fn advance(m: &mut Model) {
     let verb = match kind {
         store::Kind::Copy => "copying",
         store::Kind::Move => "moving",
+        store::Kind::Trash => "trashing",
     };
     let text = if bulk.total == 1 {
         format!("{verb} {}…", label(&op.source))
@@ -326,6 +354,7 @@ fn run(root: &Path, kind: store::Kind, op: &Op) -> Result<PathBuf, String> {
         (store::Kind::Copy, Some(name)) => store::copy(root, &op.source, &op.into, name),
         (store::Kind::Copy, None) => store::paste(root, &op.source, &op.into, false),
         (store::Kind::Move, _) => store::paste(root, &op.source, &op.into, true),
+        (store::Kind::Trash, _) => trash(root, &op.source).map(|()| op.source.clone()),
     };
     result.map_err(|error| error.to_string())
 }
@@ -341,7 +370,10 @@ pub fn written(m: &mut Model, kind: store::Kind, source: &Path, result: Result<P
     match result {
         Ok(target) => {
             bulk.done += 1;
-            bulk.reveal = Some(target);
+            // A Trash reveals the row chosen when its confirm opened: the entry it trashed is gone, so it names nothing.
+            if kind != store::Kind::Trash {
+                bulk.reveal = Some(target);
+            }
             if bulk.queue.is_empty() {
                 end(m, bulk, None);
             } else {
@@ -382,6 +414,7 @@ fn stopped(bulk: &Bulk, error: &str) -> String {
     let verb = match bulk.kind {
         store::Kind::Copy => "Copied",
         store::Kind::Move => "Moved",
+        store::Kind::Trash => "Trashed",
     };
     format!("{verb} {} of {}. {error}", bulk.done, bulk.total)
 }
@@ -439,17 +472,7 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
                 store::rename(&root, path, &typed).map(|dest| (parent, dest))
             }
         }
-        Task::Delete { path, next, identity } => {
-            let parent = parent_of(path, &root);
-            if entry_identity(path) != Some(*identity) {
-                // Another entry now holds the name: nothing is trashed, and the folder is listed again with that entry shown.
-                overlay::close(app, m);
-                refuse(m, "That entry changed since it was listed, so nothing went to the Trash.");
-                tree::relist_to(m, parent, path.clone());
-                return;
-            }
-            trash(&root, path).map(|()| (parent.clone(), next.clone().unwrap_or(parent)))
-        }
+        Task::Delete { items, next } => return delete(app, m, &root, items, next.clone()),
         Task::Duplicate { source, dir } => return duplicate(app, m, &root, &typed, source, dir),
         Task::Menu(_) => return overlay::close(app, m),
     };
@@ -465,6 +488,44 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
             }
         }
     }
+}
+
+/// Starts the Trash of a confirm's entries, as a run on the worker (plan-00014, D12). Every entry is checked before the
+/// first call: one that was replaced since the dialog opened refuses the whole run, as a single delete always did (D15).
+fn delete(app: &App, m: &mut Model, root: &Path, items: &[(PathBuf, (u64, u64))], next: Option<PathBuf>) {
+    let Some((first, _)) = items.first() else { return overlay::close(app, m) };
+    if m.bulk.is_some() {
+        if let Some(Overlay::Dialog(dialog)) = m.overlay.as_mut() {
+            dialog.error = Some(BUSY.to_owned());
+        }
+        return;
+    }
+    let folder = next.as_ref().map_or_else(|| parent_of(first, root), |next| parent_of(next, root));
+    overlay::close(app, m);
+    if items.iter().any(|(path, id)| entry_identity(path) != Some(*id)) {
+        // Another entry now holds a name: nothing is trashed, and the folder is listed again with that entry shown.
+        refuse(m, "That entry changed since it was listed, so nothing went to the Trash.");
+        tree::relist_to(m, parent_of(first, root), first.clone());
+        return;
+    }
+    let queue = items
+        .iter()
+        .map(|(source, id)| Op { source: source.clone(), into: parent_of(source, root), name: None, id: *id })
+        .collect();
+    let sources = items.iter().map(|(path, _)| path.clone()).collect();
+    let mut bulk = Bulk::new(store::Kind::Trash, queue, sources, folder);
+    bulk.reveal = next;
+    begin(m, bulk);
+}
+
+/// The names a confirm lists: one a line, up to `LISTED` of them, then `and K more` (plan-00014, D6).
+fn listed(names: &[String]) -> String {
+    let mut text = names.iter().take(LISTED).cloned().collect::<Vec<_>>().join("\n");
+    let more = names.len().saturating_sub(LISTED);
+    if more > 0 {
+        text.push_str(&format!("\nand {more} more"));
+    }
+    text
 }
 
 /// Starts a duplicate. The name is checked here, so a taken name or a paste that is running keeps the dialog open with its

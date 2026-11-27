@@ -21,7 +21,7 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `A` | new folder |
 | `R` | duplicate the row under a new name |
 | `r` | rename |
-| `D` `Delete` | move to the Trash |
+| `D` `Delete` | move the marked rows, or the row, to the Trash |
 | `c` | copy the marked rows, or the row |
 | `x` | cut the marked rows, or the row; a paste moves them |
 | `v` | paste into the folder, or beside the file |
