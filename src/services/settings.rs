@@ -9,13 +9,9 @@ use std::process;
 
 use fmc::settings::{self, Parsed};
 
-/// `$XDG_CONFIG_HOME/fmc/settings.json`, or `~/.config/fmc/settings.json` when `XDG_CONFIG_HOME` is unset or empty.
+/// `settings.json` in the config folder (`services::config_folder`).
 pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
-    let base = match config_home.filter(|dir| !dir.is_empty()) {
-        Some(dir) => PathBuf::from(dir),
-        None => PathBuf::from(home?).join(".config"),
-    };
-    Some(base.join("fmc").join("settings.json"))
+    Some(super::config_folder(config_home, home)?.join("settings.json"))
 }
 
 /// The settings the file sets, with a notice for each value it cannot use. A missing file has no notice.

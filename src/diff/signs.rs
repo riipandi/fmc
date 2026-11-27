@@ -2,7 +2,7 @@
 //! view has no signs (`src/reader/code-view.ts:99-108`), so the gutter is an approved deviation (`architecture.md`).
 //! Pure: `services/git.rs` makes the patch.
 
-use crate::theme::Palette;
+use crate::theme::{Hex, Palette};
 
 use super::Patch;
 
@@ -25,7 +25,7 @@ impl Sign {
         }
     }
 
-    pub fn color(self, p: &Palette) -> &'static str {
+    pub fn color(self, p: &Palette) -> Hex {
         match self {
             Self::Added => p.added,
             Self::Modified => p.modified,

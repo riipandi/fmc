@@ -11,7 +11,7 @@ use std::sync::Arc;
 use fmc::reader::headings;
 use fmc::reader::language::HIGHLIGHTED;
 use fmc::reader::rendered_search::Rendered;
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
@@ -74,7 +74,7 @@ impl MarkdownView {
             quote: text,
             marker: text,
             // Core draws table and rule borders in this grey when the theme has no `conceal` scope (`index.bun.js:11729`).
-            rule: color("#888888"),
+            rule: color(Hex::new("#888888")),
         };
         let theme = Arc::new(syntax::theme(p));
         self.doc.colors(colors).syntax_theme(Arc::clone(&theme)).scope_styles(true);

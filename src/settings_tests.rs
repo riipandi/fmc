@@ -3,6 +3,7 @@ use serde_json::json;
 use super::*;
 use crate::find::Matching;
 use crate::reader::associations::Language;
+use crate::theme::ModeChoice;
 
 #[test]
 fn find_mode_names_the_start_mode_and_a_bad_value_keeps_substring() {
@@ -14,6 +15,28 @@ fn find_mode_names_the_start_mode_and_a_bad_value_keeps_substring() {
     assert_eq!(parsed.notices.len(), 1);
     assert!(parsed.notices[0].contains(r#"find_mode must be "substring" or "fuzzy"; "substring" is used."#));
     assert_eq!(parse(r#"{"find_mode": 1}"#).notices.len(), 1);
+}
+
+#[test]
+fn the_theme_keys_are_read_and_a_theme_id_is_checked_later() {
+    let parsed = parse(r#"{"theme_mode": "dark", "dark_theme": "tokyo-night", "light_theme": "hogwarts-dawn"}"#);
+    assert_eq!(parsed.settings.theme_mode, ModeChoice::Dark);
+    assert_eq!(parsed.settings.dark_theme, "tokyo-night");
+    assert_eq!(parsed.settings.light_theme, "hogwarts-dawn");
+    assert!(parsed.notices.is_empty());
+    assert_eq!(parse(r#"{"theme_mode": "light"}"#).settings.theme_mode, ModeChoice::Light);
+}
+
+#[test]
+fn a_bad_theme_mode_or_theme_id_keeps_its_default_and_notes_it() {
+    let parsed = parse(r#"{"theme_mode": "sepia", "dark_theme": 3}"#);
+    assert_eq!(parsed.settings, Settings::default());
+    assert_eq!(parsed.notices.len(), 2);
+    assert!(parsed.notices[0].contains(r#"theme_mode must be "auto", "dark", or "light"; "auto" is used."#));
+    assert!(parsed.notices[1].contains(r#"dark_theme must be a theme id, a string; "scouter" is used."#));
+    assert_eq!(Settings::default().theme_mode, ModeChoice::Auto);
+    assert_eq!(Settings::default().dark_theme, "scouter");
+    assert_eq!(Settings::default().light_theme, "scouter");
 }
 
 #[test]

@@ -4,7 +4,7 @@
 
 use fmc::layout::Tier;
 use fmc::overlay::{Item, Menu};
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::styled::{Seg, color, content};
@@ -81,7 +81,7 @@ impl MenuView {
 
     /// Draws `menu` in `rect` on the `background` tint. A disabled row is muted; the selected row has the row surface
     /// and the accent marker.
-    pub fn show(&self, menu: &Menu, rect: Rect, p: &Palette, background: &str) {
+    pub fn show(&self, menu: &Menu, rect: Rect, p: &Palette, background: Hex) {
         self.root
             .position(Edge::Left, Length::Cells(f32::from(rect.x)))
             .position(Edge::Top, Length::Cells(f32::from(rect.y)))

@@ -41,7 +41,7 @@ The file-manager operations (plan-00012) are fmc's only writes to the user's fil
 | A new or moved agent document | `index.md` |
 | A user-visible behavior | the `docs/` page it belongs to (`usage.md` for a screen, `keymaps.md` for a key, `configuration.md` for a settings key, `cli.md` for an argument, `parity.md` for a difference from Scouter, `install.md` or `development.md` for setup and releases; `docs/index.md` lists them), `README.md` when the front page changes, and the `[Unreleased]` section of `CHANGELOG.md` (Keep a Changelog) |
 | Product purpose, users, principles | `PRODUCT.md` |
-| A palette token, layout metric, or component look | `DESIGN.md` (describes Scouter's look during parity; Scouter wins on disagreement) and `theme.rs` once it exists |
+| A palette token, layout metric, or component look | `DESIGN.md` (describes Scouter's look during parity; Scouter wins on disagreement) and `theme/` (`mod.rs`, `catalog.rs`, the `catalog/*.json` files) |
 
 ## Dependencies
 
@@ -122,6 +122,7 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 - Allowed dependency licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`, `Unicode-3.0`, `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`. `cargo deny check licenses` enforces it.
 - One documented exception: `opentui-sys` declares `MIT AND LGPL-2.1-or-later` (`opentui` itself is `MIT`) because the upstream release library embeds FFmpeg. fmc links a library built with `-Dvideo=false`, which contains no FFmpeg code; the exception is valid only while that holds.
 - Never copy code from a GPL project (sqltui is GPL-3.0): ideas only.
+- The bundled theme catalog (`src/theme/catalog/*.json`, the 16 themes) is bjarneo/editor's (`src/theme.rs` of that project, MIT, `Copyright (c) 2026 The editor authors`), with its `LICENSE` beside the files (plan-00015, A4). Its colour values are the source's; fmc's derived values are its own (`architecture.md`, "Approved deviation: fmc offers a theme catalog").
 - The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
 - An `injections.scm` beside a highlight query (plan-00013) is the grammar crate's own file, copied under the crate's licence (the header of each file names the crate and version), or fmc's own where no crate ships one (MIT, the project's licence). The Elixir highlights differ from the crate's by one rule, and the JavaScript, TypeScript, and TSX highlights differ from Core's by three host rules that leave injected text to its injection (`rust.md`, "Contracts and traps").
 - The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.

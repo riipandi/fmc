@@ -5,12 +5,15 @@ use serde_json::{Map, Value};
 
 use crate::find::Matching;
 use crate::reader::associations::Associations;
+use crate::theme::ModeChoice;
+use crate::theme::catalog::SCOUTER;
 
 pub const AUTO_PREVIEW: bool = true;
 pub const SIDEBAR_JUMP: u32 = 2;
 pub const READER_JUMP: u32 = 5;
 pub const GIT_GUTTER: bool = true;
 pub const FIND_MODE: Matching = Matching::Substring;
+pub const THEME_MODE: ModeChoice = ModeChoice::Auto;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Settings {
@@ -20,6 +23,10 @@ pub struct Settings {
     pub git_gutter: bool,
     pub file_associations: Associations,
     pub find_mode: Matching,
+    pub theme_mode: ModeChoice,
+    /// A catalog id for the dark slot; `scouter` is Scouter's pair (`theme::catalog`). Checked there, not here.
+    pub dark_theme: String,
+    pub light_theme: String,
 }
 
 impl Default for Settings {
@@ -31,6 +38,9 @@ impl Default for Settings {
             git_gutter: GIT_GUTTER,
             file_associations: Associations::default(),
             find_mode: FIND_MODE,
+            theme_mode: THEME_MODE,
+            dark_theme: SCOUTER.into(),
+            light_theme: SCOUTER.into(),
         }
     }
 }
@@ -68,6 +78,9 @@ pub fn parse(text: &str) -> Parsed {
         git_gutter: boolean(&object, "git_gutter", GIT_GUTTER, notices),
         file_associations: associations(&object, notices),
         find_mode: finding(&object, notices),
+        theme_mode: theme_mode(&object, notices),
+        dark_theme: theme_id(&object, "dark_theme", notices),
+        light_theme: theme_id(&object, "light_theme", notices),
     };
     parsed
 }
@@ -122,6 +135,30 @@ fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
             notices.push("settings.json: find_mode must be \"substring\" or \"fuzzy\"; \"substring\" is used.".into());
             FIND_MODE
         }),
+    }
+}
+
+/// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode (plan-00015, A7).
+fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeChoice {
+    match object.get("theme_mode") {
+        None => THEME_MODE,
+        Some(value) => value.as_str().and_then(ModeChoice::named).unwrap_or_else(|| {
+            notices
+                .push("settings.json: theme_mode must be \"auto\", \"dark\", or \"light\"; \"auto\" is used.".into());
+            THEME_MODE
+        }),
+    }
+}
+
+/// A theme id is any string here; `theme::catalog::choose` checks it against the catalog and its slot.
+fn theme_id(object: &Map<String, Value>, key: &str, notices: &mut Vec<String>) -> String {
+    match object.get(key) {
+        None => SCOUTER.into(),
+        Some(Value::String(id)) => id.clone(),
+        Some(_) => {
+            notices.push(format!("settings.json: {key} must be a theme id, a string; \"{SCOUTER}\" is used."));
+            SCOUTER.into()
+        }
     }
 }
 

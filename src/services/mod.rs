@@ -7,8 +7,10 @@ pub mod fs;
 pub mod git;
 pub mod poll;
 pub mod settings;
+pub mod theme;
 pub mod write;
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
@@ -17,6 +19,15 @@ use fmc::find::Index;
 use fmc::find::text::Progress;
 use fmc::reader::document::Document;
 use opentui::prelude::AppProxy;
+
+/// `$XDG_CONFIG_HOME/fmc`, or `~/.config/fmc` when `XDG_CONFIG_HOME` is unset or empty. Settings and themes live here.
+pub fn config_folder(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
+    let base = match config_home.filter(|dir| !dir.is_empty()) {
+        Some(dir) => PathBuf::from(dir),
+        None => PathBuf::from(home?).join(".config"),
+    };
+    Some(base.join("fmc"))
+}
 
 /// What a worker found, for the app to apply on the UI thread.
 #[derive(Clone, Debug)]

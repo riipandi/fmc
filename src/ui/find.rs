@@ -57,7 +57,7 @@ mod tests {
 
     #[test]
     fn the_prompt_reads_glyph_query_caret_then_status() {
-        let p = fmc::theme::palette(fmc::theme::Mode::Dark);
+        let p = &fmc::theme::DARK;
         let text: String = prompt_segments("/", "ledger", "1 match", p).iter().map(|seg| seg.text.as_str()).collect();
         assert_eq!(text, "/ ledger▎  1 match");
     }

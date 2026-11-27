@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A theme catalog: 16 bundled themes (bjarneo/editor, MIT), chosen with `dark_theme` and `light_theme` in `settings.json`. `scouter` is the default and Scouter's own pair.
+- `theme_mode` in `settings.json` (`auto`, `dark`, or `light`) forces a mode; `auto` still follows the terminal.
+- User themes: a JSON file per theme in `$XDG_CONFIG_HOME/fmc/themes/` (or `~/.config/fmc/themes/`), read at start. A file with a bundled id replaces that theme; a bad file is skipped with a footer notice.
+
 ## [0.3.0] - 2026-11-27
 
 Many rows can be marked and copied, moved, or sent to the Trash at once, and code embedded in other languages is coloured as its own language.

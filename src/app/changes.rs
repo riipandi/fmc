@@ -13,7 +13,7 @@ use fmc::diff::{
 use fmc::keys::{Action, Focus};
 use fmc::layout::{Tier, tier};
 use fmc::text::display_label;
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::find::OpenAt;
@@ -587,7 +587,7 @@ pub fn empty_state(m: &Model) -> Option<(&'static str, String)> {
 
 /// Paints the body's facts after the frame: the blocks follow the files, the active header follows the selection in
 /// the stacked body, and folds show. Called from `paint` once the body is built.
-pub fn sync(app: &App, m: &Model, ui: &Ui, p: &Palette, tint: &str) {
+pub fn sync(app: &App, m: &Model, ui: &Ui, p: &Palette, tint: Hex) {
     let Some(changes) = m.changes.as_ref() else { return };
     if m.change_list.changes().is_empty() {
         let Some((title, detail)) = empty_state(m) else { return };

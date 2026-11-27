@@ -4,7 +4,7 @@
 
 use fmc::layout::Tier;
 use fmc::overlay::{Dialog, Stop};
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::menu::Rect;
@@ -103,7 +103,7 @@ impl DialogView {
     }
 
     /// Draws `dialog` in `rect` on the `background` tint, with its focus marked.
-    pub fn show(&self, dialog: &Dialog, rect: Rect, p: &Palette, background: &str) {
+    pub fn show(&self, dialog: &Dialog, rect: Rect, p: &Palette, background: Hex) {
         self.root
             .position(Edge::Left, Length::Cells(f32::from(rect.x)))
             .position(Edge::Top, Length::Cells(f32::from(rect.y)))

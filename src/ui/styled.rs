@@ -1,6 +1,7 @@
 //! Styled text segments and fitting to a width (Scouter `src/ui/styled.ts`). Widths come from a measure function,
 //! so the logic runs in tests without a terminal.
 
+use fmc::theme::Hex;
 use opentui::prelude::*;
 
 pub use fmc::text::Seg;
@@ -8,12 +9,12 @@ pub use fmc::text::Seg;
 /// Display width of a string in cells.
 pub type Measure<'a> = &'a dyn Fn(&str) -> usize;
 
-pub fn color(hex: &str) -> Color {
-    Color::parse(hex).unwrap_or(Color::WHITE)
+pub fn color(hex: Hex) -> Color {
+    Color::parse(&hex).unwrap_or(Color::WHITE)
 }
 
 /// Spans for a `Text`; segments without text are skipped, a missing color is `text`.
-pub fn content(segments: &[Seg], text: &'static str) -> Content {
+pub fn content(segments: &[Seg], text: Hex) -> Content {
     let spans: Vec<Span<'static>> = segments
         .iter()
         .filter(|s| !s.text.is_empty())

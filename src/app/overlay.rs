@@ -237,11 +237,11 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
     match open {
         Some(Overlay::Menu(menu)) => {
             let rect = menu::frame(menu.items(), m.overlay_at, screen, tier(columns));
-            views.menu.show(menu, rect, p, &tint);
+            views.menu.show(menu, rect, p, tint);
         }
         Some(Overlay::Dialog(dialog)) => {
             let rect = dialog::frame(screen, tier(columns), &dialog.message, dialog.field);
-            views.dialog.show(dialog, rect, p, &tint);
+            views.dialog.show(dialog, rect, p, tint);
         }
         None => {}
     }

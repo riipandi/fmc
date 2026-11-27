@@ -7,7 +7,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use fmc::layout::{Page, Tier, tier};
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::bars;
@@ -348,7 +348,7 @@ impl Footer {
         Self { root, band, left, right, hints, targets: RefCell::new(Vec::new()) }
     }
 
-    pub fn set_background(&self, hex: &str) {
+    pub fn set_background(&self, hex: Hex) {
         self.band.bg(super::styled::color(hex));
     }
 

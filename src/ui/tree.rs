@@ -8,7 +8,7 @@ use fmc::explorer::{Browser, Entry, Kind, Row, relative};
 use fmc::find::text::Snippet;
 use fmc::layout::{Tier, tier};
 use fmc::text::display_label;
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::scrollbar;
@@ -87,15 +87,7 @@ pub fn row_segments(
 /// A name's text as segments. The characters of `text` that a fuzzy match landed on (`matched`, positions in the whole
 /// path, from `first`) take the match colour in bold; the rest, and the `lead` and `tail` around them, take `fg`. An
 /// unmatched name is one segment, as it was before matches were drawn.
-fn marked_text(
-    lead: &str,
-    text: &str,
-    tail: &str,
-    first: usize,
-    matched: &[usize],
-    fg: &'static str,
-    p: &Palette,
-) -> Vec<Seg> {
+fn marked_text(lead: &str, text: &str, tail: &str, first: usize, matched: &[usize], fg: Hex, p: &Palette) -> Vec<Seg> {
     let characters = lead
         .chars()
         .map(|c| (c, false))
@@ -118,7 +110,7 @@ fn marked_text(
     segments
 }
 
-fn run_seg(text: &str, marked: bool, fg: &'static str, p: &Palette) -> Seg {
+fn run_seg(text: &str, marked: bool, fg: Hex, p: &Palette) -> Seg {
     if marked { Seg::new(display_label(text), p.accent_soft).bold() } else { Seg::new(display_label(text), fg) }
 }
 
@@ -170,7 +162,7 @@ fn icon(entry: &Entry, folder: bool, expanded: bool) -> &'static str {
 }
 
 /// The icon's color (Scouter `iconColor`, `src/explorer/explorer.ts:56-91`).
-fn icon_color(entry: &Entry, folder: bool, p: &Palette) -> &'static str {
+fn icon_color(entry: &Entry, folder: bool, p: &Palette) -> Hex {
     if folder {
         return p.folder;
     }
@@ -227,7 +219,7 @@ pub fn line_at(y: u16, top: u16, height: usize) -> Option<usize> {
 struct Line {
     segments: Vec<Seg>,
     selected: bool,
-    mark: Option<(&'static str, &'static str)>,
+    mark: Option<(&'static str, Hex)>,
     thumb: Option<&'static str>,
 }
 

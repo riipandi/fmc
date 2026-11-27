@@ -100,7 +100,8 @@ fn rows_of(capture: &Capture, text: &str) -> Vec<u32> {
 fn an_edited_paragraph_gets_a_modified_bar_beside_its_rows() {
     let dir = repository(Some(&NOTES.replace("Sophie Neveu", "Robert Langdon")));
     let (app, model, _) = reading(dir.path(), true, 24);
-    let p = model.borrow().palette();
+    let palette = model.borrow().palette().clone();
+    let p = &palette;
     let drawn = signs_drawn(&app.render(), p);
     let row = rows_of(&app.render(), "Robert Langdon");
     assert_eq!(drawn.iter().map(|(y, _, _)| *y).collect::<Vec<_>>(), row, "{}", app.text());
@@ -112,7 +113,8 @@ fn an_added_section_gets_bars_and_a_deletion_is_drawn_under_the_block_above() {
     let edit = "# Hogwarts\n\n## Crypt\n\nLeigh Teabing keeps the Holy Grail.\n\nSophie Neveu owns the Louvre.\n";
     let dir = repository(Some(edit));
     let (app, model, _) = reading(dir.path(), true, 24);
-    let p = model.borrow().palette();
+    let palette = model.borrow().palette().clone();
+    let p = &palette;
     let capture = app.render();
     let heading = rows_of(&capture, "Crypt");
     let added = rows_of(&capture, "Leigh Teabing");
@@ -126,7 +128,8 @@ fn an_added_section_gets_bars_and_a_deletion_is_drawn_under_the_block_above() {
 
     let dir = repository(Some("# Hogwarts\n\nSophie Neveu owns the Louvre.\n"));
     let (app, model, _) = reading(dir.path(), true, 24);
-    let p = model.borrow().palette();
+    let palette = model.borrow().palette().clone();
+    let p = &palette;
     let capture = app.render();
     let under = signs_drawn(&capture, p).into_iter().find(|(_, glyph, _)| glyph == "▁");
     let heading = rows_of(&capture, "Hogwarts")[0];
@@ -156,7 +159,8 @@ fn a_bar_moves_with_its_block_when_the_view_scrolls() {
     ui.borrow().viewer.scroll_to(0.0, 200.0);
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
     let capture = app.render();
-    let p = model.borrow().palette();
+    let palette = model.borrow().palette().clone();
+    let p = &palette;
     let bars: Vec<u32> = signs_drawn(&capture, p).into_iter().map(|(y, _, _)| y).collect();
     let row = rows_of(&capture, "Minerva McGonagall");
     assert!(!row.is_empty() && bars == row, "{bars:?} {row:?}\n{}", app.text());

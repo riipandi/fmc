@@ -102,6 +102,15 @@ Two complete palettes, dark and light, in the frontmatter. fmc picks one from th
 - Accent (indigo) marks focus: the focused panel border, pills, the selected row marker `▎`, prompt marks.
 - Git states always pair a colour with a letter: `M` modified, `A` added, `D` deleted, `R` renamed, `T` type change, `U` conflict, `?` untracked.
 
+### Catalog
+
+Scouter's pair above is the default for both modes, and `theme_mode`, `dark_theme`, and `light_theme` in the settings file choose another (`docs/configuration.md`, "Themes"). The catalog holds 16 bundled themes, from bjarneo/editor (MIT): nine dark and seven light. Each has 24 colour roles, and fmc takes its tokens from them:
+
+- `bg` to `fallback-background` and `match-fg`; `fg` to `text`; `fg2` to `muted`; `fg3` to `dim`; `bd` to `border`; `bg3` to `row-active-bg` and `hover`; `ac` to `accent`; `on` to `accent-ink`; `sel` to `selection-bg`; `err` to `error` and `removed`; `warn` to `modified` and `match-bg`; `ins` to `added`; and `kw`, `fn`, `str`, `num`, `com`, and `pun` to the six syntax tokens.
+- The other tokens are mixes of two roles, with fmc's own weights: `accent-soft`, `ignored`, `folder`, `added-bg`, `removed-bg`, `added-gutter`, `removed-gutter`, `target-bg`, `target-gutter`, and the first and last `wordmark`. The middle `wordmark` is `accent`.
+
+The page background is the terminal's, tinted as above. Not every bundled theme reaches the contrast Scouter's pair does on its selection, tints, and match colours; `src/theme/theme_tests.rs` lists which pairs fall short.
+
 ## Typography
 
 The terminal font is the user's. Emphasis is bold and colour; comments are italic. File icons are Nerd Font glyphs, not emoji.

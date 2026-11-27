@@ -6,7 +6,7 @@ use std::cell::RefCell;
 
 use fmc::diff::Sign;
 use fmc::reader::rendered_signs::BlockMark;
-use fmc::theme::Palette;
+use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 use opentui::widget::Text;
 
@@ -45,7 +45,7 @@ impl SignStrip {
     pub fn show(&self, app: &App, p: &Palette, marks: &[BlockMark], tops: &[(u32, u32)], scroll: f64) {
         let mut cells = self.cells.borrow_mut();
         let mut used = 0;
-        let mut put = |cells: &mut Vec<Text>, text: String, colour: &str, row: f64, rows: u32| {
+        let mut put = |cells: &mut Vec<Text>, text: String, colour: Hex, row: f64, rows: u32| {
             if cells.len() == used {
                 let cell = Text::new(app, "").width(1).wrap(WrapMode::None).selectable(false);
                 self.overlay.add(&cell);
@@ -81,7 +81,7 @@ impl SignStrip {
 }
 
 /// A bar's colour: the palette's colour of its sign.
-fn colour_of(sign: Sign, p: &Palette) -> &'static str {
+fn colour_of(sign: Sign, p: &Palette) -> Hex {
     match sign {
         Sign::Added => p.added,
         Sign::Modified => p.modified,

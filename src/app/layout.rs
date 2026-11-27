@@ -180,8 +180,8 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     handle.on_hover({
         let (model, ui) = (model.clone(), ui.clone());
         move |_, hovered| {
-            let p = model.borrow().palette();
-            let edge = if hovered { color(p.accent_soft) } else { Color::TRANSPARENT };
+            let accent = model.borrow().palette().accent_soft;
+            let edge = if hovered { color(accent) } else { Color::TRANSPARENT };
             ui.borrow().handle.border_color(edge);
         }
     });

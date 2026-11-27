@@ -32,7 +32,8 @@ use fmc::reader::markdown::PARAGRAPH_REFUSED;
 use fmc::reader::position::scroll_label;
 use fmc::reader::rendered_signs::block_marks;
 use fmc::settings::Parsed;
-use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
+use fmc::theme::catalog::{self, Chosen};
+use fmc::theme::{DARK, Hex, LIGHT, Mode, ModeChoice, Palette, SystemTheme, page_background};
 use mouse::wire_mouse;
 use opentui::prelude::*;
 
@@ -108,8 +109,13 @@ struct Model {
     /// The location the footer shows: the startup path, then each folder opened.
     location: String,
     focus: Focus,
+    /// The terminal's mode, from its background (`app/theme.rs`).
     mode: Mode,
     background: Option<String>,
+    /// The palettes the settings chose for each mode, and whether `theme_mode` forces one (plan-00015, A7, A13).
+    dark: Palette,
+    light: Palette,
+    choice: ModeChoice,
     parser: Parser,
     proxy: AppProxy,
     browser: Browser,
@@ -207,12 +213,25 @@ struct Model {
 }
 
 impl Model {
-    fn palette(&self) -> &'static Palette {
-        palette(self.mode)
+    /// The mode in use: the one `theme_mode` forces, or the terminal's.
+    fn effective(&self) -> Mode {
+        match self.choice {
+            ModeChoice::Auto => self.mode,
+            ModeChoice::Dark => Mode::Dark,
+            ModeChoice::Light => Mode::Light,
+        }
     }
 
-    fn tint(&self) -> String {
-        tinted_background(self.background.as_deref(), self.mode)
+    fn palette(&self) -> &Palette {
+        match self.effective() {
+            Mode::Dark => &self.dark,
+            Mode::Light => &self.light,
+        }
+    }
+
+    /// The page background (A14): the terminal's tinted, unless a forced mode differs from the terminal's.
+    fn tint(&self) -> Hex {
+        page_background(self.background.as_deref(), self.mode, self.effective(), self.palette().fallback_background)
     }
 
     fn key_state(&self) -> State {
@@ -241,6 +260,9 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         focus: Focus::List,
         mode: Mode::Dark,
         background: None,
+        dark: DARK,
+        light: LIGHT,
+        choice: ModeChoice::Auto,
         parser: Parser::default(),
         proxy: app.proxy(),
         browser: Browser::new(Tree::new(root.clone())),
@@ -297,7 +319,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
 }
 
 /// Runs the app on `target` until the user quits.
-pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
+pub fn run(target: &Path, settings: Parsed, themes: crate::services::theme::Loaded) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
     let options = AppOptions {
@@ -327,8 +349,13 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         m.git_gutter = settings.settings.git_gutter;
         m.associations = settings.settings.file_associations;
         m.matching = settings.settings.find_mode;
-        if !settings.notices.is_empty() {
-            m.message = Some(Message { text: settings.notices.join(" "), error: true });
+        m.choice = settings.settings.theme_mode;
+        let Chosen { dark, light, notices } =
+            catalog::choose(themes.themes, &settings.settings.dark_theme, &settings.settings.light_theme);
+        (m.dark, m.light) = (dark, light);
+        let notices: Vec<String> = settings.notices.into_iter().chain(themes.notices).chain(notices).collect();
+        if !notices.is_empty() {
+            m.message = Some(Message { text: notices.join(" "), error: true });
         }
     }
     let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
@@ -605,7 +632,9 @@ fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
 }
 
 fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
-    let p = m.palette();
+    // A copy: the palette borrows the model, which the frame writes to.
+    let palette = m.palette().clone();
+    let p = &palette;
     let (columns, rows) = app.size();
     m.columns = columns;
     let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
@@ -701,7 +730,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         ui.diff.set_split(m.diff_options.split);
         // A body at its end stays at the end when a rebuild changes its rows (Scouter's stack does the same).
         let (at_bottom, built) = (ui.diff.at_bottom(viewport), ui.diff.built_key());
-        changes::sync(app, m, ui, p, &tint);
+        changes::sync(app, m, ui, p, tint);
         ui.diff.set_wrap(m.wrap);
         // The stack gives its bar's column back only while the text overflows (the bar takes no space when hidden), as
         // Scouter's diff scroller does; a fixed pane would leave that column empty.
@@ -825,7 +854,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         // The marks are the tree's: the finder and the changes screen show none (plan-00014, D10).
         marked: if m.finder.is_none() && m.changes.is_none() { m.browser.marked().len() } else { 0 },
     };
-    ui.footer.set_background(&tint);
+    ui.footer.set_background(tint);
     ui.footer.paint(&footer, usize::from(columns), p, &measure);
     overlay::draw(app, m, ui);
 }

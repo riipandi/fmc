@@ -99,7 +99,7 @@ Context: Scouter's `src/` splits into `app`, `core`, `diff`, `explorer`, `find`,
 
 Decision: one crate with this layout:
 
-- `src/lib.rs` is the pure core, with no I/O and no `opentui`: `keys/` (the key table and the pending-key parser), `explorer/` (tree model, ICU sort), `reader/` (motions, jump history, in-file search), `find/` (finder matching and order), `diff/` (patch parsing, change list, marks), `theme.rs` (palettes, brightness, tint).
+- `src/lib.rs` is the pure core, with no I/O and no `opentui`: `keys/` (the key table and the pending-key parser), `explorer/` (tree model, ICU sort), `reader/` (motions, jump history, in-file search), `find/` (finder matching and order), `diff/` (patch parsing, change list, marks), `theme/` (palettes, brightness, tint, the theme catalog in `catalog.rs`).
 - `src/services/{git,fs,poll}.rs` are I/O workers. They run off the UI thread and send `Event`s back. No file I/O or process spawn happens on the UI thread.
 - `src/app/` holds the `opentui` loop and dispatch: a keymap returns `Action`s, and the app carries them out.
 - `src/ui/` holds the views, one per screen or component.
@@ -794,6 +794,39 @@ Alternatives considered:
 - Writing the whole in-memory `Settings` — rejected: it drops unknown keys and the hand edits made after start.
 - Enabling `preserve_order` for the key order — rejected: a new feature on a pinned dependency, for a cosmetic gain.
 - Writing the whole config folder, so the page could also write theme and keymap files — rejected: the owner chose D1 (a); a file the owner did not name would be written.
+
+### Approved deviation: fmc offers a theme catalog, chosen in settings.json
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has one fixed pair of palettes, dark and light, and the terminal alone picks between them (`scouter:src/ui/theme.ts:115-127`, `palettes: { dark, light }` and `setThemeMode`; `scouter:src/app/app.ts:202`, `setThemeMode(mode)` from the terminal's reading). RI-10 asked for a catalog, and the owner asked for the choice to live in `settings.json` (plan-00015, phase 2).
+
+Decision (owner, 2026-11-27, plan-00015 D6, D7, D8, D9, D10; agent picks A4, A7, A9, A13 to A16):
+
+- `theme_mode` is `auto` (the default), `dark`, or `light`; `dark_theme` and `light_theme` name a catalog id for each slot (default `scouter`). `auto` follows the terminal and uses the id of the mode it found (D6 a).
+- The catalog is 16 bundled themes, bjarneo/editor's (MIT), as JSON in `src/theme/catalog/`. A user theme is `$XDG_CONFIG_HOME/fmc/themes/<id>.json`, read once at start; a user file with a bundled id replaces that theme (D7 a).
+- A theme file is strict JSON with `mode`, an optional `name`, and bjarneo's 24 colour roles (D8 b, D10 a). fmc maps 18 roles to its tokens and derives 11 by the fixed mixes of `catalog.rs` (A9); bjarneo's `bg2`, `vis`, `cmd`, `ty`, `mac`, and `prop` are read and checked, and not mapped.
+- The id `scouter` is Scouter's pair: `DARK` in a dark slot and `LIGHT` in a light slot (A13). An id used in the other slot, or an unknown id, keeps `scouter` and adds a notice that names the key.
+- The page background is the terminal's background tinted 2.5%, as before (D9 a), when the chosen palette has the terminal's mode. A forced mode that differs from the terminal uses the palette's `fallback-background` (A14).
+- The palette fields are `Hex` values of seven bytes, which are `Copy` (A15). This replaces the `Cow` of A5, which would have cloned at each of about 280 reads.
+- Contrast: the thresholds of `theme_tests.rs` are unchanged. Twelve bundled themes fall short of 7:1 on a tint or a match pair, and tokyo-night-day is also short of 4.5:1 on three of its tints. Each short pair is listed in `theme_tests.rs` (`SHORT`), and the owner's decision on them is open (plan-00015, A16).
+
+Consequences:
+
+- (positive) The default looks as before: `DARK` and `LIGHT` keep their values, and `design_md_lists_the_same_colors` still pins them to `DESIGN.md`.
+- (positive) A theme is one file; the bundled and the user files go through one parser, so the bundled files test it, and a bad file is skipped with a notice that names it.
+- (positive) The palette and the segments own their colours, with no leak and no allocation per read.
+- (negative) A theme is read once at start, so a change needs a restart, as every key does.
+- (negative) Eleven values are fmc's formulas, not the theme author's, and they are not in the source files.
+- (negative) Most bundled themes meet the contrast of Scouter's palettes on text, but not all of them meet it on the selection, the tints, and the match colours (above).
+
+Alternatives considered:
+
+- `Box::leak` for a user theme's strings — rejected: a shortcut with no limit, and it hides the lifetime (plan-00015, A5).
+- `Arc<Palette>` with `String` fields — rejected: it rewrites `DARK` and `LIGHT`, which `theme_tests.rs` pins to `DESIGN.md`.
+- `Cow<'static, str>` palette fields — rejected for A15: every palette read would clone or borrow a `Cow`, about 280 sites, where `Hex` is copied.
+- One `theme` id, and the theme's own mode decides — rejected (D6 b): a dark terminal could not pair a dark and a light theme.
+- A theme file that names its own id — rejected: the file name is the id, so a file cannot disagree with its name.
 
 ### Approved deviation: `:q` quits, as in Neovim
 
