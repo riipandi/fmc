@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T11:35:00+07:00
+updated: 2026-11-27T14:45:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
@@ -14,7 +14,8 @@ phases:
       note: "mermaid-text 0.58.0 with max_width_strict (src/reader/mermaid.rs), drawn by a measured Custom widget (src/ui/mermaid.rs). Width route: layout's measure, so a resize re-measures with no renderer call; proved by a TestApp test and live (100 to 60 columns: the frame's reason moved from 'the reader has 65' to 'the reader has 53'). 19 new tests. Crates beyond O4's list: none on macOS; the lock also gains target-only packages (rules.md). Records: architecture.md, 'Mermaid in rendered Markdown' (four records)."
     - id: 3
       title: "Grammar load spike and dependency approval list"
-      status: pending
+      status: done
+      note: "All 12 candidates load on tree-sitter 0.27.2 and compile their query: diff, elixir, heex, hcl (no query shipped; D7 query in phase 4), jsdoc, lua, regex, sql, svelte-ng, xml, astro-next, vim. None dropped. Scratch test, not committed; the Cargo files reverted. Lock 131 to 143 packages (12 direct, 0 transitive); clean debug build about 4 s more CPU. Captures to rename or add in phase 4 are in the report. Report: research/grammar-load-spike.md. Dependency approvals land in rules.md with phase 4."
     - id: 4
       title: "Register the new grammars and their filetypes"
       status: pending
