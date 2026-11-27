@@ -170,7 +170,7 @@ pub fn indexed(m: &mut Model, session: u64, index: Index) {
     update(m);
 }
 
-/// `Ctrl+F` in the finder (plan-00006 D5): flips the name matching for the rest of the session, and runs the open query
+/// `Ctrl+F` in the finder (plan-00006 D5): flips the name matching for the rest of the run, and runs the open query
 /// again with it. Outside the finder it does nothing.
 pub fn toggle_fuzzy(m: &mut Model) {
     if m.finder.is_none() {
@@ -286,7 +286,10 @@ fn update(m: &mut Model) {
     let Some(finder) = m.finder.as_ref() else { return };
     let (index, query, mode) = (finder.index.clone(), finder.query.clone(), finder.mode);
     if query.is_empty() {
-        set_status(m, if mode == Mode::Files { HINT_FILES } else { HINT_TEXT });
+        // The mode shows before the first letter too: a Ctrl+F pressed on an empty prompt must change what is drawn.
+        let hint = if mode == Mode::Files { HINT_FILES } else { HINT_TEXT };
+        let fuzzy = mode == Mode::Files && m.matching == fmc::find::Matching::Fuzzy;
+        set_status(m, &if fuzzy { format!("fuzzy, {hint}") } else { hint.to_string() });
         end_preview(m);
         let selected = m.browser.selected().to_path_buf();
         m.browser.show_tree(&selected);

@@ -15,7 +15,7 @@ fmc reads one optional settings file when it starts. It never writes that file. 
 | `reader_jump` | whole number, 1 or more | `5` | How many lines `[` and `]` scroll the reader. |
 | `git_gutter` | `true` or `false` | `true` | Whether the reader marks the lines of a file in a git repository that differ from `HEAD`: in a strip left of the line numbers, and beside the changed blocks of the rendered Markdown view. |
 | `file_associations` | object of pattern to filetype name | none | Which filetype a file is highlighted as, and whether `m` renders it as Markdown. See [File associations](#file-associations). |
-| `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it for the session. See [Finder](#finder). |
+| `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it for this run only. See [Finder](#finder). |
 
 A key that is not listed is ignored.
 
@@ -50,4 +50,4 @@ A file that is not valid JSON, or whose top level is not an object, sets nothing
 
 `find_mode` sets how the file finder (`/`) matches a name when it opens. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one pattern, spaces included, and matches its letters in order anywhere in the path, ignoring case. The best matches come first, and the letters that matched are highlighted.
 
-`Ctrl+F` in the finder flips the match for the rest of the run, and the query runs again; the footer names `fuzzy` while it is on. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
+`Ctrl+F` in the finder flips the match for this run only, and the query runs again; the footer names `fuzzy` while it is on. A restart returns to `find_mode`: fmc never writes `settings.json`, so a flip is not kept. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.

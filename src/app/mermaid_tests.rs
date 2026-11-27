@@ -83,3 +83,43 @@ fn the_source_view_keeps_the_fence_as_text() {
     assert!(text.contains("```mermaid") && text.contains("flowchart LR"), "{text}");
     assert!(!text.contains('┌'), "the source view draws no diagram: {text}");
 }
+
+/// The top-left corner of the first diagram box on screen, and the top-right corner of the rightmost box on its row,
+/// as (column, row). The fill covers the whole diagram, arrows between boxes included, so the rightmost box is its edge.
+fn box_corners(app: &TestApp) -> ((u32, u32), (u32, u32)) {
+    let capture = app.render();
+    let (left, top) = (0..capture.height)
+        .flat_map(|y| (0..capture.width).map(move |x| (x, y)))
+        .find(|&(x, y)| capture.cell(x, y).is_some_and(|cell| cell.symbol == "┌"))
+        .unwrap_or_else(|| panic!("no diagram on screen: {}", app.text()));
+    let right = (0..capture.width)
+        .rev()
+        .find(|&x| capture.cell(x, top).is_some_and(|cell| cell.symbol == "┐"))
+        .unwrap_or_else(|| panic!("no box corner on row {top}: {}", app.text()));
+    ((left, top), (right, top))
+}
+
+#[test]
+fn a_diagram_sits_on_the_panel_tone_at_each_width_and_follows_a_resize() {
+    for columns in [49, 70, 120] {
+        let (app, model, ui) = reading_markdown(columns, &fenced(SMALL_FLOWCHART));
+        // Below 60 columns the list is its own page, and the reader's page shows only with the focus in the reader.
+        if columns < 60 {
+            model.borrow_mut().focus = fmc::keys::Focus::Reader;
+            paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+        }
+        let panel = crate::ui::styled::color(model.borrow().palette().fallback_background);
+        let ((left, top), (right, _)) = box_corners(&app);
+        let capture = app.render();
+        assert_eq!(capture.cell(left + 1, top + 1).map(|cell| cell.bg), Some(panel), "inside the box at {columns}");
+        assert_ne!(capture.cell(right + 1, top + 1).map(|cell| cell.bg), Some(panel), "past the box at {columns}");
+    }
+    let (app, model, _ui) = reading_markdown(120, &fenced(SMALL_FLOWCHART));
+    let panel = crate::ui::styled::color(model.borrow().palette().fallback_background);
+    app.resize(70, 40);
+    app.render();
+    let ((left, top), (right, _)) = box_corners(&app);
+    let capture = app.render();
+    assert_eq!(capture.cell(left + 1, top + 1).map(|cell| cell.bg), Some(panel), "inside after the resize");
+    assert_ne!(capture.cell(right + 1, top + 1).map(|cell| cell.bg), Some(panel), "past the box after the resize");
+}

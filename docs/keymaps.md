@@ -26,7 +26,7 @@ The file the list selects shows in the reader after a short pause, and the focus
 | Keys | Action |
 | --- | --- |
 | type | filter by name: every word must appear in the path (or, when fuzzy is on, the whole query in order); in text search, the lines that contain the text |
-| `Ctrl+F` | flip name matching between substring and fuzzy for this session; the footer says `fuzzy` when it is on |
+| `Ctrl+F` | flip name matching between substring and fuzzy for this run (a restart returns to `find_mode`); the footer says `fuzzy` when it is on |
 | `Backspace` | delete a character |
 | `Tab` | switch between file names and text in files |
 | `↑` `↓` | move the highlight; on a text hit the reader shows its line in a preview |

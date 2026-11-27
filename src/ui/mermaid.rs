@@ -1,5 +1,6 @@
 //! A Mermaid fence in rendered Markdown, drawn as its box diagram (`reader/mermaid.rs`) in the palette: box lines in
-//! `border`, labels in `text`, the fallback's reason in `muted` (plan-00006, D3). It is a measured widget, so layout
+//! `border`, labels in `text`, the fallback's reason in `muted` (plan-00006, D3), on the panel tone `fallback-background`
+//! over the diagram's box. It is a measured widget, so layout
 //! offers it the reader's width and a resize measures it again; the renderer is not called on resize
 //! (`architecture.md`, "Mermaid in rendered Markdown").
 
@@ -13,9 +14,10 @@ use opentui::prelude::*;
 
 use super::styled::color;
 
-/// The three colours a diagram takes from the palette.
+/// The colours a diagram takes from the palette: its panel fill, and the three for its lines and labels.
 #[derive(Clone, Copy)]
 pub struct Colors {
+    fill: Color,
     border: Color,
     text: Color,
     muted: Color,
@@ -23,7 +25,7 @@ pub struct Colors {
 
 impl Colors {
     pub fn new(p: &Palette) -> Self {
-        Self { border: color(p.border), text: color(p.text), muted: color(p.muted) }
+        Self { fill: color(p.fallback_background), border: color(p.border), text: color(p.text), muted: color(p.muted) }
     }
 }
 
@@ -76,6 +78,10 @@ impl Diagram {
 impl Component for Diagram {
     fn paint(&self, painter: &mut Painter<'_>) {
         let drawn = self.fitted(painter.width() as usize);
+        // The fill goes first, and stops at the last glyph of the widest row: the engine pads rows with spaces, and the
+        // measure counts them. A text run without a background keeps the cell's colour, so the text sits on the fill.
+        let fill = drawn.rows.iter().map(|row| painter.text_width(row.trim_end())).max().unwrap_or(0);
+        painter.fill(0, 0, fill, painter.height(), self.colors.fill);
         let last = drawn.rows.len().saturating_sub(1);
         for (y, row) in drawn.rows.iter().enumerate() {
             let reason = drawn.fallback && y == last;
