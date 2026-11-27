@@ -10,7 +10,7 @@ pub mod settings;
 
 use std::path::PathBuf;
 
-use fmc::diff::{ChangeSet, FilePatch, Listing};
+use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
 use fmc::explorer::Entry;
 use fmc::find::Index;
 use fmc::find::text::Progress;
@@ -28,6 +28,9 @@ pub enum Event {
     Selected { path: PathBuf, result: Result<fs::Opened, String> },
     /// The git marks of the browsed folder; `None` outside a repository.
     Marks { root: PathBuf, result: Result<Option<Listing>, String> },
+    /// The signs of the text at `path` that `serial` showed (`app/gutter.rs`); an answer for another file or showing is
+    /// dropped.
+    Signed { path: PathBuf, serial: u64, result: Result<Vec<(u32, Sign)>, String> },
     /// The finder's index of the browsed folder, for the finder of that `session` (a newer one may have replaced it).
     Indexed { session: u64, index: Index },
     /// The debounce of a text search has passed: the search of `scan` starts if it is still the latest.

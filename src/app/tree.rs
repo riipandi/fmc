@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, preview, reader};
+use super::{Model, Pending, Ui, changes, find, gutter, preview, reader};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -196,6 +196,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                     m.browser.refreshed(path, entries.clone());
                 }
                 if let Ok(listing) = marks {
+                    m.in_repo = listing.is_some();
                     let next = listing.clone().map_or_else(Default::default, Marks::new);
                     if next != m.marks {
                         m.marks = next;
@@ -240,9 +241,11 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         }
         Event::Marks { root, result } => {
             if let (true, Ok(listing)) = (root == m.browser.tree.root(), result) {
+                m.in_repo = listing.is_some();
                 m.marks = listing.clone().map_or_else(Default::default, Marks::new);
             }
         }
+        Event::Signed { path, serial, result } => gutter::apply(m, path, *serial, result),
     }
 }
 

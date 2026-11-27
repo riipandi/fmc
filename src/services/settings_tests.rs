@@ -38,7 +38,19 @@ fn a_file_under_the_config_home_is_read() {
     fs::create_dir_all(file.parent().unwrap()).unwrap();
     fs::write(&file, r#"{"reader_jump": 8, "auto_preview": false}"#).unwrap();
     let parsed = load(&file);
-    assert_eq!(parsed.settings, Settings { auto_preview: false, sidebar_jump: 2, reader_jump: 8 });
+    assert_eq!(parsed.settings, Settings { auto_preview: false, sidebar_jump: 2, reader_jump: 8, git_gutter: true });
+    assert!(parsed.notices.is_empty());
+}
+
+#[test]
+fn git_gutter_is_read_from_the_config_home_the_path_names() {
+    let dir = TempDir::new().unwrap();
+    let home = dir.path().to_path_buf();
+    let file = path(Some(home.into_os_string()), None).unwrap();
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(&file, r#"{"git_gutter": false}"#).unwrap();
+    let parsed = load(&file);
+    assert!(!parsed.settings.git_gutter);
     assert!(parsed.notices.is_empty());
 }
 

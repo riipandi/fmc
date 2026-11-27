@@ -9,7 +9,7 @@ phases:
       status: done
     - id: 2
       title: "Signs in the reader gutter, the `git_gutter` setting, refresh"
-      status: pending
+      status: done
     - id: 3
       title: "Docs, live checks, close"
       status: pending

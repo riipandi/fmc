@@ -5,6 +5,7 @@ mod capture;
 mod changes;
 mod command;
 mod find;
+mod gutter;
 mod keys;
 mod layout;
 mod mouse;
@@ -167,6 +168,12 @@ struct Model {
     /// The rows `]` and `[` move the list by, and the lines they scroll the reader by (`settings.json`).
     sidebar_jump: u32,
     reader_jump: u32,
+    /// Whether the reader marks git changes in its gutter (`settings.json`), and whether the list's root is a repository:
+    /// the strip shows only when both hold (`app/gutter.rs`).
+    git_gutter: bool,
+    in_repo: bool,
+    /// Counts each text shown, so a sign answer finds the showing it was asked for (`app/gutter.rs`).
+    serial: u64,
     /// The text of the `:` command line while it is open (`app/command.rs`).
     command: Option<String>,
     /// The terminal's width at the last paint: the tier reads it (`app/pages.rs`).
@@ -248,6 +255,9 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         preview_generation: 0,
         sidebar_jump: fmc::settings::SIDEBAR_JUMP,
         reader_jump: fmc::settings::READER_JUMP,
+        git_gutter: fmc::settings::GIT_GUTTER,
+        in_repo: false,
+        serial: 0,
         command: None,
         columns: app.size().0,
         pages: Default::default(),
@@ -282,6 +292,7 @@ pub fn run(target: &Path, settings: Parsed) -> opentui::Result<()> {
         m.auto_preview = settings.settings.auto_preview;
         m.sidebar_jump = settings.settings.sidebar_jump;
         m.reader_jump = settings.settings.reader_jump;
+        m.git_gutter = settings.settings.git_gutter;
         if !settings.notices.is_empty() {
             m.message = Some(Message { text: settings.notices.join(" "), error: true });
         }
@@ -681,6 +692,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let fill = !body && !shows_preview && (m.wrap || m.shown.text().is_none() || previewing);
     ui.viewer.set_wrap(fill);
     ui.reader.set_wrap(m.wrap);
+    {
+        let (signs, strip) = gutter::drawn(m);
+        ui.reader.set_signs(p, signs, strip);
+    }
     ui.preview.set_wrap(false);
     // Unwrapped text takes the pane's inner width, the bar's column included: the pan range is that width less the
     // viewport, and it stops where Scouter's does (issue-00008).

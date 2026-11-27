@@ -168,6 +168,10 @@ The width picks one of three layouts (`fmc::layout::tier`). The sketches are exc
 
 The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` while dotfiles are hidden), or `Changes` with a count. From 60 to 79 columns a chevron leads a header's title: `›` on the reader's header while the list is hidden, and `‹` on the list's header while the list shows and can hide. A tap on the chevron, its gap, or the title beside it does the same. Each is plain accent text. Below 60 columns a `‹` leads the header's title on every page but Files; a tap on it or on the title goes back, and the bottom bar is one row of words. The reader shows a dim parent path and a bold file name, then badges: quiet (`read-only`, `rendered`, `image`, `binary`, `all files`, `one file`) or pills (`first 1 MiB`, `wrap`, `split`, `wide context`, `preview`). An error replaces the badges in `error`, bold, until the next key.
 
+### Reader sign strip
+
+One column left of the line numbers in the text view, inside a git repository. `▎` in `added` marks an added line and `▎` in `modified` a changed one. `▁` in `removed` sits on the line above a deletion, and `▔` on line 1 when the deletion is above it. The column stays blank while nothing changed, so the numbers do not move. Rendered Markdown, images, and the changes screen have none. Scouter has no strip (`docs/parity.md`).
+
 ### Footer pills and hints
 
 Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `SEARCH`. A pill is `accent-ink` on `accent`, bold. Hints show the key in `accent-soft` and the action in `dim`. Position reads `All`, `Top`, `Bot`, or a percentage.

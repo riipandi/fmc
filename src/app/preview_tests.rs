@@ -71,6 +71,8 @@ fn a_file_the_reader_shows_is_not_read_again() {
         language: None,
         markdown: None,
         stamp: Some(String::new()),
+        serial: 0,
+        signs: Vec::new(),
     };
     assert_eq!(due(&m, 1), None);
 }

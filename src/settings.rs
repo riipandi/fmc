@@ -1,4 +1,4 @@
-//! The settings file's three values, read from its text (`architecture.md`, "a read-only settings.json with three keys").
+//! The settings file's values, read from its text (`architecture.md`, "a read-only settings.json").
 //! The binary reads the file and passes its text here; nothing in this module touches the disk.
 
 use serde_json::{Map, Value};
@@ -6,17 +6,24 @@ use serde_json::{Map, Value};
 pub const AUTO_PREVIEW: bool = true;
 pub const SIDEBAR_JUMP: u32 = 2;
 pub const READER_JUMP: u32 = 5;
+pub const GIT_GUTTER: bool = true;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Settings {
     pub auto_preview: bool,
     pub sidebar_jump: u32,
     pub reader_jump: u32,
+    pub git_gutter: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { auto_preview: AUTO_PREVIEW, sidebar_jump: SIDEBAR_JUMP, reader_jump: READER_JUMP }
+        Self {
+            auto_preview: AUTO_PREVIEW,
+            sidebar_jump: SIDEBAR_JUMP,
+            reader_jump: READER_JUMP,
+            git_gutter: GIT_GUTTER,
+        }
     }
 }
 
@@ -50,6 +57,7 @@ pub fn parse(text: &str) -> Parsed {
         auto_preview: boolean(&object, "auto_preview", AUTO_PREVIEW, notices),
         sidebar_jump: whole(&object, "sidebar_jump", SIDEBAR_JUMP, notices),
         reader_jump: whole(&object, "reader_jump", READER_JUMP, notices),
+        git_gutter: boolean(&object, "git_gutter", GIT_GUTTER, notices),
     };
     parsed
 }

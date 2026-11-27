@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-preview: with the list focused, the file it selects shows in the reader after a short pause. `p` turns it off or on.
 - The file tree: `l` and `→` expand a folder, `h` and `←` collapse it, Enter opens a file (with the focus in the reader) or toggles a folder, a click selects a row, and `-` opens the folder above, and a file argument opens its folder with the file selected. Folders come first, then names in Scouter's collation order.
 - Git marks in the tree: status letters, a dot on folders with changes, and ignored entries dimmed. A scrollbar appears on long lists.
+- Git signs in the reader: inside a git repository, a strip left of the line numbers marks added lines (green), changed lines (yellow), and deletions (red), against `HEAD` as the changes screen does. The `git_gutter` setting in the settings file turns it off.
 - Sidebar width: `Ctrl+←` and `→` change it by two columns, and dragging its edge does too.
 - Sidebar visibility: below 80 columns the sidebar hides while a document is open, and the welcome screen keeps it. `Ctrl+/`, or the `«` or `»` on the border, shows and hides it.
 - Dotfiles: `Ctrl+.` or `.` shows and hides them in the tree and the finder. They are shown by default, and the noise names stay hidden.

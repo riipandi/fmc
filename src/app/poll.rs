@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use opentui::prelude::App;
 
-use super::{Model, Ui, reader};
+use super::{Model, Ui, gutter, reader};
 use crate::services;
 
 /// Scouter's poll interval (`src/app/app.ts:43-44`), and its longest wait (`MAX_POLL_MS`).
@@ -85,6 +85,7 @@ pub fn browse_now(m: &Model, chain: bool) {
         _ => None,
     };
     services::poll::browse(&m.proxy, chain, root, folders, document);
+    gutter::request(m);
 }
 
 fn diff_tick(m: &mut Model, session: u64) {

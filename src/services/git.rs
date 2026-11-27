@@ -15,8 +15,8 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime};
 
 use fmc::diff::{
-    ALL_LIMIT, Change, ChangeKind, ChangeSet, FilePatch, Listing, PATCH_LIMIT, Patch, binary, change_set, from_diff,
-    from_file, not_shown, order, parse_name_status, split, split_z, too_large, utf16_len,
+    ALL_LIMIT, Change, ChangeKind, ChangeSet, FilePatch, Listing, PATCH_LIMIT, Patch, Sign, binary, change_set,
+    from_diff, from_file, not_shown, order, parse_name_status, split, split_z, too_large, utf16_len,
 };
 use fmc::reader::document::{self, Document};
 use fmc::text::display_text;
@@ -158,6 +158,20 @@ impl Repository {
         parts.join("\n")
     }
 
+    /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`, plan-00008
+    /// D2). An untracked file is all added, as the listing shows it.
+    fn file_signs(&self, path: &str) -> Result<Vec<(u32, Sign)>, String> {
+        let kind = {
+            let mut queue = self.queue();
+            queue.base = resolve_base(&self.root)?;
+            self.sync(&mut queue);
+            let untracked = self.copy_git(&["ls-files", "--others", "--exclude-standard", "-z", "--", path])?;
+            if untracked.text.is_empty() { ChangeKind::Modified } else { ChangeKind::Untracked }
+        };
+        let change = Change { kind, ..Change::untracked(path) };
+        Ok(fmc::diff::signs(&self.patch(&change, 0)?))
+    }
+
     /// One change's patch against the base of the last listing (`src/diff/patch.ts:13-20`). The copy is the one that
     /// listing made; a patch does not refresh it.
     pub fn patch(&self, change: &Change, context: usize) -> Result<Patch, String> {
@@ -286,6 +300,17 @@ pub fn marks(dir: &Path) -> Result<Option<Listing>, String> {
         return Ok(None);
     };
     repository.listing(within).map(Some)
+}
+
+/// The signs of the file at `path` against the change base (plan-00008, D2). `Err` outside a repository and on a git
+/// failure; the reader clears its signs then, with no notice (D5).
+pub fn signs(path: &Path) -> Result<Vec<(u32, Sign)>, String> {
+    let folder = fs::canonicalize(path.parent().unwrap_or(Path::new("."))).map_err(|error| error.to_string())?;
+    let repository = Repository::open(&folder)?;
+    let root = fs::canonicalize(repository.root()).map_err(|error| error.to_string())?;
+    let within = folder.strip_prefix(&root).map_err(|_| NOT_A_REPOSITORY.to_string())?;
+    let file = within.join(path.file_name().unwrap_or_default());
+    repository.file_signs(&file.to_string_lossy().replace('\\', "/"))
 }
 
 /// `HEAD` when the repository has a commit, else the empty tree, so a repository with no commits lists everything as

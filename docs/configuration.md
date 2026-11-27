@@ -13,6 +13,7 @@ fmc reads one optional file when it starts, and never writes it.
 | `auto_preview` | `true` or `false` | `true` | Whether moving through the file list shows each file in the reader. |
 | `sidebar_jump` | whole number, 1 or more | `2` | How many rows `[` and `]` move the file list. |
 | `reader_jump` | whole number, 1 or more | `5` | How many lines `[` and `]` scroll the reader. |
+| `git_gutter` | `true` or `false` | `true` | Whether the reader marks, in a strip left of the line numbers, the lines of a file in a git repository that differ from `HEAD`. |
 
 A key that is not listed is ignored.
 

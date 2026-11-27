@@ -3,6 +3,7 @@
 
 use std::path::{Path, PathBuf};
 
+use fmc::diff::Sign;
 use fmc::keys::{Focus, key_page_markdown};
 use fmc::reader::binary::format_size;
 use fmc::reader::document::Document;
@@ -13,7 +14,7 @@ use fmc::reader::position::scroll_label;
 use fmc::reader::search::Search;
 use fmc::text::display_label;
 
-use super::{Model, Ui, search};
+use super::{Model, Ui, gutter, search};
 use crate::services::fs::Reread;
 use crate::ui::footer::{DocumentInfo, Message};
 use crate::ui::header::{Badge, BadgeKind};
@@ -31,6 +32,9 @@ pub enum Shown {
         markdown: Option<View>,
         /// The file's stamp when it was read, which the poll compares (`None` once the file is gone).
         stamp: Option<String>,
+        /// The showing this text is, and its git signs (`app/gutter.rs`).
+        serial: u64,
+        signs: Vec<(u32, Sign)>,
     },
     /// The key page (`?`): generated Markdown, shown as a Markdown document. `back` is what it replaced.
     Keys {
@@ -130,12 +134,22 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp:
     }
     let language = language_for(path);
     let markdown = language.filter(|filetype| is_markdown(filetype)).map(|_| View::default());
-    let shown = Shown::Text { path: path.to_path_buf(), document, language, markdown, stamp: Some(stamp) };
+    m.serial += 1;
+    let shown = Shown::Text {
+        path: path.to_path_buf(),
+        document,
+        language,
+        markdown,
+        stamp: Some(stamp),
+        serial: m.serial,
+        signs: Vec::new(),
+    };
     present(ui, &shown);
     if m.shown.shows_keys() {
         m.search = None;
     }
     m.shown = shown;
+    gutter::request(m);
     search::follow(m);
     reset_scroll(m, ui, path);
     super::find::arrive(m, path);
@@ -387,6 +401,8 @@ mod tests {
             language: Some("markdown"),
             markdown,
             stamp: None,
+            serial: 0,
+            signs: Vec::new(),
         };
         assert!(shown(Some(View::Rendered)).previewing());
         assert!(!shown(Some(View::Source)).previewing());

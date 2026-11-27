@@ -6,15 +6,19 @@
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
+use fmc::diff::Sign;
 use fmc::reader::document::Document;
 use fmc::reader::search::match_ranges;
 use fmc::theme::Palette;
 use opentui::native::{LayerRun, TextView, Viewport};
 use opentui::prelude::*;
-use opentui::widget::LineColor;
+use opentui::widget::{LineColor, LineSign};
 
 use super::styled::color;
 use super::syntax;
+
+/// The signs a paint drew, and whether the gutters kept the strip's column.
+type DrawnSigns = (Vec<(u32, Sign)>, bool);
 
 /// Shown in place of an empty file's lines, with no gutter (`src/reader/code-view.ts:288`).
 const EMPTY_FILE: &str = "(empty file)";
@@ -42,6 +46,8 @@ pub struct CodeView {
     wrap: Cell<bool>,
     /// The search marks last applied, as the query and the current line: skipped while they stay the same.
     applied: RefCell<Option<(String, Option<usize>)>>,
+    /// The git signs and the strip flag last drawn (`set_signs`); `None` until the first paint after a show.
+    signs: RefCell<Option<DrawnSigns>>,
 }
 
 impl CodeView {
@@ -66,6 +72,7 @@ impl CodeView {
             width: Cell::new(0),
             wrap: Cell::new(false),
             applied: RefCell::new(None),
+            signs: RefCell::new(None),
         };
         view.restyle(p);
         view
@@ -85,6 +92,7 @@ impl CodeView {
         self.install_table(p);
         self.numbers.fg(color(p.dim));
         self.gutter.fg(color(p.dim));
+        self.draw_signs(p);
     }
 
     /// Shows a document; `language` is its filetype when Scouter highlights it.
@@ -99,6 +107,8 @@ impl CodeView {
         self.code.set_code(content);
         // Setting the text empties the buffer's layers, so the marks are applied again.
         *self.applied.borrow_mut() = None;
+        // The next paint draws the signs of this text, so the last text's go now.
+        *self.signs.borrow_mut() = None;
         self.apply_width();
     }
 
@@ -124,6 +134,32 @@ impl CodeView {
             let colors = LineColor::new(color(p.target_gutter), color(p.target_bg));
             self.numbers.line_color(line as u32, colors);
             self.gutter.line_color(line as u32, colors);
+        }
+    }
+
+    /// The git signs of the shown text, and whether the gutters keep the strip's column (`app/gutter.rs`). Each paint
+    /// calls it; the gutters are drawn again only when the signs or the strip change.
+    pub fn set_signs(&self, p: &Palette, signs: &[(u32, Sign)], strip: bool) {
+        if self.signs.borrow().as_ref().is_some_and(|(drawn, on)| drawn.as_slice() == signs && *on == strip) {
+            return;
+        }
+        *self.signs.borrow_mut() = Some((signs.to_vec(), strip));
+        self.draw_signs(p);
+    }
+
+    /// Draws the stored signs in both gutters. A blank sign on line 1 holds the strip's column while no line has a sign,
+    /// so the numbers do not move as signs come and go (plan-00008, D1).
+    fn draw_signs(&self, p: &Palette) {
+        let stored = self.signs.borrow();
+        let Some((signs, strip)) = stored.as_ref() else { return };
+        for gutter in [&self.numbers, &self.gutter] {
+            gutter.clear_line_signs();
+            if *strip {
+                gutter.line_sign(0, LineSign::before(" ", None::<Color>));
+            }
+            for (line, sign) in signs {
+                gutter.line_sign(*line, LineSign::before(sign.glyph(), color(sign.color(p))));
+            }
         }
     }
 

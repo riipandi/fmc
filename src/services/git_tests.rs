@@ -8,7 +8,7 @@ use std::process::{Command, Stdio};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use fmc::diff::{Change, ChangeKind, Patch, binary, not_shown, too_large};
+use fmc::diff::{Change, ChangeKind, Patch, Sign, binary, not_shown, too_large};
 use tempfile::TempDir;
 
 use super::*;
@@ -385,4 +385,55 @@ fn the_stamp_changes_when_a_listed_file_or_the_index_changes() {
     assert_eq!(before, repository.stamp(&set.changes), "nothing changed, so the stamp holds");
     fs::write(dir.path().join("notes.txt"), "Azkaban and Hogsmeade\n").unwrap();
     assert_ne!(repository.stamp(&set.changes), before);
+}
+
+/// A repository whose `spells.txt` is committed with three lines, then left as `edit` makes it.
+fn committed_spells(edit: Option<&str>) -> TempDir {
+    let dir = initialized();
+    let root = dir.path();
+    fs::write(root.join("spells.txt"), "Hermione Granger\nRobert Langdon\nSophie Neveu\n").unwrap();
+    git(root, &["add", "."]);
+    git(root, &["commit", "-q", "-m", "Harry Potter"]);
+    if let Some(text) = edit {
+        fs::write(root.join("spells.txt"), text).unwrap();
+    }
+    dir
+}
+
+#[test]
+fn an_edited_line_is_modified_and_the_others_have_no_sign() {
+    let dir = committed_spells(Some("Hermione Granger\nLeigh Teabing\nSophie Neveu\n"));
+    assert_eq!(signs(&dir.path().join("spells.txt")), Ok(vec![(1, Sign::Modified)]));
+}
+
+#[test]
+fn a_line_added_at_the_end_is_added() {
+    let dir = committed_spells(Some("Hermione Granger\nRobert Langdon\nSophie Neveu\nVittoria Vetra\n"));
+    assert_eq!(signs(&dir.path().join("spells.txt")), Ok(vec![(3, Sign::Added)]));
+}
+
+#[test]
+fn a_deleted_line_is_drawn_on_the_line_above() {
+    let dir = committed_spells(Some("Hermione Granger\nSophie Neveu\n"));
+    assert_eq!(signs(&dir.path().join("spells.txt")), Ok(vec![(0, Sign::DeletedBelow)]));
+}
+
+#[test]
+fn a_committed_file_has_no_signs() {
+    let dir = committed_spells(None);
+    assert_eq!(signs(&dir.path().join("spells.txt")), Ok(Vec::new()));
+}
+
+#[test]
+fn an_untracked_file_is_all_added() {
+    let dir = initialized();
+    fs::write(dir.path().join("letter.txt"), "Albus Dumbledore\nMinerva McGonagall\n").unwrap();
+    assert_eq!(signs(&dir.path().join("letter.txt")), Ok(vec![(0, Sign::Added), (1, Sign::Added)]));
+}
+
+#[test]
+fn a_file_outside_a_repository_is_an_error() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::write(dir.path().join("spells.txt"), "Hogwarts\n").unwrap();
+    assert_eq!(signs(&dir.path().join("spells.txt")), Err(NOT_A_REPOSITORY.to_string()));
 }
