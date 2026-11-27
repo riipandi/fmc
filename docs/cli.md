@@ -11,7 +11,7 @@ fmc --help
 | `fmc` | Opens the current folder. |
 | `fmc <folder>` | Opens the folder as the root of the file list. |
 | `fmc <file>` | Opens the file in the reader. The file list shows the file's folder. |
-| `fmc -h`, `fmc --help` | Prints the usage and every key, then exits. It wins over everything else on the line. |
+| `fmc -h`, `fmc --help` | Prints the usage, the options, and where the keys, the settings, and these docs are, then exits. It wins over everything else on the line. |
 | `fmc -v`, `fmc --version` | Prints `fmc` and its version, then exits. |
 
 fmc accepts one file or folder. Any other word on the line, even one that starts with `-`, is read as a path.

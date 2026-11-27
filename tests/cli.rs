@@ -16,12 +16,22 @@ fn fmc_on_tty(arg: &str) -> std::process::Output {
 }
 
 #[test]
-fn help_prints_usage_and_every_key() {
+fn help_prints_usage_and_points_to_the_keys() {
     let out = fmc().args(["the-louvre", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(out).unwrap();
-    assert!(text.starts_with("fmc — a minimal terminal file manager\n\nUsage: fmc [file-or-directory]\n"));
-    assert!(text.contains("\nBrowse\n  j k ↑ ↓        move\n"));
-    assert!(text.ends_with("Mouse\n  Left click     select file, or toggle folder\n  Right click    context menu for the row\n  Hover          select a context-menu row; highlight a dialog button\n  Click          focus the pane under the pointer\n  Drag text      select; y copies it\n  Wheel          scroll the pane under the pointer\n  Drag edge      resize the list\n  Click «»       show / hide the sidebar, from its mark\n\n"));
+    // The keys are on the `?` page, not here (the owner, 2026-11-27).
+    let expected = "fmc — a minimal terminal file manager\n\n\
+     Usage: fmc [file-or-directory]\n\n\
+     Arguments:\n  \
+       [file-or-directory]  The folder to browse, or a file to open in the reader.\n                       \
+       Defaults to the current folder.\n\n\
+     Options:\n  \
+       -h, --help           Print this help.\n  \
+       -v, --version        Print the version.\n\n\
+     Press ? inside fmc for the keys.\n\
+     Settings: $XDG_CONFIG_HOME/fmc/settings.json, or ~/.config/fmc/settings.json.\n\
+     Docs: https://github.com/riipandi/fmc/tree/main/docs\n";
+    assert_eq!(text, expected);
 }
 
 #[test]
