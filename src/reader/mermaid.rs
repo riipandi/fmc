@@ -63,18 +63,34 @@ fn source_text(source: &str) -> String {
     crate::text::display_text(source).replace('\t', "    ")
 }
 
-/// Splits `line` into chunks of at most `columns` display columns; an empty line is one empty chunk.
+/// Splits `line` into chunks of at most `columns` display columns, breaking after a space where one fits so words stay
+/// whole; a word wider than the frame is cut where it overflows. An empty line is one empty chunk.
 fn wrap(line: &str, columns: usize) -> Vec<String> {
     let mut chunks = Vec::new();
     let (mut chunk, mut used) = (String::new(), 0);
+    // Byte offset in `chunk` just past its last space, and the columns up to it: where the chunk can break.
+    let mut space: Option<(usize, usize)> = None;
     for c in line.chars() {
         let w = c.width().unwrap_or(0);
         if used + w > columns && used > 0 {
-            chunks.push(std::mem::take(&mut chunk));
-            used = 0;
+            match space.take() {
+                // Break after the last space, unless that space is all the chunk holds (leading indentation).
+                Some((at, before)) if chunk[..at].trim() != "" => {
+                    let rest = chunk.split_off(at);
+                    chunks.push(std::mem::replace(&mut chunk, rest));
+                    used -= before;
+                }
+                _ => {
+                    chunks.push(std::mem::take(&mut chunk));
+                    used = 0;
+                }
+            }
         }
         chunk.push(c);
         used += w;
+        if c == ' ' {
+            space = Some((chunk.len(), used));
+        }
     }
     chunks.push(chunk);
     chunks

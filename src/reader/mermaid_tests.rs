@@ -104,3 +104,20 @@ fn a_reason_longer_than_the_width_ends_in_an_ellipsis() {
     assert_eq!(fit("Lumos", 6), "Lumos");
     assert_eq!(fit("Lumos", 0), "");
 }
+
+#[test]
+fn a_frame_breaks_its_source_between_words() {
+    let source = "    Hat -->|Gryffindor| Tower[Gryffindor Tower]";
+    let frame = framed(source, "too wide", Some(24));
+    let body: Vec<&str> = frame[1..frame.len() - 2].iter().map(|row| row.trim_matches(|c| c == '│' || c == ' ')).collect();
+    assert!(body.iter().any(|row| row.ends_with("Tower[Gryffindor")), "{frame:#?}");
+    assert!(body.iter().any(|row| row.starts_with("Tower]")), "words stay whole: {frame:#?}");
+    assert!(columns(&frame) <= 24, "{frame:?}");
+}
+
+#[test]
+fn a_word_wider_than_the_frame_is_cut() {
+    let frame = framed("Expelliarmusexpelliarmus", "too wide", Some(12));
+    assert!(columns(&frame) <= 12, "{frame:?}");
+    assert!(frame.iter().filter(|row| row.starts_with('│')).count() >= 3, "{frame:#?}");
+}
