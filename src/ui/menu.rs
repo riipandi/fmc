@@ -24,8 +24,8 @@ pub struct Rect {
 /// The gap between a row's label and its key hint.
 const HINT_GAP: usize = 3;
 
-/// The box a menu of `items` takes: the marker and its padding, the longest label, the gap and the longest key hint, a
-/// trailing cell, and the border; a row per item and per group rule.
+/// The box a menu of `items` takes: two cells of padding on each side, the longest label, the gap and the longest key
+/// hint, and the border; a row per item and per group rule.
 pub fn size(items: &[Item]) -> (u16, u16) {
     let longest = items.iter().map(|item| item.label.chars().count()).max().unwrap_or(0);
     let hint = items.iter().map(|item| item.hint.chars().count()).max().unwrap_or(0);
@@ -98,7 +98,7 @@ impl MenuView {
     }
 
     /// Draws `menu` in `rect` on the `background` tint. A disabled row is muted, a destructive one takes the error
-    /// colour, and the selected row has the row surface and the accent marker. A key hint sits at the right edge, and a
+    /// colour, and the selected row has the row surface and a bold label (no marker: the owner, 2026-11-27). A key hint sits at the right edge, and a
     /// rule in the border colour opens each group after the first.
     pub fn show(&self, menu: &Menu, rect: Rect, p: &Palette, background: &str) {
         self.root
@@ -124,13 +124,8 @@ impl MenuView {
             let chosen = index == menu.selected();
             let fill = chosen.then_some(p.row_active_bg);
             let hint = item.hint.chars().count();
-            let pad = inner.saturating_sub(3 + item.label.chars().count() + hint + 1);
-            let marker = Seg {
-                text: format!(" {} ", if chosen { "▎" } else { " " }),
-                fg: Some(p.accent),
-                bg: fill,
-                bold: false,
-            };
+            let pad = inner.saturating_sub(2 + item.label.chars().count() + hint + 2);
+            let lead = Seg { text: "  ".into(), fg: None, bg: fill, bold: false };
             let label = Seg {
                 text: format!("{}{}", item.label, " ".repeat(pad)),
                 fg: Some(match (item.enabled, item.danger) {
@@ -142,12 +137,12 @@ impl MenuView {
                 bold: chosen,
             };
             let hint = Seg {
-                text: format!("{} ", item.hint),
+                text: format!("{}  ", item.hint),
                 fg: Some(if item.enabled { p.muted } else { p.dim }),
                 bg: fill,
                 bold: false,
             };
-            row.width(Length::Cells(inner as f32)).set_text(content(&[marker, label, hint], p.text));
+            row.width(Length::Cells(inner as f32)).set_text(content(&[lead, label, hint], p.text));
         }
     }
 }

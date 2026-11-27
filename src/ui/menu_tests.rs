@@ -7,8 +7,8 @@ fn items(labels: &[&str]) -> Vec<Item> {
 }
 
 #[test]
-fn a_box_is_the_longest_label_plus_its_marker_and_border() {
-    // `Delete…` is seven characters: a marker and a gap on each side of it, and the border.
+fn a_box_is_the_longest_label_plus_its_padding_and_border() {
+    // `Delete…` is seven characters: two cells of padding on each side, and the border.
     assert_eq!(size(&items(&["Cut", "Delete…"])), (13, 4));
 }
 
@@ -79,6 +79,6 @@ fn a_key_hint_widens_the_box_and_a_rule_adds_a_row() {
         Item { label: "Rename…".into(), enabled: true, hint: "r", ..Item::default() },
         Item { label: "Delete…".into(), enabled: true, hint: "D", danger: true, rule: true },
     ];
-    // The marker and its gap, `Rename…`, a three-cell gap, `r`, a trailing cell, and the border; two rows and a rule.
+    // Two cells of padding, `Rename…`, a three-cell gap, `r`, two cells of padding, and the border; two rows and a rule.
     assert_eq!(size(&items), (17, 5));
 }
