@@ -268,7 +268,7 @@ fn the_key_page_and_help_come_from_the_key_table() {
     for (title, rows) in KEY_SECTIONS.iter().copied().chain([("Mouse", MOUSE_ROWS)]) {
         assert!(page.contains(&format!("## {title}\n")), "the page lacks {title}");
         for (keys, action) in rows {
-            assert!(page.contains(&format!("| `{keys}` | {action} |")), "the page lacks {keys}");
+            assert!(page.contains(&format!("| {action} | `{keys}` |")), "the page lacks {keys}");
             assert!(help.contains(&format!("{keys:<KEY_COLUMN$}{action}")), "--help lacks {keys}");
         }
     }
@@ -282,7 +282,7 @@ fn keymaps_doc_lists_every_row() {
         assert!(doc.contains(&format!("## {title}")), "docs/keymaps.md lacks {title}");
         for (keys, action) in rows {
             let cell = keys.split(' ').map(|k| format!("`{k}`")).collect::<Vec<_>>().join(" ");
-            assert!(doc.contains(&format!("| {cell} | {action} |")), "docs/keymaps.md lacks {keys}");
+            assert!(doc.contains(&format!("| {action} | {cell} |")), "docs/keymaps.md lacks {keys}");
         }
     }
 }
