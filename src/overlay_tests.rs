@@ -13,9 +13,12 @@ fn ctrl(name: &str) -> Key<'_> {
     Key { name, text: "", ctrl: true, alt: false, shift: false, cmd: false }
 }
 
+fn row(label: &str, enabled: bool) -> Item {
+    Item { label: label.into(), enabled, ..Item::default() }
+}
+
 /// The Harry Potter menu the app shows: `Paste` is disabled until a path is copied.
 fn menu() -> Menu {
-    let row = |label: &str, enabled: bool| Item { label: label.into(), enabled };
     Menu::new(vec![
         row("New file…", true),
         row("New folder…", true),
@@ -27,8 +30,7 @@ fn menu() -> Menu {
 
 #[test]
 fn a_menu_selects_its_first_enabled_row() {
-    let disabled_first =
-        Menu::new(vec![Item { label: "Paste".into(), enabled: false }, Item { label: "Cut".into(), enabled: true }]);
+    let disabled_first = Menu::new(vec![row("Paste", false), row("Cut", true)]);
     assert_eq!(disabled_first.selected(), 1);
     assert_eq!(menu().selected(), 0);
 }

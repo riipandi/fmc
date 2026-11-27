@@ -81,8 +81,9 @@ fn a_press_on_a_disabled_row_keeps_the_menu_and_on_an_enabled_row_picks_it() {
     let (app, model, _) = screen(120, 40);
     app.press("space");
     app.render();
-    // The menu sits at the list's first row (column 2, row 3): its items start on row 4, and Paste is the sixth.
-    app.click(5, 9);
+    // The menu sits at the list's first row (column 2, row 3): its items start on row 4, and Paste is the sixth, below
+    // the rule that opens the second group.
+    app.click(5, 10);
     assert!(is_open(&model), "Paste is disabled");
     app.click(5, 4);
     assert!(
