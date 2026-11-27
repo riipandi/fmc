@@ -237,6 +237,7 @@ impl TreeView {
         }
         for ((view, thumb), line) in self.views.iter().zip(&self.thumbs).zip(&lines) {
             view.root.visible(true);
+            thumb.visible(true);
             view.name.set_text(content(&line.segments, p.text));
             let (letter, color_hex) = line.mark.unwrap_or(("", p.text));
             view.mark.set_text(content(&[Seg::new(letter, color_hex).bold()], p.text));
@@ -247,8 +248,10 @@ impl TreeView {
             });
         }
         for (view, thumb) in self.views.iter().zip(&self.thumbs).skip(lines.len()) {
+            // A cell left from a taller frame must leave the column: a visible empty cell still takes a row, and the
+            // column then squeezes its cells, so the thumb stops short of the bottom after the terminal shrinks.
             view.root.visible(false);
-            thumb.set_text(content(&[], p.text));
+            thumb.visible(false);
         }
     }
 

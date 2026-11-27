@@ -89,6 +89,8 @@ impl ScrollBar {
         // The gap is blank, drawn in Scouter's default foreground so the captures agree cell for cell.
         let gap = Seg::new(" ".repeat(self.gap), "#ffffff");
         for (index, cell) in cells.iter().enumerate() {
+            // Cells past `height` are left from a taller frame; shown, they would squeeze the column (`ui/tree.rs`).
+            cell.visible(index < height);
             let thumb =
                 glyphs.get(index).copied().flatten().map_or_else(|| Seg::new(" ", "#ffffff"), |g| Seg::new(g, p.muted));
             cell.set_text(content(&[gap.clone(), thumb], p.text));

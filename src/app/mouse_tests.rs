@@ -365,3 +365,26 @@ fn a_tap_on_the_find_segment_of_the_bottom_bar_opens_the_finder_at_59_columns() 
     app.click(crate::ui::bars::cells(59, 3)[0].start as u16, 23);
     assert!(model.borrow().finder.is_some(), "the Find segment presses /");
 }
+
+/// issue-00013: after the terminal gets shorter, the tree's thumb still ends on the list's last row.
+#[test]
+fn the_tree_thumb_reaches_the_bottom_after_the_terminal_shrinks() {
+    let app = TestApp::new(80, 40);
+    let root = PathBuf::from("/hogwarts");
+    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let names: Vec<String> = (0..60).map(|n| format!("owl-{n:02}.txt")).collect();
+    model.borrow_mut().browser.listed(&root, names.iter().map(|name| Entry::new(&root, name, Kind::File)).collect());
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    app.render();
+    app.resize(80, 20);
+    model.borrow_mut().browser.select(&root.join("owl-59.txt"));
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    app.render();
+    let text = app.text();
+    let rows: Vec<&str> = text.lines().collect();
+    // 20 rows: the list ends above the bottom border (row 17) and the two footer rows.
+    let last = rows[16];
+    assert!(last.contains("owl-59.txt"), "the list is at its end: {rows:#?}");
+    assert!(last.contains('▐') || last.contains('▗'), "the thumb reaches the last row: {rows:#?}");
+}

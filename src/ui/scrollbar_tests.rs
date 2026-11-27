@@ -73,3 +73,22 @@ fn the_blank_columns_before_a_thumb_are_not_the_track() {
     app.click(2, 9);
     assert_eq!(values.borrow().last().copied(), Some(18.0));
 }
+
+#[test]
+fn the_thumb_reaches_the_bottom_after_the_bar_gets_shorter() {
+    // Painted 20 rows tall first, then 10: the cells from the taller frame must not squeeze the shorter column.
+    let app = TestApp::new(4, 20);
+    let row = View::new(app.app()).row().height(20);
+    let bar = ScrollBar::new(app.app(), 0);
+    row.add(&bar.root());
+    app.app().root().add(&row);
+    bar.paint(app.app(), 60, 20, 40, true, &DARK);
+    app.render();
+    row.height(10);
+    bar.paint(app.app(), 30, 10, 20, true, &DARK);
+    app.render();
+    let text = app.text();
+    let rows: Vec<&str> = text.lines().collect();
+    assert!(rows[9].contains('▐'), "the last row holds the thumb: {rows:?}");
+    assert!(!rows[0].contains('▐'), "the thumb sits at the bottom: {rows:?}");
+}
