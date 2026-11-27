@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T12:45:00+07:00
+updated: 2026-11-27T12:20:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -917,3 +917,44 @@ Consequences:
 Alternatives considered:
 
 - Keep Scouter's focus move — rejected by the owner.
+
+### Approved deviation: rendered Markdown headings keep their `#` marker
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's preview is a `MarkdownRenderable` with no `conceal` option (`scouter:src/reader/code-view.ts:132-145`), so the widget's default hides every Markdown marker, a heading's `#` run included. A terminal cannot enlarge a heading, so the level reads from colour and weight alone, and `#`, `##`, and `###` look alike (`research/scouter-inventory.md` §7, `index.bun.js:10673`).
+
+Decision (owner, 2026-11-27, `plan-00011`): in the rendered view (`m`), each heading keeps its ATX marker (`#` to `######`, with its space), drawn in the heading's own style. The colours of the heading and the other markers stay as they are.
+
+- D1: only headings keep a marker. Emphasis, code, and link markers stay concealed.
+- D2: the marker is the ATX run for the heading's level plus one space. A setext heading (`Title` over `===` or `---`) shows the marker of its level, and its underline row is no longer drawn, so every heading reads the same way.
+- D3: the marker is written into the source before the widget reads it (the next record).
+- D4: copying from the rendered view includes the marker, because the marker is on screen.
+- D5: the source view (`m` again) is unchanged.
+
+Consequences:
+
+- (positive) The heading levels read in a terminal without a larger font.
+- (negative) Every heading row is wider by its marker. The setext underline row is gone, where the engine draws it as text today. The `?` key page is rendered Markdown, so its headings show markers too. A copy from a heading includes its marker.
+
+Alternatives considered:
+
+- `conceal(false)` on the widget — rejected: it shows every marker, `**`, backticks, and link brackets included, which D1 forbids.
+- Markers only through the inline hook — rejected: the hook cannot tell the levels apart (the next record).
+
+### Decision: heading markers are a source rewrite, not an inline hook
+
+Context: the plan asked for a check first. The inline hook (`opentui-0.9.9/src/widget/markdown.rs:213-223`, `InlineContext`) receives the block's inline text as `source`, which has no `#` run: `# Hogwarts` gives `source="Hogwarts"` (a TestApp probe, 2026-11-27, through `MarkdownView` with the dark palette). The span style does not give the level either: the app's theme sets `markup.heading.1` to `.6` to the same bold function style (`src/ui/syntax/mod.rs:97-99`), and the probe shows the same foreground and attributes for levels 1 to 6. So the hook cannot tell `##` from `###`.
+
+Decision: a pure source rewrite in the core crate (`src/reader/headings.rs`, `with_markers`), called from `MarkdownView::show` before `set_markdown`. Each ATX heading keeps its real run, which the engine conceals, and the same run is written again as HTML entities (`&#35;`) at the start of its text. A setext heading takes the same treatment, and its underline line becomes empty. Fenced code, indented code, and HTML blocks are left as they are. Every source line stays a line, so the line mapping that plan-00010 relies on holds. The entities matter: a backslash escape (`\#`) takes a different colour (`#a7c7a1` in the dark palette), while `&#35;` takes the heading's colour (the TestApp test `each_heading_level_shows_its_marker_in_the_heading_colour`).
+
+Consequences:
+
+- (positive) No engine change and no new dependency. The rewrite is pure and unit-tested (`headings_tests.rs`, 21 cases), and the TestApp test checks the colour on screen.
+- (negative) The rewrite is a line scanner that follows CommonMark's block rules only as far as it needs. Known limits, all leaving the heading unmarked rather than marking code: a multi-line setext heading, a setext heading inside a list or a quote, and a line that only opens an HTML tag (start condition 7).
+
+Alternatives considered:
+
+- The inline hook with the level from `source` or the style — rejected: neither carries the level (above).
+- Parsing with `tree-sitter-md` — rejected: it needs the `tree-sitter` crate in the core, which `rules.md` does not approve.
+- Backslash escapes (`\#\#`) — rejected: they take the escape colour, so the marker would not be in the heading's style.

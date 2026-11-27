@@ -106,6 +106,8 @@ Two complete palettes, dark and light, in the frontmatter. fmc picks one from th
 
 The terminal font is the user's. Emphasis is bold and colour; comments are italic. File icons are Nerd Font glyphs, not emoji.
 
+A heading in the rendered Markdown view keeps its marker (`# `, `## `, `### `, and so on) in the heading's own colour and weight, so the level reads without a larger font. Emphasis, code, and link markers stay hidden. Scouter hides the heading marker too; the difference is in `docs/parity.md`.
+
 ## Layout
 
 A column: a row of two panels that fills the screen, then the footer.

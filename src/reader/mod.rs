@@ -3,6 +3,7 @@
 
 pub mod binary;
 pub mod document;
+pub mod headings;
 pub mod image;
 pub mod jump;
 pub mod language;

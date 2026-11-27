@@ -5,6 +5,7 @@
 
 use std::sync::Arc;
 
+use fmc::reader::headings;
 use fmc::theme::Palette;
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
@@ -55,7 +56,7 @@ impl MarkdownView {
     }
 
     pub fn show(&self, markdown: &str) {
-        self.doc.set_markdown(markdown);
+        self.doc.set_markdown(headings::with_markers(markdown));
     }
 
     pub fn visible(&self, visible: bool) {
@@ -68,3 +69,7 @@ impl MarkdownView {
         self.doc.rect().height.max(0.0) as usize
     }
 }
+
+#[cfg(test)]
+#[path = "markdown_tests.rs"]
+mod tests;

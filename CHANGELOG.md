@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- In the rendered Markdown view each heading keeps its `#` marker (`#`, `##`, and so on) in the heading's colour, so the levels read in a terminal. A setext heading shows the marker of its level, and its underline row is no longer drawn.
 - Below 60 columns fmc is a two-page browser: the file list fills the screen, a file opens full screen, and `q` or `Esc` goes back. The panels have the same border and two-row header as the medium tier, but there is no welcome card below 60 columns, and auto-preview does not run there.
 - Below 60 columns the header shows a `‹` (a tap on it or on the title goes back), the page's title, and its tag, and the bottom bar is one row of equal words: `Find`, `Changes`, and `Keys` on the file list; `Back`, `Search`, and `Keys` on the reader. Each word runs the key it names.
 - A row in the file list, the finder, or the changes list opens or selects on release, so a swipe over a row does nothing.

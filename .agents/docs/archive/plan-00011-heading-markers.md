@@ -1,12 +1,13 @@
 ---
-status: draft
+status: done
 created: 2026-11-27T15:10:00+07:00
-updated: 2026-11-27T15:10:00+07:00
-references: ui/markdown.rs, reader/markdown.rs
+updated: 2026-11-27T12:20:00+07:00
+references: ui/markdown.rs, reader/markdown.rs, reader/headings.rs
 phases:
     - id: 1
       title: "Rendered headings keep their `#` markers"
-      status: pending
+      status: done
+      note: "D3 option 2: the inline hook cannot tell the level (its `source` has no run; levels 2 to 6 share one style), so `reader/headings.rs` rewrites the source with entities (`&#35;`, which take the heading colour; `\\#` takes the string colour). 21 core tests (`headings_tests.rs`), 3 TestApp tests (`ui/markdown_tests.rs`). Live run 2026-11-27 on README.md and DESIGN.md at 70 and 120 columns. Owner decisions recorded in architecture.md."
 ---
 
 ## Heading markers in the rendered Markdown view
