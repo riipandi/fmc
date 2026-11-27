@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A Mermaid diagram in rendered Markdown sits on a panel tone over its box, so it reads as one block. It follows the reader's width on a resize.
+
 ### Fixed
 
 - `Ctrl+F` in the file finder changes what the footer shows before a query is typed: it names `fuzzy` while fuzzy matching is on. Before, a press on an empty prompt changed nothing on screen.

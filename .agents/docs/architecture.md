@@ -891,6 +891,8 @@ Consequences:
 - (positive) Flowcharts, sequence, class, state, and gantt diagrams read in the preview without leaving fmc.
 - (negative) Every Mermaid fence in the rendered view differs from Scouter's plain text. A diagram that does not fit, or that the engine cannot draw, shows its source in a frame, with the reason (see the fallback record below). Edge labels are not muted.
 
+The owner asked on 2026-11-27 for a background on the render area, and said to drop it if it caused problems on resize or at narrow widths. It sits on the palette's `fallback-background` (`#131519` dark, `#f6f8fa` light), over the box only: the widget fills its measured rows up to the last glyph of the widest row, so the engine's trailing padding is not filled. It does not move on a resize (`ui/mermaid.rs` `paint`; `app/mermaid_tests.rs`, `a_diagram_sits_on_the_panel_tone_at_each_width_and_follows_a_resize`). Checked live at 120, 70, and 49 columns, and across a resize from 120 to 70, in dark: the fill followed the measured width each time, and a framed fallback at 49 columns carries it too. Rejected: `row-active-bg` (the active row's tone reads as a selection), and a new palette token (one fill would need its own `DESIGN.md` entry and theme checks).
+
 Alternatives considered:
 
 - Scouter's plain code block — rejected by the owner: the diagram is the feature the roadmap asked for.

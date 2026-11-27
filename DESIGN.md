@@ -184,6 +184,10 @@ In the rendered view, the same signs sit at the left edge beside each changed bl
 
 Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `SEARCH`. A pill is `accent-ink` on `accent`, bold. Hints show the key in `accent-soft` and the action in `dim`. Position reads `All`, `Top`, `Bot`, or a percentage.
 
+### Mermaid diagram
+
+A `mermaid` fence in the rendered view is drawn on `fallback-background`, over the diagram's box: the fill runs to the last glyph of the widest row, so the engine's trailing padding stays plain. Box lines take `border`, labels `text`, and a fallback's reason `muted`; a fallback's framed source sits on the same fill. Scouter draws the fence as plain text, so this is an approved deviation (`architecture.md`, "a Mermaid fence in rendered Markdown is drawn as a diagram").
+
 ### Diff file band
 
 One band per changed file on the tinted background: the marker, a fold chevron, the bold coloured letter, the bold name (`accent-soft` when active), `← old` for a rename, the dim folder, and on the right the counts and a five-cell stat bar of `▪` (green for added, red for removed, at least one cell each when both exist). Hunk header lines are not drawn.
