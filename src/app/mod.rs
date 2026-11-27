@@ -172,7 +172,7 @@ struct Model {
     auto_preview: bool,
     /// Counts the list's moves, so a preview is read only for the newest move (`app/preview.rs`).
     preview_generation: u64,
-    /// How the finder matches names: `find_mode` in `settings.json` sets the start, and `Ctrl+F` flips it for the session.
+    /// How the finder matches names: `find_mode` in `settings.json` sets the start, and `Ctrl+F` flips it for the run.
     matching: fmc::find::Matching,
     /// The rows `]` and `[` move the list by, and the lines they scroll the reader by (`settings.json`).
     sidebar_jump: u32,

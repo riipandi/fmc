@@ -170,7 +170,7 @@ pub fn indexed(m: &mut Model, session: u64, index: Index) {
     update(m);
 }
 
-/// `Ctrl+F` in the finder (plan-00006 D5): flips the name matching for the rest of the session, and runs the open query
+/// `Ctrl+F` in the finder (plan-00006 D5): flips the name matching for the rest of the run, and runs the open query
 /// again with it. Outside the finder it does nothing.
 pub fn toggle_fuzzy(m: &mut Model) {
     if m.finder.is_none() {

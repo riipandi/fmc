@@ -166,7 +166,7 @@ The owner asked on 2026-11-27 for `Open With …` on text, code, and other suppo
 
 ### RI-17 — The rest of the owner's Neovim grammar set
 
-- status: parked (unlock: a crate that loads on the locked `tree-sitter` 0.27, per language) · updated 2026-11-27
+- status: parked, after RI-18 (owner, 2026-11-27: RI-18 is the next grammar work; unlock: a crate that loads on the locked `tree-sitter` 0.27, per language) · updated 2026-11-27
 
 Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Seven have no crate that loads. Six have a crate that pins another `tree-sitter` (json5, luadoc, luap, and query pin 0.20; just and vimdoc pin 0.25), which clashes on the `links` key with 0.27. eex has no published crate. Each also needs a highlight query for fmc's capture names. Nothing is dropped from a loaded set: the phase 3 spike dropped none (`research/grammar-load-spike.md`, section 5).
 
@@ -174,8 +174,10 @@ Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture
 
 ### RI-18 — Injected highlighting for the owner's grammars
 
-- status: parked (unlock: the owner names the injections to add) · updated 2026-11-27
+- status: next (owner, 2026-11-27: RI-18 before RI-17) · updated 2026-11-27
+
+The owner set RI-18 as the next grammar work on 2026-11-27, ahead of RI-17. It improves files fmc already highlights (a Svelte `<script>` and `<style>` body, HEEx inside Elixir, JSDoc, and regex) and adds no dependency: the injection queries run on the grammars already pinned. RI-17 needs new crates, several of which pin another `tree-sitter`.
 
 The owner's grammars highlight their own tokens, but not the code they hold: heex inside elixir, jsdoc inside JavaScript, regex inside JavaScript and Python, and a Svelte `<script>` body, which the spike's sample showed plain (`research/grammar-load-spike.md`, section 3). OpenTUI takes an injection query per grammar (`Grammar::injections`, `opentui-0.9.9/src/syntax/highlight.rs:65`); the Markdown fences already use one. A fence in one of the new languages is highlighted by its name, without an injection.
 
-**Unlock:** the owner names the injection to add. **First move:** the injection query for one pair, checked against the palette on a sample.
+**Unlock:** the owner's choice of RI-18 next (2026-11-27). **First move:** the injection query for one pair, checked against the palette on a sample.
