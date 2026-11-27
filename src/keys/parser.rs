@@ -233,6 +233,9 @@ fn tree(key: Key<'_>) -> Option<Action> {
         ("a", true) => return Some(Action::NewFolder),
         ("r", false) => return Some(Action::Rename),
         ("d", true) | ("delete", _) => return Some(Action::Delete),
+        ("c", false) => return Some(Action::CopyFile),
+        ("x", false) => return Some(Action::CutFile),
+        ("v", false) => return Some(Action::PasteFile),
         _ => {}
     }
     match key.name {

@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, gutter, preview, reader};
+use super::{Model, Pending, Ui, changes, find, gutter, preview, reader, write};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -253,6 +253,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             }
         }
         Event::Signed { path, serial, result } => gutter::apply(m, path, *serial, result),
+        Event::Pasted { source, into, moved, result } => write::pasted(m, source, into, *moved, result.clone()),
     }
 }
 

@@ -1,6 +1,6 @@
-//! The file operations of the tree (plan-00012, D2 to D9): what `a`, `A`, `r`, `D`, Delete, and the context menu ask for,
-//! the name and confirm dialogs they open, and the reveal of what a write made. The I/O is `services/write.rs`; this file
-//! picks the target and says what a dialog's answer does.
+//! The file operations of the tree (plan-00012, D2 to D9): what `a`, `A`, `r`, `c`, `x`, `v`, `D`, Delete, and the context
+//! menu ask for, the name and confirm dialogs they open, the clipboard, and the reveal of what a write made. The I/O is
+//! `services/write.rs`; this file picks the target and says what a dialog's answer does.
 
 use std::ffi::OsStr;
 use std::fs;
@@ -15,8 +15,7 @@ use fmc::text::{display_label, display_text};
 use super::*;
 use crate::services::write as store;
 
-/// What the tree's keys and the context menu ask for. Copy, cut, and paste are listed in the menu for phase 4, and stay
-/// inert here.
+/// What the tree's keys and the context menu ask for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
     NewFile,
@@ -26,6 +25,14 @@ pub enum Act {
     Cut,
     Paste,
     Delete,
+}
+
+/// The entry copy or cut put on fmc's clipboard (plan-00012, D2): its path, and whether a paste moves it. The clipboard
+/// is fmc's own, not the system's.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Clip {
+    pub path: PathBuf,
+    pub cut: bool,
 }
 
 /// What the open menu or dialog is for: the act of each menu row, or the entry a dialog acts on.
@@ -49,18 +56,16 @@ pub enum Task {
     },
 }
 
-/// The menu's rows: New file and New folder always, the entry's acts when a row is selected. Copy, cut, and paste are
-/// disabled until phase 4.
-fn menu_rows(row: bool) -> Vec<(Act, &'static str, bool)> {
+/// The menu's rows: New file and New folder always, the entry's acts when a row is selected, and Paste when the
+/// clipboard holds something (its target is the selected folder, or the root).
+fn menu_rows(row: bool, pastable: bool) -> Vec<(Act, &'static str, bool)> {
     let mut rows = vec![(Act::NewFile, "New file…", true), (Act::NewFolder, "New folder…", true)];
     if row {
-        rows.extend([
-            (Act::Rename, "Rename…", true),
-            (Act::Copy, "Copy", false),
-            (Act::Cut, "Cut", false),
-            (Act::Paste, "Paste", false),
-            (Act::Delete, "Delete…", true),
-        ]);
+        rows.extend([(Act::Rename, "Rename…", true), (Act::Copy, "Copy", true), (Act::Cut, "Cut", true)]);
+    }
+    rows.push((Act::Paste, "Paste", pastable));
+    if row {
+        rows.push((Act::Delete, "Delete…", true));
     }
     rows
 }
@@ -74,7 +79,7 @@ pub fn open_menu(m: &mut Model) {
 
 /// A right-click on a row, or `Space`: the context menu at `cell`.
 pub fn open_menu_at(m: &mut Model, cell: (u16, u16)) {
-    let rows = menu_rows(m.browser.selected_entry().is_some());
+    let rows = menu_rows(m.browser.selected_entry().is_some(), m.clipboard.is_some());
     let items = rows.iter().map(|(_, label, enabled)| Item { label: (*label).into(), enabled: *enabled }).collect();
     m.overlay_at = cell;
     m.overlay = Some(Overlay::Menu(Menu::new(items)));
@@ -136,9 +141,79 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
             let task = Task::Delete { path: entry.path.clone(), next: successor(m), identity };
             ask(m, ui, task, dialog, "");
         }
-        // Phase 4: copy, cut, and paste. The menu lists them disabled until then.
-        Act::Copy | Act::Cut | Act::Paste => {}
+        Act::Copy => take(m, false),
+        Act::Cut => take(m, true),
+        Act::Paste => paste(m),
     }
+}
+
+/// `c` and `x` on the selected row, and the menu's Copy and Cut: the row goes on the clipboard, and a notice says so.
+pub fn take(m: &mut Model, cut: bool) {
+    let Some(entry) = m.browser.selected_entry() else { return };
+    let text = format!("{} {}. Paste it with v.", if cut { "Cut" } else { "Copied" }, label(&entry.path));
+    m.clipboard = Some(Clip { path: entry.path, cut });
+    m.message = Some(Message { text, error: false });
+}
+
+/// `v`, and the menu's Paste: the clipboard goes into the target folder, on a worker, one paste at a time (plan-00012,
+/// D8). A cut pasted where it lies changes nothing, and ends the cut.
+pub fn paste(m: &mut Model) {
+    let Some(clip) = m.clipboard.clone() else { return };
+    if m.pasting {
+        m.message = Some(Message { text: "Still pasting. Try again when it finishes.".into(), error: false });
+        return;
+    }
+    let root = m.browser.tree.root().to_path_buf();
+    let into = target_folder(m, m.browser.selected_entry().as_ref());
+    if clip.cut && parent_of(&clip.path, &root) == into {
+        m.clipboard = None;
+        return;
+    }
+    m.pasting = true;
+    let verb = if clip.cut { "moving" } else { "copying" };
+    m.message = Some(Message { text: format!("{verb} {}…", label(&clip.path)), error: false });
+    let (source, cut) = (clip.path, clip.cut);
+    crate::services::spawn(&m.proxy, move || {
+        let result = store::paste(&root, &source, &into, cut).map_err(|error| error.to_string());
+        Event::Pasted { source, into, moved: cut, result }
+    });
+}
+
+/// A paste's answer (`Event::Pasted`). The new entry is revealed (D9), or its error goes to the footer. The folders the
+/// paste touched are listed again; a folder that is closed stays closed.
+pub fn pasted(m: &mut Model, source: &Path, into: &Path, moved: bool, result: Result<PathBuf, String>) {
+    m.pasting = false;
+    // A cut ends with its paste, whatever the result, unless the user has cut something else meanwhile.
+    if moved && m.clipboard.as_ref().is_some_and(|clip| clip.cut && clip.path == source) {
+        m.clipboard = None;
+    }
+    if moved {
+        let root = m.browser.tree.root().to_path_buf();
+        relist_shown(m, parent_of(source, &root));
+    }
+    match result {
+        Ok(target) => {
+            m.message = None;
+            tree::relist_to(m, into.to_path_buf(), target);
+        }
+        Err(error) => {
+            refuse(m, &error);
+            relist_shown(m, into.to_path_buf());
+        }
+    }
+    tree::refresh_marks(m);
+}
+
+/// Lists a folder again if the tree shows it open: a listing of a closed folder would open it.
+fn relist_shown(m: &mut Model, folder: PathBuf) {
+    if m.browser.tree.is_expanded(&folder) {
+        tree::list(m, folder);
+    }
+}
+
+/// An entry's name as the footer shows it.
+fn label(path: &Path) -> String {
+    display_label(&path.file_name().unwrap_or(OsStr::new("")).to_string_lossy())
 }
 
 /// A menu row or a dialog button was picked, by a key or a press. The menu closes and its act starts. A dialog's Cancel

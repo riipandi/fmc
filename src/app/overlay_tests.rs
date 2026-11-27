@@ -57,8 +57,12 @@ fn the_menu_skips_the_disabled_rows_and_escape_closes_it() {
         app.press("down");
     }
     assert_eq!(selected(&model), Some(2), "Rename is the third row");
+    for _ in 0..2 {
+        app.press("down");
+    }
+    assert_eq!(selected(&model), Some(4), "Cut is the fifth row");
     app.press("down");
-    assert_eq!(selected(&model), Some(6), "Copy, Cut, and Paste are disabled and skipped");
+    assert_eq!(selected(&model), Some(6), "Paste is disabled with nothing copied, so the selection skips it");
     app.press("escape");
     assert!(!is_open(&model));
 }

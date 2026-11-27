@@ -4,7 +4,8 @@
 use std::ffi::OsStr;
 use std::fs;
 use std::os::unix::ffi::OsStrExt;
-use std::path::PathBuf;
+use std::os::unix::fs::symlink;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use fmc::explorer::{Entry, Kind};
@@ -128,6 +129,27 @@ impl Browsing {
 
     fn footer(&self) -> Option<String> {
         self.model.borrow().message.as_ref().map(|message| message.text.clone())
+    }
+
+    /// Waits until the footer shows `text`: a paste's refusal comes back from the worker.
+    fn await_footer(&self, text: &str) {
+        let shown = self.app.wait_until(Duration::from_secs(5), || self.footer().as_deref() == Some(text));
+        assert!(shown, "the footer shows {text:?}, not {:?}", self.footer());
+        paint(self.app.app(), &mut self.model.borrow_mut(), &mut self.ui.borrow_mut());
+    }
+
+    /// Waits until the tree no longer lists `name` in the root: a move's source leaves the listing.
+    fn await_unlisted(&self, name: &str) {
+        let path = self.root.join(name);
+        let gone =
+            self.app.wait_until(Duration::from_secs(5), || self.model.borrow().browser.tree.entry(&path).is_none());
+        assert!(gone, "{name} is still listed");
+        paint(self.app.app(), &mut self.model.borrow_mut(), &mut self.ui.borrow_mut());
+    }
+
+    /// The label and enabled state of the open menu's row `label`.
+    fn menu_row(&self, label: &str) -> Option<bool> {
+        self.menu()?.iter().find(|(text, _)| text == label).map(|(_, enabled)| *enabled)
     }
 }
 
@@ -357,7 +379,7 @@ fn deleting_a_folder_selects_the_row_after_the_rows_under_it() {
 }
 
 #[test]
-fn the_menu_on_a_file_row_lists_the_acts_with_copy_cut_and_paste_disabled() {
+fn the_menu_on_a_file_row_lists_the_acts_with_paste_disabled_until_a_copy() {
     let b = browsing(&["robert-langdon.md"]);
     b.app.press("space");
     let items = b.menu().expect("the menu opens");
@@ -368,8 +390,8 @@ fn the_menu_on_a_file_row_lists_the_acts_with_copy_cut_and_paste_disabled() {
             ("New file…", true),
             ("New folder…", true),
             ("Rename…", true),
-            ("Copy", false),
-            ("Cut", false),
+            ("Copy", true),
+            ("Cut", true),
             ("Paste", false),
             ("Delete…", true),
         ]
@@ -377,10 +399,18 @@ fn the_menu_on_a_file_row_lists_the_acts_with_copy_cut_and_paste_disabled() {
 }
 
 #[test]
-fn the_menu_with_no_row_lists_only_the_new_items() {
+fn the_menu_with_no_row_lists_paste_beside_the_new_items() {
     let b = browsing(&[]);
     b.app.press("space");
-    assert_eq!(b.menu(), Some(vec![("New file…".into(), true), ("New folder…".into(), true)]));
+    assert_eq!(b.menu(), Some(vec![("New file…".into(), true), ("New folder…".into(), true), ("Paste".into(), false)]));
+}
+
+#[test]
+fn the_menu_enables_paste_once_a_row_is_copied() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("c");
+    b.app.press("space");
+    assert_eq!(b.menu_row("Paste"), Some(true));
 }
 
 #[test]
@@ -425,12 +455,136 @@ fn a_right_click_on_empty_space_opens_nothing() {
 }
 
 #[test]
-fn copy_cut_and_paste_keys_do_nothing_until_phase_four() {
+fn a_click_on_the_copy_row_puts_the_row_on_the_clipboard() {
     let b = browsing(&["robert-langdon.md"]);
-    for key in ["c", "x", "v"] {
-        b.app.press(key);
+    let (x, y) = b.row(0);
+    b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
+    b.app.render();
+    b.app.click(x + 2, y + 1 + 3);
+    assert!(b.menu().is_none());
+    assert_eq!(b.model.borrow().clipboard, Some(Clip { path: b.root.join("robert-langdon.md"), cut: false }));
+}
+
+#[test]
+fn c_then_v_copies_a_file_into_the_selected_folder_and_reveals_the_copy() {
+    let b = browsing(&["hogsmeade/", "robert-langdon.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("c");
+    b.select("hogsmeade");
+    b.app.press("v");
+    b.await_selected("robert-langdon.md");
+    assert_eq!(fs::read_to_string(b.root.join("hogsmeade/robert-langdon.md")).unwrap(), "Hedwig\n");
+    assert!(b.has("robert-langdon.md"), "a copy leaves the source");
+    assert!(b.model.borrow().clipboard.is_some(), "a copy stays on the clipboard for another paste");
+    assert!(b.model.borrow().browser.tree.is_expanded(&b.root.join("hogsmeade")));
+}
+
+#[test]
+fn a_folder_with_a_link_inside_is_copied_and_the_link_stays_a_link() {
+    let b = browsing(&["hogsmeade/", "robert-langdon.md"]);
+    let hogsmeade = b.root.join("hogsmeade");
+    fs::write(hogsmeade.join("owls.txt"), "Hedwig\n").unwrap();
+    symlink("../robert-langdon.md", hogsmeade.join("letters")).unwrap();
+    b.select("hogsmeade");
+    b.app.press("c");
+    b.select("robert-langdon.md");
+    b.app.press("v");
+    b.await_selected("hogsmeade copy");
+    let copy = b.root.join("hogsmeade copy");
+    assert_eq!(fs::read_to_string(copy.join("owls.txt")).unwrap(), "Hedwig\n");
+    assert!(
+        fs::symlink_metadata(copy.join("letters")).unwrap().file_type().is_symlink(),
+        "the link is copied as a link"
+    );
+    assert_eq!(fs::read_link(copy.join("letters")).unwrap(), Path::new("../robert-langdon.md"));
+}
+
+#[test]
+fn a_paste_into_the_same_folder_takes_a_copy_name_and_then_copy_two() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("c");
+    b.app.press("v");
+    b.await_selected("robert-langdon copy.md");
+    b.app.press("v");
+    b.await_selected("robert-langdon copy 2.md");
+    assert_eq!(fs::read_to_string(b.root.join("robert-langdon.md")).unwrap(), "Hedwig\n", "the original stays");
+}
+
+#[test]
+fn x_then_v_moves_the_file_and_its_row_leaves_the_root() {
+    let b = browsing(&["hogsmeade/", "sophie-neveu.md"]);
+    b.select("sophie-neveu.md");
+    b.app.press("x");
+    b.select("hogsmeade");
+    b.app.press("v");
+    b.await_selected("sophie-neveu.md");
+    assert!(b.root.join("hogsmeade/sophie-neveu.md").is_file());
+    b.await_unlisted("sophie-neveu.md");
+    assert!(!b.has("sophie-neveu.md"));
+    assert!(b.model.borrow().clipboard.is_none(), "the cut ends with its paste");
+}
+
+#[test]
+fn a_cut_pasted_into_its_own_folder_changes_nothing_and_ends_the_cut() {
+    let b = browsing(&["robert-langdon.md"]);
+    b.app.press("x");
+    b.app.press("v");
+    assert!(b.model.borrow().clipboard.is_none(), "the cut ends");
+    assert!(!b.model.borrow().pasting, "nothing runs");
+    assert_eq!(fs::read_dir(&b.root).unwrap().count(), 1, "nothing is copied beside it");
+}
+
+#[test]
+fn a_folder_pasted_into_itself_is_refused_in_the_footer() {
+    let b = browsing(&["hogsmeade/"]);
+    b.select("hogsmeade");
+    b.app.press("c");
+    b.app.press("v");
+    b.await_footer("A folder cannot go into itself.");
+    assert_eq!(fs::read_dir(b.root.join("hogsmeade")).unwrap().count(), 0, "nothing was copied");
+    assert!(!b.model.borrow().pasting);
+}
+
+#[test]
+fn a_folder_pasted_into_its_own_descendant_is_refused_in_the_footer() {
+    let b = browsing(&["hogsmeade/"]);
+    let hogsmeade = b.root.join("hogsmeade");
+    fs::create_dir(hogsmeade.join("owls")).unwrap();
+    b.select("hogsmeade");
+    b.app.press("c");
+    {
+        let mut m = b.model.borrow_mut();
+        m.browser.listed(&hogsmeade, vec![Entry::new(&hogsmeade, "owls", Kind::Directory)]);
+        m.browser.select(&hogsmeade.join("owls"));
     }
-    assert!(b.dialog().is_none() && b.menu().is_none());
+    b.app.press("v");
+    b.await_footer("A folder cannot go into itself.");
+    assert!(!hogsmeade.join("owls/hogsmeade").exists());
+}
+
+#[test]
+fn a_paste_while_one_runs_is_refused_with_a_notice() {
+    let b = browsing(&["robert-langdon.md", "hogsmeade/"]);
+    b.select("robert-langdon.md");
+    b.app.press("c");
+    // No copy is in flight in this test, so the flag stands in for one that is.
+    b.model.borrow_mut().pasting = true;
+    b.select("hogsmeade");
+    b.app.press("v");
+    assert_eq!(b.footer().as_deref(), Some("Still pasting. Try again when it finishes."));
+    assert!(!b.root.join("hogsmeade/robert-langdon.md").exists(), "the second paste writes nothing");
+}
+
+#[test]
+fn escape_in_the_list_drops_a_cut_and_the_paste_then_does_nothing() {
+    let b = browsing(&["robert-langdon.md", "hogsmeade/"]);
+    b.select("robert-langdon.md");
+    b.app.press("x");
+    b.app.press("escape");
+    assert!(b.model.borrow().clipboard.is_none());
+    b.select("hogsmeade");
+    b.app.press("v");
+    assert!(!b.root.join("hogsmeade/robert-langdon.md").exists());
     assert!(b.has("robert-langdon.md"));
 }
 

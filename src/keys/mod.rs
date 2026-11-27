@@ -74,6 +74,12 @@ pub enum Action {
     Rename,
     /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
     Delete,
+    /// `c` on a tree row: the row goes on fmc's clipboard to copy (plan-00012, D2).
+    CopyFile,
+    /// `x` on a tree row: the row goes on the clipboard to move, and is dimmed until a paste or Esc.
+    CutFile,
+    /// `v` in the tree: the clipboard goes into the selected folder, or the folder of the selected file.
+    PasteFile,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -119,6 +125,9 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("A", "new folder"),
             ("r", "rename"),
             ("D Delete", "move to the Trash"),
+            ("c", "copy the row"),
+            ("x", "cut the row; a paste moves it"),
+            ("v", "paste into the folder, or beside the file"),
         ],
     ),
     (
@@ -155,7 +164,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Tab", "switch panes"),
             ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
-            ("Esc", "clear selection or search, or back to the file list"),
+            ("Esc", "clear selection or search, or back to the file list; in the list, drop a copy or cut"),
             ("q", "close the open document or key list; back from the changes"),
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),

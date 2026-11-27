@@ -17,8 +17,16 @@ use super::styled::{Seg, color, content};
 /// The screen row the list starts on, in every tier: the panel's top border and the two header rows.
 pub const LIST_TOP: u16 = 3;
 
-/// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`).
-pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, name_first: bool, p: &Palette) -> Vec<Seg> {
+/// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`). A cut row is
+/// muted until its paste or Esc (plan-00012, D2), even when it is selected, so the cut stays visible.
+pub fn row_segments(
+    row: &Row<'_>,
+    selected: bool,
+    ignored: bool,
+    name_first: bool,
+    cut: bool,
+    p: &Palette,
+) -> Vec<Seg> {
     if let Some((line, snippet)) = row.hit {
         return hit_segments(row.entry, line, snippet, selected, p);
     }
@@ -28,14 +36,18 @@ pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, name_first: bo
         (true, false) => "▸ ",
         _ => "  ",
     };
-    let name_fg = if selected {
+    let name_fg = if cut {
+        p.muted
+    } else if selected {
         p.accent
     } else if ignored {
         p.ignored
     } else {
         p.text
     };
-    let glyph_fg = if selected {
+    let glyph_fg = if cut {
+        p.muted
+    } else if selected {
         p.accent
     } else if ignored {
         p.ignored
@@ -260,11 +272,12 @@ impl TreeView {
         self.track.clone()
     }
 
-    /// Paints the visible rows. Before the root is listed the list is empty (no flash of a collapsed root).
-    pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path) {
+    /// Paints the visible rows; `cut` is the row on the clipboard to move, which is muted. Before the root is listed the
+    /// list is empty (no flash of a collapsed root).
+    pub fn paint(&mut self, app: &App, browser: &Browser, marks: &Marks, p: &Palette, root: &Path, cut: Option<&Path>) {
         // The finder's rows need no listed root; the tree does (Scouter draws nothing before the root lists).
         let lines = if browser.is_flat() || browser.tree.is_listed(root) {
-            self.lines(browser, marks, p, root, tier(app.size().0) != Tier::Wide)
+            self.lines(browser, marks, p, root, tier(app.size().0) != Tier::Wide, cut)
         } else {
             Vec::new()
         };
@@ -297,7 +310,15 @@ impl TreeView {
         }
     }
 
-    fn lines(&self, browser: &Browser, marks: &Marks, p: &Palette, root: &Path, narrow: bool) -> Vec<Line> {
+    fn lines(
+        &self,
+        browser: &Browser,
+        marks: &Marks,
+        p: &Palette,
+        root: &Path,
+        narrow: bool,
+        cut: Option<&Path>,
+    ) -> Vec<Line> {
         let visible = browser.visible_rows();
         let thumbs = thumb(browser.row_count(), browser.height(), browser.top(), visible.len());
         // The selection is a row, not a path: a file with several text hits has a row for each (Browser `flat_at`).
@@ -310,7 +331,14 @@ impl TreeView {
                 let selected = browser.top() + line == selected_row;
                 let key = relative(root, &row.entry.path);
                 Line {
-                    segments: row_segments(row, selected, marks.is_ignored(&key), browser.is_flat() && narrow, p),
+                    segments: row_segments(
+                        row,
+                        selected,
+                        marks.is_ignored(&key),
+                        browser.is_flat() && narrow,
+                        cut == Some(row.entry.path.as_path()),
+                        p,
+                    ),
                     selected,
                     mark: marks.mark(&key, p).map(|mark| (mark.letter, mark.color)),
                     thumb,

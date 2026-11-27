@@ -21,6 +21,9 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `A` | new folder |
 | `r` | rename |
 | `D` `Delete` | move to the Trash |
+| `c` | copy the row |
+| `x` | cut the row; a paste moves it |
+| `v` | paste into the folder, or beside the file |
 
 The file the list selects shows in the reader after a short pause, and the focus stays in the list. `p` turns that preview off or on for the session, and `auto_preview` in the settings sets the start. In the list, `[` and `]` move the selection by `sidebar_jump` rows and scroll the reader by `reader_jump` lines. On the changes screen they step through the hunks. See [Configuration](configuration.md).
 
@@ -75,7 +78,7 @@ Text search starts at two characters and lists at most 200 hits, ten from one fi
 | `Tab` | switch panes |
 | `y` | copy selection, or the current path |
 | `Ctrl+o` `Alt+i` | jump back / forward through opened places |
-| `Esc` | clear selection or search, or back to the file list |
+| `Esc` | clear selection or search, or back to the file list; in the list, drop a copy or cut |
 | `q` | close the open document or key list; back from the changes |
 | `?` | this key list; ? or Esc closes it |
 | `Ctrl+/` | show / hide the sidebar |

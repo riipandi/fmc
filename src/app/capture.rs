@@ -92,6 +92,8 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
         Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
         Action::Escape if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
+        // Esc in the list drops a copy or cut (plan-00012, D2); with nothing to drop it is the list's own Esc.
+        Action::Escape if m.focus == Focus::List && m.clipboard.is_some() && m.changes.is_none() => m.clipboard = None,
         Action::SwitchPane | Action::Escape => m.focus = Focus::List,
         Action::Resize(step) => layout::resize(&mut m, cx.app().size().0, step),
         Action::ToggleSidebar => layout::toggle_key(&mut m, cx.app().size().0),
@@ -146,6 +148,10 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         {
             write::key(&mut m, &ui.borrow(), action)
         }
+        Action::CopyFile | Action::CutFile if m.focus == Focus::List && m.changes.is_none() => {
+            write::take(&mut m, action == Action::CutFile)
+        }
+        Action::PasteFile if m.focus == Focus::List && m.changes.is_none() => write::paste(&mut m),
         Action::NextMatch | Action::PreviousMatch if m.focus == Focus::Reader => {
             search::step(&mut m, &ui.borrow(), action == Action::NextMatch)
         }

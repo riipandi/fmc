@@ -10,7 +10,7 @@ use std::process::Command;
 use tempfile::TempDir;
 
 use super::{
-    Error, copy, copy_then_remove, create_dir, create_file, free_name, move_to, move_with, rename, trash_with,
+    Error, copy, copy_then_remove, create_dir, create_file, free_name, move_to, move_with, paste, rename, trash_with,
 };
 
 /// The browsed root, with Harry Potter and Dan Brown names, and a folder outside it that a link can point at.
@@ -426,4 +426,26 @@ fn free_name_refuses_a_name_that_is_not_one_segment() {
     let root = empty_root();
     assert!(matches!(free_name(root.path(), "", false), Err(Error::BadName)));
     assert!(matches!(free_name(root.path(), "a/b", false), Err(Error::BadName)));
+}
+
+#[test]
+fn paste_names_a_copy_in_the_same_folder_before_the_extension() {
+    let f = fixture();
+    let source = f.root.join("harry-potter.md");
+    fs::write(&source, "Hedwig\n").unwrap();
+    let copied = paste(&f.root, &source, &f.root, false).unwrap();
+    assert_eq!(copied, f.root.join("harry-potter copy.md"));
+    assert_eq!(fs::read_to_string(&source).unwrap(), "Hedwig\n", "the original stays");
+}
+
+#[test]
+fn paste_moves_a_cut_entry_under_its_own_name_when_the_folder_has_no_such_name() {
+    let f = fixture();
+    let source = f.root.join("sophie-neveu.md");
+    fs::write(&source, "Teabing\n").unwrap();
+    let dest = f.root.join("Gringotts");
+    let moved = paste(&f.root, &source, &dest, true).unwrap();
+    assert_eq!(moved, dest.join("sophie-neveu.md"));
+    assert!(fs::symlink_metadata(&source).is_err(), "the source is gone");
+    assert_eq!(fs::read_to_string(&moved).unwrap(), "Teabing\n");
 }

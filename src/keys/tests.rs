@@ -191,9 +191,12 @@ fn file_keys_act_on_the_tree_only() {
     assert_eq!(last(&["r"], TREE), Step::Done(Action::Rename));
     assert_eq!(last(&["D"], TREE), Step::Done(Action::Delete));
     assert_eq!(last(&["delete"], TREE), Step::Done(Action::Delete));
-    // Copy, cut, and paste are phase 4; the reader and the changes screen keep their own keys.
+    assert_eq!(last(&["c"], TREE), Step::Done(Action::CopyFile));
+    assert_eq!(last(&["x"], TREE), Step::Done(Action::CutFile));
+    assert_eq!(last(&["v"], TREE), Step::Done(Action::PasteFile));
+    // The reader keeps its own keys: these do nothing there.
     for key in ["c", "x", "v"] {
-        assert_eq!(last(&[key], TREE), Step::Bad, "{key} waits for phase 4");
+        assert_eq!(last(&[key], READER), Step::Bad, "{key} is a tree key");
     }
     assert_eq!(last(&["a"], READER), Step::Bad);
     assert_eq!(last(&["D"], READER), Step::Bad);

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T16:24:34+07:00
-updated: 2026-11-27T17:04:00+07:00
+updated: 2026-11-27T18:30:00+07:00
 phases:
     - id: 1
       title: The write layer (no UI)
@@ -13,12 +13,12 @@ phases:
       note: Space opens the menu; the dialog is captured by FMC_OVERLAY in debug builds; items close only
     - id: 3
       title: Create, rename, and delete from keys, the menu, and right-click
-      status: committed
+      status: committed (46f13a0)
       note: keys a, A, r, D, Delete; the menu and right-click; trash refuses a non-UTF-8 name and a swapped entry; the Finder method is kept (architecture.md)
     - id: 4
       title: Copy, cut, and paste
-      status: pending
-      note: —
+      status: committed
+      note: c, x, v in the tree; the clipboard is fmc's own; paste runs on the worker (one at a time); Esc in the list drops a copy or cut (a second x was the other option); Rex: 2000 files copied in under 0.5 s, so the scroll ran but did not overlap the copy
     - id: 5
       title: Docs sync, ledger close, handover
       status: pending
