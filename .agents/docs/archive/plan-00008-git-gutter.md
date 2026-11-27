@@ -1,18 +1,21 @@
 ---
-status: draft
+status: done
 created: 2026-11-27T13:00:00+07:00
-updated: 2026-11-27T13:00:00+07:00
+updated: 2026-11-27T12:30:00+07:00
 references: services/git.rs, ui/reader.rs, settings.rs
 phases:
     - id: 1
       title: "Line signs from a zero-context patch (core, pure)"
       status: done
+      note: "`src/diff/signs.rs` and `signs_tests.rs` (9 tests), landed in 37207a1. Test samples from Harry Potter and Dan Brown. Plan-00008 D2 as written."
     - id: 2
       title: "Signs in the reader gutter, the `git_gutter` setting, refresh"
       status: done
+      note: "Landed in 1049197 with the Scouter-Base trailer. The architecture record, docs/parity.md, docs/configuration.md, README, CHANGELOG, DESIGN.md, shape.md, and rust.md moved into this commit, because rules.md requires a deviation's record and parity line in the commit that changes the behaviour. D4 is refined (the job runs on each browse tick, keyed by a showing serial), and D6 is accepted (one column). Tests: services/git_tests (6 sign cases), app/gutter_tests (7, real repositories), settings tests with a temporary XDG_CONFIG_HOME. Live: 49, 70, and 100 columns; edits, deletion, appended line, full and partial commits, an untracked file, and 80x24 outside a repository byte-identical to HEAD."
     - id: 3
       title: "Docs, live checks, close"
-      status: pending
+      status: done
+      note: "The docs listed here landed in 1049197 (see phase 2), so the rule that a deviation's record lands with its behaviour holds. This commit archives the plan and updates index.md. The owner checks are in the run report."
 ---
 
 ## Git change markers in the reader gutter
