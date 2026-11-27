@@ -1,5 +1,5 @@
-//! The settings file's values, read from its text (`architecture.md`, "a read-only settings.json").
-//! The binary reads the file and passes its text here; nothing in this module touches the disk.
+//! The settings file's values, read from its text, and the text a save writes (`architecture.md`, "fmc writes its
+//! settings.json, atomically"). The binary reads and writes the file and passes its text here; nothing here touches the disk.
 
 use serde_json::{Map, Value};
 
@@ -70,6 +70,25 @@ pub fn parse(text: &str) -> Parsed {
         find_mode: finding(&object, notices),
     };
     parsed
+}
+
+/// The file's text with `changes` set, for a save (`services::settings::save`). Keys the change does not name keep their
+/// values, but serde_json keeps no file order, so a save rewrites the keys sorted. A text that is not a JSON object is
+/// refused, so the caller leaves the file as it is.
+pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
+    let mut object = match serde_json::from_str::<Value>(text) {
+        Ok(Value::Object(object)) => object,
+        Ok(_) => return Err("settings.json must hold a JSON object; nothing was saved.".into()),
+        Err(error) => {
+            return Err(format!("settings.json is not valid JSON (line {}); nothing was saved.", error.line()));
+        }
+    };
+    for (key, value) in changes {
+        object.insert((*key).into(), value.clone());
+    }
+    let mut text = serde_json::to_string_pretty(&Value::Object(object)).map_err(|error| error.to_string())?;
+    text.push('\n');
+    Ok(text)
 }
 
 /// The `file_associations` object: each pattern's language. A bad entry is skipped with a notice that names it, so the

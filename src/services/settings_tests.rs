@@ -5,7 +5,7 @@ use fmc::reader::associations::Language;
 use fmc::settings::Settings;
 use tempfile::TempDir;
 
-use super::{load, path};
+use super::{load, path, save};
 
 #[test]
 fn the_path_is_under_xdg_config_home_when_it_is_set() {
@@ -76,4 +76,44 @@ fn file_associations_are_read_from_the_config_home() {
     let parsed = load(&file);
     assert!(parsed.notices.is_empty());
     assert_eq!(parsed.settings.file_associations.language(None, "gringotts.rs.bak"), Some(Language::Filetype("rust")));
+}
+
+#[test]
+fn save_creates_the_file_and_its_folder_and_leaves_no_temp_file() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("fmc").join("settings.json");
+    save(&file, "{\n  \"reader_jump\": 8\n}\n").unwrap();
+    assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"reader_jump\": 8\n}\n");
+    assert_eq!(fs::read_dir(file.parent().unwrap()).unwrap().count(), 1);
+}
+
+#[test]
+fn save_writes_the_link_target_and_the_link_stays() {
+    let dir = TempDir::new().unwrap();
+    let target = dir.path().join("dotfiles").join("hogwarts-settings.json");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&target, "{}\n").unwrap();
+    let link = dir.path().join("fmc").join("settings.json");
+    fs::create_dir_all(link.parent().unwrap()).unwrap();
+    std::os::unix::fs::symlink(&target, &link).unwrap();
+    save(&link, "{\"auto_preview\": false}\n").unwrap();
+    assert!(fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+    assert_eq!(fs::read_to_string(&target).unwrap(), "{\"auto_preview\": false}\n");
+    assert_eq!(fs::read_dir(target.parent().unwrap()).unwrap().count(), 1);
+}
+
+#[test]
+fn a_read_only_folder_keeps_the_original_and_writes_no_temp_file() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = TempDir::new().unwrap();
+    let folder = dir.path().join("fmc");
+    fs::create_dir_all(&folder).unwrap();
+    let file = folder.join("settings.json");
+    fs::write(&file, "{\"reader_jump\": 3}\n").unwrap();
+    fs::set_permissions(&folder, fs::Permissions::from_mode(0o555)).unwrap();
+    let result = save(&file, "{\"reader_jump\": 8}\n");
+    fs::set_permissions(&folder, fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(result.is_err());
+    assert_eq!(fs::read_to_string(&file).unwrap(), "{\"reader_jump\": 3}\n");
+    assert_eq!(fs::read_dir(&folder).unwrap().count(), 1);
 }

@@ -476,7 +476,7 @@ Alternatives considered:
 
 Context: the read-only rule (`AGENTS.md`, `rules.md`) held every write shut until the owner opened the file-manager phase. The owner approved plan-00012 on 2026-11-27, which opens it for five operations and a copy and cut, from the tree (its D2 and D3).
 
-Decision (plan-00012 D10): the read-only rule is amended, not removed. Create, rename, copy, move, and delete (to the Trash) are allowed inside the folder fmc opened, from the tree and its context menu. Any other write still needs the owner: saving a file, a write outside the browsed root, and fmc's own settings, which stay read-only (the record "a read-only `settings.json`").
+Decision (plan-00012 D10): the read-only rule is amended, not removed. Create, rename, copy, move, and delete (to the Trash) are allowed inside the folder fmc opened, from the tree and its context menu. Any other write still needs the owner: saving a file, a write outside the browsed root, and fmc's own `settings.json`, which only the settings save path writes (plan-00015 D1; "fmc writes its settings.json, atomically").
 
 Consequences:
 
@@ -766,9 +766,34 @@ Consequences:
 
 ### Decision: a read-only `settings.json` with its keys
 
+Superseded in part by "fmc writes its settings.json, atomically" (plan-00015, D1): the read, the keys, and the notices below stand; the "never writes the file" part does not.
+
 Context: auto-preview and the `[`/`]` steps must be configurable (owner, 2026-11-27); RI-9 planned `~/.config/fmc/settings.json`.
 
 Decision: fmc reads `~/.config/fmc/settings.json` (under `$XDG_CONFIG_HOME/fmc/` when set) once at start. Keys: `auto_preview` (bool, default `true`), `sidebar_jump` (positive integer, default 2), `reader_jump` (positive integer, default 5). A missing file means the defaults. A file that fails to parse, or a key with a wrong type or a value below 1, is not applied: fmc keeps the defaults for the bad keys and shows a notice once. Unknown keys are ignored. fmc never writes the file in this step; saving UI state and the theme override stay in RI-9. Crate: `serde_json` only (the parse reads a `Value`; `serde` derive, also approved, is not needed). Approved by the owner on 2026-11-27.
+
+### fmc writes its settings.json, atomically, and never over text it cannot read
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Scouter has no configuration file (`scouter:docs/decision/0001-read-only-and-minimal.md:7`), so this is a post-parity deviation, approved by the owner on 2026-11-27 (plan-00015, D1 (a)). RI-9 asks for saved settings, and the Settings page (plan-00015 phase 3) edits them; the read-only rule for fmc's own settings (the record above) is amended to allow that one file.
+
+Context: a save must never lose the file the owner keeps. A hand-edited file may hold keys fmc does not know, a dotfile manager may link it, and a crash can happen mid-write. `serde_json` keeps no file order (no `preserve_order`, `Cargo.toml`).
+
+Decision: the only write to fmc's own config is `services/settings.rs` `save`, and the text it writes is `settings::merged` over the file as it is now (A2). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
+
+Consequences:
+
+- (positive) A save never truncates the file before the new bytes exist, and never replaces a file with an unreadable one; a hand edit made after start is kept, since the save re-reads the file.
+- (positive) The write path is a plain function with tests in temporary folders (`services/settings_tests.rs`: a missing file, a link, a read-only folder); no test touches `~/.config/fmc`.
+- (negative) A save drops the file's key order and any formatting it had; a commented file is refused by the parser, so comments cannot be lost to a save.
+- (negative) A dangling link is an error, not a new file (`fs::canonicalize` on the link fails).
+
+Alternatives considered:
+
+- `fs::write` — rejected: it truncates the file before the new bytes exist, so a crash loses it.
+- `tempfile::persist` — rejected: `tempfile` is a dev dependency (`Cargo.toml`), and production code would need the owner's approval (plan-00015, D15).
+- Writing the whole in-memory `Settings` — rejected: it drops unknown keys and the hand edits made after start.
+- Enabling `preserve_order` for the key order — rejected: a new feature on a pinned dependency, for a cosmetic gain.
+- Writing the whole config folder, so the page could also write theme and keymap files — rejected: the owner chose D1 (a); a file the owner did not name would be written.
 
 ### Approved deviation: `:q` quits, as in Neovim
 

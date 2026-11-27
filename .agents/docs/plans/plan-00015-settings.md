@@ -1,13 +1,13 @@
 ---
-status: approved
+status: in-progress
 created: 2026-11-27T20:05:31+07:00
 updated: 2026-11-27T20:05:31+07:00
 references: roadmap-00001-post-parity.md (RI-9, RI-10, RI-13), architecture.md ("a read-only settings.json with its keys", "Keys are dispatched from one key table", "The context menu and the dialog are fmc views", plan-00012 D10), rules.md ("Writes", "Dependencies", "Licenses"), plan-00012-write-operations.md, plan-00014-multi-select.md
 phases:
     - id: 1
       title: The settings write path (a library function with no caller)
-      status: pending
-      note: —
+      status: committed
+      note: "hash to be added by the phase 2 commit; no caller until phase 3"
     - id: 2
       title: Theme mode and the theme catalog
       status: pending

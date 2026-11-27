@@ -1,3 +1,5 @@
+use serde_json::json;
+
 use super::*;
 use crate::find::Matching;
 use crate::reader::associations::Language;
@@ -123,4 +125,22 @@ fn a_file_associations_value_that_is_not_an_object_sets_nothing() {
     assert_eq!(parsed.settings, Settings::default());
     assert_eq!(parsed.notices.len(), 1);
     assert!(parsed.notices[0].contains("file_associations must be an object"));
+}
+
+#[test]
+fn a_save_refuses_text_that_is_not_an_object() {
+    let change = [("auto_preview", json!(false))];
+    assert!(merged("{not json", &change).unwrap_err().starts_with("settings.json is not valid JSON (line 1)"));
+    assert!(merged("", &change).unwrap_err().contains("not valid JSON"));
+    assert!(merged("[true]", &change).unwrap_err().starts_with("settings.json must hold a JSON object"));
+}
+
+#[test]
+fn a_save_sets_its_keys_and_keeps_the_others_sorted_with_a_final_newline() {
+    let text = r#"{"zeta": 1, "reader_jump": 3, "hogwarts": {"house": "Gryffindor"}}"#;
+    let changes = [("auto_preview", json!(false)), ("reader_jump", json!(8))];
+    assert_eq!(
+        merged(text, &changes).unwrap(),
+        "{\n  \"auto_preview\": false,\n  \"hogwarts\": {\n    \"house\": \"Gryffindor\"\n  },\n  \"reader_jump\": 8,\n  \"zeta\": 1\n}\n"
+    );
 }
