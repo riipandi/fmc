@@ -46,14 +46,14 @@ use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
 use crate::ui::sidebar::Mark;
 use crate::ui::styled::color;
-use crate::ui::tree::{TreeView, line_at, list_top};
+use crate::ui::tree::{LIST_TOP, TreeView, line_at};
 use crate::ui::viewer::Viewer;
 use crate::ui::{syntax, welcome};
 
-/// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2). The compact tier has
-/// no borders and a one-row header (plan-00005, record 5).
+/// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2). Compact has a one-row
+/// footer, the bottom bar, and the same borders and header (plan-00007, D1 and D2).
 const LIST_CHROME_ROWS: usize = 6;
-const COMPACT_CHROME_ROWS: usize = 2;
+const COMPACT_CHROME_ROWS: usize = 5;
 
 struct Ui {
     browser_panel: View,
@@ -583,7 +583,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         }
     };
     // The finder's bar takes the header's place while it is open (Scouter `updateSidebarHeader`).
-    sidebar.lead = pages::back_label(m).or_else(|| layout::list_chevron(m, columns));
+    sidebar.lead = pages::back_lead(m).or_else(|| layout::list_chevron(m, columns));
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
     let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
@@ -621,7 +621,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         badges,
         focused: m.focus == Focus::Reader,
         notice: m.notice.clone(),
-        lead: pages::back_label(m).or_else(|| layout::reader_chevron(m, columns)),
+        lead: pages::back_lead(m).or_else(|| layout::reader_chevron(m, columns)),
     };
     ui.viewer_header.paint(&viewer, p);
     // The preview takes the reader's place, and hides the welcome (Scouter `previewHit`).

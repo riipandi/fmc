@@ -14,13 +14,8 @@ use opentui::prelude::*;
 use super::scrollbar;
 use super::styled::{Seg, color, content};
 
-/// Screen rows above the list in the medium and wide tiers: the panel's top border and the two header rows.
+/// The screen row the list starts on, in every tier: the panel's top border and the two header rows.
 pub const LIST_TOP: u16 = 3;
-
-/// The screen row the list starts on: the compact tier has no border and a one-row header (plan-00005, record 5).
-pub fn list_top(compact: bool) -> u16 {
-    if compact { 1 } else { LIST_TOP }
-}
 
 /// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`).
 pub fn row_segments(row: &Row<'_>, selected: bool, ignored: bool, name_first: bool, p: &Palette) -> Vec<Seg> {

@@ -116,29 +116,27 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     ui.viewer_panel.visible(!compact || !visible);
     ui.handle.visible(visible && !compact);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
-    // Compact draws no panel border and one-row headers (architecture.md, record 5).
-    let sides = if compact { Sides::NONE } else { Sides::ALL };
-    ui.browser_panel.border_sides(sides);
-    ui.viewer_panel.border_sides(sides);
-    ui.browser_header.compact(compact);
-    ui.viewer_header.compact(compact);
-    ui.find.compact(compact);
     // The marks are drawn at 80 columns and wider only; below that the header boxes are the touch targets.
     ui.mark.root.visible(tier(columns) == Tier::Wide && can_hide(m, columns));
     ui.mark.paint(visible, if visible { width.saturating_sub(2) } else { 0 }, p);
     width
 }
 
-/// A press on a medium chevron, or on the title beside it, shows or hides the list. Without a chevron the press is left
-/// alone, so the header's pane still takes the focus.
-fn chevron_press(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
+/// A press on a header's lead or title. In compact it goes Back, and the whole title box is the target; in medium it
+/// shows or hides the list, when a chevron is drawn. Without either, the press is left alone, so the header's pane still
+/// takes the focus.
+fn header_press(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let mut m = model.borrow_mut();
     let columns = cx.app().size().0;
-    if list_chevron(&m, columns).is_none() && reader_chevron(&m, columns).is_none() {
+    if pages::back_lead(&m).is_some() {
+        cx.stop_propagation();
+        pages::back(&mut m, &ui.borrow());
+    } else if list_chevron(&m, columns).is_some() || reader_chevron(&m, columns).is_some() {
+        cx.stop_propagation();
+        toggle_key(&mut m, columns);
+    } else {
         return;
     }
-    cx.stop_propagation();
-    toggle_key(&mut m, columns);
     paint(cx.app(), &mut m, &mut ui.borrow_mut());
 }
 
@@ -159,35 +157,22 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
-    // The lead text of each header is a button: the compact back text is Back, as `q` is (plan-00005, record 6), and a
-    // medium chevron shows or hides the list (record 10). The press stops at the text, so the header's own press does
-    // not act on it too.
+    // The lead and the title of each header run one press: in compact it is Back, as `q` is (plan-00005, record 6), and in
+    // medium the chevron shows or hides the list (record 10). The press stops at the header, so the pane's own press does
+    // not take the focus back.
     {
         let u = ui.borrow();
         for header in [&u.browser_header, &u.viewer_header] {
-            header.on_lead_press({
+            let press = {
                 let (model, ui) = (model.clone(), ui.clone());
-                move |cx, event| {
-                    if event.kind != MouseEventKind::Down(MouseButton::Left) {
-                        return;
-                    }
-                    if pages::back_label(&model.borrow()).is_none() {
-                        return chevron_press(cx, &model, &ui);
-                    }
-                    cx.stop_propagation();
-                    let mut m = model.borrow_mut();
-                    pages::back(&mut m, &ui.borrow());
-                    paint(cx.app(), &mut m, &mut ui.borrow_mut());
-                }
-            });
-            header.on_title_press({
-                let (model, ui) = (model.clone(), ui.clone());
-                move |cx, event| {
+                move |cx: &mut Cx<'_>, event: &MouseEvent| {
                     if event.kind == MouseEventKind::Down(MouseButton::Left) {
-                        chevron_press(cx, &model, &ui);
+                        header_press(cx, &model, &ui);
                     }
                 }
-            });
+            };
+            header.on_lead_press(press.clone());
+            header.on_title_press(press);
         }
     }
 

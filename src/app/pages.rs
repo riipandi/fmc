@@ -6,7 +6,6 @@ use fmc::keys::Focus;
 use fmc::layout::{Page, Tier, tier};
 
 use super::{Model, Ui, changes, find, reader};
-use crate::ui::bars;
 
 impl Model {
     /// Whether the terminal is in the compact tier, where the page stack draws the screen.
@@ -28,9 +27,10 @@ pub fn sync(m: &mut Model) {
     }
 }
 
-/// The compact top bar's back text while a page is open over Files: it names the page Back returns to.
-pub fn back_label(m: &Model) -> Option<String> {
-    (m.compact() && m.pages.top() != Page::Files).then(|| bars::back_text(m.pages.under()))
+/// The compact header's lead while a page is open over Files: a `‹` that Back runs (plan-00005, record 6; the page name
+/// is dropped so the path has the columns, and the bottom bar still names Back).
+pub fn back_lead(m: &Model) -> Option<String> {
+    (m.compact() && m.pages.top() != Page::Files).then(|| "‹".into())
 }
 
 /// Back (compact): closes the top page the way its own key does, so `q` and `Esc` go back a page.

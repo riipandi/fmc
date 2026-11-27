@@ -231,12 +231,12 @@ fn a_tap_on_a_medium_chevron_its_gap_or_its_title_toggles_the_list() {
 }
 
 #[test]
-fn a_compact_title_tap_does_not_go_back_a_page() {
+fn a_compact_title_tap_goes_back_a_page_as_the_chevron_does() {
     let (app, model, ui) = panes(49);
     open_document(&app, &model, &ui);
     assert_eq!(model.borrow().pages.top(), Page::Keys);
     app.click(8, 1);
-    assert_eq!(model.borrow().pages.top(), Page::Keys, "only the back text goes back");
+    assert_eq!(model.borrow().pages.top(), Page::Files, "the whole title box is the back target, as the chevron is");
 }
 
 #[test]

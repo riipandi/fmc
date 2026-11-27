@@ -102,12 +102,6 @@ fn a_prompt_bar_cancels_with_esc_in_its_first_cell_and_shows_the_prompt_after_it
 }
 
 #[test]
-fn back_text_names_the_page_it_returns_to() {
-    assert_eq!(back_text(Page::Files), "‹ Files");
-    assert_eq!(back_text(Page::Changes), "‹ Changes");
-}
-
-#[test]
 fn the_segment_labels_are_centred_in_their_cells() {
     let p = palette(Mode::Dark);
     let (drawn, _) = render(&page_segments(Page::Files, false, true, false), 40, p);

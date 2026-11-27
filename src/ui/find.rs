@@ -36,12 +36,6 @@ impl FindBar {
         Self { root, text }
     }
 
-    /// The compact tier's bar is one row with no rule under it, as the pane headers are (plan-00005, record 5).
-    pub fn compact(&self, compact: bool) {
-        self.root.height(if compact { 1 } else { 2 });
-        self.root.border_sides(if compact { Sides::NONE } else { Sides::BOTTOM });
-    }
-
     /// Shows the bar with `segments`, or hides it when the finder is closed.
     pub fn paint(&self, segments: Option<Vec<Seg>>, p: &Palette) {
         match segments {

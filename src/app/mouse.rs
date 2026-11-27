@@ -19,7 +19,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                 MouseEventKind::Down(MouseButton::Left) => {
                     let acts = press_acts(&m, cx.app().size().0);
                     m.focus = Focus::List;
-                    pressed = line_at(event.y, list_top(m.compact()), m.browser.height())
+                    pressed = line_at(event.y, LIST_TOP, m.browser.height())
                         .and_then(|line| m.browser.row_at(line))
                         .filter(|_| acts);
                 }
@@ -53,7 +53,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     // focus handler is further up the path).
                     let acts = press_acts(&m, cx.app().size().0);
                     m.focus = Focus::List;
-                    let line = line_at(event.y, list_top(m.compact()), m.change_list.height());
+                    let line = line_at(event.y, LIST_TOP, m.change_list.height());
                     pressed = line.filter(|_| acts).and_then(|line| m.change_list.row_at(line));
                     cx.stop_propagation();
                 }

@@ -1,12 +1,13 @@
 ---
-status: draft
+status: in-progress
 created: 2026-11-27T12:30:00+07:00
-updated: 2026-11-27T12:30:00+07:00
+updated: 2026-11-27T11:47:21+07:00
 references: archive/plan-00005-layout-tiers.md, architecture.md ("Three layout tiers", record 5)
 phases:
     - id: 1
       title: "Compact pages get the panel border and the two-row header"
-      status: pending
+      status: done
+      note: "`Sides::ALL` and the two-row header in every tier; `Header::compact` and `Find::compact` removed. The compact back chevron is `‹` (`pages::back_lead`), and a press on the lead or the title goes Back (`layout.rs` `header_press`); `back_text`, `page_name`, and `list_top` removed. Compact chrome is 5 rows. Captures at 60 and 80 columns are byte-identical to HEAD (10 steps each); 40 and 49 change. Live at 40 and 59 columns: Files, reader, `‹` back, Find, Changes, diff header fold, Keys, bottom bar taps, and the first and last rows of each list. TestApp row tests at 40 and 59 columns. Agent decisions in architecture.md (plan-00007 list, to be written in phase 2)."
     - id: 2
       title: "Docs, records, live checks, close"
       status: pending

@@ -66,7 +66,8 @@ fn the_compact_screen_starts_on_files_with_the_list_full_width() {
     assert_eq!(top(&model), Page::Files);
     assert_eq!(model.borrow().focus, Focus::List);
     assert_eq!(layout::width(&model.borrow(), 40), 40, "the list takes the whole screen");
-    assert!(!app.render().row(0).starts_with('╭'), "no panel border in compact");
+    assert!(app.render().row(0).starts_with('╭'), "the panel border in compact, as in medium");
+    assert!(!app.render().row(1).contains('‹'), "no back chevron on Files");
     assert!(!screen(&app).contains("Select a file"), "the welcome screen is not drawn in compact");
 }
 
@@ -97,7 +98,7 @@ fn escape_pops_the_reader_as_back_does() {
 #[test]
 fn a_tap_on_a_file_opens_it_in_compact() {
     let (app, model, _) = compact();
-    let row = crate::ui::tree::list_top(true) + 1;
+    let row = crate::ui::tree::LIST_TOP + 1;
     app.click(3, row);
     assert!(model.borrow().loading, "a tap on a file starts opening it, as Enter does");
 }
@@ -185,10 +186,12 @@ fn the_files_page_shows_find_changes_and_keys_in_the_bottom_bar() {
 }
 
 #[test]
-fn the_reader_page_names_the_page_back_in_the_top_bar() {
+fn the_reader_page_shows_a_lone_back_chevron_in_its_header() {
     let (app, model, ui) = compact();
     open_hedwig(&app, &model, &ui);
-    assert!(app.render().row(0).contains("‹ Files"), "{:?}", app.render().row(0));
+    let header = app.render().row(1);
+    assert!(header.contains("‹  hedwig.txt"), "{header:?}");
+    assert!(!header.contains("Files"), "the page name is dropped: {header:?}");
 }
 
 #[test]
@@ -201,10 +204,10 @@ fn a_tap_on_the_find_segment_opens_the_finder() {
 }
 
 #[test]
-fn a_tap_on_the_back_text_pops_the_reader() {
+fn a_tap_on_the_back_chevron_pops_the_reader() {
     let (app, model, ui) = compact();
     open_hedwig(&app, &model, &ui);
-    app.click(2, 0);
+    app.click(2, 1);
     repaint(&app, &model, &ui);
     assert_eq!(top(&model), Page::Files);
     assert_eq!(selected(&model), Path::new("/hogwarts/hedwig.txt"), "the selection stays");

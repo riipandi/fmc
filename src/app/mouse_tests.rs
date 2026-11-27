@@ -6,7 +6,7 @@ use opentui::testing::TestApp;
 
 use super::mouse::Click;
 use super::*;
-use crate::ui::tree::{LIST_TOP, list_top};
+use crate::ui::tree::LIST_TOP;
 
 const DOWN: MouseEventKind = MouseEventKind::Down(MouseButton::Left);
 const DRAG: MouseEventKind = MouseEventKind::Drag(MouseButton::Left);
@@ -137,8 +137,8 @@ fn phone() -> (TestApp, Rc<RefCell<Model>>) {
 fn a_logged_tap_acts_on_the_row_it_lands_on() {
     let (app, model) = phone();
     app.feed(TAP.as_bytes());
-    // Row 18 on the screen is list line 16 (the list starts on row 1), and nothing has scrolled.
-    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-16.txt"));
+    // The logged row 18 is SGR's 1-based row, row 17 on the screen: list line 14, as the list starts on row 3.
+    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-14.txt"));
     assert!(model.borrow().loading, "compact: a tap on a file opens it");
 }
 
@@ -157,7 +157,7 @@ fn a_tap_after_a_logged_swipe_acts_on_the_row_under_it_once_scrolled() {
     let (app, model) = phone();
     app.feed(SWIPE_DOWN.as_bytes());
     app.feed(TAP.as_bytes());
-    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-23.txt"), "list line 16 after seven rows of scroll");
+    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-21.txt"), "list line 14 after seven rows of scroll");
 }
 
 #[test]
@@ -176,23 +176,28 @@ fn a_first_tap_on_a_file_opens_it_in_compact_with_the_reader_focused() {
     let (app, model) = phone();
     model.borrow_mut().focus = Focus::Reader;
     app.feed(TAP.as_bytes());
-    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-16.txt"));
+    assert_eq!(selected(&model), Path::new("/hogwarts/hogwarts-14.txt"));
     assert!(model.borrow().loading, "compact: the first tap opens the file");
 }
 
 /// A git repository with two tracked files, both changed, on the changes screen at `columns` wide, with the mouse wired.
 fn changes_at(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>, tempfile::TempDir) {
+    changes_of(columns, &["hedwig.txt".into(), "owls.txt".into()])
+}
+
+/// A git repository with the named files tracked and each one changed, on the changes screen at `columns` wide.
+fn changes_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>, tempfile::TempDir) {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     git(root, &["init", "-q"]);
     git(root, &["config", "user.email", "dumbledore@hogwarts.test"]);
     git(root, &["config", "user.name", "Albus Dumbledore"]);
-    for name in ["hedwig.txt", "owls.txt"] {
+    for name in names {
         fs::write(root.join(name), "Hogwarts\n").unwrap();
     }
     git(root, &["add", "."]);
     git(root, &["commit", "-q", "-m", "Hogwarts"]);
-    for name in ["hedwig.txt", "owls.txt"] {
+    for name in names {
         fs::write(root.join(name), "Hogwarts, changed\n").unwrap();
     }
     let app = TestApp::new(columns, 24);
@@ -229,7 +234,7 @@ fn a_first_tap_on_a_change_acts_below_80_columns_with_the_reader_focused() {
         }
         let before = selected_change(&model);
         model.borrow_mut().focus = Focus::Reader;
-        let row = list_top(model.borrow().compact()) + 1;
+        let row = LIST_TOP + 1;
         app.click(3, row);
         assert_ne!(selected_change(&model), before, "{columns}: the first tap selects the change");
         assert_eq!(model.borrow().focus, Focus::List, "{columns}: and the list has the focus");
@@ -246,4 +251,117 @@ fn at_80_columns_the_first_tap_on_a_change_only_focuses_the_list() {
     assert_eq!(model.borrow().focus, Focus::List);
     app.click(3, LIST_TOP + 1);
     assert_ne!(selected_change(&model), before, "the next click selects the row");
+}
+
+/// Thirty files, so every compact list runs past its rows on a 24-row screen.
+fn many() -> Vec<String> {
+    (0..30).map(|i| format!("hogwarts-{i:02}.txt")).collect()
+}
+
+/// The last list row of a compact screen 24 rows tall: row 2 is the header's rule, row 22 the bottom border, row 23 the
+/// bottom bar.
+const LAST_ROW: u16 = 21;
+
+/// The name in `names` that is drawn on the screen's `row`, if one is.
+fn name_on(app: &TestApp, row: u16, names: &[String]) -> Option<String> {
+    let line = app.render().row(u32::from(row));
+    names.iter().find(|name| line.contains(name.as_str())).cloned()
+}
+
+/// The files `names` listed under `/hogwarts` on a 24-row screen `columns` wide, the first selected, with the mouse wired.
+fn tree_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>) {
+    let app = TestApp::new(columns, 24);
+    let root = PathBuf::from("/hogwarts");
+    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    {
+        let mut m = model.borrow_mut();
+        m.browser.listed(&root, names.iter().map(|name| Entry::new(&root, name, Kind::File)).collect());
+        m.browser.select(&root.join(&names[0]));
+    }
+    wire_mouse(&model, &ui);
+    paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+    app.render();
+    (app, model)
+}
+
+#[test]
+fn the_first_and_last_tree_rows_open_their_file_in_compact() {
+    let names = many();
+    for columns in [40, 59] {
+        for row in [LIST_TOP, LAST_ROW] {
+            let (app, model) = tree_of(columns, &names);
+            let border = app.render().row(u32::from(LAST_ROW) + 1);
+            assert!(border.starts_with('╰'), "{columns}: the bottom border is below the list: {border:?}");
+            let drawn = name_on(&app, row, &names).unwrap_or_else(|| panic!("{columns}: no file on row {row}"));
+            app.click(4, row);
+            assert!(
+                selected(&model).ends_with(&drawn),
+                "{columns}, row {row}: the tap opens {drawn}, which is drawn there"
+            );
+            assert!(model.borrow().loading, "{columns}, row {row}: a tap on a file opens it");
+        }
+    }
+}
+
+#[test]
+fn the_first_and_last_finder_rows_open_their_file_in_compact() {
+    let names = many();
+    for columns in [40, 59] {
+        for row in [LIST_TOP, LAST_ROW] {
+            let dir = tempfile::tempdir().unwrap();
+            for name in &names {
+                fs::write(dir.path().join(name), "Hogwarts\n").unwrap();
+            }
+            let app = TestApp::new(columns, 24);
+            let model = Rc::new(RefCell::new(new_model(app.app(), dir.path(), dir.path().to_path_buf(), None)));
+            let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+            crate::app::capture::wire(app.app(), &model, &ui);
+            wire_mouse(&model, &ui);
+            app.press("/");
+            {
+                // The index is walked on a worker in the app; here the walk runs at once and its answer is applied.
+                let mut m = model.borrow_mut();
+                let index = crate::services::find::index(dir.path(), |_| false, fmc::find::MAX_INDEXED);
+                let session = m.find_session;
+                find::indexed(&mut m, session, index);
+            }
+            app.type_text("txt");
+            paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
+            app.render();
+            let drawn = name_on(&app, row, &names).unwrap_or_else(|| panic!("{columns}: no match on row {row}"));
+            app.click(4, row);
+            // The folder is not listed here, so the pick waits on its reveal: the pending open names the row's file.
+            let pending = model.borrow().pending.as_ref().map(|pending| (pending.target.clone(), pending.open));
+            assert_eq!(
+                pending.map(|(target, open)| (target.ends_with(&drawn), open)),
+                Some((true, true)),
+                "{columns}, row {row}: the tap opens {drawn}, drawn there"
+            );
+            assert!(model.borrow().finder.is_none(), "{columns}, row {row}: picking closes the finder");
+        }
+    }
+}
+
+#[test]
+fn the_first_and_last_change_rows_open_their_change_in_compact() {
+    let names = many();
+    for columns in [40, 59] {
+        for row in [LIST_TOP, LAST_ROW] {
+            let (app, model, _ui, _dir) = changes_of(columns, &names);
+            let drawn = name_on(&app, row, &names).unwrap_or_else(|| panic!("{columns}: no change on row {row}"));
+            app.click(4, row);
+            assert!(
+                selected_change(&model).is_some_and(|path| path.ends_with(drawn.as_str())),
+                "{columns}, row {row}: the tap selects {drawn}, which is drawn there"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_tap_on_the_find_segment_of_the_bottom_bar_opens_the_finder_at_59_columns() {
+    let (app, model) = tree_of(59, &many());
+    app.click(crate::ui::bars::cells(59, 3)[0].start as u16, 23);
+    assert!(model.borrow().finder.is_some(), "the Find segment presses /");
 }

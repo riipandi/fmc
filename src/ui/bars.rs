@@ -1,5 +1,5 @@
-//! The compact tier's bars (plan-00005, D3): the bottom bar's equal segments and the top bar's back text. A segment names
-//! the key its tap presses, so a tap runs the same action as the key (plan-00004, D2; `app/keys.rs` `hint_presses`).
+//! The compact tier's bottom bar (plan-00005, D3): equal segments, each naming the key its tap presses, so a tap runs the
+//! same action as the key (plan-00004, D2; `app/keys.rs` `hint_presses`).
 
 use std::ops::Range;
 
@@ -86,22 +86,6 @@ pub fn prompt(text: &[Seg], columns: usize, p: &Palette) -> (Vec<Seg>, Vec<(Rang
         vec![Seg::new(centred("Cancel", cancel.len()), p.text), Seg::new(SEPARATOR, p.muted), Seg::plain(" ")];
     drawn.extend(text.iter().cloned());
     (drawn, vec![(cancel, "Esc")])
-}
-
-/// A page's name, as the back text and the top bar name it.
-pub fn page_name(page: Page) -> &'static str {
-    match page {
-        Page::Files => "Files",
-        Page::Reader => "Reader",
-        Page::Changes => "Changes",
-        Page::Keys => "Keys",
-        Page::Find => "Find",
-    }
-}
-
-/// The top bar's back text: the page Back returns to, as `‹ Files` (architecture.md, record 6).
-pub fn back_text(to: Page) -> String {
-    format!("‹ {}", page_name(to))
 }
 
 #[cfg(test)]

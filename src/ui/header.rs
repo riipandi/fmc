@@ -1,6 +1,6 @@
 //! A pane header (Scouter `src/ui/header.ts`): the title (with a dim parent folder) and badges, or an error notice in
-//! place of the badges, over a hairline. A lead text sits left of the title: the compact tier's back text, or a medium
-//! tier chevron that shows or hides the list (plan-00005, D3 and record 10).
+//! place of the badges, over a hairline. A lead chevron sits left of the title: `‹` is Back in the compact tier, and in the
+//! medium tier `‹` hides the list and `›` shows it (plan-00005, D3 and records 6 and 10).
 
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -32,7 +32,7 @@ pub struct HeaderState {
     pub badges: Vec<Badge>,
     pub focused: bool,
     pub notice: Option<String>,
-    /// The text left of the title: `‹ Files` in compact, or a medium chevron (`‹` hides the list, `›` shows it).
+    /// The chevron left of the title: `‹` goes Back in compact; in medium `‹` hides the list and `›` shows it.
     pub lead: Option<String>,
 }
 
@@ -90,7 +90,7 @@ impl PaneHeader {
         Self { root, lead, title, badges }
     }
 
-    /// Runs `handler` on a press on the lead text: the compact back text, or a medium chevron.
+    /// Runs `handler` on a press on the lead chevron.
     pub fn on_lead_press(&self, handler: impl FnMut(&mut Cx<'_>, &MouseEvent) + 'static) {
         self.lead.on_mouse(handler);
     }
@@ -101,18 +101,11 @@ impl PaneHeader {
         self.title.on_mouse(handler);
     }
 
-    /// The compact tier's header is one row with no rule under it (plan-00005, architecture.md record 5).
-    pub fn compact(&self, compact: bool) {
-        self.root.height(if compact { 1 } else { 2 });
-        self.root.border_sides(if compact { Sides::NONE } else { Sides::BOTTOM });
-    }
-
     pub fn paint(&self, state: &HeaderState, p: &Palette) {
         self.root.border_color(color(p.border));
         self.lead.visible(state.lead.is_some());
         if let Some(lead) = &state.lead {
-            // Plain accent text with two columns after it: a filled box read as a glitch beside the title (record 6), and
-            // one column ran the text into the title.
+            // The chevron is accent text with two columns after it: one column ran it into the title (plan-00005, D3).
             self.lead.set_text(content(&[Seg::new(format!("{lead}  "), p.accent)], p.text));
         }
         self.title.set_text(content(&state.title_segments(p), p.text));
