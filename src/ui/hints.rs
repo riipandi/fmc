@@ -9,6 +9,7 @@ pub const HINT_GAP: &str = "   ";
 pub enum Mode {
     Browse,
     Diff,
+    Settings,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -42,6 +43,7 @@ pub fn pill_label(mode: Mode, pane: Pane) -> &'static str {
         (Mode::Browse, Pane::Reader) => "READER",
         (Mode::Diff, Pane::Files) => "CHANGES",
         (Mode::Diff, Pane::Reader) => "DIFF",
+        (Mode::Settings, _) => "SETTINGS",
     }
 }
 
@@ -77,6 +79,9 @@ fn switch_hint(shown: Shown) -> Hint {
 }
 
 pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Shown) -> Vec<Hint> {
+    if mode == Mode::Settings {
+        return vec![("j k", "move"), ("Enter", "change"), ("Esc q", "close"), ("^q", "quit")];
+    }
     let pan: &[Hint] = if wrap { &[] } else { &[("h l", "pan")] };
     if mode == Mode::Diff {
         let other = ("a", if all_files { "one file" } else { "all files" });

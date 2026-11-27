@@ -105,8 +105,11 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 | `?` | this key list; ? or Esc closes it |
 | `Ctrl+/` | show / hide the sidebar |
 | `Ctrl+.` `.` | show / hide dotfiles in the tree and the finder |
+| `Ctrl+,` | the Settings page; each change saves to settings.json |
 | `:` `q` | quit |
 | `^q` `^c` | quit |
+
+`Ctrl+,` opens the [Settings page](usage.md#settings). Only a terminal that supports the kitty keyboard protocol can send `Ctrl+,`, and a terminal without it cannot open the page; the other keys still work. There is no other key for the page.
 
 `:` opens a command line in the footer, as in Neovim. `:q`, `:q!`, `:qa`, `:qa!`, and `:quit` quit. `Esc`, or Enter on an empty line, cancels; any other command shows `Not a command`.
 

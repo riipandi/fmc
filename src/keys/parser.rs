@@ -165,6 +165,8 @@ fn global(key: Key<'_>, state: State) -> Option<Action> {
             "f" if state.typing => return Some(Action::ToggleFuzzy),
             // A prompt takes a plain `.` as text; `Ctrl+.` is not text, so the finder rebuilds its index with it.
             "." => return Some(Action::ToggleDotfiles),
+            // Only the kitty keyboard protocol sends `Ctrl+,` (plan-00015, D12): a terminal without it has no route here.
+            "," if !state.typing => return Some(Action::OpenSettings),
             _ => {}
         }
     }

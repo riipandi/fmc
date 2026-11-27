@@ -95,6 +95,18 @@ There is no undo beyond the Trash. `r`, `R`, and `a` work on one row; the copy, 
 
 `?` shows the key list as tables in the reader, in place of the document. `?` or `Esc` brings the document back, with its scroll position and search.
 
+## Settings
+
+`Ctrl+,` opens the Settings page in the content area. It lists the eight settings fmc saves, each with its value, and a line of help for the selected row. The keys are described in [Configuration](configuration.md).
+
+- `j` and `k`, or the arrows, move between the rows.
+- `Enter` or `Space` changes the selected row. A setting that is on or off flips. A choice, such as `theme_mode` or `find_mode`, moves to its next value. `h` and `←` step a choice back, and `l` and `→` step it forward. A choice stops at its first and last value.
+- `sidebar_jump` and `reader_jump` are numbers. `Enter` opens a dialog with the value in its field; type a whole number of 1 or more, and press Return.
+- Each change applies at once and is saved at once to `settings.json`. A theme change repaints the screen at once. A refused save takes the value back and says why in the footer.
+- `Esc` or `q` closes the page, and the screen you were on is still there.
+
+While the page is open it takes every key, except `Ctrl+q` and `Ctrl+c`, and a click does nothing outside it. Below 60 columns the page is a page of the stack, and `q` or `Esc` goes back to the list.
+
 ## Layouts by width
 
 fmc changes its layout with the width of the terminal.

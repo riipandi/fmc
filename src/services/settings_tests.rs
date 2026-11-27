@@ -5,7 +5,9 @@ use fmc::reader::associations::Language;
 use fmc::settings::Settings;
 use tempfile::TempDir;
 
-use super::{load, path, save};
+use serde_json::json;
+
+use super::{load, path, save, update};
 
 #[test]
 fn the_path_is_under_xdg_config_home_when_it_is_set() {
@@ -116,4 +118,47 @@ fn a_read_only_folder_keeps_the_original_and_writes_no_temp_file() {
     assert!(result.is_err());
     assert_eq!(fs::read_to_string(&file).unwrap(), "{\"reader_jump\": 3}\n");
     assert_eq!(fs::read_dir(&folder).unwrap().count(), 1);
+}
+
+#[test]
+fn an_update_creates_a_missing_file_with_only_its_changes() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("fmc").join("settings.json");
+    update(&file, &[("auto_preview", json!(false))]).unwrap();
+    assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"auto_preview\": false\n}\n");
+}
+
+#[test]
+fn an_update_keeps_a_hand_edit_made_since_the_start() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    fs::write(&file, r#"{"hogwarts": "Gryffindor"}"#).unwrap();
+    update(&file, &[("reader_jump", json!(8))]).unwrap();
+    assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"hogwarts\": \"Gryffindor\",\n  \"reader_jump\": 8\n}\n");
+}
+
+#[test]
+fn an_update_refuses_a_file_that_does_not_parse_and_keeps_its_bytes() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    fs::write(&file, "{ \"auto_preview\": true,, }").unwrap();
+    let reason = update(&file, &[("auto_preview", json!(false))]).unwrap_err();
+    assert_eq!(reason, "settings.json is not valid JSON (line 1); nothing was saved.");
+    assert_eq!(fs::read_to_string(&file).unwrap(), "{ \"auto_preview\": true,, }");
+}
+
+#[test]
+fn a_relative_xdg_config_home_is_ignored_so_nothing_lands_in_the_working_directory() {
+    let path = path(Some(OsString::from("hogwarts")), Some(OsString::from("/home/hermione")));
+    assert_eq!(path.unwrap(), std::path::Path::new("/home/hermione/.config/fmc/settings.json"));
+}
+
+#[test]
+fn an_update_refuses_a_fifo_without_blocking_on_it() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    let made = std::process::Command::new("mkfifo").arg(&file).status().unwrap();
+    assert!(made.success());
+    let reason = update(&file, &[("auto_preview", json!(false))]).unwrap_err();
+    assert_eq!(reason, "settings.json is not a regular file; nothing was saved.");
 }

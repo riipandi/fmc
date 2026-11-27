@@ -16,6 +16,7 @@ mod preview;
 mod reader;
 mod scroll;
 mod search;
+mod settings;
 mod theme;
 mod tree;
 mod write;
@@ -50,6 +51,7 @@ use crate::ui::markdown_signs::SignStrip;
 use crate::ui::picture::Picture;
 use crate::ui::reader::CodeView;
 use crate::ui::scrollbar::ScrollBar;
+use crate::ui::settings::SettingsView;
 use crate::ui::sidebar::Mark;
 use crate::ui::styled::color;
 use crate::ui::tree::{LIST_TOP, TreeView, line_at};
@@ -94,6 +96,8 @@ struct Ui {
     footer: Footer,
     /// The context menu and the dialog, above the page (`app/overlay.rs`).
     overlay: overlay::Views,
+    /// The Settings page's rows and its value column, in the content stack (`app/settings.rs`).
+    settings: SettingsView,
 }
 
 /// A reveal in progress: list the folders on the way to `target`, then select it. `expand` also opens the target
@@ -210,6 +214,8 @@ struct Model {
     /// The run on the worker, while one is going: a second write is refused until it ends (plan-00012, D8; plan-00014,
     /// D7).
     bulk: Option<write::Bulk>,
+    /// The Settings page's values, its page while it is open, and its saves (`app/settings.rs`).
+    settings: settings::Store,
 }
 
 impl Model {
@@ -311,6 +317,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         overlay: None,
         overlay_at: (0, 0),
         overlay_task: None,
+        settings: Default::default(),
         clipboard: None,
         bulk: None,
         associations: Default::default(),
@@ -319,7 +326,12 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
 }
 
 /// Runs the app on `target` until the user quits.
-pub fn run(target: &Path, settings: Parsed, themes: crate::services::theme::Loaded) -> opentui::Result<()> {
+pub fn run(
+    target: &Path,
+    settings: Parsed,
+    themes: crate::services::theme::Loaded,
+    settings_path: Option<PathBuf>,
+) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
     let options = AppOptions {
@@ -343,6 +355,9 @@ pub fn run(target: &Path, settings: Parsed, themes: crate::services::theme::Load
     let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
     {
         let mut m = model.borrow_mut();
+        m.settings.values = settings.settings.clone();
+        m.settings.themes = themes.themes.clone();
+        m.settings.path = settings_path;
         m.auto_preview = settings.settings.auto_preview;
         m.sidebar_jump = settings.settings.sidebar_jump;
         m.reader_jump = settings.settings.reader_jump;
@@ -389,7 +404,7 @@ pub fn run(target: &Path, settings: Parsed, themes: crate::services::theme::Load
             {
                 let mut m = model.borrow_mut();
                 let mut u = ui.borrow_mut();
-                tree::apply(&mut m, &u, event);
+                settings::event(cx.app(), &mut m, &mut u, event);
                 paint(cx.app(), &mut m, &mut u);
             }
             repaint_after_layout(cx.app(), &model, &ui);
@@ -583,7 +598,9 @@ fn build(app: &App, p: &Palette) -> Ui {
     let body = View::new(app).grow(1.0).min_height(0).row().overflow(Overflow::Hidden);
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
     viewer.gutter().add(&reader.gutter());
+    let settings = SettingsView::new(app);
     stack.add(&welcome.root).add(&binary.root()).add(&viewer.view()).add(&preview_viewer.view()).add(&diff.root);
+    stack.add(&settings.root);
     viewer.view().add(&markdown_signs.view());
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
     viewer_panel.add(&viewer_header.root).add(&body);
@@ -618,6 +635,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         narrow_bar,
         footer,
         overlay: overlays,
+        settings,
     }
 }
 
@@ -655,7 +673,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
 
     // The changes screen replaces the tree in the sidebar and the reader in the viewer, unless a key page is open.
     let on_changes = m.changes.is_some();
-    let body = changes::body_shows(m);
+    // The page fills the content area, so the changes body and the viewer's documents hide while it is open.
+    let on_settings = m.settings.page.is_some();
+    let body = changes::body_shows(m) && !on_settings;
     let root = m.browser.tree.root().to_path_buf();
     let name = root.file_name().map_or(String::new(), |n| fmc::text::display_label(&n.to_string_lossy()));
     let mut sidebar = if on_changes {
@@ -687,6 +707,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         m.finder.as_ref().and_then(|finder| finder.preview.as_ref()).and_then(|preview| preview.shown.as_ref());
     let diff_header = body.then(|| changes::viewer_header(m));
     let (title, parent) = match (previewed, &diff_header, &m.shown) {
+        _ if on_settings => ("Settings".into(), None),
         (Some(shown), _, _) => reader::title_parts(&root, &shown.path),
         (None, Some((title, parent, _)), _) => (title.clone(), parent.clone()),
         (None, None, reader::Shown::None) => ("Reader".into(), None),
@@ -698,6 +719,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         ) => reader::title_parts(&root, path),
     };
     let badges = match (previewed, diff_header) {
+        _ if on_settings => Vec::new(),
         (Some(_), _) => vec![Badge { text: "preview".into(), kind: BadgeKind::Pill }],
         (None, Some((_, _, badges))) => badges,
         (None, None) => reader::badges(&m.shown, m.wrap),
@@ -716,15 +738,19 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The preview's line count, copied out: the model is changed below, which the borrow of `previewed` forbids.
     let preview_lines = previewed.map(|shown| shown.document.lines);
     // The compact tier has no welcome screen: its list is the first page (plan-00005, record 4).
-    ui.welcome.root.visible(!m.compact() && !m.shown.is_some() && !shows_preview && !on_changes);
+    ui.welcome.root.visible(!m.compact() && !m.shown.is_some() && !shows_preview && !on_changes && !on_settings);
     let previewing = m.shown.previewing();
-    ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body);
-    ui.markdown.visible(previewing && !shows_preview && !body);
-    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview && !body);
-    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview && !body);
+    ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body && !on_settings);
+    ui.markdown.visible(previewing && !shows_preview && !body && !on_settings);
+    ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview && !body && !on_settings);
+    ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview && !body && !on_settings);
+    ui.settings.root.visible(on_settings);
+    if let Some(page) = &m.settings.page {
+        ui.settings.paint(&m.settings.values, page.selected, p);
+    }
     // The reader's pane takes no space beside the preview, which is the pane the stack shows then. With no document it
     // takes none either: an empty viewer would halve the stack and push the welcome out of its half.
-    ui.viewer.visible(m.shown.is_some() && !shows_preview && !body);
+    ui.viewer.visible(m.shown.is_some() && !shows_preview && !body && !on_settings);
     ui.diff.root.visible(body);
     if on_changes {
         ui.diff.set_split(m.diff_options.split);
@@ -804,7 +830,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.bar.paint(app, total, viewport, top, gapped, p);
     ui.narrow_bar.paint(app, total, viewport, top, !gapped, p);
     let has_blocks = m.changes.as_ref().is_some_and(|changes| !changes.files.is_empty());
-    let (document, position) = if body {
+    let (document, position) = if on_settings {
+        (None, None)
+    } else if body {
         (None, has_blocks.then(|| scroll_label(ui.diff.height(), viewport, m.top)))
     } else {
         match preview_lines {
@@ -832,7 +860,13 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     };
     let footer = FooterState {
         location,
-        mode: if body { hints::Mode::Diff } else { hints::Mode::Browse },
+        mode: if on_settings {
+            hints::Mode::Settings
+        } else if body {
+            hints::Mode::Diff
+        } else {
+            hints::Mode::Browse
+        },
         pane,
         prompt: match (&m.finder, &m.search) {
             (Some(finder), _) => Some(find::prompt(finder).1),

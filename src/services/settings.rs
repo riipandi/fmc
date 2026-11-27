@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 use fmc::settings::{self, Parsed};
+use serde_json::Value;
 
 /// `settings.json` in the config folder (`services::config_folder`).
 pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
@@ -25,10 +26,26 @@ pub fn load(path: &Path) -> Parsed {
     }
 }
 
+/// Sets `changes` in the settings file at `path` and writes the file (the Settings page's save, on its worker). The file
+/// is read here, not when the page changed, so a hand edit made since the start is kept. A missing file starts from `{}`;
+/// a file that does not parse is refused and left as it is (`settings::merged`).
+pub fn update(path: &Path, changes: &[(&str, Value)]) -> Result<(), String> {
+    // A FIFO or a device would block the read below, and the page would wait for its answer forever.
+    if fs::metadata(path).is_ok_and(|meta| !meta.is_file()) {
+        return Err("settings.json is not a regular file; nothing was saved.".into());
+    }
+    let text = match fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == ErrorKind::NotFound => "{}".into(),
+        Err(error) => return Err(format!("settings.json could not be read: {error}.")),
+    };
+    let text = settings::merged(&text, changes)?;
+    save(path, &text).map_err(|error| format!("settings.json could not be saved: {error}; nothing was saved."))
+}
+
 /// Writes `text` to the settings file at `path`, or to the file a link at `path` points to (plan-00015 D14). The text goes
 /// to a temp file beside the target, and the rename replaces the target only once the bytes are on disk, so a crash
 /// leaves the old file or the new one. A new file gets the old file's mode. Nothing outside the folder is touched.
-#[allow(dead_code)] // No caller until the Settings page (plan-00015, phase 3).
 pub fn save(path: &Path, text: &str) -> io::Result<()> {
     let target = match fs::symlink_metadata(path) {
         Ok(meta) if meta.file_type().is_symlink() => fs::canonicalize(path)?,

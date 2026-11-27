@@ -37,6 +37,7 @@ pub fn page_segments(page: Page, body: bool, all_files: bool, selection: bool) -
             vec![segment("Back", "q"), middle, segment("Keys", "?")]
         }
         Page::Keys | Page::Find => vec![segment("Back", "q")],
+        Page::Settings => vec![segment("Back", "q"), segment("Change", "Enter")],
     }
 }
 

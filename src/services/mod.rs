@@ -11,7 +11,7 @@ pub mod theme;
 pub mod write;
 
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
 use fmc::explorer::Entry;
@@ -20,9 +20,10 @@ use fmc::find::text::Progress;
 use fmc::reader::document::Document;
 use opentui::prelude::AppProxy;
 
-/// `$XDG_CONFIG_HOME/fmc`, or `~/.config/fmc` when `XDG_CONFIG_HOME` is unset or empty. Settings and themes live here.
+/// `$XDG_CONFIG_HOME/fmc`, or `~/.config/fmc` when `XDG_CONFIG_HOME` is unset, empty, or relative (the XDG Base Directory
+/// rule: a relative value is ignored, so a save never lands in the working directory). Settings and themes live here.
 pub fn config_folder(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
-    let base = match config_home.filter(|dir| !dir.is_empty()) {
+    let base = match config_home.filter(|dir| Path::new(dir).is_absolute()) {
         Some(dir) => PathBuf::from(dir),
         None => PathBuf::from(home?).join(".config"),
     };
@@ -70,6 +71,8 @@ pub enum Event {
     /// One item of a run finished (`app/write.rs`): `source` was copied, moved, or trashed as `kind` says. `result` is the
     /// new path, or the error the footer shows.
     Written { kind: write::Kind, source: PathBuf, result: Result<PathBuf, String> },
+    /// The Settings page's batch of changes was written, or refused with the reason (`app/settings.rs`).
+    SettingsSaved { result: Result<(), String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

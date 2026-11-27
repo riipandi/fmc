@@ -1,6 +1,6 @@
 # Configuration
 
-fmc reads one optional settings file when it starts. It never writes that file. Edit it by hand, then start fmc again.
+fmc reads one optional settings file when it starts. The [Settings page](usage.md#settings) (`Ctrl+,`) is the only thing that writes it: each change you make there is saved at once. You can also edit the file by hand. A hand edit made while fmc runs applies when fmc starts again.
 
 ## Location
 
@@ -25,6 +25,18 @@ A key that is not listed is ignored.
 ## Errors
 
 A file that is not valid JSON, or whose top level is not an object, sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
+
+## Saving from the Settings page
+
+The Settings page edits the eight keys above except `file_associations`: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme`. Edit `file_associations` by hand.
+
+- Each change is saved when you make it. A save reads the file again and sets only the keys the page changed. Every other key stays as it is, including keys fmc does not know and hand edits made since fmc started.
+- A save writes the keys in alphabetical order, so the first save of a file that was in another order reorders it. Values keep their types.
+- A file that is not valid JSON, or whose top level is not an object, is refused. Nothing is written, the file keeps its bytes, the page shows the value the file has, and the footer says `Not saved: settings.json is not valid JSON (line N); nothing was saved. The value went back.`. Fix the file, then make the change again.
+- A missing file is created with the one key. A missing folder is created too.
+- A `settings.json` that is a symbolic link is written through to the file it points to, and the link stays. The target can lie anywhere the link reaches.
+- Each save is written to a temporary file beside the target, which then replaces it, so a crash leaves the old file or the new one. Comments in the file are not kept: the parser refuses them, so a save cannot drop them silently.
+- Without a home folder (`HOME` and `XDG_CONFIG_HOME` both unset), the page cannot save, and it says so.
 
 ## Themes
 
@@ -52,7 +64,7 @@ A theme file is strict JSON, with no comments:
 - A file that cannot be read or parsed is skipped, and the footer names it. The id `scouter` cannot be a file: Scouter's palette is built in.
 - A `dark_theme` or `light_theme` that is not a theme, or that names a theme of the other mode, keeps `scouter` for that slot and the footer says so.
 - The page background is the terminal's background, tinted as Scouter tints it. When `theme_mode` forces a mode that is not the terminal's, the page uses the palette's own background instead.
-- Themes are read once, when fmc starts, like the other keys. fmc never writes a theme file.
+- Themes are read once, when fmc starts, like the other keys. fmc never writes a theme file, and the Settings page never writes one either.
 
 ## File associations
 
@@ -81,4 +93,4 @@ A theme file is strict JSON, with no comments:
 
 `find_mode` sets how the file finder (`/`) matches a name when it opens. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one pattern, spaces included, and matches its letters in order anywhere in the path, ignoring case. The best matches come first, and the letters that matched are highlighted.
 
-`Ctrl+F` in the finder flips the match for this run only, and the query runs again; the footer names `fuzzy` while it is on. A restart returns to `find_mode`: fmc never writes `settings.json`, so a flip is not kept. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
+`Ctrl+F` in the finder flips the match for this run only, and the query runs again; the footer names `fuzzy` while it is on. A restart returns to `find_mode`: a flip is not saved. Change `find_mode` on the Settings page to keep a different start. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.

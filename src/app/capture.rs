@@ -27,6 +27,13 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
         return;
     }
+    // The Settings page takes every key while it is open, as an overlay does; Ctrl+q and Ctrl+c still quit.
+    if m.settings.page.is_some() && !(key.ctrl && matches!(key.name, "q" | "c")) {
+        cx.stop_propagation();
+        settings::key(cx.app(), &mut m, &mut ui.borrow_mut(), key);
+        paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        return;
+    }
     // While the finder is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
     if m.finder.is_some() && named.key().plain() {
         cx.stop_propagation();
@@ -65,6 +72,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
     match action {
         Action::Quit => return cx.quit(),
         Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
+        Action::OpenSettings => settings::open(&mut m),
         // In compact `q` goes back a page; the list page at the root has nothing to go back to (plan-00005, record 11).
         Action::Close if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
         // `q` on the changes screen goes back to browsing, as `d` does (architecture.md, approved deviation).

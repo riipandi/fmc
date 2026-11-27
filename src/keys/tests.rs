@@ -86,6 +86,22 @@ fn a_period_and_ctrl_period_toggle_dotfiles_but_a_prompt_types_the_period() {
 }
 
 #[test]
+fn ctrl_comma_opens_the_settings_page_in_every_focus_but_not_in_a_prompt() {
+    for state in [TREE, READER, CHANGES, DIFF_BODY] {
+        assert_eq!(last(&["^,"], state), Step::Done(Action::OpenSettings));
+    }
+    assert_eq!(last(&["^,"], State { typing: true, ..TREE }), Step::Bad, "a prompt takes no Ctrl+,");
+    assert_eq!(last(&["^,"], State { typing: true, ..READER }), Step::Bad);
+}
+
+#[test]
+fn a_plain_comma_is_bound_in_no_context() {
+    for state in [TREE, READER, CHANGES, DIFF_BODY, State { typing: true, ..TREE }] {
+        assert_eq!(last(&[","], state), Step::Bad, "a plain comma does nothing");
+    }
+}
+
+#[test]
 fn ctrl_f_flips_the_finder_match_and_is_unbound_in_the_tree() {
     let finding = State { typing: true, ..TREE };
     assert_eq!(last(&["^f"], finding), Step::Done(Action::ToggleFuzzy));
@@ -242,6 +258,7 @@ fn every_documented_key_is_bound() {
                     "Alt+i" => vec!["M-i".into()],
                     "Ctrl+/" => vec!["^/".into()],
                     "Ctrl+." => vec!["^.".into()],
+                    "Ctrl+," => vec!["^,".into()],
                     "Enter" => vec!["enter".into()],
                     "Backspace" => vec!["backspace".into()],
                     "Delete" => vec!["delete".into()],

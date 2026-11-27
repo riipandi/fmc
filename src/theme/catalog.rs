@@ -139,6 +139,15 @@ pub struct Chosen {
 /// id names one mode and is used only in its own slot; `scouter` is Scouter's pair in either slot. A bad id keeps that
 /// slot's Scouter palette and adds a notice.
 pub fn choose(user: Vec<Theme>, dark_id: &str, light_id: &str) -> Chosen {
+    let mut themes = merged(user);
+    let mut notices = Vec::new();
+    let dark = slot(&mut themes, "dark_theme", dark_id, Mode::Dark, &mut notices);
+    let light = slot(&mut themes, "light_theme", light_id, Mode::Light, &mut notices);
+    Chosen { dark, light, notices }
+}
+
+/// The bundled themes with the user's: a user theme replaces the bundled one with its id, and a new id is added.
+fn merged(user: Vec<Theme>) -> Vec<Theme> {
     let mut themes = bundled();
     for theme in user {
         match themes.iter().position(|bundled| bundled.id == theme.id) {
@@ -146,10 +155,14 @@ pub fn choose(user: Vec<Theme>, dark_id: &str, light_id: &str) -> Chosen {
             None => themes.push(theme),
         }
     }
-    let mut notices = Vec::new();
-    let dark = slot(&mut themes, "dark_theme", dark_id, Mode::Dark, &mut notices);
-    let light = slot(&mut themes, "light_theme", light_id, Mode::Light, &mut notices);
-    Chosen { dark, light, notices }
+    themes
+}
+
+/// The ids a slot accepts for `mode` (A13): `scouter` first, then each bundled or user theme of that mode, in the order
+/// `merged` keeps them. The Settings page cycles through these.
+pub fn slot_ids(user: &[Theme], mode: Mode) -> Vec<String> {
+    let others = merged(user.to_vec()).into_iter().filter(|theme| theme.mode == mode).map(|theme| theme.id);
+    std::iter::once(SCOUTER.to_string()).chain(others).collect()
 }
 
 fn slot(themes: &mut Vec<Theme>, key: &str, id: &str, mode: Mode, notices: &mut Vec<String>) -> Palette {

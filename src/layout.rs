@@ -37,6 +37,8 @@ pub enum Page {
     Changes,
     Keys,
     Find,
+    /// The Settings page (plan-00015, D4): its own page in the compact tier, as Keys is.
+    Settings,
 }
 
 /// The pages open, bottom first. Each page is kept while its screen is open, so a repaint never reorders the stack.

@@ -213,7 +213,11 @@ A rounded border in `accent` on the `tint` background, over the page at the poin
 
 ### Dialog
 
-A rounded border in `accent` on the `tint` background, centred and at most 56 columns wide. It has a bold title in `text`, a wrapped message, an optional one-line field (the terminal cursor shows in it while the field has the focus), an error line in `error`, and buttons on the right. The focused button is filled with `accent` and its label is `accent-ink` in bold. A pointer over a button tints its label in `accent` with no fill, and does not move the focus, so Return still picks the focused button. In the compact tier the dialog spans the width less a column on each side. A scrim dims the page under it with a colour gain of 0.4, and the page takes no clicks while a dialog is open.
+A rounded border in `accent` on the `tint` background, centred and at most 56 columns wide. It has a bold title in `text`, a wrapped message, an optional one-line field (the terminal cursor shows in it while the field has the focus), an error line in `error`, and buttons on the right. The focused button is filled with `accent` and its label is `accent-ink` in bold. A pointer over a button tints its label in `accent` with no fill, and does not move the focus, so Return still picks the focused button. In the compact tier the dialog spans the width less a column on each side. A scrim dims the page under it with a colour gain of 0.4, and the page takes no clicks while a dialog or the Settings page is open.
+
+### Settings page
+
+A post-parity addition: Scouter has no settings page (`architecture.md`, "the Settings page edits settings.json"). It fills the content area as the changes screen does, and in the compact tier it is a page of the stack. One row per setting: the key's word in `muted` in a 13-column label column, then the value in `accent-soft`. The selected row fills with `row-active-bg`. One help line under the rows, in `muted`, says what the selected row does. There are no switches, boxes, or Save button: Enter or Space changes a row, and the change saves at once.
 
 ### Welcome
 

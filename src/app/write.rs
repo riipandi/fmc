@@ -98,6 +98,8 @@ pub enum Task {
         source: PathBuf,
         dir: PathBuf,
     },
+    /// A number row of the Settings page: the dialog's text is the new value (`app/settings.rs`).
+    Setting(fmc::settings::Row),
     /// The entries to trash, each with its device and inode when the dialog opened (an entry swapped since then is not
     /// trashed, plan-00014 D15), and the row to select after them: the next row, or the one before it when it was last.
     Delete {
@@ -474,6 +476,7 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
         }
         Task::Delete { items, next } => return delete(app, m, &root, items, next.clone()),
         Task::Duplicate { source, dir } => return duplicate(app, m, &root, &typed, source, dir),
+        Task::Setting(row) => return settings::submit(app, m, *row, &typed),
         Task::Menu(_) => return overlay::close(app, m),
     };
     match done {

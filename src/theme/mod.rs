@@ -22,6 +22,15 @@ pub enum ModeChoice {
 }
 
 impl ModeChoice {
+    /// The word `theme_mode` holds for this choice.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Dark => "dark",
+            Self::Light => "light",
+        }
+    }
+
     pub fn named(text: &str) -> Option<Self> {
         match text {
             "auto" => Some(Self::Auto),

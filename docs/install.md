@@ -29,4 +29,4 @@ See [Development](development.md#first-build). You need Rust 1.92 or newer and Z
 ## Font and terminal
 
 - A [Nerd Font](https://www.nerdfonts.com/) in your terminal draws the file icons. fmc uses its glyphs, so the icons need one.
-- fmc asks the terminal for the Kitty keyboard protocol, which lets it receive keys such as `Ctrl+.` and `Ctrl+/`. Terminal.app cannot send `Ctrl+.`, so use `.` there to show or hide dotfiles.
+- fmc asks the terminal for the Kitty keyboard protocol, which lets it receive keys such as `Ctrl+.`, `Ctrl+/`, and `Ctrl+,`. Terminal.app cannot send `Ctrl+.`, so use `.` there to show or hide dotfiles.

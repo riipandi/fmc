@@ -66,6 +66,8 @@ pub enum Action {
     Jump(i8),
     /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
     OpenCommand,
+    /// `Ctrl+,`: opens the Settings page (plan-00015, D12). Only the kitty keyboard protocol sends it.
+    OpenSettings,
     Find,
     /// `Space` on a tree row: the context menu for the row (plan-00012, D3).
     ContextMenu,
@@ -184,6 +186,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),
             ("Ctrl+. .", "show / hide dotfiles in the tree and the finder"),
+            ("Ctrl+,", "the Settings page; each change saves to settings.json"),
             (": q", "quit"),
             ("^q ^c", "quit"),
         ],

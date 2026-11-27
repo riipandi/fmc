@@ -5,7 +5,7 @@
 use fmc::keys::Focus;
 use fmc::layout::{Page, Tier, tier};
 
-use super::{Model, Ui, changes, find, reader};
+use super::{Model, Ui, changes, find, reader, settings};
 
 impl Model {
     /// Whether the terminal is in the compact tier, where the page stack draws the screen.
@@ -21,9 +21,11 @@ pub fn sync(m: &mut Model) {
     m.pages.sync(Page::Find, m.finder.is_some());
     m.pages.sync(Page::Changes, m.changes.is_some());
     m.pages.sync(Page::Keys, m.shown.shows_keys());
+    m.pages.sync(Page::Settings, m.settings.page.is_some());
     m.pages.sync(Page::Reader, reading);
     if m.compact() {
-        m.focus = if matches!(m.pages.top(), Page::Reader | Page::Keys) { Focus::Reader } else { Focus::List };
+        let reader = matches!(m.pages.top(), Page::Reader | Page::Keys | Page::Settings);
+        m.focus = if reader { Focus::Reader } else { Focus::List };
     }
 }
 
@@ -38,6 +40,7 @@ pub fn back(m: &mut Model, ui: &Ui) {
     match m.pages.top() {
         Page::Reader => m.focus = Focus::List,
         Page::Keys => reader::close_keys(m, ui),
+        Page::Settings => settings::close(m),
         Page::Changes => changes::leave(m),
         Page::Find => find::end(m, None),
         Page::Files => {}

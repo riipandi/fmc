@@ -778,7 +778,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Sco
 
 Context: a save must never lose the file the owner keeps. A hand-edited file may hold keys fmc does not know, a dotfile manager may link it, and a crash can happen mid-write. `serde_json` keeps no file order (no `preserve_order`, `Cargo.toml`).
 
-Decision: the only write to fmc's own config is `services/settings.rs` `save`, and the text it writes is `settings::merged` over the file as it is now (A2). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
+Decision: the only write to fmc's own config is `services/settings.rs` `save`, called by `update` on the Settings page's worker (`app/settings.rs`), and the text it writes is `settings::merged` over the file as it is now (A2). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
 
 Consequences:
 
@@ -794,6 +794,32 @@ Alternatives considered:
 - Writing the whole in-memory `Settings` — rejected: it drops unknown keys and the hand edits made after start.
 - Enabling `preserve_order` for the key order — rejected: a new feature on a pinned dependency, for a cosmetic gain.
 - Writing the whole config folder, so the page could also write theme and keymap files — rejected: the owner chose D1 (a); a file the owner did not name would be written.
+
+### Approved deviation: the Settings page edits settings.json on Ctrl+, and saves each change at once
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has no configuration and no settings page (`scouter:docs/decision/0001-read-only-and-minimal.md:7`, "no configuration file"). RI-9 asks for saved settings, and the owner asked for a page that edits them (2026-11-27, plan-00015).
+
+Decision: `Ctrl+,` opens the Settings page over the content area (`app/settings.rs`, drawn by `ui/settings.rs`), and in the compact tier it is a page of the stack (`Page::Settings`). The page edits eight keys: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme` (plan-00015, D2 (a)); `file_associations` is not on it. Each row is fmc's own, drawn like a tree row with a value column, not OpenTUI's `Select` (A6). Enter or Space changes a row: a setting flips, a choice steps to its next value, and a number opens the existing dialog's field, where a whole number of 1 or more is typed (D4 (a), D5 (a)). Left and Right (`h`, `l`) step a choice back and forward (plan-00015, A19). A choice stops at its ends and does not wrap (`fmc::settings::Settings::step`).
+
+Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::settings::save` (A1, D14). The UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3).
+
+While the page is open it takes every key, except Ctrl+q and Ctrl+c, and it takes the clicks too: the catcher a dialog uses covers the screen, so the panes beneath do not act (plan-00015, A21). Ctrl+, is the only key for the page (D12, owner): a plain `,` is unbound on every page and `:settings` is not added. Only the kitty keyboard protocol sends `Ctrl+,` (`opentui-0.9.9/src/host.rs:147`, `input-parser.zig:1269-1300`), so a terminal without it has no route to the page; the owner accepted that.
+
+Consequences:
+
+- (positive) A row shows the word the file uses, and a change applies and saves at once; a save the file refuses leaves the file as it was.
+- (positive) The rows, their steps, and their ends are pure and tested (`settings_tests.rs`); the keys and the saves are tested through `TestApp` in a temporary config folder (`app/settings_tests.rs`).
+- (negative) A save sorts the keys and drops comments (A3, D10), so a hand-ordered file is reordered by its first save.
+- (negative) A terminal without the kitty keyboard protocol cannot open the page.
+
+Alternatives considered:
+
+- A dialog-sized overlay built on the menu (D4 (b)) — rejected: the menu closes on a pick, so a value could not stay on screen, and eight rows with a value and a help line do not fit its 16-row limit.
+- A Save row at the end (D5 (c)), or preview on move with Esc to revert and Enter to save (D5 (b)) — rejected: each needs a revert path for every row, and a theme could not preview until saved.
+- A `:settings` command and a plain `,` (D12) — rejected by the owner, who chose `Ctrl+,` only.
+- A watcher that re-reads the file (D13 (c)) — rejected: RI-8 is parked; a restart applies a hand edit.
 
 ### Approved deviation: fmc offers a theme catalog, chosen in settings.json
 

@@ -11,11 +11,11 @@ phases:
     - id: 2
       title: Theme mode and the theme catalog
       status: committed
-      note: "committed as `feat(theme): a theme catalog and the theme mode, from settings.json and themes/` (`git log --oneline` gives its hash); deviations A16 and A17"
+      note: "64c7aea; deviations A16 and A17"
     - id: 3
       title: The Settings page on Ctrl+,
-      status: pending
-      note: —
+      status: committed
+      note: "to be added by the phase 4 commit; agent decisions A19 to A21 (2026-11-27)"
     - id: 4
       title: The keymap file over the defaults
       status: pending
@@ -101,6 +101,9 @@ These picks are the agent's, dated 2026-11-27. Each is one line to change; the o
 - **A16 (2026-11-27): the bundled themes that fall short are listed, not hidden.** The contrast thresholds of `theme_tests.rs` stay as they are. Found when the catalog was added: twelve bundled themes fall short of 7:1 on a tint (`text/added-bg`, `text/removed-bg`, `text/target-bg`, `text/row-active-bg`, `text/selection-bg`) or on `match-fg/match-bg`, and tokyo-night-day also falls below 4.5:1 on three of its tints (`text/added-bg` 4.36:1, `text/removed-bg` 4.11:1, `text/target-bg` 4.02:1; the lowest is 3.85:1 on `text/selection-bg`). `SHORT` in `theme_tests.rs` lists each pair, and the test fails on a new shortfall or on a listed pair that passes. The owner decides: keep the colours and the list, change a colour, or change a threshold.
 - **A17 (2026-11-27): a theme file's id is its file name, and `parse` takes it.** `catalog::parse(id, text)` takes the id, so the name defaults to it; the phase text's `parse(text, base)` took no id and no base, since the derived values come from the roles (D8 b). A file named `scouter.json` is refused with a notice, because `scouter` is built in.
 - **A18 (2026-11-27): the footer shows the notices in their order.** The settings file's notices come first, then the theme files', then the palette choice's (`app/mod.rs` `run`), joined on one line as the settings notices were. A long line is cut at the footer's width, as any footer text is.
+- **A19 (2026-11-27): Left and Right step a choice back and forward.** Enter and Space step forward, as the plan's keys say. Left (and `h`) step back and Right (and `l`) step forward, because a choice with no way back would be a one-way walk through the theme ids. Rejected: a Shift or Backspace binding, which a terminal may not send.
+- **A20 (2026-11-27): one save is in flight at a time.** A change made while a write runs waits in a queue, and the next write takes the queue as one batch (`app/settings.rs` `start`). A refused batch takes back itself and the queue, last first. Rejected: refusing a change while a save runs (a held key would be refused), and one write per change in parallel (two writes would race on the file, and the second would lose the first's key).
+- **A21 (2026-11-27): the page is modal to the mouse.** While the page is open the dialog's catcher covers the screen (`app/overlay.rs` `draw`), so a click or a wheel step on the list or the reader does nothing, as it does under a dialog. The rows take keys only. Open for the owner: whether a click should select a row, which the plan does not name.
 - **A12 (2026-11-27): a live run uses a temporary config folder.** Every live run sets `XDG_CONFIG_HOME` to a temp folder (`src/services/settings.rs:12-18` reads it), so the owner's `~/.config/fmc` is never touched by a test.
 
 ### Parity and records (what each feature needs)
