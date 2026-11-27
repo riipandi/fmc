@@ -2,7 +2,7 @@
 
 /// OpenTUI's bundled grammars (JavaScript, TypeScript, TSX, Markdown, Zig, and Rust) and the ten vendored ones.
 /// `javascriptreact` is an alias of the JavaScript grammar.
-const HIGHLIGHTED: &[&str] = &[
+pub const HIGHLIGHTED: &[&str] = &[
     "javascript",
     "javascriptreact",
     "typescript",

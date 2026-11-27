@@ -174,6 +174,10 @@ The sidebar shows the folder name with a quiet `files` badge (`no dotfiles` whil
 
 One column left of the line numbers in the text view, inside a git repository. `▎` in `added` marks an added line and `▎` in `modified` a changed one. `▁` in `removed` sits on the line above a deletion, and `▔` on line 1 when the deletion is above it. The column stays blank while nothing changed, so the numbers do not move. Rendered Markdown, images, and the changes screen have none. Scouter has no strip (`docs/parity.md`).
 
+### Rendered search marks
+
+In the rendered Markdown view, `/` marks each occurrence of the query in the text the view draws. Every match takes `match-fg` on `match-bg`, as the code view's match does. The current match takes the text colour on `target-bg`, so `n` and `N` show which one they reached. A fenced block in a highlighted language is marked the same way; a block of another language is counted and not marked. Scouter has no marks here (it refuses the search), so this is a recorded deviation (`docs/parity.md`).
+
 ### Footer pills and hints
 
 Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `SEARCH`. A pill is `accent-ink` on `accent`, bold. Hints show the key in `accent-soft` and the action in `dim`. Position reads `All`, `Top`, `Bot`, or a percentage.

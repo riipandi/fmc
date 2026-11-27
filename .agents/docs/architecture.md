@@ -420,7 +420,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter's `?` draws a centred help card over the panes and consumes the next key (`scouter:src/ui/help.ts`, `src/app/app.ts:746-750`).
 
-Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` with the key table's own sections (Scouter's card groups: Browse, Reader, Changes, Everywhere, Mouse), generated from the key table, so `--help` and the page share one source and `--help` stays Scouter's text and drawn with the Markdown table renderer. `?` moves focus to the reader so the reader keys scroll the page; `?` or `Esc` restores the previous document, its scroll position, and the previous focus. Search follows rendered Markdown (Scouter refuses `/` there, `scouter:src/app/app.ts:999-1005`): `m` shows the generated source, where `/` works (owner, 2026-11-26). This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
+Decision: `?` opens a "Keys" page in the reader pane: tables of `Key | Action` with the key table's own sections (Scouter's card groups: Browse, Reader, Changes, Everywhere, Mouse), generated from the key table, so `--help` and the page share one source and `--help` stays Scouter's text and drawn with the Markdown table renderer. `?` moves focus to the reader so the reader keys scroll the page; `?` or `Esc` restores the previous document, its scroll position, and the previous focus. Search follows rendered Markdown (Scouter refuses `/` there, `scouter:src/app/app.ts:999-1005`): `/` works in the key page's rendered view too, as in any rendered Markdown file (approved deviation, plan-00010, 2026-11-27). This replaces the card, and with it the earlier deviation that added the Mouse section to the card. Approved by the owner on 2026-11-26.
 
 Consequences:
 
@@ -834,6 +834,27 @@ Agent decisions in plan-00007 (each reversible, with its reason):
 - The list starts on `LIST_TOP` (row 3) in every tier, and `list_top` is removed: agent decision: one offset, since the border and the header are the same in both tiers — why: the row maps then need no compact case to keep right.
 - A press on the compact title goes Back, where plan-00005 pinned that it did nothing: agent decision: the whole title box is the target (plan-00007, D3) — why: the chevron alone is a one-column target for a finger.
 - The row tests tap the first and last visible rows of the tree, the finder, and the change list at 40 and 59 columns, and check the row that opens is the one drawn there. The diff header's fold is checked live, not in a unit test, because the diff body needs its patches from the worker — agent decision: the diff's row maps follow the laid-out rectangles, so a live tap is the proof — why: the unit harness does not run the worker.
+
+### Approved deviation: search runs in the rendered Markdown view
+
+Context: Scouter refuses `/` in a rendered Markdown file: `startSearch` shows "Press m to search this Markdown file's source." and returns (`scouter:src/app/app.ts:999-1005`). The code view's search matches source lines, but the rendered view shows the text without its markers (`**Harry** Potter` reads `Harry Potter`), so a source match cannot be marked where the reader draws it. Owner objective, plan-00010 (approved 2026-11-27): search in the rendered view, with the matches marked in place and counted in the footer.
+
+Decision: `/` opens the prompt in the rendered view, `n`, `N`, and `p` step, Esc keeps then clears, as in the code view, and the footer reads `/query  k of N` (the code view's text; plan-00010 D1 said `3/12`, refined here). The search reads the text the view draws: each paragraph, heading, and table cell, and each code block's text. A match is an occurrence, not a line, counted in document order, ignoring case (no smart case: the code view ignores case always, `reader/search.rs`). Every match is marked in the match colours; the current one takes `target-bg` (D3). A fence in a highlighted language is marked through a code-block renderer that keeps the default look when no mark is set (plan-00010 phase 1: no differing cell). A fence in another language, an HTML block, and an indented block are counted and reached but not marked (D5). A mermaid diagram has no searchable text. A jump scrolls the block of the current match into view, and inside a block taller than the view to an estimated row: the match's byte offset over the block's text, times the block's rows (D4), because OpenTUI exposes no byte's row. Esc clears the search and its marks, and so does `m`, which switches the view (D8). A shown text that changes keeps the query, with its hits counted again (the code view's rule, D9).
+
+Consequences:
+
+- (positive) A search finds what the reader shows, and the marks sit on the text the reader draws; the key page and any Markdown file are searchable.
+- (positive) The hook and renderers need no per-block identity: they count their calls in document order, and an offscreen index of each block's text names the block of every count (`ui/markdown_search.rs`).
+- (negative) A search step rebuilds the document: about 3 ms in release on DESIGN.md (the measurement of plan-00010 phase 1); a 1 MiB document is not measured.
+- (negative) An estimated row can land a few rows off inside a tall block, such as a long list.
+- (negative) A block that is not drawn (a plain fence, HTML) is counted without a mark.
+
+Alternatives considered:
+
+- Search the source and map matches to blocks — rejected: marker and entity text differs from what is drawn, so the marks cannot be placed by source offsets.
+- Keep Scouter's refusal — rejected by the owner's objective.
+- Smart case, as in the usual editors — rejected: it would make the rendered view disagree with the code view on the same query.
+- Exact rows inside a block — rejected: OpenTUI 0.9.9 exposes a block's rows, not a byte's row (`opentui-0.9.9/src/widget/markdown.rs:758`).
 
 ### Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram
 

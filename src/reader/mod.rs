@@ -11,4 +11,5 @@ pub mod markdown;
 pub mod mermaid;
 pub mod motion;
 pub mod position;
+pub mod rendered_search;
 pub mod search;

@@ -12,7 +12,11 @@ use opentui::style::{Color, Span};
 use opentui::testing::TestApp;
 use opentui::widget::{Code, Container, InlineSpan, View, Widget, WrapMode};
 
-use super::top_level;
+use super::{Block, split};
+
+fn top_level(source: &str) -> Vec<Block> {
+    split(source).blocks
+}
 use crate::ui::markdown::MarkdownView;
 use crate::ui::styled::color;
 use crate::ui::syntax;

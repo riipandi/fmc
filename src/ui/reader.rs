@@ -213,7 +213,7 @@ impl CodeView {
     fn install_table(&self, p: &Palette) {
         let buffer = self.code.buffer();
         let search = Style::new().fg(color(p.match_fg)).bg(color(p.match_bg)).bold();
-        if let Ok(table) = syntax::table(buffer.context(), &syntax::theme(p), search) {
+        if let Ok(table) = syntax::table(buffer.context(), &syntax::theme(p), search, search) {
             let _ = buffer.set_syntax_style(Some(&table));
         }
     }

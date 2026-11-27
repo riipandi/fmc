@@ -1,5 +1,6 @@
 //! Markdown's two views (Scouter `src/reader/code-view.ts`, `previewing` and `toggleSource`): the rendered view is the
-//! default, `m` switches to the source, and the search and paragraph motions refuse while the rendered view shows.
+//! default, `m` switches to the source, and the paragraph motions refuse while the rendered view shows (search runs in
+//! both views, `reader/rendered_search.rs`).
 
 /// How a Markdown document is shown.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -21,9 +22,6 @@ impl View {
         self == Self::Rendered
     }
 }
-
-/// The footer message for `/` in the rendered view (Scouter `startSearch`, `src/app/app.ts:999-1005`).
-pub const SEARCH_REFUSED: &str = "Press m to search this Markdown file's source.";
 
 /// The footer message for `{` or `}` in the rendered view (Scouter `src/reader/reader-motion.ts:103-106`).
 pub const PARAGRAPH_REFUSED: &str = "Press m to move by paragraph in this Markdown file's source.";
@@ -53,7 +51,6 @@ mod tests {
 
     #[test]
     fn the_refusals_name_the_key_that_works() {
-        assert!(SEARCH_REFUSED.starts_with("Press m to search this Markdown file's source"));
         assert!(PARAGRAPH_REFUSED.starts_with("Press m to move by paragraph"));
     }
 }

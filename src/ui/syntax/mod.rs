@@ -199,10 +199,10 @@ const CAPTURE_NAMES: &[&str] = &[
     "variable.parameter",
 ];
 
-/// The style table of a code view's buffer: each capture name's style as the widget would register it, plus the search
-/// mark, which layers name as `opentui.search.match` (Scouter `search.match`). A buffer keeps the table it was given, so
-/// this one stands in for the widget's own.
-pub fn table(context: &Context, theme: &SyntaxTheme, search: Style) -> Result<SyntaxStyle> {
+/// The style table of a code buffer: each capture name's style as the widget would register it, plus the search marks,
+/// which layers name as `opentui.search.match` (Scouter `search.match`) and `opentui.search.current` (the match the view
+/// is on, plan-00010 D3). A buffer keeps the table it was given, so this one stands in for the widget's own.
+pub fn table(context: &Context, theme: &SyntaxTheme, search: Style, current: Style) -> Result<SyntaxStyle> {
     let table = SyntaxStyle::new(context)?;
     for name in CAPTURE_NAMES {
         if let Some(style) = theme.get(name) {
@@ -210,5 +210,6 @@ pub fn table(context: &Context, theme: &SyntaxTheme, search: Style) -> Result<Sy
         }
     }
     table.register("opentui.search.match", search)?;
+    table.register("opentui.search.current", current)?;
     Ok(table)
 }

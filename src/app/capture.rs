@@ -91,6 +91,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         // The changes body has no Markdown view of its own: `m` is for the reader's document.
         Action::ToggleMarkdown if !body => {
             reader::toggle_markdown(&mut m);
+            search::clear(&mut m);
             ui.borrow().viewer.scroll_to(0.0, 0.0);
         }
         Action::ToggleWrap if m.shown.has_document() || m.changes.is_some() => m.wrap = !m.wrap,
@@ -124,10 +125,9 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
             let ui = ui.borrow();
             scroll::motion(&m, if body { &ui.diff.scroller } else { &ui.viewer }, action)
         }
-        // The rendered view has no search or paragraph motion: the footer says which key shows the source.
-        Action::Search | Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
-            let text = if action == Action::Search { SEARCH_REFUSED } else { PARAGRAPH_REFUSED };
-            reader::refuse(&mut m, text);
+        // The rendered view has no paragraph motion: the footer says which key shows the source.
+        Action::Paragraph(_) if m.focus == Focus::Reader && m.shown.previewing() => {
+            reader::refuse(&mut m, PARAGRAPH_REFUSED);
         }
         Action::Search if m.focus == Focus::Reader && m.shown.text().is_some() => search::start(&mut m),
         Action::Find if m.focus == Focus::List => find::start(&mut m),

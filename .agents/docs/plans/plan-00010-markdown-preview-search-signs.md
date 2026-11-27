@@ -10,7 +10,8 @@ phases:
       note: "Verdict: the mapping matches OpenTUI's blocks on 10 samples at 40, 60, 80, and 120 columns, after two rules (a leading blank line disables tree-sitter's front matter; link reference definitions are dropped). The STOP condition does not hold. Numbers and the D2 correction: research/markdown-preview-mapping.md. Tests: ui/markdown_blocks_tests.rs (4 assertions, 1 ignored timing test)."
     - id: 2
       title: "Search in rendered Markdown"
-      status: pending
+      status: done
+      note: "Search runs in the rendered view: `/`, `n`, `N`/`p`, Esc, and the footer's `k of N` (the code view's text; D1 refined). The index (`ui/markdown_search.rs`, `reader/rendered_search.rs`) numbers the occurrences per block; the hook and renderers mark them by build order. Records: architecture.md, 'Approved deviation: search runs in the rendered Markdown view'; parity.md Reader and Help; keymaps; CHANGELOG; DESIGN.md. Tests: 6 mark tests (every counted occurrence drawn where the index puts it), 6 app key-path tests (including a hit below the view), 4 core tests, 4 block-top and mapping tests. just verify: 450 tests, 1 ignored. Live (Rex, DESIGN.md, a new tab, closed): 70 and 120 columns; `/palette` 1 of 3 with the current mark on target-bg and the others on match-bg; Enter and shift+n step; Esc keeps then clears; m shows the source with no marks. Refinements: D8 (m clears the search), D9 (a changed document keeps the query, as the code view does)."
     - id: 3
       title: "Git change signs beside rendered blocks (needs plan-00008)"
       status: pending
@@ -56,6 +57,8 @@ Both are deviations from Scouter v0.3.4 (`434d000f`). Scouter refuses search in 
 
   A block changes when any of its source lines has a sign.
 - **D7.** Signs follow plan-00008's `git_gutter` setting. There is no second key.
+- **D8 (phase 2).** `m` clears the search, in both directions: the view it searched is no longer the one shown, and the marks name the document they were counted in.
+- **D9 (phase 2).** A document that changes keeps the query, and its hits are counted again, as the code view's `follow` does. The phase text said the marks clear on a new document; the code view keeps the query, and one rule for both views is simpler. Cheap to change.
 
 ### Phases
 

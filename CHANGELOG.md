@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Search in the rendered Markdown view: `/` searches the text the view draws, so `**Harry** Potter` matches `Harry Potter`; every occurrence is marked, the current one in its own colour, and `n`, `N`, and `p` step through them, with the footer's `k of N`. Scouter refuses `/` there.
 - Command line: `fmc [file-or-directory]`, `--help` with every key, and `--version`, with the same checks and messages as Scouter.
 - Dark and light palettes that follow the terminal's background, checked at start, every 3 seconds, and when the terminal reports a change.
 - The two panes with their headers, the two-row footer with hints that fit the width, the welcome screen, and the `?` key list, which also lists the mouse.

@@ -4,14 +4,20 @@
 
 use std::ops::Range;
 
+use super::rendered_search::Hit;
+
 /// Scouter marks at most this many occurrences in a file (`src/reader/match-style.ts:11`).
 pub const MAX_MARKS: usize = 2000;
 
-/// The search in progress: the query, the lines it hits, the hit the view is on, and whether the prompt is open.
+/// The search in progress: the query, the hits it has in the view, the hit the view is on, and whether the prompt is
+/// open. The code view's hits are lines; the rendered view's are occurrences (`marks`, `rendered`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Search {
     pub query: String,
     pub lines: Vec<usize>,
+    pub marks: Vec<Hit>,
+    /// The search runs in the rendered Markdown view, so `marks` holds its hits.
+    pub rendered: bool,
     pub at: usize,
     /// The prompt is open: typed keys edit the query.
     pub editing: bool,
@@ -23,14 +29,50 @@ impl Search {
         Self { editing: true, ..Self::default() }
     }
 
-    /// The line of the hit the view is on, if the query hits anything.
+    /// A search in the rendered view, which opens its prompt with an empty query.
+    pub fn start_rendered() -> Self {
+        Self { editing: true, rendered: true, ..Self::default() }
+    }
+
+    /// The number of hits in the view the search runs in.
+    pub fn hit_count(&self) -> usize {
+        if self.rendered { self.marks.len() } else { self.lines.len() }
+    }
+
+    /// The line of the hit the view is on, if the query hits anything in the code view.
     pub fn current_line(&self) -> Option<usize> {
-        self.lines.get(self.at).copied()
+        if self.rendered { None } else { self.lines.get(self.at).copied() }
+    }
+
+    /// The occurrence the rendered view is on, if the query hits anything there.
+    pub fn current_mark(&self) -> Option<&Hit> {
+        if self.rendered { self.marks.get(self.at) } else { None }
+    }
+
+    /// Replaces the query and the rendered hits, and moves to the first hit at or below `top`, as `retype` does; `row`
+    /// is a hit's row in the document. Returns the hit the view shows.
+    pub fn retype_marks(
+        &mut self,
+        marks: Vec<Hit>,
+        query: String,
+        top: u32,
+        row: impl Fn(&Hit) -> u32,
+    ) -> Option<&Hit> {
+        self.query = query;
+        self.at = marks.iter().position(|hit| row(hit) >= top).unwrap_or(0);
+        self.marks = marks;
+        self.current_mark()
+    }
+
+    /// Replaces the rendered hits of a document that changed, keeping the hit in range.
+    pub fn refresh_marks(&mut self, marks: Vec<Hit>) {
+        self.marks = marks;
+        self.at = self.at.min(self.marks.len().saturating_sub(1));
     }
 
     /// The footer's text for the search (Scouter `show`): the query and the hit count, or nothing for an empty query.
     pub fn message(&self) -> String {
-        let count = match (self.query.is_empty(), self.lines.len()) {
+        let count = match (self.query.is_empty(), self.hit_count()) {
             (true, _) => String::new(),
             (false, 0) => "  no matches".into(),
             (false, n) => format!("  {} of {n}", self.at + 1),
@@ -48,7 +90,7 @@ impl Search {
 
     /// Steps to the next or previous hit, wrapping (Scouter `step`). Returns the line to show.
     pub fn step(&mut self, forward: bool) -> Option<usize> {
-        let count = self.lines.len();
+        let count = self.hit_count();
         if count > 0 {
             self.at = if forward { (self.at + 1) % count } else { (self.at + count - 1) % count };
         }
@@ -59,7 +101,7 @@ impl Search {
     pub fn seed(text: &str, query: &str, line: usize) -> Self {
         let lines = matching_lines(text, query);
         let at = lines.iter().position(|&hit| hit == line).unwrap_or(0);
-        Self { query: query.to_owned(), lines, at, editing: false }
+        Self { query: query.to_owned(), lines, at, ..Self::default() }
     }
 
     /// Recomputes the hits for a text that changed or was shown (Scouter `refresh`), keeping the hit in range.

@@ -150,7 +150,7 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp:
     }
     m.shown = shown;
     gutter::request(m);
-    search::follow(m);
+    search::follow(m, ui);
     reset_scroll(m, ui, path);
     super::find::arrive(m, path);
 }
@@ -177,7 +177,7 @@ pub fn reread(m: &mut Model, ui: &Ui, path: &Path, result: Reread) {
             }
             *document = next;
             present(ui, &m.shown);
-            search::follow(m);
+            search::follow(m, ui);
         }
     }
 }

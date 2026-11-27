@@ -26,7 +26,7 @@ use fmc::diff::{ChangeList, Marks};
 use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
 use fmc::layout::{Page, Tier, tier};
-use fmc::reader::markdown::{PARAGRAPH_REFUSED, SEARCH_REFUSED};
+use fmc::reader::markdown::PARAGRAPH_REFUSED;
 use fmc::reader::position::scroll_label;
 use fmc::settings::Parsed;
 use fmc::theme::{Mode, Palette, SystemTheme, palette, tinted_background};
@@ -728,11 +728,14 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
                 .map_or((None, None), |(info, label)| (Some(info), label)),
         }
     };
+    // The rendered view's marks follow the search; the code view's marks are for a code view that shows.
+    search::sync(m, ui);
     let search_text = m.shown.text().map_or_else(String::new, |(document, ..)| document.content().to_owned());
+    let code_search = m.search.as_ref().filter(|_| !m.shown.previewing());
     ui.reader.sync_search(
         p,
-        m.search.as_ref().map_or("", |search| search.query.as_str()),
-        m.search.as_ref().and_then(|search| search.current_line()),
+        code_search.map_or("", |search| search.query.as_str()),
+        code_search.and_then(|search| search.current_line()),
         &search_text,
     );
     // The compact bottom bar shows an open prompt after `Cancel` (`ui/bars.rs`), as the finder bar does in the header.
@@ -781,3 +784,7 @@ mod mouse_tests;
 #[cfg(test)]
 #[path = "mermaid_tests.rs"]
 mod mermaid_tests;
+
+#[cfg(test)]
+#[path = "search_tests.rs"]
+mod search_tests;

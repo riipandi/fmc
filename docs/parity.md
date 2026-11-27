@@ -42,6 +42,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 - Line numbers stay in place when you scroll sideways. In Scouter they scroll away with the text.
 - In a file inside a git repository, the reader shows a one-column strip left of the line numbers: `▎` green for an added line, `▎` yellow for a changed line, and `▁` red on the line above a deletion (`▔` on line 1 for a deletion above it). The strip keeps its column in a file without changes. `git_gutter: false` in the settings file turns it off, and outside a repository nothing changes. Scouter's code view has no signs (`src/reader/code-view.ts:121-131`). Recorded in `architecture.md`, "Approved deviation: the reader shows git change signs in a strip left of the line numbers".
 - A heading in the rendered view keeps its `#` marker (`# `, `## `, and so on) in the heading's colour, so the levels read without a larger font. Scouter conceals the marker (`scouter:src/reader/code-view.ts:132-145`). Emphasis, code, and link markers stay concealed. A setext heading (`Title` over `===` or `---`) shows the marker of its level, and its underline row is not drawn. Recorded in `architecture.md`, "Approved deviation: rendered Markdown headings keep their `#` marker".
+- `/` searches the rendered view. Each occurrence is marked in the text the view draws (`**Harry** Potter` matches `Harry Potter`), the current one in its own colour, and `n`, `N`, and `p` step through them; the footer counts them as `k of N`. A fence in a language fmc does not highlight is counted and reached but not marked. Scouter refuses `/` in a rendered Markdown file (`scouter:src/app/app.ts:999-1005`). Recorded in `architecture.md`, "Approved deviation: search runs in the rendered Markdown view" (Scouter v0.3.4, `434d000f`; owner, 2026-11-27).
 - A ```` ```mermaid ```` fence in the rendered view is drawn as a box diagram at the reader's width. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason. Scouter shows the fence as plain code. The source view (`m`) keeps the fence as text, and edge labels take the text colour, not the muted one. Recorded in `architecture.md`, "Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram".
 
 ## Copying text
@@ -56,7 +57,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 ## Help
 
-- `?` shows the key list as tables in the reader, with the mouse actions in their own table. `--help` describes the same key list, so the two always agree. `?` or `Esc` brings the document back where it was. The key list is Markdown, so `/` is refused there, as Scouter refuses it in a rendered Markdown file: press `m` to see the source, then `/` to search the list.
+- `?` shows the key list as tables in the reader, with the mouse actions in their own table. `--help` describes the same key list, so the two always agree. `?` or `Esc` brings the document back where it was. The key list is Markdown, so `/` searches it in the rendered view, as in any rendered Markdown file (see Reader).
 
 ## Footer
 
