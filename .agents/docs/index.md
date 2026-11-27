@@ -1,6 +1,6 @@
 # Agents Documentation Index
 
-updated: 2026-11-27T23:00:00+07:00
+updated: 2026-11-27T20:05:31+07:00
 
 Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), then the core documents below. Everything else is reference, history, or contract; navigate from here.
 
@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | none in progress; `plan-00014-multi-select.md`, `plan-00013-injected-highlighting.md`, and `plan-00012-write-operations.md` are archived (done). |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00015-settings.md` (approved: the settings write path, theme mode and the theme catalog, the Settings page on `Ctrl+,`, and the keymap file; RI-9, RI-10, RI-13; sixteen owner decisions open); none in progress. `plan-00014-multi-select.md`, `plan-00013-injected-highlighting.md`, and `plan-00012-write-operations.md` are archived (done). |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): a status table at the top tracks every entry; RI-4, RI-18, and RI-19 landed (plan-00012, plan-00013, plan-00014); RI-17 parked (unlock: a crate that loads). |
 | `handover/` | Session compactions. | `handover-00010-multi-select.md` (done: RI-19 landed, plan-00014 closed, with the owner checks); `handover-00009-injected-highlighting.md` (done: RI-18 landed, plan-00013 closed); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
