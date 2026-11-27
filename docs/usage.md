@@ -82,13 +82,14 @@ The file list creates, renames, copies, moves, and deletes files. Each action wo
 
 - `a` creates a file. A name ending in `/` creates a folder, and `A` creates a folder.
 - `r` renames the row. `R` duplicates it: a name dialog opens with the name a paste would give (`sophie-neveu copy.md`), and Return copies the row into the same folder under the name you type. A copy of a folder keeps its links as links.
-- `c` copies the row, and `x` cuts it. `v` pastes it into the selected folder, or beside the selected file. A cut row is dimmed until it is pasted or the cut is dropped with `Esc`.
-- `D` or `Delete` moves the row to the Trash, after a dialog that names it. The dialog selects Cancel, so Return keeps the file. Finder's Put Back restores a trashed item. The first delete asks macOS for permission to let fmc control Finder.
+- `c` copies the marked rows, or the selected row when none is marked, and `x` cuts them. `v` pastes them into the selected folder, or beside the selected file. A cut row is dimmed until it is pasted or the cut is dropped with `Esc`. Copy, Cut, and Paste in the menu say how many rows they take, as `Copy 3 items`.
+- `D` or `Delete` moves the marked rows, or the row when none is marked, to the Trash, after a dialog that names them (up to five, then the count of the rest). Every entry is checked before the first one moves: one that was replaced since the dialog opened stops the whole delete. A link cannot go to the Trash, since Finder refuses it: `D` on a link, or on marks that include one, says so and moves nothing. The dialog selects Cancel, so Return keeps the file. Finder's Put Back restores a trashed item. The first delete asks macOS for permission to let fmc control Finder.
 - `Space`, or a right-click on a row, opens a menu with the same actions, and Duplicate. Paste is dimmed until something is copied or cut.
+- `s` marks the row and moves down one row, and `S` clears every mark. A marked row shows `✓`, and the footer counts the marks. Marks stay while you scroll or fold a folder, and an entry that leaves the folder takes its mark with it. `Esc` drops a copy or cut first, then the marks. The finder and the changes screen have no marks.
 
-fmc never overwrites. A name that is taken is refused with a notice, and the dialog stays open for another name. A paste into a folder that has the same name takes `copy`, then `copy 2`, before the extension. A copy of a folder keeps its links as links, and fmc does not follow them. A paste runs in the background, and the footer says `copying` or `moving` while it runs. A second paste is refused until the first one finishes.
+fmc never overwrites. A name that is taken is refused with a notice, and the dialog stays open for another name. A paste into a folder that has the same name takes `copy`, then `copy 2`, before the extension. A copy of a folder keeps its links as links, and fmc does not follow them. A paste runs in the background, and the footer says `copying` or `moving` while it runs, with `copying 2 of 5…` for several rows. The rows go one at a time: the first error stops the paste and the footer says how many landed. A second paste is refused until the first one finishes.
 
-There is no undo beyond the Trash, and no action works on more than one row at a time.
+There is no undo beyond the Trash. `r`, `R`, and `a` work on one row; the copy, cut, paste, and delete keys work on every marked row.
 
 ## Help
 

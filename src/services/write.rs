@@ -9,6 +9,14 @@ use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
+/// What a worker does with one item of a run: a copy, a move, or a move to the Trash (plan-00014, D12).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kind {
+    Copy,
+    Move,
+    Trash,
+}
+
 /// Why a write was refused or failed. The UI shows it as a short message (`Display`).
 #[derive(Debug)]
 pub enum Error {
@@ -204,6 +212,9 @@ pub fn trash_with(root: &Path, path: &Path, delete: impl FnOnce(&Path) -> Result
     name.to_str().ok_or(Error::NotUtf8)?;
     inside(root, parent_of(path)?)?;
     fs::symlink_metadata(path)?;
+    // shortcut: the checks above and Finder's own resolution of the path are separate steps. A parent swapped for a link
+    // out of the root in between is trashed from outside, and an entry swapped after the identity check (`app/write.rs`
+    // `run`) is trashed too. The Trash takes a path, not a descriptor, so this needs another process running as the user.
     delete(path)
 }
 

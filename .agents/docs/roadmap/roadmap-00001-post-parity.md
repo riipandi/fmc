@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T19:24:00+07:00
+updated: 2026-11-27T23:00:00+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -33,7 +33,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
 | RI-17 | The rest of the owner's grammar set | parked | unlock: a crate that loads | 2026-11-27 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
-| RI-19 | Multi-select and bulk operations | parked | unlock: the owner asks for it (plan-00012 D7) | 2026-11-27 |
+| RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
 
 ## Rendering
 
@@ -75,11 +75,11 @@ Create, rename, move, copy, delete. Ideas from `research/editor-study.md`: atomi
 
 ### RI-19 — Multi-select and bulk operations
 
-- status: parked (unlock: the owner asks for it; plan-00012 D7 left it out) · updated 2026-11-27
+- status: landed (plan-00014, phases 1 to 4: `19d119d` the marked set, `b669168` the keys and the mark, `4c7eac9` the bulk copy, cut, and paste, `df88716` the bulk Trash; `architecture.md`, the records of the marks and the bulk run) · updated 2026-11-27
 
-plan-00012 acts on one row at a time. Several rows need a selection model in the tree and in the finder, which has only the one cursor: a mark on each row, a range, and a rule for what a dialog names when several rows go to the Trash. The clipboard holds one path (`architecture.md`, "The clipboard is fmc's own"), so a multi-row copy or cut needs its shape decided too.
+plan-00012 acted on one row at a time. plan-00014 gives the browser a set of marked paths (`s`, `S`), and copy, cut, paste, and Trash run over it as one queue on the worker, one item at a time, stopping at the first error. The clipboard holds a list, each path with its device and inode (`architecture.md`, the records of the marks and the bulk run). Mouse selection and range keys were left out (the owner, 2026-11-27).
 
-**Unlock:** the owner asks for it. **First move:** a plan for the selection model (marks, range keys, what a dialog names) and for the clipboard's shape (one path or a list).
+**Done:** the owner asked on 2026-11-27 and chose `s` and `S`; plan-00014 landed the marks, the bulk copy, cut, paste, and Trash, and a link is refused, since Finder cannot trash one. Open: whether a link gets another route to the Trash (plan-00014 D16).
 
 ### RI-5 — SQLite and DuckDB viewer
 

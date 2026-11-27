@@ -164,7 +164,9 @@ The width picks one of three layouts. The sketches are excerpts from live runs o
 
 ### Tree row
 
-`▎` on the selected row, depth guides `│ `, the folder chevron `▾` or `▸`, the icon, the name (folders end with `/`), and on the right a bold git letter or a `•` for a folder with changes. The selected row has the `row-active-bg` surface and an accent, bold name. Ignored files use `ignored`.
+`▎` on the selected row, depth guides `│ `, the folder chevron `▾` or `▸`, the icon, the name (folders end with `/`), and on the right a bold git letter or a `•` for a folder with changes. The selected row has the `row-active-bg` surface and an accent, bold name. Ignored files use `ignored`. A marked row (`s`) shows `✓` in `accent-soft` in the bar's cell, in place of `▎`, and keeps its name; a marked row that is also selected keeps the surface. Scouter has no marks: the mark is fmc's own (plan-00014).
+
+The footer's facts start with `N marked` in `accent-soft` while marks exist, and the compact bottom bar starts its Files page with the same text (plan-00014, D8).
 
 ### Panel header
 

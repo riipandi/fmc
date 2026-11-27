@@ -69,6 +69,8 @@ pub struct FooterState {
     pub page: Page,
     /// The open prompt's own text, which the compact bottom bar shows after `Cancel`.
     pub prompt_text: Option<Vec<Seg>>,
+    /// How many tree rows are marked; zero hides the count (plan-00014, D8).
+    pub marked: usize,
 }
 
 impl Default for FooterState {
@@ -89,6 +91,7 @@ impl Default for FooterState {
             selection: false,
             page: Page::Files,
             prompt_text: None,
+            marked: 0,
         }
     }
 }
@@ -140,7 +143,11 @@ impl FooterState {
             return (vec![Seg::new(fit_start(&message.text, columns, measure), fg)], Vec::new());
         }
         let all_files = self.diff.as_ref().is_none_or(|d| d.all_files);
-        let segments = bars::page_segments(self.page, self.mode == Mode::Diff, all_files, self.selection);
+        let mut segments = bars::page_segments(self.page, self.mode == Mode::Diff, all_files, self.selection);
+        // Its key is empty, so a tap on the count does nothing: `S` clears the marks from the keyboard.
+        if self.marked > 0 && self.page == Page::Files {
+            segments.insert(0, bars::Segment { label: format!("{} marked", self.marked), key: "" });
+        }
         bars::render(&segments, columns, p)
     }
 
@@ -211,6 +218,12 @@ impl FooterState {
         }
         if let Some(pending) = self.pending.filter(|&n| n > 0) {
             facts.push(Fact { key: "count", segments: vec![Seg::new(pending.to_string(), p.accent_soft)] });
+        }
+        if self.marked > 0 {
+            facts.insert(
+                0,
+                Fact { key: "marked", segments: vec![Seg::new(format!("{} marked", self.marked), p.accent_soft)] },
+            );
         }
         facts
     }

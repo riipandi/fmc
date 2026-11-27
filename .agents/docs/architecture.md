@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T19:27:00+07:00
+updated: 2026-11-27T21:30:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -509,7 +509,7 @@ Alternatives considered:
 
 Context: plan-00012 D2 and D3 put copy, cut, and paste on the tree, and D8 runs a paste off the frame. A system clipboard for files (Finder's copy and paste between apps) is out of scope.
 
-Decision (owner, 2026-11-27: the footer wording is approved): the clipboard holds one path and whether it is a cut, and nothing else; it lives in the model and is lost when fmc exits. `c` and `x` set it and the footer says `Copied <name>. Paste it with v.` or `Cut <name>. Paste it with v.`. A paste runs on a worker, one at a time: a second `v` while one runs says `Still pasting. Try again when it finishes.`, and the footer says `copying` or `moving` while it runs. A cut row is dimmed in the tree until it is pasted or the cut is dropped; `Esc` in the list drops a copy or a cut (the second `x` was the other option).
+Decision (owner, 2026-11-27: the footer wording is approved; plan-00014 D11 amends the one-path clause): the clipboard holds the paths of the entries `c` or `x` took, each with its device and inode at that moment, and whether they are a cut, and nothing else; a run leaves an entry alone when its device and inode have changed since, and says so in the footer (the security review of phase 3, finding 1); it lives in the model and is lost when fmc exits. The footer says `Copied <name>. Paste it with v.` or `Cut <name>. Paste it with v.` for one entry, and `Copied 3 items. Paste them with v.` for several. A paste runs as a bulk run on the worker (the record below): a second `v` while one runs says `Still working. Try again when it finishes.`, and the footer says `copying` or `moving` while it runs. A cut row is dimmed in the tree until it is pasted or the cut is dropped; `Esc` in the list drops a copy or a cut (the second `x` was the other option).
 
 Consequences:
 
@@ -519,6 +519,43 @@ Consequences:
 Alternatives considered:
 
 - `y` and `p`, as yazi uses: rejected, `y` copies the path here, and `p` toggles the preview (plan-00012 D3).
+
+### Marks are a set of paths in the browser, and Esc drops them after the clipboard
+
+Context: plan-00012 D7 left multi-select out: the tree has one cursor, and each write acts on one row. A mark kept by row index would name another entry once a folder collapses or a listing changes (plan-00014, "Current state").
+
+Decision (owner, 2026-11-27: `s` marks and moves down, `S` clears; plan-00014 D1 to D3, D9, D10, D14): the browser holds the marked paths in a `BTreeSet` (`explorer/browser.rs`). A listing that drops an entry drops its mark, and a new root starts with none. The tree draws `✓` in the bar's cell and the footer counts the marks; the finder and the changes screen draw and count none. Esc in the list drops the clipboard first, then the marks.
+
+Consequences:
+
+- (positive) The set follows the entries: scrolling, folding, and a relisting keep the marks that still exist, and a renamed or trashed entry leaves its mark.
+- (negative) A mark under a collapsed folder is not drawn, but the footer counts it, and the confirm of an action names it (plan-00014, D6). A hidden dotfile keeps its mark for the same reason.
+- (negative) Marks are not saved: they are lost on exit, as the clipboard is.
+
+Alternatives considered:
+
+- A mark on a row index: rejected, a collapse moves the rows under it.
+- A background tint for a mark: rejected, the selection already uses that tint.
+- Ctrl+click or Cmd+click: rejected, terminals do not send them; Shift+click is the terminal's own selection (the owner, 2026-11-27).
+- Space to mark: rejected, Space opens the menu (plan-00012, D3).
+
+### A bulk run goes to the worker one item at a time, and stops at its first error
+
+Context: plan-00012 D8 ran one paste on the worker. Several marked entries (plan-00014) need a run that the footer can count, that stops at the first error, and that does not race two writes in one folder.
+
+Decision (plan-00014 D7, D12, D13): a run is a queue in the model (`app/write.rs`, `Bulk`). Each item is one job on the worker (`services::spawn`), and it answers with `Event::Written`; the UI starts the next item when the answer arrives, so the footer says `copying 2 of 5…`. The first error stops the run and says how many landed (`Copied 2 of 5. <error>`), and the items the run did not reach stay where they are. A run's marks clear only when every item landed. Copy, move, and duplicate use the queue, and a single entry is a queue of one.
+
+Consequences:
+
+- (positive) One write is in flight at a time, so two items never race each other, and a second write waits (`Still working`).
+- (positive) No new thread or channel: the worker and the event path that a paste already used carry each item.
+- (negative) A run pays one round trip through the event loop per item. A run of many small entries is slower than one bulk call would be.
+- (negative) No cancel key is offered: a run ends at its next answer or at its last item.
+
+Alternatives considered:
+
+- One worker job for the whole run: rejected, the footer could not count the items without a stream, and the stop at the error would live on the worker, away from the tree's relisting.
+- Items in parallel: rejected, two writes into one folder race, and the footer cannot count them.
 
 ## Pending decisions
 
@@ -538,6 +575,12 @@ Consequences:
 - (negative) Each delete runs a subprocess, `osascript`, and waits for Finder.
 - (negative) The first delete from a terminal asks macOS for Automation permission to control Finder. A refusal fails the delete with the dialog's error line, and nothing moves.
 - (negative) The delete path depends on Finder being available; a Mac without it cannot trash.
+
+Amended (plan-00014, D12 and D15): the Trash runs in the bulk queue on the worker, one entry per job, as copy and move do. A single delete is a run of one. The method stays Finder through `osascript`. Each entry's device and inode are checked before the first call, and again on the worker before each one (a changed entry is skipped and stops the run, with the footer naming it). Errors go to the footer, not to the dialog, which has closed by then.
+
+Links (plan-00014, D16; a live check on 2026-11-27): Finder refuses to delete a symbolic link, dangling or not, with error -5000 (`osascript -e 'tell application "Finder" to delete { POSIX file "…/link" }'`), while a plain file in the same folder goes to the Trash. So fmc refuses a link before its confirm and moves nothing. This amends plan-00012 D6, which said a link is trashed as the link. The owner's options: (1) `NsFileManager` for links only, which the crate's table says gives no Put Back (not checked here); (2) keep the refusal, the current state; (3) another route to the Trash for a link. The owner picks; until then the refusal stands.
+
+The checks before Finder and the Finder call are separate steps. The shortcut in `services/write.rs` (`trash_with`) records that a same-user process can swap an entry or a parent in between (the security review of phase 4, findings 1 and 2).
 
 Alternatives considered:
 

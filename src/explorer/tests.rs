@@ -523,3 +523,98 @@ fn hiding_dotfiles_moves_a_selected_dotfile_to_the_first_row() {
     assert_eq!(selected_name(&browser), "Notes.md", "the selection falls back as for a removed row");
     assert!(!browser.dotfiles());
 }
+
+/// A root `/vault` with the folder `hogwarts` listed and expanded (`harry-potter.md`, `hermione-granger.md`), and the
+/// files `robert-langdon.md` and `sophie-neveu.md` beside it.
+fn vault_with_folder() -> Browser {
+    let root = PathBuf::from("/vault");
+    let hogwarts = Entry::new(&root, "hogwarts", Kind::Directory);
+    let mut browser = Browser::new(Tree::new(root.clone()));
+    browser.set_height(10);
+    let files = [Entry::new(&root, "robert-langdon.md", Kind::File), Entry::new(&root, "sophie-neveu.md", Kind::File)];
+    browser.listed(&root, [vec![hogwarts], files.to_vec()].concat());
+    browser.listed(&root.join("hogwarts"), hogwarts_children());
+    browser
+}
+
+fn hogwarts_children() -> Vec<Entry> {
+    let hogwarts = PathBuf::from("/vault/hogwarts");
+    vec![Entry::new(&hogwarts, "harry-potter.md", Kind::File), Entry::new(&hogwarts, "hermione-granger.md", Kind::File)]
+}
+
+#[test]
+fn s_marks_a_row_and_a_second_toggle_unmarks_it() {
+    let mut browser = browser(3, 10);
+    let path = Path::new("/vault/f00.md");
+    browser.toggle_mark(path);
+    assert!(browser.is_marked(path));
+    browser.toggle_mark(path);
+    assert!(!browser.is_marked(path) && browser.marked().is_empty());
+}
+
+#[test]
+fn a_mark_survives_scrolling_and_the_selection_moving_away() {
+    let mut browser = browser(40, 5);
+    let first = PathBuf::from("/vault/f00.md");
+    browser.toggle_mark(&first);
+    browser.move_by(30);
+    assert!(browser.top() > 0, "the list scrolled");
+    assert!(browser.is_marked(&first));
+}
+
+#[test]
+fn a_mark_on_a_child_survives_its_folder_collapsing() {
+    let mut browser = vault_with_folder();
+    let child = PathBuf::from("/vault/hogwarts/harry-potter.md");
+    browser.toggle_mark(&child);
+    browser.tree.collapse(Path::new("/vault/hogwarts"));
+    assert!(browser.tree.entry(&child).is_some(), "the tree keeps a collapsed folder's children");
+    assert!(browser.is_marked(&child));
+    assert_eq!(browser.targets(), vec![child]);
+}
+
+#[test]
+fn a_relisting_that_keeps_a_child_keeps_its_mark() {
+    let mut browser = vault_with_folder();
+    let child = PathBuf::from("/vault/hogwarts/harry-potter.md");
+    browser.toggle_mark(&child);
+    browser.listed(Path::new("/vault/hogwarts"), hogwarts_children());
+    assert!(browser.is_marked(&child));
+}
+
+#[test]
+fn a_listing_that_drops_an_entry_drops_its_mark() {
+    let mut browser = vault_with_folder();
+    let gone = PathBuf::from("/vault/hogwarts/hermione-granger.md");
+    browser.toggle_mark(&gone);
+    let kept = Entry::new(Path::new("/vault/hogwarts"), "harry-potter.md", Kind::File);
+    assert!(browser.refreshed(Path::new("/vault/hogwarts"), vec![kept]), "the rows changed");
+    assert!(!browser.is_marked(&gone));
+    assert!(browser.targets().is_empty());
+}
+
+#[test]
+fn targets_are_in_path_order_and_a_marked_folder_takes_its_marked_children() {
+    let mut browser = vault_with_folder();
+    let folder = PathBuf::from("/vault/hogwarts");
+    let child = folder.join("harry-potter.md");
+    let sophie = PathBuf::from("/vault/sophie-neveu.md");
+    let robert = PathBuf::from("/vault/robert-langdon.md");
+    browser.toggle_mark(&sophie);
+    browser.toggle_mark(&child);
+    browser.toggle_mark(&folder);
+    browser.toggle_mark(&robert);
+    assert_eq!(browser.targets(), vec![folder.clone(), robert, sophie], "the child is taken by its folder");
+    assert!(browser.is_marked(&child), "the child keeps its mark for when the folder is unmarked");
+}
+
+#[test]
+fn a_new_browser_starts_with_no_marks_and_clear_marks_drops_them_all() {
+    let mut browser = vault_with_folder();
+    browser.toggle_mark(Path::new("/vault/robert-langdon.md"));
+    browser.toggle_mark(Path::new("/vault/sophie-neveu.md"));
+    browser.clear_marks();
+    assert!(browser.marked().is_empty());
+    let fresh = Browser::new(Tree::new(PathBuf::from("/vault")));
+    assert!(fresh.marked().is_empty());
+}

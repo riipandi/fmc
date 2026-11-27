@@ -85,6 +85,10 @@ pub enum Action {
     CutFile,
     /// `v` in the tree: the clipboard goes into the selected folder, or the folder of the selected file.
     PasteFile,
+    /// `s` in the tree: marks the selected row and moves the selection down one row (plan-00014, D1).
+    ToggleMark,
+    /// `S` in the tree: clears every mark.
+    ClearMarks,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -130,10 +134,12 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("A", "new folder"),
             ("R", "duplicate the row under a new name"),
             ("r", "rename"),
-            ("D Delete", "move to the Trash"),
-            ("c", "copy the row"),
-            ("x", "cut the row; a paste moves it"),
+            ("D Delete", "move the marked rows, or the row, to the Trash"),
+            ("c", "copy the marked rows, or the row"),
+            ("x", "cut the marked rows, or the row; a paste moves them"),
             ("v", "paste into the folder, or beside the file"),
+            ("s", "mark the row and move down"),
+            ("S", "clear the marks"),
         ],
     ),
     (
@@ -170,7 +176,10 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("Tab", "switch panes"),
             ("y", "copy selection, or the current path"),
             ("Ctrl+o Alt+i", "jump back / forward through opened places"),
-            ("Esc", "clear selection or search, or back to the file list; in the list, drop a copy or cut"),
+            (
+                "Esc",
+                "clear selection or search, or back to the file list; in the list, drop a copy or cut, then the marks",
+            ),
             ("q", "close the open document or key list; back from the changes"),
             ("?", "this key list; ? or Esc closes it"),
             ("Ctrl+/", "show / hide the sidebar"),

@@ -72,7 +72,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 ## File operations
 
-- fmc creates, renames, copies, moves, and deletes files from the file list, and it has a context menu for them (`Space`, or a right-click). Scouter is read-only and has none of this. Writes stay inside the folder fmc opened, links are never followed, and a delete goes to the Trash (`architecture.md`, "The file-manager operations are the one write path").
+- fmc creates, renames, copies, moves, and deletes files from the file list, and it has a context menu for them (`Space`, or a right-click). Scouter is read-only and has none of this. Writes stay inside the folder fmc opened, links are never followed, and a delete goes to the Trash, except a link, which Finder will not trash, so fmc refuses it. Marks (`s`) and the bulk copy, cut, and delete over them are fmc's own (`architecture.md`, "The file-manager operations are the one write path" and "Marks are a set of paths in the browser").
 
 ## Help
 

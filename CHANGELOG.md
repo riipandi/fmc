@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `s` marks the selected row and moves down one row, and `S` clears the marks. A marked row shows `✓`, and the footer counts the marks. `Esc` drops a copy or cut first, then the marks.
+- `c`, `x`, and `v` work on every marked row. A paste of several rows runs one at a time and shows `copying 2 of 5…`; the first error stops it, and the footer says how many rows landed. The menu's Copy, Cut, and Paste say how many rows they take.
+- `D` and Delete move every marked row to the Trash after one dialog that names them, up to five and then the count of the rest. The menu's Delete says how many rows it takes.
+- A paste or a delete that finds an entry replaced since it was marked leaves that entry alone and stops, with a footer note.
 - The code inside some files is coloured as its own language: a Svelte or Astro `<script>` and `<style>` block, an Astro frontmatter, a HEEx template, the HTML of an Elixir `~H` sigil, and the body of Elixir's `~r`, `~SQL`, `~MD`, `~PY`, and `~JS` sigils. HTML's `<script>` and `<style>` blocks are coloured too (`docs/parity.md`).
 - In JavaScript, TypeScript, and Python, regex literals and the patterns of Python's `re` functions are coloured as patterns, and the JSDoc tags of a `/** */` comment are coloured as tags.
+
+### Changed
+
+- A Trash runs on the worker, as a paste does. A delete error now shows in the footer, and the dialog closes when the delete starts.
+- A link cannot go to the Trash, because Finder refuses it. `D` on a link, or on marks that include one, says so in the footer and moves nothing.
 
 ## [0.2.0] - 2026-11-27
 

@@ -166,6 +166,11 @@ impl Browsing {
     }
 }
 
+/// A run that is on the worker and has nothing queued: it makes a second write wait, as a paste that is running does.
+fn busy() -> Bulk {
+    Bulk::new(crate::services::write::Kind::Copy, Vec::new(), Vec::new(), PathBuf::new())
+}
+
 #[test]
 fn a_opens_a_name_dialog_in_the_folder_of_the_selected_file() {
     let b = browsing(&["robert-langdon.md"]);
@@ -477,7 +482,8 @@ fn a_click_on_the_copy_row_puts_the_row_on_the_clipboard() {
     b.app.render();
     b.app.click(x + 2, y + 1 + 3);
     assert!(b.menu().is_none());
-    assert_eq!(b.model.borrow().clipboard, Some(Clip { path: b.root.join("robert-langdon.md"), cut: false }));
+    let clip = b.model.borrow().clipboard.clone().expect("the copy is on the clipboard");
+    assert_eq!((clip.paths, clip.cut), (vec![b.root.join("robert-langdon.md")], false));
 }
 
 #[test]
@@ -545,7 +551,7 @@ fn a_cut_pasted_into_its_own_folder_changes_nothing_and_ends_the_cut() {
     b.app.press("x");
     b.app.press("v");
     assert!(b.model.borrow().clipboard.is_none(), "the cut ends");
-    assert!(!b.model.borrow().pasting, "nothing runs");
+    assert!(b.model.borrow().bulk.is_none(), "nothing runs");
     assert_eq!(fs::read_dir(&b.root).unwrap().count(), 1, "nothing is copied beside it");
 }
 
@@ -557,7 +563,7 @@ fn a_folder_pasted_into_itself_is_refused_in_the_footer() {
     b.app.press("v");
     b.await_footer("A folder cannot go into itself.");
     assert_eq!(fs::read_dir(b.root.join("hogsmeade")).unwrap().count(), 0, "nothing was copied");
-    assert!(!b.model.borrow().pasting);
+    assert!(b.model.borrow().bulk.is_none());
 }
 
 #[test]
@@ -583,10 +589,10 @@ fn a_paste_while_one_runs_is_refused_with_a_notice() {
     b.select("robert-langdon.md");
     b.app.press("c");
     // No copy is in flight in this test, so the flag stands in for one that is.
-    b.model.borrow_mut().pasting = true;
+    b.model.borrow_mut().bulk = Some(busy());
     b.select("hogsmeade");
     b.app.press("v");
-    assert_eq!(b.footer().as_deref(), Some("Still pasting. Try again when it finishes."));
+    assert_eq!(b.footer().as_deref(), Some("Still working. Try again when it finishes."));
     assert!(!b.root.join("hogsmeade/robert-langdon.md").exists(), "the second paste writes nothing");
 }
 
@@ -735,9 +741,9 @@ fn a_duplicate_while_a_paste_runs_is_refused_in_the_dialog() {
     let b = browsing(&["robert-langdon.md"]);
     b.app.press("R");
     // No copy is in flight in this test, so the flag stands in for one that is.
-    b.model.borrow_mut().pasting = true;
+    b.model.borrow_mut().bulk = Some(busy());
     b.app.press("return");
-    assert_eq!(b.error().as_deref(), Some("Still pasting. Try again when it finishes."));
+    assert_eq!(b.error().as_deref(), Some("Still working. Try again when it finishes."));
     assert!(b.dialog().is_some(), "the dialog stays open until the paste finishes");
     assert!(!b.has("robert-langdon copy.md"), "nothing is copied");
 }
@@ -748,4 +754,269 @@ fn capital_r_with_no_row_opens_nothing() {
     b.app.press("R");
     assert!(b.dialog().is_none());
     assert!(b.menu().is_none());
+}
+
+#[test]
+fn s_marks_the_row_and_moves_down_and_capital_s_clears_every_mark() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md", "leigh-teabing.md"]);
+    b.select("leigh-teabing.md");
+    b.app.press("s");
+    assert_eq!(b.selected(), "robert-langdon.md", "the selection moves down one row");
+    b.app.press("s");
+    b.app.press("s");
+    assert_eq!(b.selected(), "sophie-neveu.md", "the last row keeps the selection");
+    assert_eq!(b.model.borrow().browser.marked().len(), 3);
+    assert!(b.app.text().contains("3 marked"), "the footer counts the marks:\n{}", b.app.text());
+    assert!(b.app.text().contains('✓'), "a marked row takes a check:\n{}", b.app.text());
+    b.app.press("S");
+    assert!(b.model.borrow().browser.marked().is_empty());
+    assert!(!b.app.text().contains("marked"), "no count without marks:\n{}", b.app.text());
+}
+
+#[test]
+fn a_second_s_on_a_marked_row_unmarks_it() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("s");
+    b.select("robert-langdon.md");
+    b.app.press("s");
+    assert!(b.model.borrow().browser.marked().is_empty());
+}
+
+#[test]
+fn escape_drops_the_clipboard_first_and_then_the_marks() {
+    let b = browsing(&["robert-langdon.md", "sophie-neveu.md"]);
+    b.select("robert-langdon.md");
+    b.app.press("c");
+    b.app.press("s");
+    b.app.press("escape");
+    assert!(b.model.borrow().clipboard.is_none(), "the first Esc drops the copy");
+    assert_eq!(b.model.borrow().browser.marked().len(), 1, "and keeps the marks");
+    b.app.press("escape");
+    assert!(b.model.borrow().browser.marked().is_empty(), "the second Esc drops the marks");
+}
+
+/// Marks `count` rows, from `leigh-teabing.md` down: each `s` moves the selection to the next row.
+fn mark_from_leigh(b: &Browsing, count: usize) {
+    b.select("leigh-teabing.md");
+    for _ in 0..count {
+        b.app.press("s");
+    }
+}
+
+#[test]
+fn c_then_v_copies_every_marked_row_into_the_folder_and_clears_the_marks() {
+    let b = browsing(&["hogwarts/", "leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 3);
+    b.app.press("c");
+    assert_eq!(b.footer().as_deref(), Some("Copied 3 items. Paste them with v."));
+    b.select("hogwarts");
+    b.app.press("v");
+    b.await_selected("sophie-neveu.md");
+    assert!(b.has("hogwarts/leigh-teabing.md") && b.has("hogwarts/robert-langdon.md"));
+    assert!(b.has("hogwarts/sophie-neveu.md") && b.has("sophie-neveu.md"), "a copy leaves the originals");
+    assert!(b.model.borrow().browser.marked().is_empty(), "a run that lands every item clears the marks");
+    assert!(b.model.borrow().clipboard.is_some(), "a copy stays on the clipboard for another paste");
+}
+
+#[test]
+fn x_then_v_moves_every_marked_row_and_the_rows_leave_the_root() {
+    let b = browsing(&["hogwarts/", "leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 2);
+    b.app.press("x");
+    b.select("hogwarts");
+    b.app.press("v");
+    b.await_selected("robert-langdon.md");
+    assert!(b.has("hogwarts/leigh-teabing.md") && b.has("hogwarts/robert-langdon.md"));
+    assert!(!b.has("leigh-teabing.md") && !b.has("robert-langdon.md"), "a move leaves nothing behind");
+    assert!(b.has("sophie-neveu.md"), "an unmarked row stays");
+    assert!(b.model.borrow().clipboard.is_none(), "the cut ends with its paste");
+}
+
+#[test]
+fn a_paste_that_meets_a_missing_entry_stops_and_says_how_many_landed() {
+    let b = browsing(&["hogwarts/", "leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 3);
+    b.app.press("c");
+    // The second item goes missing after the copy was made: the run copies the first and stops there.
+    fs::remove_file(b.root.join("robert-langdon.md")).unwrap();
+    b.select("hogwarts");
+    b.app.press("v");
+    b.await_footer("Copied 1 of 3. Nothing is at that path.");
+    assert!(b.has("hogwarts/leigh-teabing.md"), "the first item landed");
+    assert!(!b.has("hogwarts/sophie-neveu.md"), "the run did not go on past its error");
+    assert_eq!(b.model.borrow().browser.marked().len(), 3, "a run that stops keeps its marks");
+    assert!(b.model.borrow().clipboard.is_some(), "and the clipboard");
+}
+
+#[test]
+fn a_cut_of_marks_pasted_where_they_lie_changes_nothing_and_ends_the_cut() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md"]);
+    mark_from_leigh(&b, 2);
+    b.app.press("x");
+    b.app.press("v");
+    assert!(b.model.borrow().clipboard.is_none(), "every item is already here, so the cut ends");
+    assert!(b.has("leigh-teabing.md") && b.has("robert-langdon.md"));
+    assert_eq!(b.model.borrow().browser.marked().len(), 2, "nothing ran, so the marks stay");
+}
+
+#[test]
+fn the_menu_counts_the_marks_and_the_clipboard() {
+    let b = browsing(&["hogwarts/", "leigh-teabing.md", "robert-langdon.md"]);
+    mark_from_leigh(&b, 2);
+    b.app.press("space");
+    assert_eq!(b.menu_row("Copy 2 items"), Some(true));
+    assert_eq!(b.menu_row("Cut 2 items"), Some(true));
+    assert_eq!(b.menu_row("Paste"), Some(false), "nothing is on the clipboard yet");
+    b.app.press("escape");
+    b.app.press("c");
+    b.app.press("space");
+    assert_eq!(b.menu_row("Paste 2 items"), Some(true));
+}
+
+#[test]
+fn r_renames_the_selected_row_while_other_rows_are_marked() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md"]);
+    mark_from_leigh(&b, 1);
+    assert_eq!(b.selected(), "robert-langdon.md");
+    b.app.press("r");
+    assert_eq!(b.field(), "robert-langdon.md", "a rename is single-row");
+}
+
+#[test]
+fn an_entry_replaced_after_it_was_copied_is_skipped_and_the_run_stops() {
+    let b = browsing(&["hogwarts/", "leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 3);
+    b.app.press("c");
+    // A new file takes robert's name: written beside the old one and renamed over it, so it has a new inode, and the
+    // old one is gone before the copy runs.
+    fs::write(b.root.join("swap.tmp"), "Hedwig\n").unwrap();
+    fs::rename(b.root.join("swap.tmp"), b.root.join("robert-langdon.md")).unwrap();
+    b.select("hogwarts");
+    b.app.press("v");
+    b.await_footer("Copied 1 of 3. An item changed after it was copied or cut, so it was skipped.");
+    assert!(b.has("hogwarts/leigh-teabing.md"), "the item before the swap landed");
+    assert!(!b.has("hogwarts/robert-langdon.md"), "the replaced entry was not copied");
+    assert!(!b.has("hogwarts/sophie-neveu.md"), "the run stopped there");
+    assert!(b.model.borrow().clipboard.is_some(), "a copy stays on the clipboard");
+}
+
+#[test]
+fn a_mark_on_a_file_that_is_gone_is_left_out_of_a_copy() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md"]);
+    mark_from_leigh(&b, 1);
+    fs::remove_file(b.root.join("leigh-teabing.md")).unwrap();
+    b.select("robert-langdon.md");
+    b.app.press("c");
+    assert!(b.model.borrow().clipboard.is_none(), "nothing is left to copy, so the clipboard stays empty");
+}
+
+#[test]
+fn capital_d_on_marks_names_every_entry_and_trashes_them_together() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 3);
+    b.app.press("D");
+    let dialog = b.dialog().expect("the confirm opens");
+    assert_eq!(dialog.title, "Move 3 items to the Trash?");
+    assert!(dialog.message.ends_with("leigh-teabing.md\nrobert-langdon.md\nsophie-neveu.md"), "{}", dialog.message);
+    b.app.press("tab");
+    b.app.press("return");
+    assert!(b.dialog().is_none());
+    // The files leave on the worker; the run's answer then clears the marks, so both are waited for.
+    let landed = b.app.wait_until(Duration::from_secs(5), || {
+        !b.has("leigh-teabing.md")
+            && !b.has("robert-langdon.md")
+            && !b.has("sophie-neveu.md")
+            && b.model.borrow().browser.marked().is_empty()
+    });
+    assert!(landed, "every marked entry went to the Trash, and a run that landed them clears the marks");
+}
+
+#[test]
+fn the_confirm_names_five_entries_and_counts_the_rest_and_cancel_keeps_them() {
+    let b = browsing(&[
+        "albus-dumbledore.md",
+        "diagon-alley.md",
+        "gringotts.md",
+        "harry-potter.md",
+        "hermione-granger.md",
+        "hogwarts-owls.md",
+        "minerva-mcgonagall.md",
+    ]);
+    b.select("albus-dumbledore.md");
+    for _ in 0..7 {
+        b.app.press("s");
+    }
+    b.app.press("D");
+    let dialog = b.dialog().expect("the confirm opens");
+    assert_eq!(dialog.title, "Move 7 items to the Trash?");
+    assert_eq!(
+        dialog.message,
+        "These go to the Trash. Finder's Put Back restores them:\n\
+         albus-dumbledore.md\ndiagon-alley.md\ngringotts.md\nharry-potter.md\nhermione-granger.md\nand 2 more"
+    );
+    b.app.press("return");
+    assert!(b.dialog().is_none());
+    assert!(b.has("albus-dumbledore.md") && b.has("minerva-mcgonagall.md"), "Cancel keeps every entry");
+    assert_eq!(b.model.borrow().browser.marked().len(), 7, "and its marks");
+}
+
+#[test]
+fn an_entry_replaced_after_the_confirm_opens_refuses_the_whole_run() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 2);
+    b.app.press("D");
+    assert!(b.dialog().is_some());
+    fs::write(b.root.join("swap.tmp"), "Griphook\n").unwrap();
+    fs::rename(b.root.join("swap.tmp"), b.root.join("robert-langdon.md")).unwrap();
+    b.app.press("tab");
+    b.app.press("return");
+    assert_eq!(b.footer().as_deref(), Some("That entry changed since it was listed, so nothing went to the Trash."));
+    assert!(b.has("leigh-teabing.md"), "the entry before the swap is not trashed either");
+    assert_eq!(fs::read_to_string(b.root.join("robert-langdon.md")).unwrap(), "Griphook\n", "the new entry stays");
+}
+
+#[test]
+fn a_mark_whose_entry_is_gone_before_the_confirm_is_not_named() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md", "sophie-neveu.md"]);
+    mark_from_leigh(&b, 3);
+    fs::remove_file(b.root.join("leigh-teabing.md")).unwrap();
+    b.app.press("D");
+    let dialog = b.dialog().expect("the confirm opens");
+    assert_eq!(dialog.title, "Move 2 items to the Trash?");
+    assert!(!dialog.message.contains("leigh-teabing"), "{}", dialog.message);
+}
+
+#[test]
+fn the_menu_names_the_delete_count() {
+    let b = browsing(&["leigh-teabing.md", "robert-langdon.md"]);
+    mark_from_leigh(&b, 2);
+    b.app.press("space");
+    assert_eq!(b.menu_row("Delete 2 items…"), Some(true));
+}
+
+#[test]
+fn a_link_is_refused_before_the_confirm_because_finder_cannot_trash_it() {
+    let b = browsing(&["vittoria-vetra.md"]);
+    symlink(b.root.join("vittoria-vetra.md"), b.root.join("robert-langdon-link.md")).unwrap();
+    let entries = crate::services::fs::list(&b.root, &[]).unwrap();
+    b.model.borrow_mut().browser.listed(&b.root, entries);
+    b.select("robert-langdon-link.md");
+    b.app.press("D");
+    assert!(b.dialog().is_none(), "no confirm opens for a link");
+    assert_eq!(b.footer().as_deref(), Some("A link cannot go to the Trash through Finder, so nothing was moved."));
+    assert!(b.root.join("robert-langdon-link.md").symlink_metadata().is_ok(), "the link stays");
+}
+
+#[test]
+fn a_trash_run_reveals_the_row_after_the_selection_when_that_row_is_kept() {
+    let b = browsing(&["harry-potter.md", "hermione-granger.md", "robert-langdon.md", "sophie-neveu.md"]);
+    b.select("harry-potter.md");
+    b.app.press("s");
+    assert_eq!(b.selected(), "hermione-granger.md");
+    b.app.press("D");
+    b.app.press("tab");
+    b.app.press("return");
+    b.await_selected("robert-langdon.md");
+    assert!(!b.has("harry-potter.md") && b.has("hermione-granger.md"));
 }

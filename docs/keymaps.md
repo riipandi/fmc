@@ -21,10 +21,12 @@ Press `?` inside fmc to see this list in the reader, or run `fmc --help` for the
 | `A` | new folder |
 | `R` | duplicate the row under a new name |
 | `r` | rename |
-| `D` `Delete` | move to the Trash |
-| `c` | copy the row |
-| `x` | cut the row; a paste moves it |
+| `D` `Delete` | move the marked rows, or the row, to the Trash |
+| `c` | copy the marked rows, or the row |
+| `x` | cut the marked rows, or the row; a paste moves them |
 | `v` | paste into the folder, or beside the file |
+| `s` | mark the row and move down |
+| `S` | clear the marks |
 
 The file the list selects shows in the reader after a short pause, and the focus stays in the list. `p` turns that preview off or on for the session, and `auto_preview` in the settings sets the start. In the list, `[` and `]` move the selection by `sidebar_jump` rows and scroll the reader by `reader_jump` lines. On the changes screen they step through the hunks. See [Configuration](configuration.md).
 
@@ -98,7 +100,7 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 | `Tab` | switch panes |
 | `y` | copy selection, or the current path |
 | `Ctrl+o` `Alt+i` | jump back / forward through opened places |
-| `Esc` | clear selection or search, or back to the file list; in the list, drop a copy or cut |
+| `Esc` | clear selection or search, or back to the file list; in the list, drop a copy or cut, then the marks |
 | `q` | close the open document or key list; back from the changes |
 | `?` | this key list; ? or Esc closes it |
 | `Ctrl+/` | show / hide the sidebar |
