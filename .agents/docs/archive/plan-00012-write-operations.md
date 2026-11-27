@@ -25,7 +25,7 @@ phases:
       note: the docs sync, the ledger close, and handover-00008; the commit is named by its message, since its hash is its own
     - id: 6
       title: Final validation
-      status: pending
+      status: done
       note: runs after the docs commit; no commit if green; a failure gets a fix: commit
 ---
 
