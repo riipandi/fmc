@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T11:35:00+07:00
+updated: 2026-11-27T11:47:21+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -713,8 +713,8 @@ Decision (agent, on the owner's delegation, 2026-11-27):
 2. **Wide (80+) stays Scouter plus the earlier records.** Why: parity is the product's base; the owner's desktop complaints were about behaviour already fixed (auto-preview, Enter), not layout.
 3. **Compact is a navigation stack, not a drawer.** Two full-screen pages: Files and Reader (plus the existing Changes, Keys, and Find pages). Opening a file pushes Reader; Back returns to Files with the selection and scroll kept. Why: this is how every phone file browser works (iOS Files, Android Files); a drawer over a reader only makes sense when the reader is visible beside it, which it is not at 40–59 columns.
 4. **Compact starts on Files, with no welcome card.** Why: on a phone the first useful screen is the list; the welcome card was telling the user to tap something to get to it.
-5. **Compact drops the panel border and the header rule.** Chrome becomes one top bar and one bottom bar (2 rows instead of 6, 0 border columns instead of 2). Why: at 49x40 the border, the header rule, and the two-row footer took 6 of 40 rows and 2 of 49 columns; content is what a phone screen is for.
-6. **Top bar:** left, a text back button `‹ Files` on Reader-like pages (the folder name on Files); centre-left, the page title (the file name); right, the existing quiet tag (`files`, `read-only`). Plain text in the accent colour with a space after it, no filled box. Why: the filled box glued to the title read as a rendering glitch; a text back button is the platform idiom and needs no glyph-width tricks.
+5. **Compact drops the panel border and the header rule.** Chrome becomes one top bar and one bottom bar (2 rows instead of 6, 0 border columns instead of 2). Why: at 49x40 the border, the header rule, and the two-row footer took 6 of 40 rows and 2 of 49 columns; content is what a phone screen is for. Superseded in part by plan-00007 (owner, 2026-11-27): compact draws the border and the two-row header too (the record below).
+6. **Top bar:** left, a text back button `‹ Files` on Reader-like pages (the folder name on Files); centre-left, the page title (the file name); right, the existing quiet tag (`files`, `read-only`). Plain text in the accent colour with a space after it, no filled box. Why: the filled box glued to the title read as a rendering glitch; a text back button is the platform idiom and needs no glyph-width tricks. Superseded in part by plan-00007: the back text is a lone `‹`, and the page name is dropped.
 7. **Bottom bar:** one row of equal-width segments, each a word, no key glyphs: Files page `Find · Changes · Keys`; Reader page `Back · Search · Keys`; Changes page `Back · All/One · Split`; a prompt (find, search, `:`) replaces the bar while open, with `Cancel` as the first segment. Why: equal segments make every target at least 12 columns wide at 40 columns, thumbs live at the bottom, and words beat `^/` and `?` glyphs for people who are not using a keyboard. The mode pill and the path line go; the top bar carries the location.
 8. **Touch rules in every tier:** a row acts on release when the pointer did not move (as the fold rule already does), so a swipe never opens or toggles; a tap on a file opens it (compact: pushes Reader; medium and wide: as today); swipes scroll the pane under them; the whole row is the target. Why: a finger lands, drifts, and lifts; acting on press turns every scroll attempt into an accidental open.
 9. **Compact turns auto-preview off.** Why: the reader is not on screen while the list is; a preview there is wasted work.
@@ -744,9 +744,9 @@ Agent decisions (plan-00005, taken under the owner's delegation; each is reversi
 - Phase 3, `Copy` takes the Reader bar's middle cell while text is selected: agent decision: the bar keeps P8's tappable copy on a phone, and the search key is one tap away again when the selection is cleared — why: a selection cannot be copied on a phone without a tap, and the plan's bar has no other slot for it.
 - Phase 3, a prompt's bar is `Cancel` in the first cell and then the prompt's own text: agent decision: D3 says `Cancel`, then the prompt, so the text stays in the bar where a thumb reads it, and the cell's tap presses `Esc` — why: a segment per prompt key would hide the query the user is typing.
 - Phase 3, the back text is followed by two columns, not one: agent decision: one column ran `‹ Files` into the title (`‹ Files README.md`) — why: a gap that reads as a separator, not as one phrase. The spec said a space; this is a visible change of width, and the owner can set it back.
-- Phase 3, the back text names the page Back returns to, so the key page over a document reads `‹ Reader`: agent decision: Back goes to that page, and the label says where — why: a fixed `‹ Files` would name a page Back does not reach.
+- Phase 3, the back text names the page Back returns to, so the key page over a document reads `‹ Reader`: agent decision: Back goes to that page, and the label says where — why: a fixed `‹ Files` would name a page Back does not reach. Superseded by plan-00007: the back chevron names no page; Back still goes to the page under the top.
 - Phase 3, the reader's position (`Top`, `37%`) and the file's path leave the compact footer: agent decision: record 7 removes the path line, and the bar has no room for the position beside its words; the scrollbar still shows where the reader is — why: a second line of facts would bring back the two-row footer the record removes.
-- Phase 3, the finder's bar in compact is one row with no rule, as the pane headers are: agent decision: the finder's bar takes the header's place (plan-00005, record 5), so its rows start on the same row as the list — why: the bar's second row was pushing the list below the list top the hit test assumes.
+- Phase 3, the finder's bar in compact is one row with no rule, as the pane headers are: agent decision: the finder's bar takes the header's place (plan-00005, record 5), so its rows start on the same row as the list — why: the bar's second row was pushing the list below the list top the hit test assumes. Superseded by plan-00007: the finder bar is two rows with its hairline in every tier.
 - Phase 4, the chevron and the compact back text share the header's lead cell, and each header has one press handler that acts by tier: agent decision: one cell holds one action at a time, so the handler asks the tier (Back in compact, a toggle in medium) rather than two handlers fighting for the press — why: a second handler on the same cell would stop or miss the press depending on the order of the two.
 - Phase 4, a chevron shows only where its action works: `‹` on the list's header while a document is open and the list shows, `›` on the reader's header while the list is hidden, and none on the welcome screen — agent decision: a control that does nothing is a defect, and the welcome's list cannot hide (plan-00002, D7) — why: the chevron must read as a control the user can use.
 - Phase 4, a tap on the header row no longer toggles the list at any width below 80 (plan-00004, P1 and P3 retired by record 10): agent decision: the chevron is the toggle, so a tap on a title does nothing — why: the owner's report named three ways to toggle the list as the clunky part, and a title tap that hides the list is one of them.
@@ -767,6 +767,43 @@ Follow-ups to the layout tiers (2026-11-27, the same delegation), decisions the 
 - The medium chevron's target is the lead text and the title beside it, and the title's box runs from the chevron to the badges: a press on its blank end toggles the list too. Why: the framework hit-tests the box, not the words, and a box whose edge the finger must find is the trap the chevron had.
 - Below 80 columns the first press on a row acts (tree, finder, changes); at 80 and wider it only focuses the list, as the owner's rule says. In compact the page sets the focus on every paint, so the focus-first branch is reached only in medium and wide. Why: tests in compact set the focus by hand, so they pin the handler, not a reachable state.
 - The welcome card goes in the medium tier when the reader beside the list is narrower than the card. The test is the reader's inner width (its width less its border) against the card's 45 columns, which the widest hint, `changes in a git repository`, sets. With the default sidebar the card goes below 75 columns. Why: at 60 to 74 the card cut into a ragged block. The wide tier keeps the card as it was, so a sidebar dragged wide at 80 still clips it: an open question for the owner, not decided here.
+
+### Decision: compact has the medium tier's border and two-row header
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context (2026-11-27): the owner's screenshots at about 50 columns put compact next to medium. Compact had no panel border and a one-row header, so it read as a different app. Record 5 removed both to free six rows and two columns; the owner asked for both tiers to look the same.
+
+Decision (owner, 2026-11-27, plan-00007):
+
+1. Compact pages draw the medium tier's rounded panel border. In compact the visible page always holds the focus, so its border is the accent colour.
+2. The pane headers and the finder bar are two rows with the hairline in every tier. The `compact` switch on `Header` and `Find` is removed.
+3. The compact back chevron is a lone `‹`, styled and spaced as medium's (accent, two columns after it). A press on it or on the title beside it goes Back. The page name is dropped, so `‹ Files` is `‹`. Files has no lead: nothing is underneath it.
+4. The bottom bar is unchanged. Its words are the taps, and `Back` names the action.
+
+Why: the tiers differ by their width budget, not by their look, and one frame and one header make the phone read as the medium screen. The page name costs six columns the path needs at 40 to 59 columns, and the bottom bar already says `Back`.
+
+Consequences:
+
+- (positive) Compact and medium share one frame, one header, and one hairline; the whole title box is a back target, not a single glyph.
+- (negative) Compact loses two columns and three rows (the top border, the hairline, the bottom border), so the list has five rows fewer than the screen. A long title is cut sooner: at 40 columns the live run shows `hogwarts-00-the-maraude` with `read-only` kept, and the cut has no ellipsis.
+- (negative) The chevron no longer names the page Back returns to. The Keys page sits over Files, so Back goes to Files as before, but the header no longer says so.
+
+Alternatives considered:
+
+- Keep the one-row header and draw only the border: rejected, because the owner's screenshots asked for the header too, and the one-row header is what made compact look unlike medium.
+- Keep `‹ Files` beside the chevron: rejected, because at 40 to 59 columns the name takes the columns the path needs, and the bottom bar already names Back.
+- Move the bottom bar inside the frame: rejected for now (plan-00007, D4). Its words are the phone's tap targets, and the owner did not ask for a change there.
+
+Supersedes: the border and header items of record 5, the `‹ Files` back text of record 6, and the finder-bar note of plan-00005 phase 3.
+
+Agent decisions in plan-00007 (each reversible, with its reason):
+
+- The compact lead and the medium chevron share one drawing, the `PaneHeader` lead (`‹` and two columns): agent decision: one lead for both tiers — why: the owner asked the tiers to match, and the lead is the part they compare.
+- The lead and the title run one press handler, `app/layout.rs` `header_press`: it runs Back in compact and the chevron toggle in medium: agent decision: the tier decides the action, not the cell — why: the title box is the back target, and two handlers on one box would fight for the press.
+- The list starts on `LIST_TOP` (row 3) in every tier, and `list_top` is removed: agent decision: one offset, since the border and the header are the same in both tiers — why: the row maps then need no compact case to keep right.
+- A press on the compact title goes Back, where plan-00005 pinned that it did nothing: agent decision: the whole title box is the target (plan-00007, D3) — why: the chevron alone is a one-column target for a finger.
+- The row tests tap the first and last visible rows of the tree, the finder, and the change list at 40 and 59 columns, and check the row that opens is the one drawn there. The diff header's fold is checked live, not in a unit test, because the diff body needs its patches from the worker — agent decision: the diff's row maps follow the laid-out rectangles, so a live tap is the proof — why: the unit harness does not run the worker.
 
 ### Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram
 
