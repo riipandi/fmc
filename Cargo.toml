@@ -6,7 +6,7 @@ description = "A terminal file browser with Markdown, code, image, and git diff 
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/riipandi/fmc"
 readme = "README.md"
-rust-version = "1.90"
+rust-version = "1.92"
 keywords = ["tui", "terminal", "file-manager", "git", "markdown"]
 categories = ["command-line-utilities"]
 
@@ -17,6 +17,9 @@ opentui-sys = "=0.9.9"
 clap = { version = "4.6", default-features = false, features = ["std", "derive", "help", "usage"] }
 icu_collator = "2.4"
 imagesize = "0.15"
+# Mermaid diagrams in rendered Markdown (`src/reader/mermaid.rs`); pinned exactly, its own dependencies come with it.
+mermaid-text = "=0.58.0"
+unicode-width = "0.2.3"
 # The grammars Scouter vendors beyond OpenTUI's bundled set (Rust comes with `opentui`'s `tree-sitter` feature).
 # Pinned exactly: their highlight queries are Scouter's `grammars/*/highlights.scm`.
 tree-sitter-json = "=0.24.8"

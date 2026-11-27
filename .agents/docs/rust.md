@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-27T04:02:00+07:00
+updated: 2026-11-27T11:35:00+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -11,7 +11,7 @@ Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cr
   - `gen` is a reserved keyword.
   - Tail-expression temporaries and `if let` scrutinee drop order changed in 2024: check them when a lock guard or a borrow is involved.
 - The engine is `opentui` and `opentui-sys` =0.9.9 with the `tree-sitter` feature (`Cargo.toml`). Read the API from the locked source; docs.rs for the locked version is the second source.
-- `rust-version = "1.90"`: the floor set by `tree-sitter` 0.27.2; `cargo +1.90 check` passed on 2026-11-26. The pinned toolchain (`rust-toolchain.toml`) is newer.
+- `rust-version = "1.92"`: the floor set by `mermaid-text` 0.58.0 (owner decision O4, plan-00006; it was 1.90 for `tree-sitter` 0.27.2). The pinned toolchain (`rust-toolchain.toml`, 1.100.0) builds it. No 1.92 toolchain is installed here, so `cargo +1.92 check` has not run.
 
 ## Layout rules
 
@@ -49,6 +49,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **Overlapping captures cascade as Core's.** The vendored grammars register with `Grammar::core_captures()` (`src/ui/syntax/mod.rs`, `grammar`). Without it, a TOML key takes `(bare_key) @type`'s style where Scouter shows `(pair ...) @property`'s; with it, every vendored grammar's captures match Scouter's (plan-00001 phase 11). Rust, bundled with `opentui`, is registered by the binding and matched Scouter without it.
 - **Core's queries use `#match?`, not `#lua-match?`.** The binding evaluates tree-sitter's regex predicates and ignores unknown ones, so a `#lua-match?` would colour every identifier. `src/ui/syntax/queries/{typescript,typescriptreact,zig}/highlights.scm` carry the translation (same patterns; the comment pattern takes `(?s)`); the test `typescript_names_a_property_as_core_does` pins one capture.
 - **The Markdown injections are the binding's own.** `src/ui/syntax/queries/markdown/injections.scm` is the text of `MARKDOWN_INJECTIONS` (`opentui-0.9.9/src/syntax/highlight.rs`), not Core's: Core's `#set-lang-from-info-string!` and `#offset!` are not evaluated, and inline text needs `injection.include-unnamed-children` to keep its backticks in the string colour.
+- **A Mermaid diagram learns its width from layout, not from the renderer.** `ui/markdown.rs` registers a `mermaid` code-block renderer, which runs when a block is built or changes, never on a resize, and `CodeBlock` carries no width. It returns `Custom::measured` (`ui/mermaid.rs`), so layout offers it the reader's width through `Component::measure`, and a resize measures it again. `measure` runs inside native layout: it must not change other widgets. The widget keeps the rows of its last measure; paint draws them when they fit the box and renders again only when they do not, because the engine is not idempotent at its own width (the gantt sample draws at 96 columns within 100 and falls back at 96).
 - **Rendered Markdown has rows only after a frame.** The viewer's scrollbar and the footer's position count the widget's own height (`MarkdownView::rows`, `src/ui/markdown.rs`), which is empty until the frame lays the document out; `repaint_after_layout` (`src/app/mod.rs`) paints again 20 ms after each event and resize. `Markdown::block_rows` are screen rows that move up as the view scrolls, so their last end is not the total (plan-00001 phase 23c, audit-00001 F-03). The body and the stack clip with `Overflow::Hidden`, or a rendered block paints over the footer.
 - **The reader scrolls in a `ScrollBox`, and unwrapped text is pane-wide.** `ui/viewer.rs` wraps the text, the rendered view, and the picture. Unwrapped text takes the pane's inner width with the bar's column (`app/mod.rs` paint, `set_width`), which gives Scouter's pan range (issue-00008, plan-00001 phase 23e). The wrapped row count, which the bar and the footer use, comes from a second `TextView` on the code's buffer (`CodeView::rows`), because `Code` keeps its own view private. Unwrapped text keeps its numbers in a gutter beside the box (`ui/viewer.rs` gutter slot, `ui/reader.rs` `CodeView::follow` moves it up with the scroll), so a pan moves only the text; a wheel over that gutter scrolls the box (`app/mouse.rs` `wire_gutter`).
 - **Search marks name a style the buffer's table must hold.** A layer's group set names `opentui.<name>`, resolved against the buffer's style table, and the binding registers only the capture names a grammar uses. The code view installs its own table (`ui/syntax/mod.rs` `table`) with every capture name of the queries plus `opentui.search.match`; a new capture name in a query must join `CAPTURE_NAMES`, or it is drawn plain.

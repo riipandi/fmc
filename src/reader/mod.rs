@@ -7,6 +7,7 @@ pub mod image;
 pub mod jump;
 pub mod language;
 pub mod markdown;
+pub mod mermaid;
 pub mod motion;
 pub mod position;
 pub mod search;

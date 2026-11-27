@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T11:19:00+07:00
+updated: 2026-11-27T11:35:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
@@ -10,7 +10,8 @@ phases:
       note: "Spike in a throwaway project (/tmp/fmc-spike, outside the repo; fmc's manifests and src untouched). Grok mermaid.rs ported to plain rows: 157 lines removed, 42 added, 3,968 non-test lines kept, unicode-width the only crate, 144 tests pass. mermaid-text 0.58.0 (MIT, MSRV 1.92, six new crates on macOS). Four Harry Potter and Dan Brown diagrams plus one broken, at 60 and 100 columns. Recommendation: mermaid-text with max_width_strict (Grok frames most flowcharts: no compaction, 104 columns natural). Width: the renderer is not called on resize (opentui markdown.rs:928-1426); a measured Custom widget gets the width in layout (custom.rs:155), to be proven in phase 2. Report: research/mermaid-spike.md. Stopped for the owner's pick."
     - id: 2
       title: "Mermaid in rendered Markdown, with the engine the owner picked"
-      status: pending
+      status: done
+      note: "mermaid-text 0.58.0 with max_width_strict (src/reader/mermaid.rs), drawn by a measured Custom widget (src/ui/mermaid.rs). Width route: layout's measure, so a resize re-measures with no renderer call; proved by a TestApp test and live (100 to 60 columns: the frame's reason moved from 'the reader has 65' to 'the reader has 53'). 19 new tests. Crates beyond O4's list: none on macOS; the lock also gains target-only packages (rules.md). Records: architecture.md, 'Mermaid in rendered Markdown' (four records)."
     - id: 3
       title: "Grammar load spike and dependency approval list"
       status: pending
@@ -59,6 +60,7 @@ Owner, 2026-11-27 (do not reopen):
 - **O1.** Mermaid: spike both engines first, then the owner picks.
 - **O2.** Grammars: every compatible crate, each behind a load test.
 - **O3.** Fuzzy: a `find_mode` setting (`"substring"` default, `"fuzzy"`) picks the start mode; `Ctrl+F` in the finder flips it for the session.
+- **O4.** (After phase 1.) Mermaid engine: `mermaid-text` 0.58.0 with `max_width_strict`, over the Grok port (`research/mermaid-spike.md`). This approves the MSRV bump from 1.90 to 1.92 and the new crates `mermaid-text`, `ascii-dag`, `chrono`, `iana-time-zone`, `core-foundation-sys`, `num-traits`, and `unicode-width`. Its quirks are accepted: reordered class members, and some malformed lines rendered without an error.
 
 Agent, within those:
 

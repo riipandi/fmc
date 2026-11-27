@@ -762,3 +762,7 @@ mod focus_tests;
 mod layout_tests;
 #[cfg(test)]
 mod mouse_tests;
+
+#[cfg(test)]
+#[path = "mermaid_tests.rs"]
+mod mermaid_tests;

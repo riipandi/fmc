@@ -9,6 +9,7 @@ pub mod footer;
 pub mod header;
 pub mod hints;
 pub mod markdown;
+pub mod mermaid;
 pub mod picture;
 pub mod reader;
 pub mod scrollbar;

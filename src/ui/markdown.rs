@@ -1,6 +1,7 @@
 //! The rendered Markdown view (Scouter `src/reader/code-view.ts`, the `MarkdownRenderable` of `preview`): OpenTUI's
 //! Markdown widget with the syntax styles of the palette, the text colour, and two cells of padding on each side.
-//! Scrolling arrives with plan-00001 W3 phase 14.
+//! Mermaid fences are drawn as diagrams (`ui/mermaid.rs`); Scouter draws them as code. Scrolling arrives with plan-00001
+//! W3 phase 14.
 
 use std::sync::Arc;
 
@@ -8,6 +9,7 @@ use fmc::theme::Palette;
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
+use super::mermaid::{Colors, Diagram};
 use super::styled::color;
 use super::syntax;
 
@@ -44,6 +46,12 @@ impl MarkdownView {
             rule: color("#888888"),
         };
         self.doc.colors(colors).syntax_theme(Arc::new(syntax::theme(p))).scope_styles(true);
+        // An empty fence keeps the default code block; the renderer is registered again on each restyle, which replaces it.
+        let diagram = Colors::new(p);
+        self.doc.code_block_renderer("mermaid", move |block| {
+            (!block.code.trim().is_empty())
+                .then(|| Custom::measured(block.app, Diagram::new(block.code, diagram)).as_any())
+        });
     }
 
     pub fn show(&self, markdown: &str) {

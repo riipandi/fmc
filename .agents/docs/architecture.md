@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T04:02:00+07:00
+updated: 2026-11-27T11:35:00+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -451,7 +451,7 @@ Alternatives considered:
 
 ## Pending decisions
 
-- `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3 and is recorded in `rust.md`.
+- `rust-version` 1.90 was confirmed by `cargo +1.90 check` in `plan-00001` phase 3. Superseded by the owner's decision O4 of `plan-00006` (1.92, for `mermaid-text`; see "Decision: Mermaid is drawn by `mermaid-text`"); `rust.md` records the floor.
 
 Note (2026-11-26, plan-00001 W5): a knock-on of the `Ctrl+q` record above. The footer hint `^q quit` is one column wider than Scouter's `q quit`, so Scouter's own fit (`scouter:src/ui/footer.ts` `fitHints`, width minus 2) drops one more hint at 80 columns; on the changes screen that is `a one file`. Accepted as a consequence of the approved key change; the key list always shows every key.
 
@@ -767,3 +767,71 @@ Follow-ups to the layout tiers (2026-11-27, the same delegation), decisions the 
 - The medium chevron's target is the lead text and the title beside it, and the title's box runs from the chevron to the badges: a press on its blank end toggles the list too. Why: the framework hit-tests the box, not the words, and a box whose edge the finger must find is the trap the chevron had.
 - Below 80 columns the first press on a row acts (tree, finder, changes); at 80 and wider it only focuses the list, as the owner's rule says. In compact the page sets the focus on every paint, so the focus-first branch is reached only in medium and wide. Why: tests in compact set the focus by hand, so they pin the handler, not a reachable state.
 - The welcome card goes in the medium tier when the reader beside the list is narrower than the card. The test is the reader's inner width (its width less its border) against the card's 45 columns, which the widest hint, `changes in a git repository`, sets. With the default sidebar the card goes below 75 columns. Why: at 60 to 74 the card cut into a ragged block. The wide tier keeps the card as it was, so a sidebar dragged wide at 80 still clips it: an open question for the owner, not decided here.
+
+### Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has no Mermaid. A ```` ```mermaid ```` fence in rendered Markdown shows as an ordinary code block with its body as plain text (`research/scouter-inventory.md` §7; no Mermaid code in the repo, `bun.lock`, or `@opentui/core`). The OpenTUI binding has a code-block renderer for a fence language (`opentui-0.9.9/src/widget/markdown.rs:631`), so a diagram is a renderer, not a change to the widget. The roadmap names the feature (RI-1, `roadmap-00001-post-parity.md`).
+
+Decision: the owner approved (2026-11-27, `plan-00006`, O1 and O4) that a `mermaid` fence in the rendered view (`m`) is drawn as a box diagram at the reader's width. Its box lines and arrows take `border`, its labels `text`, and a fallback's reason `muted` (D3). The engine does not mark edge labels apart from node labels, so edge labels take `text`, not `muted`: the simplification D3 allows. The raw code view keeps the fence as highlighted text, and `.mmd` files stay plain (D1), because the renderer belongs to the rendered view.
+
+Consequences:
+
+- (positive) Flowcharts, sequence, class, state, and gantt diagrams read in the preview without leaving fmc.
+- (negative) Every Mermaid fence in the rendered view differs from Scouter's plain text. A diagram that does not fit, or that the engine cannot draw, shows its source in a frame, with the reason (see the fallback record below). Edge labels are not muted.
+
+Alternatives considered:
+
+- Scouter's plain code block — rejected by the owner: the diagram is the feature the roadmap asked for.
+- The raw code view draws the diagram too — rejected: a second renderer on a surface nobody asked for (D1).
+
+### Decision: Mermaid is drawn by `mermaid-text` with a strict column budget
+
+Context: two engines were spiked (`research/mermaid-spike.md`, plan-00006 phase 1). A port of Grok's `mermaid.rs` (Apache-2.0, 5,699 lines; five diagram kinds; a fallback with no reason text; no gantt) and `mermaid-text` 0.58.0 (MIT; about 18 diagram kinds; typed errors; a strict width budget). A fallback needs a reason for each fence, and a diagram wider than the reader must become a fallback, not a clipped drawing (D2).
+
+Decision: `mermaid-text` 0.58.0 with `RenderOptions::max_width_strict` (`src/reader/mermaid.rs`). Its error variants give the reason text, and the strict budget turns "too wide" into an error (`mermaid-text` `lib.rs:180-185`, `539-560`). The owner approved it on 2026-11-27 (O4), with the MSRV raised from 1.90 to 1.92 and the crates in `rules.md` ("Approved for plan-00006 phase 2").
+
+Consequences:
+
+- (positive) One dependency covers the gantt sample and 18 diagram kinds, and the reason comes from the engine's own error text.
+- (negative) MSRV 1.92. The lockfile gains packages for other targets, listed in `rules.md`. The engine's quirks are accepted by the owner: class members can be reordered (`+String passcode` is drawn `+passcode String`), and some malformed lines draw without an error (an unclosed bracket in a flowchart still draws its text in a box).
+- (negative) The engine is not idempotent at its own width: the gantt sample is 96 columns when drawn within 100, and rendering at 96 falls back. The widget's paint keeps the measured rows for this reason (`rust.md`, "A Mermaid diagram learns its width from layout").
+
+Alternatives considered:
+
+- The Grok port — rejected: a 5,700-line module to keep, five diagram kinds, and no reason text for the fallback.
+- `mermaid-rs-renderer` — rejected: it rasterises SVG, and fmc is a text terminal app (RI-1).
+- `mermaid-text` with a soft width hint — rejected: a diagram can be wider than the reader, and nothing would catch it.
+
+### Decision: a Mermaid diagram is measured by layout, so a resize measures it again
+
+Context: the renderer runs when a block is built or changes, and when streaming ends (`opentui-0.9.9/src/widget/markdown.rs:928-931`, `1013`, `1359-1375`). `CodeBlock` carries no width (`markdown.rs:157-175`), and a window resize does not rebuild the document, so a renderer that reads the width when it runs keeps the old width. Rebuilding the document on each resize would also reset its scroll.
+
+Decision: the renderer returns a measured `Custom` widget (`Custom::measured`, `opentui-0.9.9/src/widget/custom.rs:155-171`). Layout offers it the reader's width through `Component::measure`, and a resize measures it again. Proof: the TestApp test `a_resize_measures_the_diagram_again` (`app/mermaid_tests.rs`), and a live run, where a 100 to 60 column resize with the document open changed the frame's reason from `the reader has 65` to `the reader has 53` (2026-11-27). Chosen over re-showing the document on resize (`MarkdownView::show`), which rebuilds it.
+
+Consequences:
+
+- (positive) The reader's width reaches the diagram with no resize hook and no shared width cell, and the document keeps its scroll position.
+- (negative) `measure` runs inside native layout, so it must not change other widgets. A render happens once per width: about 0.6 ms for the largest sample at 60 columns (spike §7).
+
+Alternatives considered:
+
+- Re-show the document from the resize path — rejected: it rebuilds the whole document and resets its scroll.
+- A shared width cell read when the renderer runs — rejected: the renderer does not run on a resize, so an open document would keep the old width.
+
+### Decision: a diagram wider than the reader falls back to its source in a frame
+
+Context: rendered Markdown wraps and has no horizontal pan, so a diagram wider than the reader cannot scroll sideways. Grok's Mermaid falls back to the source in the same way (`xai-grok-markdown/src/mermaid.rs`, the spike's source). Plan-00006 D2 records the rule.
+
+Decision: a diagram that is too wide for the reader (the strict budget) or that the engine cannot draw shows its source in a frame (`│`, `─`), with the source lines wrapped inside it and one reason row in `muted`: `too wide: <N> columns, the reader has <M>`, `unsupported diagram: <keyword>`, or `parse error: <message>`. The reason is cut to the width with `…`. Under five columns there is no room for the frame (`reader/mermaid.rs` `framed`). An empty fence is an ordinary code block. Owner approved (2026-11-27, D2).
+
+Consequences:
+
+- (positive) The source stays readable at every width, and the reason says why the diagram is not drawn. A phone shows a frame, not a broken drawing.
+- (negative) A wide flowchart is a frame at phone widths. Its reason gives the width the diagram needs; `m` shows the source as plain text, without the frame.
+
+Alternatives considered:
+
+- Clip the diagram or pan it sideways — rejected: rendered Markdown has no horizontal pan, and a clipped diagram loses its arrows.
+- Scale the diagram down to fit — rejected: the engine already compacts within its budget, and a diagram that still does not fit is a fallback.

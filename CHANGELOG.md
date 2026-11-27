@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The file tree, the open file, and the changes poll every 2 seconds (backing off to 30 seconds when a refresh is slow): a new or removed file appears, an open file re-reads when it changes, and a file that is gone says so. The changes list and diff follow edits without `r`.
 - `r` reloads the changes while the screen shows: the list keeps its selection, and the diff is read again.
 - The diff's keys: `s` shows side by side at 60 columns or more, `a` switches between one file and all files, `c` folds a file, `x` shows 12 lines of context, `n` `N` `]` `[` `p` move between hunks, and `o` opens the file at the hunk in the reader. A click on a file's header folds it.
+- Mermaid fences in rendered Markdown are drawn as box diagrams at the reader's width: flowchart, sequence, class, state, gantt, and the other types the engine draws. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason, and a resize draws it again at the new width.
 
 ### Changed
 
@@ -54,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The line numbers stay in place when the reader pans sideways: only the text moves, and a wheel over the numbers scrolls the text beside them.
 - At 60 to 79 columns a tap on a chevron, the gap after it, or the title beside it shows or hides the list. Below 80 columns the first tap on a row acts, with the reader focused; at 80 columns and wider it only focuses the list.
 - Below 80 columns the `»` and `«` marks are not drawn. At 60 to 79 columns a `‹` at the start of the file list's title hides the list, and a `›` at the start of the reader's title shows it. The closing line of the welcome breaks at ` · ` instead of mid-phrase.
+- The minimum supported Rust version is 1.92, up from 1.90, for the Mermaid engine.
 
 ### Fixed
 

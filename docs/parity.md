@@ -39,6 +39,7 @@ Ported from: Scouter v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 ## Reader
 
 - Line numbers stay in place when you scroll sideways. In Scouter they scroll away with the text.
+- A ```` ```mermaid ```` fence in the rendered view is drawn as a box diagram at the reader's width. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason. Scouter shows the fence as plain code. The source view (`m`) keeps the fence as text, and edge labels take the text colour, not the muted one. Recorded in `architecture.md`, "Approved deviation: a Mermaid fence in rendered Markdown is drawn as a diagram".
 
 ## Copying text
 

@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-27T01:42:45+07:00
+updated: 2026-11-27T11:35:00+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -52,6 +52,17 @@ Versions are the crates.io snapshot of 2026-11-26 (`research/dependency-survey.m
 | dev: `insta` `1.49`, `assert_cmd` `2.2`, `tempfile` `3.27` | | default | Snapshots, CLI tests, fixture repositories |
 
 Tools (installed, not crate dependencies): zig `0.17.1` (native library build), `cargo-deny` (license and advisory gate), `cargo-about` (third-party notices), kache `2.4.0` (Apache-2.0, compiler cache for the just tasks and CI; owner, 2026-11-27). Std covers git (`std::process::Command`), the filesystem, file-type checks, text search, and temp-file guards; clipboard and terminal theme come from `opentui`.
+
+### Approved for plan-00006 phase 2 (owner, 2026-11-27)
+
+Decision O4 of `plan-00006-mermaid-grammars-fuzzy.md`, with the MSRV raised from 1.90 to 1.92 (`Cargo.toml`, `rust.md`).
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `mermaid-text` | `=0.58.0` | default (it declares none) | Mermaid diagrams as box text in rendered Markdown (`src/reader/mermaid.rs`); MIT; MSRV 1.92 |
+| `unicode-width` | `0.2.3` | default | Display width of the Mermaid frame's rows (`src/reader/mermaid.rs`); MIT OR Apache-2.0; `mermaid-text` uses it too |
+
+Dependencies that come with `mermaid-text` and are not declared in `Cargo.toml`: `ascii-dag` 0.9.1, `chrono` 0.4.45 (with `std` and `clock`, `default-features = false`, as `mermaid-text` declares it), `iana-time-zone` 0.1.65, `core-foundation-sys` 0.8.7, `num-traits` 0.2.19, and `autocfg` 1.5.1 (a build dependency of `num-traits`). These are the crates `cargo tree` lists for `aarch64-apple-darwin`. `Cargo.lock` also holds packages that only other targets build (`wasm-bindgen`, `js-sys`, the `windows-*` crates, `android_system_properties`, `iana-time-zone-haiku`, `futures-*`, `log`, `slab`, `pin-project-lite`, `rustversion`, `bumpalo`). `cargo deny check licenses` passes with all of them.
 
 ### Approved for after parity (owner, 2026-11-26)
 
