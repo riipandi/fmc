@@ -8,7 +8,7 @@ const DIFF_BODY: State = State { screen: Screen::Changes, focus: Focus::Reader, 
 
 /// A key as OpenTUI Core reports it: `G` is name `g` with Shift; `^d` is Ctrl+d; `M-i` is Alt+i.
 fn key(spec: &str) -> Key<'_> {
-    let plain = Key { name: spec, text: spec, ctrl: false, alt: false, shift: false };
+    let plain = Key { name: spec, text: spec, ctrl: false, alt: false, shift: false, cmd: false };
     if let Some(rest) = spec.strip_prefix("^") {
         return Key { name: rest, text: rest, ctrl: true, ..plain };
     }

@@ -6,7 +6,8 @@ mod parser;
 pub use parser::{Focus, Parser, Screen, State, Step};
 
 /// One key press, named as OpenTUI Core names it: `name` is the lowercase key (`g`, `return`, `pagedown`), `text`
-/// the typed text (`G`, `?`, `{`), and Shift is set for capitals.
+/// the typed text (`G`, `?`, `{`), and Shift is set for capitals. `cmd` is the Super key (Cmd on a Mac), which a
+/// terminal sends only with the kitty keyboard protocol or when it passes Cmd through.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Key<'a> {
     pub name: &'a str,
@@ -14,10 +15,12 @@ pub struct Key<'a> {
     pub ctrl: bool,
     pub alt: bool,
     pub shift: bool,
+    pub cmd: bool,
 }
 
 impl Key<'_> {
-    /// No Ctrl and no Alt (Scouter `isPlain`); Shift may be set.
+    /// No Ctrl and no Alt (Scouter `isPlain`); Shift may be set. Cmd does not count, so a Cmd key takes the path of
+    /// the same key without it unless a rule names `cmd`.
     pub fn plain(&self) -> bool {
         !self.ctrl && !self.alt
     }

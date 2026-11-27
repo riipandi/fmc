@@ -10,11 +10,19 @@ pub struct Named {
     pub ctrl: bool,
     pub alt: bool,
     pub shift: bool,
+    pub cmd: bool,
 }
 
 impl Named {
     pub fn key(&self) -> fmc::keys::Key<'_> {
-        fmc::keys::Key { name: &self.name, text: &self.text, ctrl: self.ctrl, alt: self.alt, shift: self.shift }
+        fmc::keys::Key {
+            name: &self.name,
+            text: &self.text,
+            ctrl: self.ctrl,
+            alt: self.alt,
+            shift: self.shift,
+            cmd: self.cmd,
+        }
     }
 }
 
@@ -52,7 +60,7 @@ pub fn name(event: &KeyEvent) -> Option<Named> {
         _ => (String::new(), String::new()),
     };
     let alt = m.contains(Modifiers::ALT) || m.contains(Modifiers::META);
-    Some(Named { name, text, ctrl: m.contains(Modifiers::CTRL), alt, shift })
+    Some(Named { name, text, ctrl: m.contains(Modifiers::CTRL), alt, shift, cmd: m.contains(Modifiers::SUPER) })
 }
 
 /// The presses a tap on a footer hint sends, named by the hint's key (plan-00004, P2): the hint's own key, or its first
@@ -64,6 +72,7 @@ pub fn hint_presses(key: &str) -> Option<Vec<Named>> {
         ctrl,
         alt: false,
         shift: false,
+        cmd: false,
     };
     Some(match key {
         "Enter" => vec![press("return", "\r", false)],

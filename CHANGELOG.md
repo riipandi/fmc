@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Files can be managed from the file list. `a` creates a file (a name ending in `/` makes a folder), `A` creates a folder, `r` renames, `c` copies, `x` cuts, and `v` pastes into the selected folder or beside the selected file. `D` or `Delete` moves the row to the Trash after a dialog, and Finder's Put Back restores it. `Space` and a right-click open a context menu with the same actions. A name that is taken is never overwritten.
 - A context menu and a confirm dialog, drawn over the page with a dimmed background. The dialog's Cancel is the default.
+- The name field of a dialog edits by word and by line, as in a macOS text field: `Option+←` and `Option+→` move by word, `Option+Backspace` and `Option+Delete` delete a word, `Cmd+←` and `Cmd+→` go to the ends of the line, and `Cmd+Backspace` deletes to its start. The Ctrl keys `Ctrl+A`, `Ctrl+E`, `Ctrl+W`, `Ctrl+U`, and `Ctrl+K` do the same (`docs/keymaps.md`, "Name field").
 
 ### Changed
 

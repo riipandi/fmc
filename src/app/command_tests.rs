@@ -18,7 +18,7 @@ fn model() -> Rc<RefCell<Model>> {
 
 /// One plain key press: a printable key names itself, as OpenTUI names it.
 fn press(m: &mut Model, name: &str, text: &str) -> bool {
-    prompt_key(m, Key { name, text, ctrl: false, alt: false, shift: false })
+    prompt_key(m, Key { name, text, ctrl: false, alt: false, shift: false, cmd: false })
 }
 
 fn type_text(m: &mut Model, text: &str) {
