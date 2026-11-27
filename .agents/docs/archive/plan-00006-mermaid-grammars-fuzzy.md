@@ -15,7 +15,7 @@ phases:
     - id: 3
       title: "Grammar load spike and dependency approval list"
       status: done
-      note: "All 12 candidates load on tree-sitter 0.27.2 and compile their query: diff, elixir, heex, hcl (no query shipped; D7 query in phase 4), jsdoc, lua, regex, sql, svelte-ng, xml, astro-next, vim. None dropped. Scratch test, not committed; the Cargo files reverted. Lock 131 to 143 packages (12 direct, 0 transitive); clean debug build about 4 s more CPU. Captures to rename or add in phase 4 are in the report. Report: research/grammar-load-spike.md. Dependency approvals land in rules.md with phase 4."
+      note: "All 12 candidates load on tree-sitter 0.27.2 and compile their query: diff, elixir, heex, hcl (no query shipped; D7 query in phase 4), jsdoc, lua, regex, sql, svelte-ng, xml, astro-next, vim. None dropped. Scratch test, not committed; the Cargo files reverted. Lock 130 to 142 packages (12 direct, 0 transitive); clean debug build about 4 s more CPU. Captures to rename or add in phase 4 are in the report. Report: research/grammar-load-spike.md. Dependency approvals land in rules.md with phase 4."
     - id: 4
       title: "Register the new grammars and their filetypes"
       status: done

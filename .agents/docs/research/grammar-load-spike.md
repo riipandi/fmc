@@ -50,7 +50,7 @@ Notes:
 ## 4. Dependency and build effect
 
 - Direct crates added: 12, all `=`-pinnable and all on the allowlist (`rules.md`, "Licenses"; `cargo deny check licenses` passed with them).
-- `Cargo.lock`: 131 packages at HEAD, 143 with the twelve crates. The twelve are the only additions; `tree-sitter` 0.27.2 and `tree-sitter-language` 0.1.9 are shared.
+- `Cargo.lock`: 130 packages at HEAD, 142 with the twelve crates (a plain count of `version =` lines gives one more, the lockfile's own format line). The twelve are the only additions; `tree-sitter` 0.27.2 and `tree-sitter-language` 0.1.9 are shared.
 - Clean debug build (`cargo build`, `RUSTC_WRAPPER` empty, a fresh target directory, one run each on this machine): HEAD 11.2 s wall, 46.9 s user; with the twelve crates 11.2 s wall, 50.8 s user. The C grammars add about 4 s of CPU in a debug build. Wall time was unchanged within the noise of one run.
 
 ## 5. Parked for the roadmap
