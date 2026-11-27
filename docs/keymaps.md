@@ -132,7 +132,7 @@ Some keys work but are not in the lists above: `J` and `K` move five rows, Page 
 
 ## Changing the keys
 
-fmc reads `keymap.json` when it starts, from `$XDG_CONFIG_HOME/fmc/keymap.json` or `~/.config/fmc/keymap.json` when `XDG_CONFIG_HOME` is unset, empty, or relative. The file is only read: fmc never writes it, and a change applies the next time fmc starts. A missing file keeps the keys above. The `?` list and `fmc --help` show the keys the file sets.
+fmc reads `keymap.json` when it starts, from `$XDG_CONFIG_HOME/fmc/keymap.json` or `~/.config/fmc/keymap.json` when `XDG_CONFIG_HOME` is unset, empty, or relative. fmc only reads the file, and a change applies the next time fmc starts. A missing file keeps the keys above. The `?` list and `fmc --help` show the keys the file sets.
 
 The file is one JSON object. Each entry names a context and a key, then an action name, or `null` to unbind the default key in that context:
 

@@ -4,7 +4,7 @@ fmc reads one optional settings file when it starts. The [Settings page](usage.m
 
 ## Location
 
-`$XDG_CONFIG_HOME/fmc/settings.json`, or `~/.config/fmc/settings.json` when `XDG_CONFIG_HOME` is unset or empty.
+`$XDG_CONFIG_HOME/fmc/settings.json`, or `~/.config/fmc/settings.json` when `XDG_CONFIG_HOME` is unset, empty, or relative.
 
 ## Keys
 
@@ -22,6 +22,8 @@ fmc reads one optional settings file when it starts. The [Settings page](usage.m
 
 A key that is not listed is ignored.
 
+The file keeps no UI state. The sidebar's width and visibility, wrap, the changes screen's split and context lines, and dotfiles are not saved: a change to them lasts until fmc quits.
+
 ## Errors
 
 A file that is not valid JSON, or whose top level is not an object, sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
@@ -36,7 +38,7 @@ The Settings page edits the eight keys above except `file_associations`: `auto_p
 - A missing file is created with the one key. A missing folder is created too.
 - A `settings.json` that is a symbolic link is written through to the file it points to, and the link stays. The target can lie anywhere the link reaches.
 - Each save is written to a temporary file beside the target, which then replaces it, so a crash leaves the old file or the new one. Comments in the file are not kept: the parser refuses them, so a save cannot drop them silently.
-- Without a home folder (`HOME` and `XDG_CONFIG_HOME` both unset), the page cannot save, and it says so.
+- Without a usable home folder (no `HOME`, and no absolute `XDG_CONFIG_HOME`), the page cannot save, and it says so.
 
 ## Themes
 
@@ -64,7 +66,7 @@ A theme file is strict JSON, with no comments:
 - A file that cannot be read or parsed is skipped, and the footer names it. The id `scouter` cannot be a file: Scouter's palette is built in.
 - A `dark_theme` or `light_theme` that is not a theme, or that names a theme of the other mode, keeps `scouter` for that slot and the footer says so.
 - The page background is the terminal's background, tinted as Scouter tints it. When `theme_mode` forces a mode that is not the terminal's, the page uses the palette's own background instead.
-- Themes are read once, when fmc starts, like the other keys. fmc never writes a theme file, and the Settings page never writes one either.
+- Themes are read once, when fmc starts, like the other keys. fmc only reads a theme file, and the Settings page does not write one either.
 
 ## File associations
 
@@ -97,4 +99,4 @@ A theme file is strict JSON, with no comments:
 
 ## Keymap file
 
-`$XDG_CONFIG_HOME/fmc/keymap.json`, or `~/.config/fmc/keymap.json`, sets key bindings. It is a JSON object of `"<context>.<key>": "<action>"` entries, or `null` to unbind a default key. fmc reads it when it starts and never writes it, so a change applies on the next start. A bad entry is skipped with a footer notice that names its line, and the other entries apply; a file that is not a JSON object keeps every default. The shape, the context and action names, and the notices are in [Keys](keymaps.md#changing-the-keys).
+`$XDG_CONFIG_HOME/fmc/keymap.json`, or `~/.config/fmc/keymap.json`, sets key bindings. It is a JSON object of `"<context>.<key>": "<action>"` entries, or `null` to unbind a default key. fmc only reads it when it starts, so a change applies on the next start. A bad entry is skipped with a footer notice that names its line, and the other entries apply; a file that is not a JSON object keeps every default. The shape, the context and action names, and the notices are in [Keys](keymaps.md#changing-the-keys).

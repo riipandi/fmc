@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `docs/configuration.md` no longer says fmc never writes its settings file: the Settings page writes it.
+- `docs/configuration.md` no longer calls the settings file read-only: the Settings page writes it.
 
 ## [0.3.0] - 2026-11-27
 
