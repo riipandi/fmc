@@ -1,0 +1,95 @@
+name: Release
+
+# A pushed tag `vX.Y.Z` builds the macOS Apple silicon binary and publishes a GitHub Release with it. The tag must
+# match the version in Cargo.toml, and CHANGELOG.md must have a `## [X.Y.Z]` section: it becomes the release notes.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  ZIG_VERSION: 0.17.1
+  # Keep in step with .cargo/config.toml, scripts/opentui-native.sh, and ci.yml.
+  OPENTUI_VERSION: 0.9.9
+  TARGET: aarch64-apple-darwin
+
+jobs:
+  release:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the tag against Cargo.toml and CHANGELOG.md
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          crate=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
+          [ "$version" = "$crate" ] || { echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $crate"; exit 1; }
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on && /^\[[^]]+\]: / { exit }
+            on { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          [ -s "$RUNNER_TEMP/notes.md" ] || { echo "::error::CHANGELOG.md has no ## [$version] section"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Install the Rust toolchain from rust-toolchain.toml
+        run: rustup toolchain install
+
+      - uses: taiki-e/install-action@073e1fd0bc889c9aee68dbaaa927cde1b5653a83 # v2.90.11
+        with:
+          tool: cargo-about
+
+      - name: Restore the OpenTUI native library
+        id: native
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/fmc/opentui-native/${{ env.OPENTUI_VERSION }}
+          key: opentui-native-${{ env.OPENTUI_VERSION }}-zig${{ env.ZIG_VERSION }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('scripts/opentui-native.sh') }}
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        if: steps.native.outputs.cache-hit != 'true'
+        with:
+          version: ${{ env.ZIG_VERSION }}
+          use-cache: false
+
+      - name: Build
+        run: |
+          scripts/opentui-native.sh
+          cargo build --release --locked
+          ./target/release/fmc --version
+
+      - name: Package
+        id: package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          name="fmc-$VERSION-$TARGET"
+          mkdir -p "dist/$name"
+          cp target/release/fmc README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "dist/$name/"
+          cargo about generate about.hbs -o "dist/$name/THIRD_PARTY_LICENSES.html"
+          tar -C dist -czf "dist/$name.tar.gz" "$name"
+          (cd dist && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256")
+          cat "dist/$name.tar.gz.sha256"
+          echo "archive=dist/$name.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          ARCHIVE: ${{ steps.package.outputs.archive }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$ARCHIVE" "$ARCHIVE.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "fmc $VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag

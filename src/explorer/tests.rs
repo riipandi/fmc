@@ -430,9 +430,21 @@ fn a_text_hit_list_selects_by_row_when_one_file_has_several_hits() {
     let a = Path::new("/vault/a.txt");
     let snippet = |text: &str| Snippet { before: String::new(), matched: text.into(), after: String::new() };
     let rows = vec![
-        Flat { entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File), hit: Some((3, snippet("one"))) },
-        Flat { entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File), hit: Some((9, snippet("two"))) },
-        Flat { entry: Entry::new(Path::new("/vault"), "b.txt", Kind::File), hit: Some((1, snippet("three"))) },
+        Flat {
+            entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File),
+            hit: Some((3, snippet("one"))),
+            matched: Vec::new(),
+        },
+        Flat {
+            entry: Entry::new(Path::new("/vault"), "a.txt", Kind::File),
+            hit: Some((9, snippet("two"))),
+            matched: Vec::new(),
+        },
+        Flat {
+            entry: Entry::new(Path::new("/vault"), "b.txt", Kind::File),
+            hit: Some((1, snippet("three"))),
+            matched: Vec::new(),
+        },
     ];
     browser.show(rows, a);
     assert_eq!(browser.selected_index(), 0);

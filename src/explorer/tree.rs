@@ -17,13 +17,15 @@ struct Node {
 }
 
 /// One visible row. `folder` is true for a directory and for any entry that has been listed (Scouter `paintRow`).
-/// `hit` is a text hit's line and snippet, which only the finder's rows carry.
+/// `hit` is a text hit's line and snippet, which only the finder's rows carry; `matched` is a fuzzy name match's
+/// character positions in the path (empty for the tree and for a substring match).
 pub struct Row<'a> {
     pub entry: &'a Entry,
     pub depth: usize,
     pub folder: bool,
     pub expanded: bool,
     pub hit: Option<(usize, &'a Snippet)>,
+    pub matched: &'a [usize],
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -206,6 +208,7 @@ impl Tree {
             folder: node.entry.kind == Kind::Directory || node.children.is_some(),
             expanded: node.expanded,
             hit: None,
+            matched: &[],
         });
         if node.expanded
             && let Some(children) = &node.children

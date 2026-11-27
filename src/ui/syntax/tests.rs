@@ -16,7 +16,103 @@ fn every_vendored_grammar_compiles_with_its_query() {
     for filetype in ["javascript", "typescript", "typescriptreact", "markdown", "markdown_inline", "zig"] {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
+    for filetype in OWNERS {
+        assert!(prewarm(filetype), "{filetype} does not compile");
+    }
     assert!(has_grammar("javascriptreact") && has_grammar("rust"));
+}
+
+/// The owner's twelve grammars (RI-2), each with the query it is registered with.
+const OWNERS: [&str; 12] =
+    ["diff", "elixir", "heex", "hcl", "jsdoc", "lua", "regex", "sql", "svelte", "xml", "astro", "vim"];
+
+fn owners_queries() -> [&'static str; 12] {
+    [
+        include_str!("queries/diff/highlights.scm"),
+        include_str!("queries/elixir/highlights.scm"),
+        include_str!("queries/heex/highlights.scm"),
+        include_str!("queries/hcl/highlights.scm"),
+        include_str!("queries/jsdoc/highlights.scm"),
+        include_str!("queries/lua/highlights.scm"),
+        include_str!("queries/regex/highlights.scm"),
+        include_str!("queries/sql/highlights.scm"),
+        include_str!("queries/svelte/highlights.scm"),
+        include_str!("queries/xml/highlights.scm"),
+        include_str!("queries/astro/highlights.scm"),
+        include_str!("queries/vim/highlights.scm"),
+    ]
+}
+
+/// The names a query captures, from each `@name`. A name starting with `_` is a predicate's helper (`#eq? @_scope`),
+/// which is never drawn.
+fn capture_names(query: &str) -> Vec<&str> {
+    query
+        .split('@')
+        .skip(1)
+        .filter_map(|rest| {
+            let end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.'))).unwrap_or(rest.len());
+            let name = rest[..end].trim_end_matches('.');
+            (!name.is_empty()).then_some(name)
+        })
+        .collect()
+}
+
+#[test]
+fn every_capture_of_the_owners_queries_has_a_table_entry() {
+    for (filetype, query) in OWNERS.iter().zip(owners_queries()) {
+        for name in capture_names(query) {
+            assert!(
+                name.starts_with('_') || CAPTURE_NAMES.contains(&name),
+                "{filetype} captures {name}, not in the table"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_owners_grammars_style_a_token_of_their_sample() {
+    register();
+    let theme = theme(&DARK);
+    // Each token takes a capture the palette styles, and the capture is the one the query names for it.
+    let cases = [
+        (
+            "elixir",
+            "defmodule Hogwarts.Owl do\n  def deliver(letter), do: {:ok, letter}\nend\n",
+            "defmodule",
+            "keyword",
+        ),
+        ("lua", "local function open(vault) return vault.key end\n", "return", "keyword.return"),
+        ("sql", "SELECT name FROM louvre_keys WHERE holder = 'Sophie Neveu';\n", "SELECT", "keyword"),
+        ("xml", "<?xml version=\"1.0\"?>\n<owl name=\"Hedwig\"/>\n", "owl", "tag"),
+        ("hcl", "resource \"aws_s3_bucket\" \"gringotts\" {\n  bucket = \"vault-713\"\n}\n", "resource", "keyword"),
+        ("astro", "---\nconst name = 'Albus Dumbledore';\n---\n<h1>{name}</h1>\n", "h1", "tag"),
+        ("vim", "\" Opens the Louvre\nfunction! Open(key)\n  let g:key = a:key\nendfunction\n", "function", "keyword"),
+        ("diff", "--- a/owls.txt\n+++ b/owls.txt\n@@ -1 +1 @@\n-Hedwig\n+Crookshanks\n", "+Crookshanks", "string"),
+        ("heex", "<div class=\"owl\">\n  <%= @name %>\n</div>\n", "div", "tag"),
+        ("regex", "^[A-Z][a-z]+ (Langdon|Neveu)$", "(", "punctuation"),
+        ("jsdoc", "/**\n * Opens the vault.\n * @param {string} key Robert Langdon's key\n */\n", "param", "keyword"),
+        ("svelte", "<script>\n  let name = 'Hermione Granger';\n</script>\n<h1>{name}</h1>\n", "{", "punctuation"),
+    ];
+    for (filetype, sample, token, expected) in cases {
+        let start = sample.find(token).expect("the sample holds the token");
+        let captures = highlights(sample, filetype).unwrap_or_else(|| panic!("{filetype} has no highlights"));
+        let names: Vec<&str> = captures.iter().filter(|c| c.start <= start && start < c.end).map(|c| c.name).collect();
+        assert!(
+            names.iter().any(|name| name.starts_with(expected) && theme.get(name).is_some()),
+            "{filetype}: {token} takes {names:?}, not {expected}"
+        );
+    }
+}
+
+#[test]
+fn the_extensions_opentui_lacks_are_highlighted() {
+    let none = Associations::default();
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/vault.tf")), Some("hcl"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/owls.tfvars")), Some("hcl"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/live.heex")), Some("heex"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/owls.ex")), Some("elixir"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/schema.sql")), Some("sql"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/Makefile.mk")), None);
 }
 
 #[test]

@@ -12,3 +12,29 @@ accepted = [
 targets = ["aarch64-apple-darwin"]
 ignore-build-dependencies = true
 ignore-dev-dependencies = true
+
+# opentui-sys declares `MIT AND LGPL-2.1-or-later` because upstream's prebuilt library embeds FFmpeg. fmc links a
+# library built with video off (scripts/opentui-native.sh, deny.toml's exception), so the notices are the crate's own
+# MIT licence and those of the code the macOS archive carries (Yoga, Zig's runtime, zlib).
+[opentui-sys.clarify]
+license = "MIT AND Zlib"
+
+[[opentui-sys.clarify.files]]
+path = "LICENSE"
+license = "MIT"
+checksum = "d9c397a5dc5ac77a2a08fc967ea06a65317a4b5b8de48f6f732ffcb21737e3d2"
+
+[[opentui-sys.clarify.files]]
+path = "LICENSE-YOGA"
+license = "MIT"
+checksum = "52412d7bc7ce4157ea628bbaacb8829e0a9cb3c58f57f99176126bc8cf2bfc85"
+
+[[opentui-sys.clarify.files]]
+path = "LICENSE-ZIG"
+license = "MIT"
+checksum = "5c537d6853e005298a285d508cff9ac7192cea23576c840d485b2b586a7ff177"
+
+[[opentui-sys.clarify.files]]
+path = "LICENSE-ZLIB"
+license = "Zlib"
+checksum = "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2"

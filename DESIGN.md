@@ -120,7 +120,7 @@ A column: a row of two panels that fills the screen, then the footer.
 
 ### Tiers
 
-The width picks one of three layouts (`fmc::layout::tier`). The sketches are excerpts from live runs on the demo repository.
+The width picks one of three layouts. The sketches are excerpts from live runs on the demo repository.
 
 - **Compact, below 60 columns**: two pages in the medium tier's frame. The file list fills the screen; a file opens the reader full screen. The header's `‹` goes back, and so does a tap on the title beside it (`q` and `Esc` do too). The bottom bar is one row of equal words: `Find`, `Changes`, `Keys` on the list; `Back`, `Search`, `Keys` on the reader. A notice or an open prompt takes that row.
 
@@ -147,7 +147,7 @@ The width picks one of three layouts (`fmc::layout::tier`). The sketches are exc
     Back     ·   Search    ·    Keys
 ```
 
-- **Medium, 60 to 79 columns**: the list beside the reader, with the two-row header and footer. The list hides while a document is open; `‹` at the start of the list's title hides it, and `›` at the start of the reader's title shows it. No boxes and no border marks.
+- **Medium, 60 to 79 columns**: the list beside the reader, with the two-row header and footer. The list hides while a document is open; `‹` at the start of the list's title hides it, and `›` at the start of the reader's title shows it. The panels keep their rounded borders, and the `«` and `»` marks are not drawn.
 
 ```text
 ╭──────────────────────────╮╭────────────────────────────────────────╮
@@ -188,9 +188,9 @@ Pills name the context: `FILES`, `READER`, `CHANGES`, `DIFF`, `FIND`, `TEXT`, `S
 
 One band per changed file on the tinted background: the marker, a fold chevron, the bold coloured letter, the bold name (`accent-soft` when active), `← old` for a rename, the dim folder, and on the right the counts and a five-cell stat bar of `▪` (green for added, red for removed, at least one cell each when both exist). Hunk header lines are not drawn.
 
-### Help card
+### Key list
 
-A centred, rounded card titled ` Keyboard Shortcuts `, with sections Browse, Reader, Changes, Everywhere, and Mouse. Any key closes it.
+`?` shows the key list in the reader, in place of the document, as tables: Browse, Reader, Changes, Everywhere, and Mouse. `?` or `Esc` brings the document back, with its scroll position and search.
 
 ### Welcome
 

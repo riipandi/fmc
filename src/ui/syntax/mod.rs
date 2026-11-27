@@ -5,7 +5,7 @@
 use std::path::Path;
 
 use fmc::reader::associations::{Associations, Language as Association};
-use fmc::reader::language::is_highlighted;
+use fmc::reader::language::{extension_filetype, is_highlighted};
 use fmc::theme::Palette;
 use opentui::native::{Context, SyntaxStyle};
 use opentui::prelude::{Result, Style};
@@ -48,6 +48,18 @@ pub fn register() {
     register_lazy("toml", || grammar(tree_sitter_toml_ng::LANGUAGE, include_str!("queries/toml/highlights.scm")));
     register_lazy("c", || grammar(tree_sitter_c::LANGUAGE, include_str!("queries/c/highlights.scm")));
     register_lazy("java", || grammar(tree_sitter_java::LANGUAGE, include_str!("queries/java/highlights.scm")));
+    register_lazy("diff", || grammar(tree_sitter_diff::LANGUAGE, include_str!("queries/diff/highlights.scm")));
+    register_lazy("elixir", || grammar(tree_sitter_elixir::LANGUAGE, include_str!("queries/elixir/highlights.scm")));
+    register_lazy("heex", || grammar(tree_sitter_heex::LANGUAGE, include_str!("queries/heex/highlights.scm")));
+    register_lazy("hcl", || grammar(tree_sitter_hcl::LANGUAGE, include_str!("queries/hcl/highlights.scm")));
+    register_lazy("jsdoc", || grammar(tree_sitter_jsdoc::LANGUAGE, include_str!("queries/jsdoc/highlights.scm")));
+    register_lazy("lua", || grammar(tree_sitter_lua::LANGUAGE, include_str!("queries/lua/highlights.scm")));
+    register_lazy("regex", || grammar(tree_sitter_regex::LANGUAGE, include_str!("queries/regex/highlights.scm")));
+    register_lazy("sql", || grammar(tree_sitter_sequel::LANGUAGE, include_str!("queries/sql/highlights.scm")));
+    register_lazy("svelte", || grammar(tree_sitter_svelte_ng::LANGUAGE, include_str!("queries/svelte/highlights.scm")));
+    register_lazy("xml", || grammar(tree_sitter_xml::LANGUAGE_XML, include_str!("queries/xml/highlights.scm")));
+    register_lazy("astro", || grammar(tree_sitter_astro_next::LANGUAGE, include_str!("queries/astro/highlights.scm")));
+    register_lazy("vim", || grammar(tree_sitter_vim::language(), include_str!("queries/vim/highlights.scm")));
     register_alias("javascriptreact", "javascript");
 }
 
@@ -59,14 +71,14 @@ fn grammar(language: impl Into<Language>, highlights: &'static str) -> Option<Co
 }
 
 /// The filetype a path is highlighted as. A matching `file_associations` entry decides first, and plain text turns
-/// highlighting off; otherwise it is OpenTUI's filetype, kept only when Scouter highlights it (`languageFor`).
-/// `root` is the folder fmc opened, which a path pattern is matched from.
+/// highlighting off. Otherwise the extensions OpenTUI does not know decide, then OpenTUI's filetype, kept only when
+/// fmc highlights it (`languageFor`). `root` is the folder fmc opened, which a path pattern is matched from.
 pub fn language_for(associations: &Associations, root: &Path, path: &Path) -> Option<&'static str> {
     match associations.language_of(path, root) {
         Some(Association::Plain) => None,
         Some(Association::Filetype(filetype)) => Some(filetype),
         None => {
-            let filetype = filetype_for_path(&path.to_string_lossy())?;
+            let filetype = extension_filetype(path).or_else(|| filetype_for_path(&path.to_string_lossy()))?;
             is_highlighted(filetype).then_some(filetype)
         }
     }
@@ -122,13 +134,18 @@ const CAPTURE_NAMES: &[&str] = &[
     "charset",
     "cImport",
     "comment",
+    "comment.doc",
+    "comment.doc.__attribute__",
     "comment.documentation",
+    "comment.unused",
     "conceal",
     "constant",
     "constant.builtin",
+    "constant.character",
     "constructor",
     "delimiter",
     "embedded",
+    "error",
     "escape",
     "function",
     "function.builtin",
@@ -143,6 +160,7 @@ const CAPTURE_NAMES: &[&str] = &[
     "keyword.conditional",
     "keyword.conditional.ternary",
     "keyword.coroutine",
+    "keyword.debug",
     "keyword.directive",
     "keyword.exception",
     "keyword.function",
@@ -184,24 +202,30 @@ const CAPTURE_NAMES: &[&str] = &[
     "number.float",
     "operator",
     "property",
+    "punctuation",
     "punctuation.bracket",
     "punctuation.delimiter",
     "punctuation.special",
     "spell",
     "string",
     "string.escape",
+    "string.regex",
     "string.regexp",
     "string.special",
     "string.special.key",
+    "string.special.path",
+    "string.special.symbol",
     "string.special.url",
     "supports",
     "tag",
     "tag.attribute",
     "tag.builtin",
     "tag.delimiter",
+    "tag.doctype",
     "tag.error",
     "type",
     "type.builtin",
+    "type.qualifier",
     "variable",
     "variable.builtin",
     "variable.member",

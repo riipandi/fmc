@@ -14,6 +14,8 @@ fn table(entries: &[(&str, &str)]) -> Associations {
 fn a_value_names_a_filetype_an_alias_or_plain_text() {
     assert_eq!(Language::named("rust"), Some(Language::Filetype("rust")));
     assert_eq!(Language::named("typescriptreact"), Some(Language::Filetype("typescriptreact")));
+    assert_eq!(Language::named("hcl"), Some(Language::Filetype("hcl")));
+    assert_eq!(Language::named("sql"), Some(Language::Filetype("sql")));
     assert_eq!(Language::named("dotenv"), Some(Language::Filetype("bash")));
     assert_eq!(Language::named("env"), Some(Language::Filetype("bash")));
     assert_eq!(Language::named("shellscript"), Some(Language::Filetype("bash")));

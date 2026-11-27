@@ -20,6 +20,8 @@ imagesize = "0.15"
 # Mermaid diagrams in rendered Markdown (`src/reader/mermaid.rs`); pinned exactly, its own dependencies come with it.
 mermaid-text = "=0.58.0"
 unicode-width = "0.2.3"
+# Fuzzy name matching in the finder (`src/find/mod.rs`, `Matching::Fuzzy`; plan-00006 D4). Pinned exactly; no other crate.
+neo_frizbee = "=0.13.3"
 # The grammars Scouter vendors beyond OpenTUI's bundled set (Rust comes with `opentui`'s `tree-sitter` feature).
 # Pinned exactly: their highlight queries are Scouter's `grammars/*/highlights.scm`.
 tree-sitter-json = "=0.24.8"
@@ -37,6 +39,19 @@ tree-sitter-javascript = "=0.25.0"
 tree-sitter-typescript = "=0.23.2"
 tree-sitter-md = "=0.5.4"
 tree-sitter-zig = "=1.1.2"
+# The owner's extra grammars (RI-2; plan-00006 O2), each loaded by `research/grammar-load-spike.md`. Pinned exactly.
+tree-sitter-diff = "=0.1.0"
+tree-sitter-elixir = "=0.3.5"
+tree-sitter-heex = "=0.8.1"
+tree-sitter-hcl = "=1.1.0"
+tree-sitter-jsdoc = "=0.25.0"
+tree-sitter-lua = "=0.5.0"
+tree-sitter-regex = "=0.25.0"
+tree-sitter-sequel = "=0.3.13"
+tree-sitter-svelte-ng = "=1.0.2"
+tree-sitter-xml = "=0.7.0"
+tree-sitter-astro-next = "=0.1.1"
+tree-sitter-vim = "=0.4.0"
 serde_json = "1.0.154"
 
 [dev-dependencies]

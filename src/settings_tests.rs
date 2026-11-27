@@ -1,5 +1,18 @@
 use super::*;
+use crate::find::Matching;
 use crate::reader::associations::Language;
+
+#[test]
+fn find_mode_names_the_start_mode_and_a_bad_value_keeps_substring() {
+    assert_eq!(parse("{}").settings.find_mode, Matching::Substring);
+    assert_eq!(parse(r#"{"find_mode": "fuzzy"}"#).settings.find_mode, Matching::Fuzzy);
+    assert_eq!(parse(r#"{"find_mode": "substring"}"#).settings.find_mode, Matching::Substring);
+    let parsed = parse(r#"{"find_mode": "Fuzzy"}"#);
+    assert_eq!(parsed.settings.find_mode, Matching::Substring);
+    assert_eq!(parsed.notices.len(), 1);
+    assert!(parsed.notices[0].contains(r#"find_mode must be "substring" or "fuzzy"; "substring" is used."#));
+    assert_eq!(parse(r#"{"find_mode": 1}"#).notices.len(), 1);
+}
 
 #[test]
 fn an_empty_object_gives_the_defaults_without_a_notice() {
