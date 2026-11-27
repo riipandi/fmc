@@ -1,24 +1,24 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-27T18:56:00+07:00
-updated: 2026-11-27T18:56:00+07:00
+updated: 2026-11-27T19:21:48+07:00
 phases:
     - id: 1
       title: Injections for HTML, Svelte, Astro, Elixir, and HEEx
-      status: pending
-      note: —
+      status: committed
+      note: "1c3857e; the Elixir ~r fix is d68a7e7 (D12)"
     - id: 2
       title: Injections for JavaScript and TypeScript (JSDoc, regex) and Python (regex)
-      status: pending
-      note: —
+      status: committed
+      note: "d619868 (D11)"
     - id: 3
       title: Docs close, ledger close, handover
-      status: pending
-      note: —
+      status: done
+      note: "this commit (the docs close)"
     - id: 4
       title: Final validation and live captures
-      status: pending
-      note: —
+      status: done
+      note: "no commit; evidence in the run report"
 ---
 
 ## Inject the code inside highlighted files — the pairs the grammars already link
