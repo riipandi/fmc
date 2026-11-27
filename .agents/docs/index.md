@@ -1,6 +1,6 @@
 # Agents Documentation Index
 
-updated: 2026-11-27T04:02:00+07:00
+updated: 2026-11-27T11:19:00+07:00
 
 Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), then the core documents below. Everything else is reference, history, or contract; navigate from here.
 
@@ -15,7 +15,7 @@ Agent-only documentation. Start at the repo root `AGENTS.md` (workflow rules), t
 | `.agents/docs/rust.md` | Rust code contracts and traps for the crate. |
 | `.agents/docs/architecture.md` | Decision records, approved parity deviations, and the pending decisions. |
 | `/PRODUCT.md`, `/DESIGN.md`, `/README.md` | Human docs: product purpose and principles; palettes, layout, and components (Scouter wins during parity); overview and usage. |
-| `.agents/docs/research/` | Point-in-time research of 2026-11-26: `scouter-inventory.md` (the parity reference, cited by every port phase), `rendering-research.md`, `opentui-binding-risk.md`, `dependency-survey.md`, `editor-study.md`, `sqltui-study.md`. The tree and the locked crates win. |
+| `.agents/docs/research/` | Point-in-time research of 2026-11-26 and 2026-11-27: `scouter-inventory.md` (the parity reference, cited by every port phase), `rendering-research.md`, `opentui-binding-risk.md`, `dependency-survey.md`, `editor-study.md`, `sqltui-study.md`, `mermaid-spike.md` (2026-11-27, plan-00006 phase 1: the Mermaid engine comparison, its outputs and recommendation). The tree and the locked crates win. |
 
 ## Terms
 
@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00006-mermaid-grammars-fuzzy.md` (draft: RI-1 Mermaid, RI-2 grammars, RI-3 fuzzy; waits for the go-ahead) |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00006-mermaid-grammars-fuzzy.md` (in-progress: RI-1 Mermaid, RI-2 grammars, RI-3 fuzzy; phase 1, the Mermaid spike, is done and stops for the owner's engine pick; phases 2 to 6 wait for the go-ahead) |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): Mermaid, Neovim grammars, fuzzy finding, write operations, SQLite and DuckDB viewer, platforms, Vim keymap, event watching. |
 | `handover/` | Session compactions. | `handover-00006-layout-tiers.md` (done: plan-00005 closed, with the owner checks on a phone); `handover-00005-phone-layout.md` (done: plan-00004 closed, with the owner checks); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |

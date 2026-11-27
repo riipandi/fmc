@@ -1,12 +1,13 @@
 ---
-status: draft
+status: in-progress
 created: 2026-11-27T11:07:49+07:00
-updated: 2026-11-27T11:07:49+07:00
+updated: 2026-11-27T11:19:00+07:00
 references: roadmap/roadmap-00001-post-parity.md (RI-1, RI-2, RI-3)
 phases:
     - id: 1
       title: "Mermaid spike: a Grok port and mermaid-text on the same diagrams"
-      status: pending
+      status: done
+      note: "Spike in a throwaway project (/tmp/fmc-spike, outside the repo; fmc's manifests and src untouched). Grok mermaid.rs ported to plain rows: 157 lines removed, 42 added, 3,968 non-test lines kept, unicode-width the only crate, 144 tests pass. mermaid-text 0.58.0 (MIT, MSRV 1.92, six new crates on macOS). Four Harry Potter and Dan Brown diagrams plus one broken, at 60 and 100 columns. Recommendation: mermaid-text with max_width_strict (Grok frames most flowcharts: no compaction, 104 columns natural). Width: the renderer is not called on resize (opentui markdown.rs:928-1426); a measured Custom widget gets the width in layout (custom.rs:155), to be proven in phase 2. Report: research/mermaid-spike.md. Stopped for the owner's pick."
     - id: 2
       title: "Mermaid in rendered Markdown, with the engine the owner picked"
       status: pending
