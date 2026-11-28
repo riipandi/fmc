@@ -97,7 +97,7 @@ fn wrap(line: &str, columns: usize) -> Vec<String> {
 }
 
 /// `text` cut to `columns`, with `…` when cut.
-fn fit(text: &str, columns: usize) -> String {
+pub fn fit(text: &str, columns: usize) -> String {
     if columns == 0 {
         return String::new();
     }

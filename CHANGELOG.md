@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- An image that is a paragraph of its own draws as a box in the rendered Markdown view: its name, its path, its size and format, and a hint. A remote image, an SVG, or an image outside the browsed folder shows the box with its reason. Scouter shows the alt text as a link.
+
 ## [0.7.0] - 2026-11-28
 
 fmc remembers its layout, wrap, diff view, dotfiles, and finder mode across runs, edits its prompts at a caret by word and by line, shows Markdown front matter as a code block, and colours Lua doc comments and eex templates.

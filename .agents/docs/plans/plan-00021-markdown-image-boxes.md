@@ -6,10 +6,10 @@ phases:
     - id: 1
       title: The image paragraphs, found and rewritten as fences
       status: done
-      note: —
+      note: d973b5d
     - id: 2
       title: The image box in the rendered view
-      status: pending
+      status: done
       note: —
     - id: 3
       title: Opening a box's image, and back

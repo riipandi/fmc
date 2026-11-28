@@ -4,7 +4,10 @@
 
 use std::path::{Component, Path, PathBuf};
 
-use super::image::is_image_path;
+use unicode_width::UnicodeWidthStr;
+
+use super::image::{self, is_image_path};
+use super::mermaid::fit;
 
 /// The info string of the fence a lone image is written as. The renderer is registered for it (`ui/markdown.rs`), and
 /// the fence's info string carries the image, so the renderer reads it back with `from_info`.
@@ -85,6 +88,75 @@ fn is_title(title: &str) -> bool {
 pub fn from_info(info: &str) -> Option<Image> {
     let (word, line) = info.trim().split_once(char::is_whitespace)?;
     (word == FENCE).then(|| parse(line.trim())).flatten()
+}
+
+/// Why a box has no picture to open, in the words its last row shows (D2, D3).
+pub const REMOTE: &str = "remote";
+pub const SVG: &str = "SVG";
+pub const NOT_SHOWN: &str = "not an image fmc shows";
+pub const OUTSIDE: &str = "outside the folder";
+pub const NOT_FOUND: &str = "not found";
+pub const UNREADABLE: &str = "could not be read";
+pub const TOO_LARGE: &str = "too large (over 10 MiB)";
+
+/// What the reader found for one image, read from the disk on a worker (`services/picture.rs`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Header {
+    /// A picture the reader opens: its canonical path, and its size and format.
+    Picture { path: PathBuf, info: image::Info },
+    /// No picture: the reason, from the constants above.
+    Refused(&'static str),
+}
+
+/// What a box says about its image (D5): the name, the path with the size and format, and the hint or the reason.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Card {
+    pub title: String,
+    pub detail: String,
+    pub hint: Hint,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Hint {
+    /// The picture opens with Enter.
+    Open,
+    Reason(&'static str),
+    /// No header has come back yet.
+    Reading,
+}
+
+/// Which colour a box's text takes: the name and an open hint in the text colour, the rest muted.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tone {
+    Text,
+    Muted,
+}
+
+pub fn card(image: &Image, header: Option<&Header>) -> Card {
+    let title = format!("▣ {}", image.label());
+    match header {
+        Some(Header::Picture { info, .. }) => Card {
+            title,
+            detail: format!("{} · {}×{} · {}", image.target, info.width, info.height, info.format),
+            hint: Hint::Open,
+        },
+        Some(Header::Refused(reason)) => Card { title, detail: image.target.clone(), hint: Hint::Reason(reason) },
+        None => Card { title, detail: image.target.clone(), hint: Hint::Reading },
+    }
+}
+
+/// The three text rows of a box, each cut or padded to `inner` columns, with the tone of its text.
+pub fn text_rows(card: &Card, inner: usize) -> [(Tone, String); 3] {
+    let hint = match card.hint {
+        Hint::Open => (Tone::Text, "Enter opens it".to_owned()),
+        Hint::Reason(reason) => (Tone::Muted, reason.to_owned()),
+        Hint::Reading => (Tone::Muted, "reading the image…".to_owned()),
+    };
+    [(Tone::Text, card.title.clone()), (Tone::Muted, card.detail.clone()), hint].map(|(tone, text)| {
+        let cut = fit(&text, inner);
+        let pad = inner.saturating_sub(cut.width());
+        (tone, format!("{cut}{}", " ".repeat(pad)))
+    })
 }
 
 /// The opening fence line for a lone image's line: the image moves into the info string, so the fence takes no line

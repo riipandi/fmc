@@ -6,13 +6,40 @@
 use std::borrow::Cow;
 
 use fmc::reader::frontmatter;
-use fmc::reader::images;
+use fmc::reader::images::{self, Image};
 
 use super::markdown_blocks;
+use super::markdown_blocks::Split;
 
 /// The source as the view draws it: front matter as a code fence (`reader/frontmatter.rs`), then each lone image as a box.
 pub fn prepared(source: &str) -> String {
     as_boxes(&frontmatter::as_fence(source)).into_owned()
+}
+
+/// The boxes of `prepared` (`prepared` gives its `split`): each box's block index and its image, in document order.
+pub fn boxes(prepared: &str, split: &Split) -> Vec<(usize, Image)> {
+    let lines: Vec<&str> = prepared.split('\n').collect();
+    split
+        .blocks
+        .iter()
+        .enumerate()
+        .filter(|(_, block)| block.kind == "fenced_code_block")
+        .filter_map(|(index, block)| {
+            let opening = lines.get(block.lines.start)?;
+            let info = opening.trim_start().strip_prefix("```")?;
+            images::from_info(info).map(|image| (index, image))
+        })
+        .collect()
+}
+
+/// The destinations of the boxes in `source`, each once: what the headers are read for.
+pub fn targets(source: &str) -> Vec<String> {
+    let prepared = prepared(source);
+    let mut targets: Vec<String> =
+        boxes(&prepared, &markdown_blocks::split(&prepared)).into_iter().map(|(_, image)| image.target).collect();
+    targets.sort();
+    targets.dedup();
+    targets
 }
 
 /// `source` with each top-level paragraph that is one image rewritten as a box fence, line for line. A paragraph whose

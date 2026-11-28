@@ -9,6 +9,7 @@ pub mod find;
 pub mod footer;
 pub mod header;
 pub mod hints;
+pub mod image_box;
 pub mod markdown;
 pub mod markdown_blocks;
 pub mod markdown_images;

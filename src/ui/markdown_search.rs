@@ -8,6 +8,7 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use fmc::reader::headings;
+use fmc::reader::images;
 use fmc::reader::rendered_search::{Piece, Rendered, Slot};
 use fmc::reader::search::match_ranges;
 use opentui::native::LayerRun;
@@ -177,9 +178,13 @@ pub fn capture_prose(spans: Vec<InlineSpan>, captured: &RefCell<Vec<Captured>>) 
 }
 
 /// The offscreen index's code renderer: records a code block, and keeps the default block. A diagram has no text the
-/// search can count, so it records nothing.
+/// search can count, so it records nothing; a box counts its name, which is the alt text or the file's name (D7).
 pub fn capture_code(block: &CodeBlock<'_>, captured: &RefCell<Vec<Captured>>) -> Option<AnyWidget> {
-    let text = if block.language == "mermaid" { String::new() } else { block.code.to_owned() };
+    let text = match block.language {
+        "mermaid" => String::new(),
+        images::FENCE => images::from_info(block.info).map(|image| image.label()).unwrap_or_default(),
+        _ => block.code.to_owned(),
+    };
     captured.borrow_mut().push(Captured::Code(text));
     None
 }

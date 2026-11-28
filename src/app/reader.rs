@@ -148,6 +148,7 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp:
     }
     m.shown = shown;
     gutter::request(m);
+    super::picture::request(m);
     search::follow(m, ui);
     reset_scroll(m, ui, path);
     super::find::arrive(m, path);
@@ -175,6 +176,7 @@ pub fn reread(m: &mut Model, ui: &Ui, path: &Path, result: Reread) {
             }
             *document = next;
             present(ui, &m.shown);
+            super::picture::request(m);
             search::follow(m, ui);
         }
     }
@@ -276,6 +278,7 @@ pub fn close_keys(m: &mut Model, ui: &Ui) {
     let Back { shown, focus, scroll: (left, top), search } = *back;
     present(ui, &shown);
     m.shown = shown;
+    super::picture::request(m);
     m.focus = focus;
     m.search = search;
     m.message = None;

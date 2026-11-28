@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T17:15:44+07:00
+updated: 2026-11-28T17:50:31+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1712,3 +1712,27 @@ Alternatives considered:
 - Append-only prompts, as Scouter has: rejected by the owner's request.
 - Unicode word segmentation: rejected. It would differ from the dialog's field, which OpenTUI draws, and it needs a crate the owner has not approved.
 - OpenTUI's `Input` for each prompt: rejected. Each prompt is a `Text` in a bar the app paints, and an `Input` takes the keyboard focus, which the prompts keep for the list and the reader.
+
+### Approved deviation: an image that is a whole paragraph is drawn as a box in rendered Markdown
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's rendered Markdown draws `![alt](path)` as its alt text styled as a link. Its preview has no image handling (`scouter:src/reader/code-view.ts:132-142`, `defaultRender()`), and OpenTUI 0.9.9's Markdown has no image block (`opentui-sys-0.9.9/src/generated.rs:483-493`): the inline hook sees the link target, and `![](a.svg)` draws nothing. The owner asked on 2026-11-28 whether the preview can show images.
+
+Decision (owner, 2026-11-28, plan-00021 D1 to D3 and D5 to D7): a top-level paragraph that is one image and nothing else draws as a box of three text rows in a frame. The rows are the image's name (its alt text, or its file's name when the alt is empty), the path as written with the size and format read from the header, and the hint: `Enter opens it`, or the reason the picture cannot open. The reasons are `outside the folder`, `not found`, `not an image fmc shows`, `could not be read`, `too large`, `remote` (an `http` or `https` source), and `SVG`. A destination is resolved against the Markdown file's folder and must stay inside the browsed root, checked on the disk after symbolic links are resolved. No picture is drawn inside the preview, no remote file is fetched, and no SVG is rasterised.
+
+Mechanics: the rendered view rewrites the source before OpenTUI reads it (`ui/markdown_images.rs`). The paragraph's line becomes an opening fence whose info string is `fmc-image` and the image's own text, and the blank line after it becomes the closing fence, so no line is added and the git signs and the search keep their rows. A paragraph with no blank line after it, or with a backtick, keeps its text, since a fence cannot carry them. The box is a measured widget (`ui/image_box.rs`) that does no I/O: each image's header is read on a worker (`services/picture.rs`) when the document shows, cached by path and modification time, and drawn when it arrives. The source view (`m`) shows the file as it is.
+
+Consequences:
+
+- (positive) An image in a document reads as what it is: its name, where it lives, and its size, and the picture is one key away once the open is in place.
+- (positive) Search finds a box by its name and counts it once, so `n` and `N` reach it.
+- (negative) A paragraph of two images, or an image in a sentence, a list, or a quote, still shows its alt text as a link, which Scouter also does.
+- (negative) A box is drawn over the fence's two source lines, so the line a deletion sits under is the closing line of the box.
+
+Alternatives considered:
+
+- A picture drawn inside the preview, placed from the block tops and clipped under the scroll: rejected by the owner (D1). It needs a decode cache and overlay placement that are unproven in the terminals.
+- An inline `[image: alt]` marker: rejected by the owner (D1), since it shows no size and no path.
+- The fence's body holds the image's line, with a blank line before the fence too: rejected, because it needs a blank line on both sides and fails for an image at the top of a file. The image sits in the info string instead.
+- Remote images fetched over HTTP, and SVG rasterised: rejected by the owner (D3). Each needs a client or a rasteriser that the approved dependencies do not hold.
