@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Dockerfiles, Makefiles, CMake files, INI and Java properties files, Protocol Buffers, GraphQL, Nix, SCSS, and Vue files are highlighted. A Vue file's `<script>` and `<style>` are coloured as JavaScript, TypeScript, CSS, or SCSS, and a Dockerfile's `RUN` lines as shell. `Dockerfile.dev`, `Containerfile.prod`, and `app.dockerfile` are read as Dockerfiles, `CMakeLists.txt` as CMake, `.mk` as Make, and `.env`, `.env.local`, and `*.env` as shell. Docker Compose files were already highlighted as YAML.
+- `.gitignore` (and `.dockerignore`, `.npmignore`, and the other ignore files that share its syntax), `.gitattributes`, `.gitconfig`, `.gitmodules`, and `.editorconfig` are highlighted.
+- C++, C#, Ruby, PHP, Kotlin, Swift, and Dart files are highlighted. A PHP file's HTML is coloured as HTML.
+
 ### Changed
 
 - Building fmc needs Rust 1.100 or newer (`rust-version` in `Cargo.toml`), the toolchain `rust-toolchain.toml` pins.

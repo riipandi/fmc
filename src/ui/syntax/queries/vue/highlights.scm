@@ -1,0 +1,162 @@
+; From tree-sitter-vue-next 0.1.0 (MIT, LICENSE beside this file): its queries/html_tags/highlights.scm followed by its
+; queries/vue/highlights.scm, which inherits it. Changes: the spell captures are dropped (fmc has no spell check); the
+; `:` and `.` of a directive are punctuation.delimiter (character.special has no style); the editor-only
+; commentstring rule is dropped.
+
+(tag_name) @tag
+
+; (erroneous_end_tag_name) @error ; we do not lint syntax errors
+(comment) @comment
+
+(attribute_name) @tag.attribute
+
+((attribute
+  (quoted_attribute_value) @string)
+  (#set! priority 99))
+
+(text) @none
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading)
+  (#eq? @_tag "title"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.1)
+  (#eq? @_tag "h1"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.2)
+  (#eq? @_tag "h2"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.3)
+  (#eq? @_tag "h3"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.4)
+  (#eq? @_tag "h4"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.5)
+  (#eq? @_tag "h5"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.heading.6)
+  (#eq? @_tag "h6"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.strong)
+  (#any-of? @_tag "strong" "b"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.italic)
+  (#any-of? @_tag "em" "i"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.strikethrough)
+  (#any-of? @_tag "s" "del"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.underline)
+  (#eq? @_tag "u"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.raw)
+  (#any-of? @_tag "code" "kbd"))
+
+((element
+  (start_tag
+    (tag_name) @_tag)
+  (text) @markup.link.label)
+  (#eq? @_tag "a"))
+
+((attribute
+  (attribute_name) @_attr
+  (quoted_attribute_value
+    (attribute_value) @string.special.url))
+  (#any-of? @_attr "href" "src"))
+
+[
+  "<"
+  ">"
+  "</"
+  "/>"
+] @tag.delimiter
+
+"=" @operator
+; inherits: html_tags
+
+[
+  "["
+  "]"
+] @punctuation.bracket
+
+[
+  ":"
+  "."
+] @punctuation.delimiter
+
+[
+  (interpolation)
+  "@"
+] @punctuation.special
+
+(interpolation
+  (raw_text) @none)
+
+(dynamic_directive_inner_value) @variable
+
+(directive_name) @tag.attribute
+
+; Accessing a component object's field
+(":"
+  .
+  (directive_value) @variable.member)
+
+("."
+  .
+  (directive_value) @property)
+
+; @click is like onclick for HTML
+("@"
+  .
+  (directive_value) @function.method)
+
+; Used in v-slot, declaring position the element should be put in
+("#"
+  .
+  (directive_value) @variable)
+
+(directive_attribute
+  (quoted_attribute_value) @punctuation.special)
+
+(directive_attribute
+  (quoted_attribute_value
+    (attribute_value) @none))
+
+(directive_modifier) @function.method
+

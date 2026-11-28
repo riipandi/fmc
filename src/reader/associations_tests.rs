@@ -21,14 +21,14 @@ fn a_value_names_a_filetype_an_alias_or_plain_text() {
     assert_eq!(Language::named("shellscript"), Some(Language::Filetype("bash")));
     assert_eq!(Language::named("jsonc"), Some(Language::Filetype("json")));
     assert_eq!(Language::named("plaintext"), Some(Language::Plain));
-    assert_eq!(Language::named("make"), None);
+    assert_eq!(Language::named("perl"), None);
     assert_eq!(Language::named("Rust"), None);
 }
 
 #[test]
 fn an_unknown_value_or_a_bad_pattern_is_refused_and_leaves_the_table() {
     let mut associations = Associations::default();
-    assert_eq!(associations.add("*.log", "make").unwrap_err(), "make is not a filetype fmc shows");
+    assert_eq!(associations.add("*.log", "perl").unwrap_err(), "perl is not a filetype fmc shows");
     assert!(associations.add("docs/{a", "rust").unwrap_err().contains("no matching"));
     assert_eq!(associations.language(None, "gringotts.log"), None);
 }

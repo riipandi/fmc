@@ -1432,6 +1432,66 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: Dockerfiles, build files, and common config files are highlighted (plan-00024)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter colours its sixteen grammars (`scouter:src/reader/code-view.ts:20-29`, `scouter:grammars/`), and a `Dockerfile`, a `Makefile`, a `.vue` file, or a `.env` file shows plain. OpenTUI names `dockerfile`, `make`, `ini`, `scss`, and `vue` by file name or extension already; fmc left them plain because no grammar was registered. Research on 2026-11-28 (`research/common-grammars.md`) loaded every candidate on the locked `tree-sitter` 0.27.2 and measured its cost: the fourteen config and build grammars add 0.87 MiB to the release binary. Docker Compose files are YAML by extension in both apps, so they need nothing.
+
+Decision (owner, 2026-11-28, plan-00024 O1 to O4, D1 to D6): fmc highlights `dockerfile`, `make`, `cmake`, `ini`, `properties`, `proto`, `graphql`, `nix`, `scss`, and `vue` through ten crates pinned exactly (`rules.md`, "Dependencies"), each query under `src/ui/syntax/queries/<filetype>/` with its `LICENSE`. The crate's own query is used where it compiles and styles the sample; GraphQL's crate ships none, so its query is nvim-treesitter's. Older capture names are renamed to the palette's (Make's `conditional`, `repeat`, `include`, `exception`, `text.*`), `module` is `namespace`, and `@spell` and `@nospell` are dropped. A Vue file's `<script>` and `<style>` are injected (JavaScript, TypeScript, TSX, CSS, SCSS), and a Dockerfile's `RUN` and heredocs are bash. `.env` files are bash (D5): no dotenv grammar exists, and bash reads `KEY=value` and `#` lines. `reader/language.rs` gains a prefix step between `NAMES` and `EXTENSIONS` (`PREFIXES`): `Dockerfile.*`, `Containerfile.*`, and `.env.*` take the filetype of the name before the dot, as Neovim's rules do. `CMakeLists.txt` and `.env` are names; `.dockerfile`, `.containerfile`, `.mk`, `.mak`, `.cmake`, `.env`, `.properties`, `.proto`, `.graphql`, `.graphqls`, `.gql`, and `.nix` are extensions.
+
+Consequences:
+
+- (positive) The files nearly every repository holds are coloured in every view, and `file_associations` and Markdown fences accept the ten names.
+- (negative) These files are coloured where Scouter shows them plain.
+- (negative) A prefix rule wins over the extension, so `Dockerfile.json` would read as a Dockerfile. Neovim does the same.
+- (negative) `tree-sitter-vue-next` is a fork with no stars, the only Vue crate whose query compiles. nix's `#is-not? local` is not evaluated, so a local binding named like a builtin takes the builtin's colour.
+
+Alternatives considered:
+
+- nvim-treesitter's queries everywhere: rejected. They fail on eleven of the grammars, whose versions differ from nvim's pins (`research/common-grammars.md`, section 3).
+- `tree-sitter-dockerfile` 0.2.0: rejected, it pins `tree-sitter` 0.20 (a second C runtime). `-orchard` 0.1.0 and `-updated` 0.2.0: not taken (D4).
+- A dotenv grammar: none exists.
+
+### Approved deviation: git and EditorConfig files are highlighted from crates (plan-00024)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter shows a `.gitignore`, a `.gitattributes`, a `.gitconfig`, and an `.editorconfig` plain (none is in `scouter:grammars/`). The grammars nvim-treesitter uses for them commit their `parser.c` and load when vendored; the only crates are four `konomanoasa-*` crates published on 2026-11-26 by one author (`research/common-grammars.md`, sections 3 and 4).
+
+Decision (owner, 2026-11-28, plan-00024 O3 (b), "avoid vendoring"): fmc highlights `gitignore`, `gitattributes`, `gitconfig`, and `editorconfig` through the four crates, pinned exactly, with each crate's own query (nvim's does not fit these grammars); wildcards are `string.special`. `.gitignore` and the ignore files that copy its syntax (`.dockerignore`, `.containerignore`, `.npmignore`, `.prettierignore`, `.vscodeignore`, `.ignore`, `.rgignore`, `.fdignore`) are `gitignore` by name, as are `.gitattributes`, `.gitconfig`, `.gitmodules`, and `.editorconfig`. SSH config is not highlighted: its one loading crate is CC0-1.0, which the licence allowlist does not hold, and vendoring was declined.
+
+Consequences:
+
+- (positive) No C is copied into the tree; `build.rs` is unchanged.
+- (negative) Four one-author crates, each pinning `tree-sitter-language` =0.1.9, so a bump of that crate waits for theirs. Their queries are thinner than nvim's (15 captures against 49 on the gitignore sample).
+- (negative) These files are coloured where Scouter shows them plain.
+
+Alternatives considered:
+
+- Vendor the nvim-treesitter grammars (about 50 KiB with SSH config's 270 KiB): declined by the owner (O3 (a)).
+- `tree-sitter-gitattributes` 0.1.6: rejected, it pins `tree-sitter` 0.20 (a second C runtime).
+
+### Approved deviation: C++, C#, Ruby, PHP, Kotlin, Swift, and Dart are highlighted (plan-00024)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: OpenTUI names these seven filetypes by extension, and by file name for Ruby's `Gemfile` and `Rakefile` (`opentui-0.9.9/src/generated.rs:136-169`), but Scouter registers no grammar for them (`scouter:src/reader/code-view.ts:20-29`), so they show plain in both apps. Their grammars are the heaviest of the research's common set: 1.4 to 6.9 MiB each, 25 MiB together (`research/common-grammars.md`, section 6).
+
+Decision (owner, 2026-11-28, plan-00024 O1 (a), O2): fmc highlights `cpp`, `csharp`, `ruby`, `php`, `kotlin`, `swift`, and `dart` through seven crates pinned exactly. The crate's own query is used, except C++, whose crate query colours five tokens of a sample: its query is nvim-treesitter's c query followed by its cpp query. nvim's ancestry predicates (`#has-ancestor?`, `#has-parent?`), which OpenTUI does not evaluate and which would otherwise match with no condition, are written as structural patterns (a field under a `field_declaration` is a property) or dropped (the attribute builtins, the template-method rule, the four-deep qualified names). A PHP file's text outside `<?php` is injected as HTML, and a heredoc takes the language its label names. The older capture names (Kotlin's `include`, `conditional`, `parameter`, and so on) are renamed to the palette's, and `module` is `namespace`. Wave 3 (Scala, Haskell, OCaml, Objective-C, R, PowerShell, Groovy) is parked in the roadmap.
+
+Consequences:
+
+- (positive) The common languages outside Scouter's set are coloured in every view, and Markdown fences in them too.
+- (negative) The release binary grows by about 25 MiB (+63 %). A clean release build takes about 13 s more CPU (`research/common-grammars.md`, section 6).
+- (negative) These files are coloured where Scouter shows them plain. `tree-sitter-kotlin-sg` is a fork with no stars.
+
+Alternatives considered:
+
+- All three waves: not taken, about 46 MiB for languages fewer developers open daily (O1 (c)).
+- Wave 1 only, or wave 1 with C++, Ruby, and PHP: not taken (O1 (b), (d)).
+- `tree-sitter-kotlin-ng` 1.1.0: rejected, it ships no query, and nvim's does not fit its grammar.
+
 ### Approved deviation: front matter is a code block in the rendered view
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.

@@ -122,6 +122,55 @@ pub fn register() {
     register_lazy("json5", || {
         grammar(tree_sitter_json5_orchard::LANGUAGE, include_str!("queries/json5/highlights.scm"))
     });
+    register_lazy("dockerfile", || {
+        injected(
+            tree_sitter_containerfile::LANGUAGE,
+            include_str!("queries/dockerfile/highlights.scm"),
+            include_str!("queries/dockerfile/injections.scm"),
+        )
+    });
+    register_lazy("make", || grammar(tree_sitter_make::LANGUAGE, include_str!("queries/make/highlights.scm")));
+    register_lazy("cmake", || grammar(tree_sitter_cmake::LANGUAGE, include_str!("queries/cmake/highlights.scm")));
+    register_lazy("ini", || grammar(tree_sitter_ini::LANGUAGE, include_str!("queries/ini/highlights.scm")));
+    register_lazy("properties", || {
+        grammar(tree_sitter_properties::LANGUAGE, include_str!("queries/properties/highlights.scm"))
+    });
+    register_lazy("proto", || grammar(tree_sitter_proto::LANGUAGE, include_str!("queries/proto/highlights.scm")));
+    register_lazy("graphql", || grammar(tree_sitter_graphql::LANGUAGE, include_str!("queries/graphql/highlights.scm")));
+    register_lazy("nix", || grammar(tree_sitter_nix::LANGUAGE, include_str!("queries/nix/highlights.scm")));
+    register_lazy("scss", || grammar(tree_sitter_scss::language(), include_str!("queries/scss/highlights.scm")));
+    register_lazy("gitignore", || {
+        grammar(konomanoasa_tree_sitter_gitignore::LANGUAGE, include_str!("queries/gitignore/highlights.scm"))
+    });
+    register_lazy("gitattributes", || {
+        grammar(konomanoasa_tree_sitter_gitattributes::LANGUAGE, include_str!("queries/gitattributes/highlights.scm"))
+    });
+    register_lazy("gitconfig", || {
+        grammar(konomanoasa_tree_sitter_gitconfig::LANGUAGE, include_str!("queries/gitconfig/highlights.scm"))
+    });
+    register_lazy("editorconfig", || {
+        grammar(konomanoasa_tree_sitter_editorconfig::LANGUAGE, include_str!("queries/editorconfig/highlights.scm"))
+    });
+    register_lazy("cpp", || grammar(tree_sitter_cpp::LANGUAGE, include_str!("queries/cpp/highlights.scm")));
+    register_lazy("csharp", || grammar(tree_sitter_c_sharp::LANGUAGE, include_str!("queries/csharp/highlights.scm")));
+    register_lazy("ruby", || grammar(tree_sitter_ruby::LANGUAGE, include_str!("queries/ruby/highlights.scm")));
+    register_lazy("php", || {
+        injected(
+            tree_sitter_php::LANGUAGE_PHP,
+            include_str!("queries/php/highlights.scm"),
+            include_str!("queries/php/injections.scm"),
+        )
+    });
+    register_lazy("kotlin", || grammar(tree_sitter_kotlin_sg::LANGUAGE, include_str!("queries/kotlin/highlights.scm")));
+    register_lazy("swift", || grammar(tree_sitter_swift::LANGUAGE, include_str!("queries/swift/highlights.scm")));
+    register_lazy("dart", || grammar(tree_sitter_dart::LANGUAGE, include_str!("queries/dart/highlights.scm")));
+    register_lazy("vue", || {
+        injected(
+            tree_sitter_vue_next::LANGUAGE,
+            include_str!("queries/vue/highlights.scm"),
+            include_str!("queries/vue/injections.scm"),
+        )
+    });
     register_alias("javascriptreact", "javascript");
 }
 
@@ -286,6 +335,7 @@ const CAPTURE_NAMES: &[&str] = &[
     "punctuation.special",
     "spell",
     "string",
+    "string.documentation",
     "string.escape",
     "string.regex",
     "string.regexp",
