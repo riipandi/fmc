@@ -2,7 +2,7 @@
 
 updated: 2026-11-28T19:30:00+07:00
 
-Point-in-time research, 2026-11-28, for plan-00023 (`.agents/docs/plans/plan-00023-common-grammars.md`). Agent audience; evidence as `file:line` in the tree, in the locked crates (`opentui` 0.9.9, `tree-sitter` 0.27.2, `tree-sitter-language` 0.1.9), or as the scratch runs' output. The scratch crates live in `/tmp/fmc-cg-PKSA/` (`load`, `load2`, `load4`, and the release trees `base`, `w1`, `w12`, `all`), outside the repository, and are not kept.
+Point-in-time research, 2026-11-28, for plan-00023 (`.agents/docs/archive/plan-00023-common-grammars.md`). Agent audience; evidence as `file:line` in the tree, in the locked crates (`opentui` 0.9.9, `tree-sitter` 0.27.2, `tree-sitter-language` 0.1.9), or as the scratch runs' output. The scratch crates live in `/tmp/fmc-cg-PKSA/` (`load`, `load2`, `load4`, and the release trees `base`, `w1`, `w12`, `all`), outside the repository, and are not kept.
 
 ## 1. Result
 
@@ -145,3 +145,7 @@ Ranked by daily use against cost:
 - The per-pattern rewrites of `#has-ancestor?` and friends (section 5) are not written yet.
 - MSRV of the new crates (none was checked against 1.92), and builds on targets other than macOS arm64.
 - The measured binary sizes are one run each; sizes are deterministic, times are not.
+
+## 11. Outcome
+
+The owner took waves 1 and 2 and declined vendoring (2026-11-28, plan-00023 O1 (a), O3 (b)). The git family and EditorConfig come from the four konomanoasa crates (section 4's rejected route), and SSH config is not highlighted. The release binary after plan-00023 phase 3 is 65,972,256 bytes. Wave 3 and the dropped set are parked as RI-21 in `roadmap-00001-post-parity.md`.

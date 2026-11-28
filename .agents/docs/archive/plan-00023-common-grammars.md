@@ -1,28 +1,28 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T19:28:25+07:00
-updated: 2026-11-28T19:33:44+07:00
+updated: 2026-11-28T19:47:10+07:00
 phases:
     - id: 1
       title: Wave 1 crate grammars, file names, and .env as bash
-      status: pending
+      status: committed (08bbc80)
       note: —
     - id: 2
       title: Git-family and EditorConfig grammars from crates
-      status: pending
+      status: committed (e76cefb)
       note: O3 (b); SSH config dropped
     - id: 3
       title: Wave 2 language grammars
-      status: pending
+      status: committed (f74c67e)
       note: O1 (a)
     - id: 4
       title: Agent docs sync, roadmap, ledger close, handover
-      status: pending
+      status: committed (docs commit)
       note: —
     - id: 5
       title: Final validation, live run, push, pull request
-      status: pending
-      note: —
+      status: done
+      note: just verify green, live run in the handover; push and PR follow the docs commit
 ---
 
 ## Highlight Dockerfile, build and config files, and the common languages
