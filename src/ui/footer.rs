@@ -120,18 +120,19 @@ fn last_name(root: &str) -> String {
     }
 }
 
-/// The folder part dim and the last name in `text`; a trailing `/` stays with the name (JS
+/// The folder part dim and the last name muted, so the label stays quieter than a message; a trailing `/` stays with
+/// the name (JS
 /// `lastIndexOf("/", length - 2)`, which still looks at index 0 of a one-character string).
 fn root_segments(shown: &str, p: &Palette) -> Vec<Seg> {
     let end = shown.len().saturating_sub(1).max(shown.len().min(1));
     let cut = shown.as_bytes()[..end].iter().rposition(|&b| b == b'/').map_or(0, |i| i + 1);
-    vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.text)]
+    vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.muted)]
 }
 
-/// The root's segments with the branch after the gap, in the name's colour.
+/// The root's segments with the branch after the gap, in the name's muted colour.
 fn with_branch(mut segments: Vec<Seg>, branch: &str, p: &Palette) -> Vec<Seg> {
     segments.push(Seg::plain(BRANCH_GAP));
-    segments.push(Seg::new(branch, p.text));
+    segments.push(Seg::new(branch, p.muted));
     segments
 }
 

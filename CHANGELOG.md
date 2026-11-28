@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The footer's root and git branch are drawn in a muted colour, so a message and the facts stand out.
+
 ## [0.6.0] - 2026-11-28
 
 fmc opens files and folders in other apps (`o`, `O`, `e`, `E`), highlights JSON5, tree-sitter queries, justfiles, Vim help, and Lua patterns, shows the browsed root and git branch in the footer, and fits short diffs to the pane.
