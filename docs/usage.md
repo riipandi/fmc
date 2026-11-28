@@ -38,7 +38,9 @@ A file over 1 MiB shows its first 1 MiB.
 
 ## Images and binary files
 
-PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and format in the footer. Any other binary file shows a short notice with its name and size. fmc displays UTF-8 text and images only.
+PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and format in the footer. Any other binary file shows a short notice with its name and size, and two choices: `X` for the hex view, and `o` to open it in its default app. Each choice is also a button you can click.
+
+The hex view shows each row's offset, its bytes in hex, and the same bytes as ASCII, with a dot for a byte that does not print. A row holds 32, 16, 8, or 4 bytes, as many as the pane fits. The colours tell the kinds of byte apart: NUL, printable text, whitespace, other control bytes, and bytes past ASCII. It reads only the part of the file on screen, so a file of several gigabytes opens and scrolls at once. The scroll keys move it by rows, `gg` and `G` go to the start and the end, and `:` followed by an offset jumps there: `:0x1f40` in hex, `:8000` in decimal, or `:50%` for halfway.
 
 ## Markdown
 

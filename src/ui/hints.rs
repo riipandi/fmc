@@ -66,6 +66,8 @@ pub struct Shown {
     /// `Some(rendered)` for a Markdown document, `None` for anything else.
     pub markdown: Option<bool>,
     pub image: bool,
+    /// The hex view: its keys are rows, offsets, and the views it switches to.
+    pub hex: bool,
     /// Something is open, so `q` closes it; the welcome screen has nothing to close.
     pub open: bool,
     /// The sidebar is hidden: `Tab` cannot reach it, and `Ctrl+/` shows it.
@@ -124,6 +126,19 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
     }
     if shown.image && pane != Pane::Files {
         return vec![switch_hint(shown), ("d", "changes"), ("^q", "quit")];
+    }
+    if shown.hex && pane != Pane::Files {
+        return vec![
+            ("j k", "scroll"),
+            switch_hint(shown),
+            ("gg G", "top/bottom"),
+            ("^d ^u", "page"),
+            (":", "offset"),
+            ("y", "copy"),
+            ("q", "close"),
+            ("?", "help"),
+            ("^q", "quit"),
+        ];
     }
     if pane == Pane::Files {
         return vec![

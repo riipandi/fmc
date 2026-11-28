@@ -6,6 +6,7 @@ mod changes;
 mod command;
 mod find;
 mod gutter;
+mod hex;
 mod keys;
 mod layout;
 mod mouse;
@@ -49,6 +50,7 @@ use crate::ui::diff::DiffBody;
 use crate::ui::find::{FindBar, PromptLine};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
+use crate::ui::hex::HexView;
 use crate::ui::hints::{self, Pane, Prompt};
 use crate::ui::markdown::MarkdownView;
 use crate::ui::markdown_signs::SignStrip;
@@ -94,6 +96,7 @@ struct Ui {
     /// What the preview shows, as the paint last drew it.
     preview_at: Option<find::PreviewAt>,
     binary: BinaryView,
+    hex: HexView,
     /// Two bars: beside plain text the bar is the thumb's column alone; beside filled content it has two blanks before it.
     bar: ScrollBar,
     narrow_bar: ScrollBar,
@@ -607,6 +610,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let viewer = Viewer::new(app);
     let picture = Picture::new(app);
     let binary = BinaryView::new(app);
+    let hex = HexView::new(app);
     let preview = CodeView::new(app, p);
     let preview_viewer = Viewer::new(app);
     preview_viewer.visible(false);
@@ -622,7 +626,8 @@ fn build(app: &App, p: &Palette) -> Ui {
     viewer.widget().add(&reader.widget()).add(&markdown.widget()).add(&picture.widget());
     viewer.gutter().add(&reader.gutter());
     let settings = SettingsView::new(app);
-    stack.add(&welcome.root).add(&binary.root()).add(&viewer.view()).add(&preview_viewer.view()).add(&diff.root);
+    stack.add(&welcome.root).add(&binary.root()).add(&hex.widget()).add(&viewer.view()).add(&preview_viewer.view());
+    stack.add(&diff.root);
     stack.add(&settings.root);
     viewer.view().add(&markdown_signs.view());
     body.add(&stack).add(&narrow_bar.root()).add(&bar.root());
@@ -654,6 +659,7 @@ fn build(app: &App, p: &Palette) -> Ui {
         preview_viewer,
         preview_at: None,
         binary,
+        hex,
         bar,
         narrow_bar,
         footer,
@@ -746,6 +752,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
             None,
             reader::Shown::Text { path, .. } | reader::Shown::Image { path, .. } | reader::Shown::Binary { path, .. },
         ) => reader::title_parts(&root, path),
+        (None, None, reader::Shown::Hex(hex)) => reader::title_parts(&root, &hex.path),
     };
     let badges = match (previewed, diff_header) {
         _ if on_settings => Vec::new(),
@@ -773,13 +780,15 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.markdown.visible(previewing && !shows_preview && !body && !on_settings);
     ui.picture.visible(matches!(m.shown, reader::Shown::Image { .. }) && !shows_preview && !body && !on_settings);
     ui.binary.visible(matches!(m.shown, reader::Shown::Binary { .. }) && !shows_preview && !body && !on_settings);
+    let hexing = matches!(m.shown, reader::Shown::Hex(_));
+    ui.hex.visible(hexing && !shows_preview && !body && !on_settings);
     ui.settings.root.visible(on_settings);
     if let Some(page) = &m.settings.page {
         ui.settings.paint(&m.settings.values, page.selected, p);
     }
     // The reader's pane takes no space beside the preview, which is the pane the stack shows then. With no document it
     // takes none either: an empty viewer would halve the stack and push the welcome out of its half.
-    ui.viewer.visible(m.shown.is_some() && !shows_preview && !body && !on_settings);
+    ui.viewer.visible(m.shown.is_some() && !hexing && !shows_preview && !body && !on_settings);
     ui.diff.root.visible(body);
     if on_changes {
         ui.diff.set_split(m.diff_options.split);
@@ -843,19 +852,22 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.preview.set_width(u32::from(columns.saturating_sub(width + 2)));
     ui.picture.fill(viewport as u32);
     let lines = m.shown.text().map_or(0, |(document, ..)| document.lines);
+    // The hex view draws its own rows, beside the narrow bar.
+    let hex_rows = hex::sync(m, ui, usize::from(columns.saturating_sub(width + 3)), viewport, p);
     let total = match preview_lines {
         _ if body => ui.diff.height(),
         Some(lines) => lines,
+        None if hex_rows.is_some() => hex_rows.map_or(0, |(rows, _)| rows),
         None => reader::content_rows(&m.shown, ui.markdown.rows(), ui.reader.rows(lines)),
     };
     // A preview has its own position, as Scouter's preview scroll box does.
     let top = match preview_lines {
         Some(_) => ui.preview_viewer.position().1.floor() as usize,
-        None => m.top.floor() as usize,
+        None => hex_rows.map_or(m.top.floor() as usize, |(_, top)| top),
     };
     // The rendered view's bar takes one column, as Scouter's scroll box does: the blank before the thumb is wrapped
     // text's and a picture's, not the rendered view's (`scouter:src/app/reader-pane.ts:31-48`).
-    let gapped = fill && !previewing;
+    let gapped = fill && !previewing && !hexing;
     ui.bar.paint(app, total, viewport, top, gapped, p);
     ui.narrow_bar.paint(app, total, viewport, top, !gapped, p);
     let has_blocks = m.changes.as_ref().is_some_and(|changes| !changes.files.is_empty());
@@ -866,8 +878,14 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     } else {
         match preview_lines {
             Some(_) => (None, None),
-            None => reader::footer_facts(&m.shown, viewport, ui.markdown.rows(), ui.reader.rows(lines), m.top)
-                .map_or((None, None), |(info, label)| (Some(info), label)),
+            None => reader::footer_facts(
+                &m.shown,
+                viewport,
+                ui.markdown.rows(),
+                hex_rows.map_or(ui.reader.rows(lines), |(rows, _)| rows),
+                hex_rows.map_or(m.top, |(_, top)| top as f64),
+            )
+            .map_or((None, None), |(info, label)| (Some(info), label)),
         }
     };
     // The rendered view's marks follow the search; the code view's marks are for a code view that shows.

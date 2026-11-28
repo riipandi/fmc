@@ -11,6 +11,7 @@ pub mod poll;
 pub mod settings;
 pub mod state;
 pub mod theme;
+pub mod window;
 pub mod write;
 
 use std::ffi::OsString;
@@ -151,6 +152,8 @@ pub enum Event {
     Launched { done: String, result: Result<(), String> },
     /// The apps the Open With picker lists for `target` (`app/open.rs`); the picker opens only if `target` is still the one shown.
     Apps { target: PathBuf, result: Result<Vec<launch::App>, String> },
+    /// Block `index` of the file the hex view shows (`app/hex.rs`); a block of a file no longer shown is dropped.
+    Block { path: PathBuf, index: u64, result: Result<Vec<u8>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

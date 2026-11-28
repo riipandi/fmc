@@ -129,6 +129,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         }
         Action::ToggleWrap if m.shown.has_document() || m.changes.is_some() => m.wrap = !m.wrap,
         Action::OpenDefault if m.changes.is_none() => open::default_app(&mut m),
+        Action::OpenAsHex if m.changes.is_none() => hex::open_shown(&mut m),
         Action::OpenWith if m.changes.is_none() => open::with(&mut m),
         Action::OpenImage if m.focus == Focus::Reader && m.shown.previewing() => {
             picture::open_first(&mut m, &ui.borrow())
@@ -150,6 +151,15 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
                 m.restore = Some((target.path.clone(), target.top));
                 tree::open_entry(&mut m, target.path);
             }
+        }
+        Action::Scroll(_) | Action::Page(_) | Action::HalfPage(_) | Action::Top | Action::Bottom
+            if m.focus == Focus::Reader && m.shown.is_hex() && !body =>
+        {
+            hex::motion(&mut m, action)
+        }
+        Action::Jump(step) if m.focus == Focus::Reader && m.shown.is_hex() && !body => {
+            let rows = i32::try_from(m.reader_jump).unwrap_or(i32::MAX) * i32::from(step);
+            hex::motion(&mut m, Action::Scroll(rows))
         }
         Action::Scroll(_)
         | Action::Pan(_)

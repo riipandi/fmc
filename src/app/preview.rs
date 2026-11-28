@@ -10,7 +10,7 @@ use std::time::Duration;
 use fmc::keys::Focus;
 use opentui::prelude::*;
 
-use super::reader::{self, Shown};
+use super::reader;
 use super::{Model, Ui, tree};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
@@ -54,10 +54,7 @@ fn wanted(m: &Model) -> bool {
 }
 
 fn shown_path(m: &Model) -> Option<&Path> {
-    match &m.shown {
-        Shown::Text { path, .. } | Shown::Image { path, .. } | Shown::Binary { path, .. } => Some(path),
-        Shown::None | Shown::Keys { .. } => None,
-    }
+    m.shown.path()
 }
 
 /// A selected file's read arrives: it shows as an open shows it (its views and notices), unless the selection has moved.

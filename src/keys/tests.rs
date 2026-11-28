@@ -37,6 +37,7 @@ fn key(spec: &str) -> Key<'_> {
                 "O" => "o",
                 "R" => "r",
                 "S" => "s",
+                "X" => "x",
                 _ => spec,
             };
             Key { name: lower, shift: true, ..plain }
@@ -269,6 +270,7 @@ fn every_documented_key_is_bound() {
                     "gg" => vec!["g".into(), "g".into()],
                     "zz" => vec!["z".into(), "z".into()],
                     "120G" => vec!["1".into(), "2".into(), "0".into(), "G".into()],
+                    ":0x1f40" => vec![":".into()],
                     _ => vec![token.to_string()],
                 };
                 let refs: Vec<&str> = sequence.iter().map(String::as_str).collect();

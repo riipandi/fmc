@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A binary file can open in a hex view: `X` on its notice, or a click on the notice's button. Each row shows the offset, the bytes in hex coloured by kind, and an ASCII column, and the row width follows the pane. Only the rows on screen are read, so a file of several gigabytes opens, scrolls, and jumps at once. `:` with an offset (`:0x1f40`, `:8000`, `:50%`) jumps there. Scouter's notice has no action.
+
 ## [0.8.0] - 2026-11-28
 
 The rendered Markdown view shows an image paragraph as a box with its alt text, size, and format, and Enter or a click opens the picture.

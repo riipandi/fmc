@@ -12,7 +12,6 @@ use fmc::overlay::Overlay;
 use fmc::reader::associations::OpenWith;
 
 use crate::app::reader::Shown;
-use crate::ui::binary::OPEN_HINT;
 
 use super::*;
 
@@ -168,7 +167,7 @@ fn the_binary_notice_names_the_key_and_o_opens_the_file() {
     b.app.press("return");
     let shown = b.app.wait_until(Duration::from_secs(5), || matches!(b.model.borrow().shown, Shown::Binary { .. }));
     assert!(shown, "the binary notice is not shown");
-    assert!(b.screen().contains(OPEN_HINT), "the notice lacks the key line");
+    assert!(b.screen().contains("o open in the default app"), "the notice lacks the o button");
     b.app.press("o");
     b.await_footer("Opened Pensieve.bin.");
 }

@@ -50,6 +50,8 @@ pub enum Shown {
         path: PathBuf,
         size: u64,
     },
+    /// The hex view of a file the reader refused (`app/hex.rs`).
+    Hex(Box<super::hex::Hex>),
 }
 
 /// The reader before the key page took it: `?` and Esc put it back, with its focus, scroll, and search.
@@ -67,19 +69,24 @@ impl Shown {
         !matches!(self, Self::None)
     }
 
+    pub fn is_hex(&self) -> bool {
+        matches!(self, Self::Hex(_))
+    }
+
     pub fn shows_keys(&self) -> bool {
         matches!(self, Self::Keys { .. })
     }
 
     /// Whether the reader holds a document the keys can reach (Scouter `hasDocument`): text, the key page, or an image.
     pub fn has_document(&self) -> bool {
-        matches!(self, Self::Text { .. } | Self::Keys { .. } | Self::Image { .. })
+        matches!(self, Self::Text { .. } | Self::Keys { .. } | Self::Image { .. } | Self::Hex(_))
     }
 
     /// The file the reader shows, when it shows one: a text, an image, or the binary notice.
     pub fn path(&self) -> Option<&Path> {
         match self {
             Self::Text { path, .. } | Self::Image { path, .. } | Self::Binary { path, .. } => Some(path),
+            Self::Hex(hex) => Some(&hex.path),
             _ => None,
         }
     }
@@ -229,6 +236,7 @@ pub fn here(m: &Model) -> Option<Jump> {
         Shown::None | Shown::Keys { .. } => None,
         Shown::Text { path, .. } => Some(Jump { path: path.clone(), top: m.top.floor() as usize }),
         Shown::Image { path, .. } | Shown::Binary { path, .. } => Some(Jump { path: path.clone(), top: 0 }),
+        Shown::Hex(hex) => Some(Jump { path: hex.path.clone(), top: 0 }),
     }
 }
 
@@ -316,6 +324,7 @@ pub fn badges(shown: &Shown, wrap: bool) -> Vec<Badge> {
     match shown {
         Shown::Image { .. } => badges.push(Badge::quiet("image")),
         Shown::Binary { .. } => badges.push(Badge::quiet("binary")),
+        Shown::Hex(_) => badges.push(Badge::quiet("hex")),
         _ => {}
     }
     if let Shown::Text { document, .. } = shown
@@ -366,6 +375,10 @@ pub fn footer_facts(
             Some((info, Some(scroll_label(viewport, viewport, 0.0))))
         }
         Shown::Binary { size, .. } => Some((DocumentInfo::Binary { size: format_size(*size) }, None)),
+        Shown::Hex(hex) => {
+            let info = DocumentInfo::Hex { size: format_size(hex.size) };
+            Some((info, Some(scroll_label(text_rows, viewport, top))))
+        }
         _ => None,
     }
 }
