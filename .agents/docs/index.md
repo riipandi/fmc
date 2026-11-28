@@ -36,6 +36,7 @@ A behavior change and its documentation land in the same commit; `rules.md` ("Wh
 | `deep-audit` | Evidence-based audit of a feature or the whole system; report in `audit/`. |
 | `parity-audit` | Screen-by-screen comparison of fmc with Scouter, using Scouter's source and a Rex live run. |
 | `rust-verify-harden` | Rust quality gates and the leak, deadlock, race, and terminal-state pass. |
+| `rebase` | Rebase the current branch onto the default branch, set uncommitted work aside as a temporary commit and restore it, unshallow on an add/add flood. |
 | `ship` | Commit, push, open the PR, merge after CI, then decide whether a release is due and, if so, cut it and update the Homebrew tap. |
 
 Global skills used here too: `security-review`, `clarity`, `run`, `rex`.
