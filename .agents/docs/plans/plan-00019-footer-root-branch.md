@@ -5,7 +5,7 @@ updated: 2026-11-28T15:21:18+07:00
 phases:
     - id: 1
       title: The branch, read with the browse poll
-      status: pending
+      status: done
       note: —
     - id: 2
       title: The footer shows the root and the branch on every screen

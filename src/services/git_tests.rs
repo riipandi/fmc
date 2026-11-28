@@ -223,6 +223,30 @@ fn a_directory_outside_any_repository_has_no_marks() {
 }
 
 #[test]
+fn the_branch_is_its_name_with_any_slash_and_a_detached_head_is_its_hash() {
+    let dir = initialized();
+    let root = dir.path();
+    git(root, &["switch", "-q", "-c", "hogwarts"]);
+    assert_eq!(branch(root).as_deref(), Some("hogwarts"));
+    git(root, &["switch", "-q", "-c", "feat/marauders-map"]);
+    assert_eq!(branch(root).as_deref(), Some("feat/marauders-map"));
+    git(root, &["tag", "feat/marauders-map"]);
+    assert_eq!(branch(root).as_deref(), Some("feat/marauders-map"), "a tag of the same name does not change it");
+    git(root, &["switch", "-q", "--detach"]);
+    let hash = branch(root).expect("a detached HEAD shows its short hash");
+    assert!(hash.len() >= 4 && hash.chars().all(|c| c.is_ascii_hexdigit()), "{hash}");
+}
+
+#[test]
+fn a_repository_without_a_commit_names_its_branch_and_a_folder_outside_one_has_none() {
+    let dir = tempfile::tempdir().unwrap();
+    git(dir.path(), &["init", "-q", "-b", "hogwarts"]);
+    assert_eq!(branch(dir.path()).as_deref(), Some("hogwarts"));
+    let outside = tempfile::tempdir().unwrap();
+    assert_eq!(branch(outside.path()), None);
+}
+
+#[test]
 fn the_repository_index_is_byte_identical_after_every_read() {
     let dir = every_kind();
     let index = dir.path().join(".git/index");

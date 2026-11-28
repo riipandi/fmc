@@ -196,6 +196,8 @@ struct Model {
     /// the strip shows only when both hold (`app/gutter.rs`).
     git_gutter: bool,
     in_repo: bool,
+    /// The branch of the browsed root, from the last browse poll (`None` outside a repository).
+    branch: Option<String>,
     /// Counts each text shown, so a sign answer finds the showing it was asked for (`app/gutter.rs`).
     serial: u64,
     /// The text of the `:` command line while it is open (`app/command.rs`).
@@ -313,6 +315,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         reader_jump: fmc::settings::READER_JUMP,
         git_gutter: fmc::settings::GIT_GUTTER,
         in_repo: false,
+        branch: None,
         serial: 0,
         command: None,
         columns: app.size().0,

@@ -201,7 +201,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
             changes::patched(m, *session, *request, stamp.clone(), result.clone())
         }
         Event::DiffPolled { session, result } => changes::polled(m, *session, result.clone()),
-        Event::BrowsePolled { root, chain, folders, marks, document } => {
+        Event::BrowsePolled { root, chain, folders, marks, branch, document } => {
             if *chain {
                 let elapsed = m.browse_started.take().map_or(POLL, |started| started.elapsed());
                 m.ticks.push(Tick { chain: Chain::Browse, delay: poll::backoff(elapsed) });
@@ -217,6 +217,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                         m.marks = next;
                     }
                 }
+                m.branch = branch.clone();
             }
             if let Some((path, reread)) = document {
                 reader::reread(m, ui, path, reread.clone());

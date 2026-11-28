@@ -301,6 +301,18 @@ pub fn marks(dir: &Path) -> Result<Option<Listing>, String> {
     repository.listing(within).map(Some)
 }
 
+/// The branch `dir` is on: its name, or the short hash of a detached `HEAD`. `None` outside a repository or when git
+/// fails. The name is read without `--short`, which prints `heads/main` when a tag has the same name.
+pub fn branch(dir: &Path) -> Option<String> {
+    let text = |args: &[&str]| run(dir, None, args).ok().map(|output| output.text.trim().to_string());
+    // A detached `HEAD` fails `symbolic-ref`, so the hash stands in for the name.
+    text(&["symbolic-ref", "-q", "HEAD"])
+        .map(|reference| reference.strip_prefix("refs/heads/").unwrap_or(&reference).to_string())
+        .filter(|name| !name.is_empty())
+        .or_else(|| text(&["rev-parse", "--short", "HEAD"]))
+        .filter(|name| !name.is_empty())
+}
+
 /// The signs of the file at `path` against the change base (plan-00008, D2). `Err` outside a repository and on a git
 /// failure; the reader clears its signs then, with no notice (D5).
 pub fn signs(path: &Path) -> Result<Vec<(u32, Sign)>, String> {

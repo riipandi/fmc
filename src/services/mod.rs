@@ -123,12 +123,14 @@ pub enum Event {
     /// the latest one, or a listing no longer shown, is dropped.
     ChangesPatched { session: u64, request: u64, stamp: String, result: Result<Vec<FilePatch>, String> },
     /// A browse poll's answer (Scouter `refreshBrowse`): the fresh listings of the expanded folders that could be
-    /// listed, the marks, and the check of the open document. `chain` is set for a timed poll, which schedules the next.
+    /// listed, the marks, the branch (`None` outside a repository), and the check of the open document. `chain` is set
+    /// for a timed poll, which schedules the next.
     BrowsePolled {
         root: PathBuf,
         chain: bool,
         folders: Vec<(PathBuf, Vec<Entry>)>,
         marks: Result<Option<Listing>, String>,
+        branch: Option<String>,
         document: Option<(PathBuf, fs::Reread)>,
     },
     /// The changes poll's answer for the listing of `session`: the listing and the stamp of the files the body shows.
