@@ -15,6 +15,7 @@ mod pages;
 mod poll;
 mod preview;
 mod reader;
+mod remember;
 mod scroll;
 mod search;
 mod settings;
@@ -39,7 +40,7 @@ use fmc::theme::{DARK, Hex, LIGHT, Mode, ModeChoice, Palette, SystemTheme, page_
 use mouse::wire_mouse;
 use opentui::prelude::*;
 
-use crate::services::Event;
+use crate::services::{self, Event};
 use crate::ui::binary::BinaryView;
 use crate::ui::changes::ChangesView;
 use crate::ui::diff::DiffBody;
@@ -218,6 +219,8 @@ struct Model {
     bulk: Option<write::Bulk>,
     /// The Settings page's values, its page while it is open, and its saves (`app/settings.rs`).
     settings: settings::Store,
+    /// The remembered UI state's file and its pending write (`app/remember.rs`).
+    saves: remember::Saves,
 }
 
 impl Model {
@@ -321,6 +324,7 @@ fn new_model(app: &App, root: PathBuf, pending: Option<Pending>) -> Model {
         overlay_at: (0, 0),
         overlay_task: None,
         settings: Default::default(),
+        saves: Default::default(),
         clipboard: None,
         bulk: None,
         associations: Default::default(),
@@ -335,6 +339,7 @@ pub fn run(
     themes: crate::services::theme::Loaded,
     keys: fmc::keys::Parsed,
     settings_path: Option<PathBuf>,
+    remembered: services::state::Loaded,
 ) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
@@ -369,6 +374,7 @@ pub fn run(
         m.git_gutter = settings.settings.git_gutter;
         m.associations = settings.settings.file_associations;
         m.matching = settings.settings.find_mode;
+        remember::start(&mut m, remembered);
         m.choice = settings.settings.theme_mode;
         let Chosen { dark, light, notices } =
             catalog::choose(themes.themes, &settings.settings.dark_theme, &settings.settings.light_theme);
@@ -461,7 +467,9 @@ pub fn run(
     if std::env::var_os("FMC_PANIC_AFTER_START").is_some() {
         app.set_timeout(std::time::Duration::from_millis(200), |_| panic!("Peeves was here"));
     }
-    app.run()
+    let result = app.run();
+    remember::flush(&model.borrow());
+    result
 }
 
 /// Focuses `pane` on a left press anywhere in `panel`.
@@ -666,6 +674,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let (columns, rows) = app.size();
     m.columns = columns;
     m.rows = rows;
+    // Every change passes a paint, so the remembered values are checked here (`app/remember.rs`).
+    remember::sync(app, m);
     let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
     let viewport = usize::from(rows).saturating_sub(chrome);
     m.browser.set_height(viewport);

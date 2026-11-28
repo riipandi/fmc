@@ -12,6 +12,20 @@ pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<Pat
     Some(super::config_folder(config_home, home)?.join("meta").join("state.json"))
 }
 
+/// The remembered state at the start: the file's path, and the values it sets.
+#[derive(Default)]
+pub struct Loaded {
+    pub path: Option<PathBuf>,
+    pub state: State,
+}
+
+/// Reads the file in the config folder once, before the first frame.
+pub fn read(config_home: Option<OsString>, home: Option<OsString>) -> Loaded {
+    let path = path(config_home, home);
+    let state = path.as_deref().map(load).unwrap_or_default();
+    Loaded { path, state }
+}
+
 /// The state the file sets. A missing file, a file that cannot be read, and a file that does not parse all read as
 /// unset, with no notice: the next save replaces the file.
 pub fn load(path: &Path) -> State {

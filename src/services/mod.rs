@@ -8,7 +8,6 @@ pub mod keymap;
 pub mod launch;
 pub mod poll;
 pub mod settings;
-#[cfg_attr(not(test), allow(dead_code))] // the app reads and writes the state file once it applies the values
 pub mod state;
 pub mod theme;
 pub mod write;
@@ -141,6 +140,8 @@ pub enum Event {
     Written { kind: write::Kind, source: PathBuf, result: Result<PathBuf, String> },
     /// The Settings page's batch of changes was written, or refused with the reason (`app/settings.rs`).
     SettingsSaved { result: Result<(), String> },
+    /// The remembered UI state was written, or refused with the reason (`app/remember.rs`).
+    StateSaved { result: Result<(), String> },
     /// A launch finished (`app/open.rs`): `done` is the footer's text on success, `result` is `open`'s first error.
     Launched { done: String, result: Result<(), String> },
     /// The apps the Open With picker lists for `target` (`app/open.rs`); the picker opens only if `target` is still the one shown.

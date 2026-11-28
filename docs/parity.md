@@ -33,7 +33,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 - Below 80 columns the sidebar hides once a file is open, and the reader takes the full width. The welcome screen keeps the sidebar from 60 columns up. Scouter always shows the sidebar.
 - At 80 columns and wider, a mark on the border shows or hides the sidebar with a click: `«` on the sidebar's border while it is shown, and `»` on the reader's left border while it is hidden. Below 80 columns those marks are not drawn. The `‹` and `›` chevrons at the start of the header titles take their place from 60 to 79 columns, and a tap on the title beside a chevron does the same. A manual choice holds until the width crosses 80 again.
-- The sidebar's visibility and the dotfile choice are not saved across runs.
+- The sidebar's visibility is not saved across runs. The sidebar's width, wrap, the changes screen's options, the dotfile choice, and the finder's matching are kept in `meta/state.json` ([Configuration](configuration.md#remembered-state)); Scouter keeps them for the session only.
 - The footer's left side shows the browsed root, with `~` for the home folder, and the git branch as `⎇ name` (a detached `HEAD` shows `⎇` and its short hash). It shows on the files, reader, Settings, and changes screens from 60 columns up, and the root is cut from the left before the branch. Scouter shows the selected file's or folder's path there, which the reader's header already names (`architecture.md`, "Approved deviation: the footer shows the browsed root and the git branch"). Below 60 columns the bottom bar keeps its words, and neither the root nor the branch is shown there. The root's last name and the branch are drawn in a muted colour, where Scouter draws the path's last name in the normal text colour.
 - Below 60 columns (a phone), fmc is a two-page browser. The file list fills the screen, opening a file shows it full screen, and the header's `‹` (or `q` or `Esc`) goes back. The bottom bar has large buttons with words: `Find`, `Changes`, and `Keys` on the list; `Back`, `Search`, and `Keys` on the reader. There is no sidebar and no welcome card. From 60 to 74 columns the welcome keeps its wordmark, tagline, and prompt, and drops its card. A tap acts when the finger lifts without moving, so a swipe never opens a file.
 - From 60 to 79 columns the list sits beside the reader and hides once a file is open. `‹` and `›` in the titles hide and show it.
@@ -41,6 +41,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 ## Settings
 
 - fmc reads a settings file and writes it from the Settings page (see [Configuration](configuration.md)). Each change saves at once. Scouter has no settings file, and the values fmc reads from it are fixed in Scouter.
+- The state fmc keeps across runs is in `meta/state.json`, which the settings file does not hold. Scouter writes no state at all.
 - fmc writes a JSON Schema for the settings file to `meta/config.schema.json` in its config folder at each start, so an editor can complete and check `settings.json` ([Configuration](configuration.md), "Editor completion"). Scouter has no configuration file and no schema.
 - Scouter has one fixed palette pair, dark and light, and the terminal picks between them. fmc offers a catalog of 16 themes and a theme mode, chosen in the settings file; the default is Scouter's own pair ([Configuration](configuration.md), "Themes").
 
@@ -68,7 +69,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 ## Finder
 
-- `Ctrl+F` in the finder switches the name matching between substring and fuzzy for the run, and `find_mode` in the settings file sets the start. The default, `substring`, is Scouter's match. With fuzzy on, the query is one pattern matched in order anywhere in the path, the rows rank by how well they match, and the matched letters are highlighted. Scouter has no fuzzy match.
+- `Ctrl+F` in the finder switches the name matching between substring and fuzzy, and the choice is kept across runs in `meta/state.json`; `find_mode` in the settings file sets the start until the state holds one. The default, `substring`, is Scouter's match. With fuzzy on, the query is one pattern matched in order anywhere in the path, the rows rank by how well they match, and the matched letters are highlighted. Scouter has no fuzzy match.
 
 ## File tree
 

@@ -1,16 +1,16 @@
 ---
 status: in-progress
 created: 2026-11-28T16:31:56+07:00
-updated: 2026-11-28T16:35:53+07:00
+updated: 2026-11-28T16:47:04+07:00
 phases:
     - id: 1
       title: The state file, read at start and written after a change
-      status: pending
-      note: —
+      status: done
+      note: c95faf0
     - id: 2
       title: Each remembered toggle reads and writes the state
-      status: pending
-      note: —
+      status: done
+      note: live run in a new Rex tab: each toggle kept across a restart; the Rex run's quit within a second was written
     - id: 3
       title: Lua documentation comments and eex through heex
       status: pending

@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- fmc keeps the sidebar's width, the reader's wrap, the changes screen's side by side, wide context, and all-files choices, the dotfiles, and the finder's fuzzy or substring matching across runs, in `meta/state.json` in its config folder. A change is written about a second after it, and the sidebar's visibility is not kept. See [Configuration](docs/configuration.md#remembered-state).
+
 ### Changed
 
+- A `find_mode` set on the Settings page, or a `Ctrl+F` in the finder, is kept in `meta/state.json`, and that file wins over `find_mode` in `settings.json` once it holds one.
+- Dotfiles stay as you set them when you go up a folder with `-`.
 - The footer's root and git branch are drawn in a muted colour, so a message and the facts stand out.
 
 ## [0.6.0] - 2026-11-28
