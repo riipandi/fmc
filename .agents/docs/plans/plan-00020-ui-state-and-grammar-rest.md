@@ -1,5 +1,5 @@
 ---
-status: awaiting-approval
+status: in-progress
 created: 2026-11-28T16:31:56+07:00
 updated: 2026-11-28T16:35:53+07:00
 phases:
@@ -63,7 +63,7 @@ An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2
 
 ### Execution rules
 
-- **Execution waits for the owner's go-ahead**; D4 to D6 are the owner's, D7 the agent's.
+- **The owner gave the go-ahead for all phases in order (2026-11-28)**; D4 to D6 are the owner's, D7 the agent's.
 - **Every commit ends with** `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Comments state their reason, never a plan or doc (`AGENTS.md`).
 - **The deviation's records land with the behaviour** (phase 2 and phase 3 commits), as `rules.md` requires.
 - **Tests use temporary config folders**; no test touches the real `~/.config/fmc`.
