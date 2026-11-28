@@ -4,7 +4,7 @@ fmc builds on macOS with Apple silicon. Other platforms come later.
 
 ## Prerequisites
 
-- Rust 1.92 or newer. `rustup` installs the pinned toolchain from `rust-toolchain.toml` the first time you run `cargo`.
+- Rust 1.100 or newer. `rustup` installs the pinned toolchain from `rust-toolchain.toml` the first time you run `cargo`.
 - Zig 0.17.1, exactly. fmc uses it once per OpenTUI version to build the native library, and the build stops on any other version. `brew install zig` may not give that version, so check with `zig version`.
 - [kache](https://github.com/kunobi-ninja/kache) (`cargo install kache --locked`), the compiler cache the just tasks use. Optional with `KACHE=false`.
 - Git.

@@ -24,7 +24,7 @@ The check prints `OK` when the archive is intact. The archive unpacks into a fol
 
 ## Build from source
 
-See [Development](development.md#first-build). You need Rust 1.92 or newer and Zig 0.17.1.
+See [Development](development.md#first-build). You need Rust 1.100 or newer and Zig 0.17.1.
 
 ## Font and terminal
 
