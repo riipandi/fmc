@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T16:05:30+07:00
+updated: 2026-11-28T16:56:09+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 

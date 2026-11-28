@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-28T15:32:12+07:00
+updated: 2026-11-28T16:56:09+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 

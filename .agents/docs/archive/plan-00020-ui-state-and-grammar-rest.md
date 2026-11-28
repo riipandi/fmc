@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T16:31:56+07:00
-updated: 2026-11-28T18:10:00+07:00
+updated: 2026-11-28T16:56:09+07:00
 phases:
     - id: 1
       title: The state file, read at start and written after a change
@@ -14,19 +14,19 @@ phases:
     - id: 3
       title: Lua documentation comments and eex through heex
       status: done
-      note: the sub-span is not possible (probed; D8 fallback: the whole line takes comment.documentation, same colour as a comment in both palettes); .eex and .leex read as heex, live run checked the tags
+      note: 522fc83; the sub-span is not possible (probed; D8 fallback: the whole line takes comment.documentation, same colour as a comment in both palettes); .eex and .leex read as heex, live run checked the tags
     - id: 4
       title: Markdown front matter as a code block in the rendered view
       status: done
-      note: live run in a new Rex tab: YAML and TOML drawn as yaml and toml blocks at 120 and 50 columns, colours checked, m shows the markers; Scouter 0.3.1 run for the baseline
+      note: 10e65b9; live run in a new Rex tab: YAML and TOML drawn as yaml and toml blocks at 120 and 50 columns, colours checked, m shows the markers; Scouter 0.3.1 run for the baseline
     - id: 5
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: done
+      note: the commit that closes the ledger (roadmap RI-2, RI-9, RI-17 landed; this plan archived; handover-00016-ui-state-and-grammar.md)
     - id: 6
       title: Final validation and live run
-      status: pending
-      note: —
+      status: done
+      note: no commit; just verify green (867 tests run, 1 skipped); the live runs of phases 2 to 4 cover each toggle across a restart, the comment line and eex, and the front matter at 120 and 50 columns
 ---
 
 ## Finish the roadmap's partly landed entries, and tidy Markdown front matter — RI-9's remembered UI state, RI-17's luadoc and eex, RI-2's status, front matter as a code block

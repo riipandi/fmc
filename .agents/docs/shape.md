@@ -1,6 +1,6 @@
 # Shape
 
-updated: 2026-11-28T16:05:30+07:00
+updated: 2026-11-28T16:56:09+07:00
 
 The repository's shape: the layout, the toolchain, and the commands. Read once; return when a path or a command is needed.
 

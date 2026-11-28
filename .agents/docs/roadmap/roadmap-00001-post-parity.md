@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-28T15:32:12+07:00
+updated: 2026-11-28T16:56:09+07:00
 
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
@@ -17,14 +17,14 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | ID | Entry | Status | Where | Updated |
 | --- | --- | --- | --- | --- |
 | RI-1 | Mermaid diagrams in Markdown | landed | plan-00006 phases 1 and 2 | 2026-11-27 |
-| RI-2 | The owner's Neovim grammar set | landed in part | plan-00006 phases 3 and 4; the rest is RI-17 | 2026-11-27 |
+| RI-2 | The owner's Neovim grammar set | landed | plan-00006 phases 3 and 4, plan-00018, and plan-00020 phase 3 (`522fc83`): `.eex` and `.leex` read as heex | 2026-11-28 |
 | RI-3 | Fuzzy file finding | landed | plan-00006 phase 5 | 2026-11-27 |
 | RI-4 | Write operations | landed | plan-00012 phases 1 to 5 and the fix `872fd21` | 2026-11-27 |
 | RI-5 | SQLite and DuckDB viewer | parked | owner-deferred | 2026-11-26 |
 | RI-6 | Platforms beyond macOS aarch64 | parked | owner-deferred | 2026-11-26 |
 | RI-7 | An alternate Vim-style keymap | parked | owner-deferred | 2026-11-26 |
 | RI-8 | Event-based file watching | parked | unlock: a measured polling cost and MSRV 1.91 | 2026-11-26 |
-| RI-9 | Persistent settings | landed in part | plan-00015 phases 1 to 4 (`3f5673c`, `64c7aea`, `d68af26`): the Settings page writes `settings.json`; the UI state (sidebar, wrap, split, context lines, dotfiles) is not saved (D3 (a)) | 2026-11-27 |
+| RI-9 | Persistent settings | landed | plan-00015 phases 1 to 4 (`3f5673c`, `64c7aea`, `d68af26`): the Settings page writes `settings.json`; plan-00020 phases 1 and 2 (`c95faf0`, `676d439`): the UI state is kept in `meta/state.json`, and the sidebar's visibility is not | 2026-11-28 |
 | RI-10 | Theme catalog | landed | plan-00015 phase 2 (`64c7aea`): 16 bundled themes, the theme mode, `dark_theme`, `light_theme`, and the `themes/` folder | 2026-11-27 |
 | RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
 | RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
@@ -32,7 +32,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-14 | Open an unsupported file with the default app | landed | plan-00017 | 2026-11-28 |
 | RI-15 | Open the project folder in Finder or an editor | landed | plan-00017 | 2026-11-28 |
 | RI-16 | Open With | landed | plan-00017 | 2026-11-28 |
-| RI-17 | The rest of the owner's grammar set | landed in part | plan-00018 phases 1 to 3; luadoc in Lua comments and eex stay parked (the entry) | 2026-11-28 |
+| RI-17 | The rest of the owner's grammar set | landed | plan-00018 phases 1 to 3; plan-00020 phase 3 (`522fc83`): Lua `---` documentation comments take the documentation capture, and `.eex` and `.leex` read as heex | 2026-11-28 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
 | RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
@@ -49,11 +49,11 @@ Scouter draws a `mermaid` fence as plain text (`research/scouter-inventory.md` �
 
 ### RI-2 — The owner's Neovim grammar set
 
-- status: landed in part (plan-00006 phases 3 and 4, 2026-11-27): twelve grammars are highlighted, `architecture.md`, "the owner's extra grammars". The seven without a crate are RI-17; the injections landed in RI-18 (plan-00013) · updated 2026-11-27
+- status: landed (plan-00006 phases 3 and 4, 2026-11-27: twelve grammars are highlighted, `architecture.md`, "the owner's extra grammars"; plan-00018 for the rest, RI-17; plan-00020 phase 3 for eex and leex, `522fc83`). The injections landed in RI-18 (plan-00013) · updated 2026-11-28
 
 The owner's Neovim config (`~/.config/nvim/lua/plugin_treesitter.lua:14-50`) adds, beyond Scouter's 16: astro, diff, eex, elixir, hcl, heex, jsdoc, json5, just, lua, luadoc, luap, query, regex, sql, svelte, vim, vimdoc, xml. On crates.io (2026-11-26): no crate for astro or eex; `tree-sitter-sequel` 0.3.13 for SQL; old crates that need an ABI check against `tree-sitter` 0.27: `tree-sitter-diff` 0.1.0, `tree-sitter-svelte-ng` 1.0.2, `tree-sitter-xml` 0.7.0; `luadoc`, `luap`, `query`, `json5` crates are barely used. Each grammar also needs a `highlights.scm` that uses the palette's capture names.
 
-**Unlock:** plan-00001 done. **First move:** build each candidate crate against `opentui` 0.9.9 and list the ones that load.
+**Closed:** the candidate crates were built against `opentui` 0.9.9 and the ones that load are highlighted (plan-00018); eex is read as heex by the owner's decision (plan-00020 D9, `architecture.md`, "`.eex` and `.leex` are read as HEEx").
 
 ## Finding
 
@@ -123,11 +123,11 @@ Scouter polls (`research/scouter-inventory.md` §12) and fmc copies it. `notify`
 
 ### RI-9 — Persistent settings in `~/.config/fmc/settings.json`
 
-- status: landed in part (plan-00015 phases 1 to 4, `3f5673c`, `64c7aea`, `d68af26`: the Settings page on `Ctrl+,` saves each change to `settings.json` through a temp file and a rename, and the theme keys are in the file). Not landed: the saved UI state (sidebar width and visibility, wrap, split, context lines, dotfiles). The owner chose not to save it in plan-00015 (D3 (a)), so that part needs its own decision (`architecture.md`, "fmc writes its settings.json, atomically") · updated 2026-11-27
+- status: landed (plan-00015 phases 1 to 4, `3f5673c`, `64c7aea`, `d68af26`: the Settings page on `Ctrl+,` saves each change to `settings.json` through a temp file and a rename, and the theme keys are in the file; plan-00020 phases 1 and 2, `c95faf0` and `676d439`: the sidebar's width, wrap, the changes view's split, wide context, and all files, dotfiles, and the finder's matching are kept in `meta/state.json`, and the sidebar's visibility is not, `architecture.md`, "fmc remembers its UI state in meta/state.json") · updated 2026-11-28
 
 Scouter has no configuration by design (`research/scouter-inventory.md` §15), so this is a post-parity deviation the owner asked for on 2026-11-26. fmc remembers the UI state the user changes: sidebar width, reader wrap, diff layout (unified or split), diff context (`x`), and the theme mode (`auto` follows the terminal as Scouter does, or `dark`, `light`). Path: `~/.config/fmc/settings.json` (owner's choice). Crates approved for this item: `serde` with `derive` and `serde_json` (`rules.md`, "Dependencies"). The write is fmc's own file, not a user file: temp file plus `rename`; a file that fails to parse is never overwritten, fmc starts with defaults and shows a notice.
 
-**Unlock:** plan-00001 done. **First move:** a plan with the schema (every key, type, default), the load and save points, and the `architecture.md` deviation record.
+**Closed:** the schema, the load and save points, and the deviation record are in plan-00015 and plan-00020 (`architecture.md`).
 
 ### RI-10 — Theme catalog in `~/.config/fmc/themes/*.json`
 
@@ -210,14 +210,11 @@ The owner asked on 2026-11-27 for `Open With …` on text, code, and other suppo
 
 ### RI-17 — The rest of the owner's Neovim grammar set
 
-- status: landed in part (plan-00018, 2026-11-28): query and json5 from crates, just and vimdoc vendored under `vendor/grammars/` with their queries, and luap patterns inside Lua. Parked: luadoc in Lua's `---` comments, and eex (`architecture.md`, "the owner's remaining grammars are highlighted" and "Lua patterns are an injection") · updated 2026-11-28
+- status: landed (plan-00018, 2026-11-28: query and json5 from crates, just and vimdoc vendored under `vendor/grammars/` with their queries, and luap patterns inside Lua; plan-00020 phase 3, `522fc83`: a Lua `---` documentation comment takes the documentation capture as a whole line, and `.eex` and `.leex` are read as heex, `architecture.md`, "Lua patterns are an injection; Lua documentation comments take the documentation capture" and "`.eex` and `.leex` are read as HEEx") · updated 2026-11-28
 
 Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Of the seven that had no crate loading on `tree-sitter` 0.27, four are now highlighted: query and json5 through crates that load with no vendored C, and just and vimdoc through parsers vendored at pinned commits. luadoc and luap are injections, not filetypes: luap is injected into Lua's pattern arguments, and luadoc is not, as below. Nothing was dropped from a loaded set. The `links` clash is the 0.25 pins' (vimdoc and just); the 0.20 pins (json5, luadoc, luap, and query) link a second C runtime (`research/grammar-load-spike.md`, section 5).
 
-**Unlocks:**
-
-- **luadoc in Lua's `---` comments:** OpenTUI must evaluate the offset directive (`#offset!`) that drops the comment's leading dash. The luadoc grammar does not parse a body that starts with a dash, and OpenTUI 0.9.9 does not evaluate offsets (`architecture.md`, "Lua patterns are an injection").
-- **eex:** a licence from the author. The grammar (connorlay/tree-sitter-eex `f742f2f`) loads, but the repository has no `LICENSE` and GitHub reports none, so it cannot ship. Ask the author only if the owner wants it.
+**Closed:** the owner chose the two routes on 2026-11-28 (plan-00020 D8 and D9). A `---` comment takes `comment.documentation` as a whole line, because OpenTUI paints a capture over a whole node and the grammar has no node for a tag, so the tag cannot be coloured on its own; the palettes give documentation the comment's colour. eex and leex are read as heex, with no licence needed.
 
 ### RI-18 — Injected highlighting for the owner's grammars
 
