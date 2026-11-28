@@ -119,6 +119,8 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         }
         Action::ToggleWrap if m.shown.has_document() || m.changes.is_some() => m.wrap = !m.wrap,
         Action::OpenDefault if m.changes.is_none() => open::default_app(&mut m),
+        Action::OpenInEditor if m.changes.is_none() => open::editor(&mut m),
+        Action::RevealInFinder if m.changes.is_none() => open::reveal(&mut m),
         Action::Copy if m.shown.is_some() || m.focus == Focus::List || m.changes.is_some() => {
             if scroll::yank(&mut m, cx.app()) {
                 clear_message_later(cx.app(), model, ui);

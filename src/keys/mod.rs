@@ -98,6 +98,10 @@ pub enum Action {
     ClearMarks,
     /// `o` on a tree row or in the reader: opens the row, or the shown file, with the default app (plan-00017, D1, D5).
     OpenDefault,
+    /// `e` in the tree or the reader: opens the browsed folder in the settings' editor, or in Finder (plan-00017, O3).
+    OpenInEditor,
+    /// `E` in the tree or the reader: reveals the row, or the shown file, in Finder (`open -R`).
+    RevealInFinder,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -157,6 +161,8 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("s", "mark the row and move down"),
             ("S", "clear the marks"),
             ("o", "open in the default app; a folder opens in Finder"),
+            ("e", "open the folder in the editor from settings, or in Finder"),
+            ("E", "show the row in Finder"),
         ],
     ),
     (
@@ -173,6 +179,8 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("w", "wrap long lines"),
             ("m", "Markdown: rendered / source"),
             ("o", "open the file in its default app"),
+            ("e", "open the folder in the editor from settings, or in Finder"),
+            ("E", "show the file in Finder"),
         ],
     ),
     (
@@ -245,6 +253,8 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Files", "s", &[Action::ToggleMark]),
     ("Files", "S", &[Action::ClearMarks]),
     ("Files", "o", &[Action::OpenDefault]),
+    ("Files", "e", &[Action::OpenInEditor]),
+    ("Files", "E", &[Action::RevealInFinder]),
     ("Reader", "j k", &[Action::Scroll(1), Action::Scroll(-1)]),
     ("Reader", "/", &[Action::Search]),
     ("Reader", "n N p", &[Action::NextMatch, Action::PreviousMatch]),
@@ -254,6 +264,8 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Reader", "w", &[Action::ToggleWrap]),
     ("Reader", "m", &[Action::ToggleMarkdown]),
     ("Reader", "o", &[Action::OpenDefault]),
+    ("Reader", "e", &[Action::OpenInEditor]),
+    ("Reader", "E", &[Action::RevealInFinder]),
     ("Changes", "d", &[Action::ToggleChanges]),
     ("Changes", "n N p", &[Action::Hunk(1), Action::Hunk(-1)]),
     ("Changes", "a", &[Action::ToggleScope]),

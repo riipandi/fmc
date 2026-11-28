@@ -23,6 +23,8 @@ pub struct Settings {
     pub reader_jump: u32,
     pub git_gutter: bool,
     pub file_associations: Associations,
+    /// An app's name or path that `e` opens the folder with (plan-00017, O3); empty opens the folder in Finder.
+    pub editor: String,
     pub find_mode: Matching,
     pub theme_mode: ModeChoice,
     /// A catalog id for the dark slot; `default` is Scouter's pair (`theme::catalog`). Checked there, not here.
@@ -38,6 +40,7 @@ impl Default for Settings {
             reader_jump: READER_JUMP,
             git_gutter: GIT_GUTTER,
             file_associations: Associations::default(),
+            editor: String::new(),
             find_mode: FIND_MODE,
             theme_mode: THEME_MODE,
             dark_theme: DEFAULT_THEME.into(),
@@ -78,6 +81,7 @@ pub fn parse(text: &str) -> Parsed {
         reader_jump: whole(&object, "reader_jump", READER_JUMP, notices),
         git_gutter: boolean(&object, "git_gutter", GIT_GUTTER, notices),
         file_associations: associations(&object, notices),
+        editor: editor(&object, notices),
         find_mode: finding(&object, notices),
         theme_mode: theme_mode(&object, notices),
         dark_theme: theme_id(&object, "dark_theme", notices),
@@ -89,12 +93,13 @@ pub fn parse(text: &str) -> Parsed {
 /// The keys `parse` reads: the Settings page's rows and `file_associations`. Every lookup goes through `field`, which
 /// asserts its key is here, and the schema's properties are tested against this list, so a key cannot be parsed
 /// without a schema property.
-pub const KEYS: [&str; 9] = [
+pub const KEYS: [&str; 10] = [
     "auto_preview",
     "sidebar_jump",
     "reader_jump",
     "git_gutter",
     "file_associations",
+    "editor",
     "find_mode",
     "theme_mode",
     "dark_theme",
@@ -173,6 +178,10 @@ pub fn schema() -> String {
             "additionalProperties": { "type": "string", "enum": Language::names() },
         }),
     );
+    properties.insert(
+        "editor".into(),
+        json!({ "type": "string", "default": "", "description": "An app name or path, such as Zed or /Applications/Zed.app, that e opens the folder with. Empty opens the folder in Finder." }),
+    );
     let root = json!({
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "fmc settings.json",
@@ -238,6 +247,21 @@ fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Assoc
         Some(_) => notices.push("settings.json: file_associations must be an object; no association is used.".into()),
     }
     table
+}
+
+/// `editor`: the app `e` opens the folder with, as `open -a` takes it. Empty, the default, opens the folder in Finder. Any
+/// other value is kept as written; `open` reports an app it cannot find.
+fn editor(object: &Map<String, Value>, notices: &mut Vec<String>) -> String {
+    match field(object, "editor") {
+        None => String::new(),
+        Some(Value::String(app)) => app.clone(),
+        Some(_) => {
+            notices.push(
+                "settings.json: editor must be an app name or path, a string; the folder opens in Finder.".into(),
+            );
+            String::new()
+        }
+    }
 }
 
 /// `find_mode`: the name matching the finder starts with (plan-00006 D6). Any other value keeps Scouter's substring match

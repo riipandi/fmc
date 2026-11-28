@@ -53,16 +53,16 @@ fn space_opens_the_menu_and_the_page_gets_no_key_while_it_is_open() {
 fn the_menu_skips_the_disabled_rows_and_escape_closes_it() {
     let (app, model, _) = screen(120, 40);
     app.press("space");
-    for _ in 0..3 {
+    for _ in 0..4 {
         app.press("down");
     }
-    assert_eq!(selected(&model), Some(3), "Rename is the fourth row, after Open and the new items");
+    assert_eq!(selected(&model), Some(4), "Rename is the fifth row, after Open, Show in Finder, and the new items");
     for _ in 0..2 {
         app.press("down");
     }
-    assert_eq!(selected(&model), Some(5), "Cut is the sixth row");
+    assert_eq!(selected(&model), Some(6), "Cut is the seventh row");
     app.press("down");
-    assert_eq!(selected(&model), Some(7), "Paste is disabled with nothing copied, so the selection skips it");
+    assert_eq!(selected(&model), Some(8), "Paste is disabled with nothing copied, so the selection skips it");
     app.press("escape");
     assert!(!is_open(&model));
 }
@@ -83,9 +83,9 @@ fn a_press_on_a_disabled_row_keeps_the_menu_and_on_an_enabled_row_picks_it() {
     app.render();
     // The menu sits at the list's first row (column 2, row 3): Open is on row 4, and Paste is the seventh, below the
     // rules that open the second and third groups.
-    app.click(5, 12);
+    app.click(5, 13);
     assert!(is_open(&model), "Paste is disabled");
-    app.click(5, 6);
+    app.click(5, 7);
     assert!(
         matches!(model.borrow().overlay, Some(Overlay::Dialog(_))),
         "New file is picked: the menu closes and its name dialog opens"

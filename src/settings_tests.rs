@@ -474,3 +474,20 @@ fn linked_leaves_a_file_with_its_own_schema_or_that_is_not_an_object() {
 fn a_key_read_outside_keys_fails_the_tests() {
     field(&Map::new(), "invisibility_cloak");
 }
+
+#[test]
+fn editor_names_an_app_or_a_path_and_a_bad_value_is_skipped_with_a_notice() {
+    assert_eq!(parse("{}").settings.editor, "");
+    assert_eq!(parse(r#"{"editor": "Zed"}"#).settings.editor, "Zed");
+    assert_eq!(parse(r#"{"editor": "/Applications/Zed.app"}"#).settings.editor, "/Applications/Zed.app");
+    let parsed = parse(r#"{"editor": ["Zed"]}"#);
+    assert_eq!(parsed.settings.editor, "");
+    assert!(parsed.notices[0].contains("editor must be an app name or path"), "{:?}", parsed.notices);
+}
+
+#[test]
+fn the_schema_gives_editor_a_string_with_an_empty_default() {
+    let schema = schema_value();
+    assert_eq!(schema["properties"]["editor"]["type"], json!("string"));
+    assert_eq!(schema["properties"]["editor"]["default"], json!(""));
+}

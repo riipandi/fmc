@@ -1,5 +1,5 @@
-//! `o` and the menu's Open row through the model: the selected row, the shown file, a folder, a failure's footer, and the
-//! binary notice's line. The launcher is the test stand-in (`launch` in `open.rs`), so no test launches an app.
+//! `o`, `e`, `E`, and the menu rows through the model: the selected row, the shown file, a folder, a failure's footer,
+//! and the binary notice's line. The launcher is the test stand-in (`launch` in `open.rs`), so no test launches an app.
 
 use std::fs;
 use std::path::PathBuf;
@@ -23,7 +23,7 @@ struct Opening {
     _dir: TempDir,
 }
 
-/// A folder that holds `names` (a name ending in `/` is a folder, a name ending in `.bin` holds a NUL byte), browsed on a
+/// A folder that holds `names` (a name ending in `/` is a folder, one ending in `.bin` holds a NUL byte), browsed on a
 /// 120 by 40 screen with its listing read and the first row selected. The app's worker events are wired.
 fn opening(names: &[&str]) -> Opening {
     let dir = tempfile::tempdir().unwrap();
@@ -165,4 +165,40 @@ fn the_binary_notice_names_the_key_and_o_opens_the_file() {
     assert!(b.screen().contains(OPEN_HINT), "the notice lacks the key line");
     b.app.press("o");
     b.await_footer("Opened Pensieve.bin.");
+}
+
+/// The browsed folder's name, as the footer shows it.
+fn folder_name(b: &Opening) -> String {
+    b.root.file_name().unwrap().to_string_lossy().into_owned()
+}
+
+#[test]
+fn e_opens_the_browsed_folder_in_finder_when_no_editor_is_set() {
+    let b = opening(&["Gringotts.md"]);
+    b.app.press("e");
+    b.await_footer(&format!("Opened {}.", folder_name(&b)));
+}
+
+#[test]
+fn e_opens_the_browsed_folder_in_the_editor_the_settings_name() {
+    let b = opening(&["Gringotts.md"]);
+    b.model.borrow_mut().settings.values.editor = "/Applications/Zed.app".into();
+    b.app.press("e");
+    b.await_footer(&format!("Opened {} in Zed.", folder_name(&b)));
+}
+
+#[test]
+fn capital_e_shows_the_selected_file_in_finder() {
+    let b = opening(&["Gringotts.md"]);
+    b.app.press("E");
+    b.await_footer("Showed Gringotts.md in Finder.");
+}
+
+#[test]
+fn the_menu_show_in_finder_row_reveals_the_row() {
+    let b = opening(&["Gringotts.md"]);
+    b.app.press("space");
+    b.app.press("down");
+    b.app.press("return");
+    b.await_footer("Showed Gringotts.md in Finder.");
 }

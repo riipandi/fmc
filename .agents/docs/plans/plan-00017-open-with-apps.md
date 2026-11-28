@@ -11,11 +11,11 @@ phases:
       note: —
     - id: 2
       title: RI-14, open with the default app
-      status: committed
+      status: committed (52639c3)
       note: —
     - id: 3
       title: RI-15, the editor setting and the folder in the editor or Finder
-      status: pending
+      status: committed
       note: —
     - id: 4
       title: RI-16, Open With

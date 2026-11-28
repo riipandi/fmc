@@ -29,6 +29,8 @@ const LISTED: usize = 5;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
     Open,
+    Reveal,
+    Editor,
     NewFile,
     NewFolder,
     Rename,
@@ -44,6 +46,8 @@ impl Act {
     fn hint(self) -> &'static str {
         match self {
             Act::Open => "o",
+            Act::Reveal => "E",
+            Act::Editor => "e",
             Act::NewFile => "a",
             Act::NewFolder => "A",
             Act::Rename => "r",
@@ -58,7 +62,7 @@ impl Act {
     /// The menu's groups: opening, creating, changing an entry, and deleting. A rule separates them.
     fn group(self) -> u8 {
         match self {
-            Act::Open => 0,
+            Act::Open | Act::Reveal | Act::Editor => 0,
             Act::NewFile | Act::NewFolder => 1,
             Act::Delete => 3,
             _ => 2,
@@ -142,7 +146,9 @@ pub enum Task {
 fn menu_rows(row: bool, clipped: usize, acted: usize) -> Vec<(Act, String, bool)> {
     let mut rows = Vec::new();
     if row {
-        rows.push((Act::Open, "Open".into(), true));
+        rows.extend([(Act::Open, "Open".into(), true), (Act::Reveal, "Show in Finder".into(), true)]);
+    } else {
+        rows.push((Act::Editor, "Open Folder in Editor".into(), true));
     }
     rows.extend([(Act::NewFile, "New file…".into(), true), (Act::NewFolder, "New folder…".into(), true)]);
     if row {
@@ -289,6 +295,8 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
             ask(m, ui, Task::Duplicate { source: entry.path, dir }, dialog, &copy);
         }
         Act::Open => open::default_app(m),
+        Act::Reveal => open::reveal(m),
+        Act::Editor => open::editor(m),
         Act::Copy => take(m, false),
         Act::Cut => take(m, true),
         Act::Paste => paste(m),
