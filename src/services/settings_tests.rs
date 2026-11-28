@@ -7,7 +7,8 @@ use tempfile::TempDir;
 
 use serde_json::json;
 
-use super::{load, path, save, update};
+use super::{ensure_schema, load, path, schema_path, update};
+use crate::services::save_atomic;
 
 #[test]
 fn the_path_is_under_xdg_config_home_when_it_is_set() {
@@ -95,7 +96,7 @@ fn file_associations_are_read_from_the_config_home() {
 fn save_creates_the_file_and_its_folder_and_leaves_no_temp_file() {
     let dir = TempDir::new().unwrap();
     let file = dir.path().join("fmc").join("settings.json");
-    save(&file, "{\n  \"reader_jump\": 8\n}\n").unwrap();
+    save_atomic(&file, "{\n  \"reader_jump\": 8\n}\n").unwrap();
     assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"reader_jump\": 8\n}\n");
     assert_eq!(fs::read_dir(file.parent().unwrap()).unwrap().count(), 1);
 }
@@ -109,7 +110,7 @@ fn save_writes_the_link_target_and_the_link_stays() {
     let link = dir.path().join("fmc").join("settings.json");
     fs::create_dir_all(link.parent().unwrap()).unwrap();
     std::os::unix::fs::symlink(&target, &link).unwrap();
-    save(&link, "{\"auto_preview\": false}\n").unwrap();
+    save_atomic(&link, "{\"auto_preview\": false}\n").unwrap();
     assert!(fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
     assert_eq!(fs::read_to_string(&target).unwrap(), "{\"auto_preview\": false}\n");
     assert_eq!(fs::read_dir(target.parent().unwrap()).unwrap().count(), 1);
@@ -124,7 +125,7 @@ fn a_read_only_folder_keeps_the_original_and_writes_no_temp_file() {
     let file = folder.join("settings.json");
     fs::write(&file, "{\"reader_jump\": 3}\n").unwrap();
     fs::set_permissions(&folder, fs::Permissions::from_mode(0o555)).unwrap();
-    let result = save(&file, "{\"reader_jump\": 8}\n");
+    let result = save_atomic(&file, "{\"reader_jump\": 8}\n");
     fs::set_permissions(&folder, fs::Permissions::from_mode(0o755)).unwrap();
     assert!(result.is_err());
     assert_eq!(fs::read_to_string(&file).unwrap(), "{\"reader_jump\": 3}\n");
@@ -172,4 +173,79 @@ fn an_update_refuses_a_fifo_without_blocking_on_it() {
     assert!(made.success());
     let reason = update(&file, &[("auto_preview", json!(false))]).unwrap_err();
     assert_eq!(reason, "settings.json could not be read: it is not a regular file; nothing was saved.");
+}
+
+fn schema_file(dir: &TempDir) -> std::path::PathBuf {
+    dir.path().join("fmc").join("meta").join("config.schema.json")
+}
+
+#[test]
+fn the_schema_path_is_under_the_config_folder_and_a_relative_xdg_is_ignored() {
+    let path = schema_path(Some(OsString::from("/tmp/hogwarts")), Some(OsString::from("/home/hermione")));
+    assert_eq!(path.unwrap(), std::path::Path::new("/tmp/hogwarts/fmc/meta/config.schema.json"));
+    let relative = schema_path(Some(OsString::from("relative/dir")), Some(OsString::from("/home/hermione")));
+    assert_eq!(relative.unwrap(), std::path::Path::new("/home/hermione/.config/fmc/meta/config.schema.json"));
+    assert!(schema_path(None, None).is_none());
+}
+
+#[test]
+fn a_missing_schema_is_created_with_its_folders_and_nothing_else() {
+    let dir = TempDir::new().unwrap();
+    let file = schema_file(&dir);
+    assert_eq!(ensure_schema(&file), None);
+    assert_eq!(fs::read_to_string(&file).unwrap(), fmc::settings::schema());
+    assert_eq!(fs::read_dir(file.parent().unwrap()).unwrap().count(), 1);
+}
+
+#[test]
+fn a_stale_schema_is_rewritten_to_the_running_build() {
+    let dir = TempDir::new().unwrap();
+    let file = schema_file(&dir);
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(&file, "{\"title\": \"an older build\"}\n").unwrap();
+    assert_eq!(ensure_schema(&file), None);
+    assert_eq!(fs::read_to_string(&file).unwrap(), fmc::settings::schema());
+}
+
+#[test]
+fn an_equal_schema_is_not_rewritten() {
+    use std::time::{Duration, SystemTime};
+    let dir = TempDir::new().unwrap();
+    let file = schema_file(&dir);
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    fs::write(&file, fmc::settings::schema()).unwrap();
+    let old = SystemTime::UNIX_EPOCH + Duration::from_secs(1_000_000);
+    fs::File::options().write(true).open(&file).unwrap().set_modified(old).unwrap();
+    assert_eq!(ensure_schema(&file), None);
+    assert_eq!(fs::metadata(&file).unwrap().modified().unwrap(), old);
+}
+
+#[test]
+fn a_read_only_folder_gives_a_notice_and_no_panic() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = TempDir::new().unwrap();
+    let file = schema_file(&dir);
+    let meta = file.parent().unwrap().to_path_buf();
+    fs::create_dir_all(dir.path().join("fmc")).unwrap();
+    fs::create_dir(&meta).unwrap();
+    fs::set_permissions(&meta, fs::Permissions::from_mode(0o555)).unwrap();
+    let notice = ensure_schema(&file);
+    fs::set_permissions(&meta, fs::Permissions::from_mode(0o755)).unwrap();
+    let notice = notice.expect("a read-only folder is a notice");
+    assert!(notice.starts_with("meta/config.schema.json could not be written: "), "{notice}");
+    assert!(!file.exists());
+}
+
+#[test]
+fn a_schema_link_is_written_through_and_the_link_stays() {
+    let dir = TempDir::new().unwrap();
+    let target = dir.path().join("dotfiles").join("hogwarts-schema.json");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&target, "{}\n").unwrap();
+    let file = schema_file(&dir);
+    fs::create_dir_all(file.parent().unwrap()).unwrap();
+    std::os::unix::fs::symlink(&target, &file).unwrap();
+    assert_eq!(ensure_schema(&file), None);
+    assert!(fs::symlink_metadata(&file).unwrap().file_type().is_symlink());
+    assert_eq!(fs::read_to_string(&target).unwrap(), fmc::settings::schema());
 }

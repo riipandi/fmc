@@ -139,3 +139,12 @@ fn a_panic_restores_the_terminal_before_its_message() {
     let message = out.find("Peeves was here").expect("panic message printed");
     assert!(left < message, "the terminal is restored before the panic message");
 }
+
+#[test]
+fn version_and_help_write_no_config_folder() {
+    let home = tempfile::TempDir::new().unwrap();
+    for arg in ["--version", "--help"] {
+        fmc().env_remove("XDG_CONFIG_HOME").env("HOME", home.path()).arg(arg).assert().success();
+    }
+    assert!(!home.path().join(".config").exists(), "a command that opens no UI writes no settings or schema");
+}
