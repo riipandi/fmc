@@ -33,3 +33,36 @@ fn a_missing_file_is_an_error_in_nodes_words() {
     let error = read_block(Path::new("/nonexistent/Azkaban.bin"), 0).unwrap_err();
     assert!(error.starts_with("ENOENT"), "{error}");
 }
+
+#[test]
+fn a_search_finds_a_hit_across_a_chunk_edge_and_wraps() {
+    let mut bytes = vec![0u8; (CHUNK * 3) as usize];
+    let edge = CHUNK as usize - 3;
+    bytes[edge..edge + 7].copy_from_slice(b"Langdon");
+    let late = 2 * CHUNK as usize + 100;
+    bytes[late..late + 7].copy_from_slice(b"LANGDON");
+    let (_dir, path) = file_with(&bytes);
+    let stop = AtomicBool::new(false);
+    assert_eq!(search(&path, b"langdon", 0, true, &stop).unwrap(), Some(edge as u64));
+    assert_eq!(search(&path, b"langdon", edge as u64 + 1, true, &stop).unwrap(), Some(late as u64));
+    // Past the last hit, forward wraps to the first.
+    assert_eq!(search(&path, b"langdon", late as u64 + 1, true, &stop).unwrap(), Some(edge as u64));
+    // Back finds the hit before, and wraps from the first to the last.
+    assert_eq!(search(&path, b"langdon", late as u64, false, &stop).unwrap(), Some(edge as u64));
+    assert_eq!(search(&path, b"langdon", edge as u64, false, &stop).unwrap(), Some(late as u64));
+    assert_eq!(search(&path, b"vittoria", 0, true, &stop).unwrap(), None);
+}
+
+#[test]
+fn a_stopped_search_finds_nothing() {
+    let (_dir, path) = file_with(b"Teabing");
+    assert_eq!(search(&path, b"teabing", 0, true, &AtomicBool::new(true)).unwrap(), None);
+}
+
+#[test]
+fn a_hit_at_the_last_byte_is_found() {
+    let (_dir, path) = file_with(b"...........Neveu");
+    let stop = AtomicBool::new(false);
+    assert_eq!(search(&path, b"neveu", 0, true, &stop).unwrap(), Some(11));
+    assert_eq!(search(&path, b"u", 16, false, &stop).unwrap(), Some(15));
+}

@@ -160,3 +160,72 @@ fn a_short_block_moves_the_end_of_a_file_that_shrank() {
         _ => panic!("no hex view"),
     }
 }
+
+impl Viewing {
+    fn message(&self) -> String {
+        self.model.borrow().message.clone().map(|message| message.text).unwrap_or_default()
+    }
+
+    /// Waits until the search's answer puts `text` in the footer.
+    fn await_message(&self, text: &str) {
+        let shown = self.app.wait_until(Duration::from_secs(5), || self.message() == text);
+        assert!(shown, "the footer shows {:?}, not {text:?}", self.message());
+    }
+}
+
+/// A file with `Langdon` at 0x10 and `LANGDON` at 0x30000, past the blocks the first screen reads.
+fn two_langdons() -> Vec<u8> {
+    let mut bytes = counting(300 * 1024);
+    bytes[0x10..0x17].copy_from_slice(b"Langdon");
+    bytes[0x30000..0x30007].copy_from_slice(b"LANGDON");
+    bytes
+}
+
+#[test]
+fn a_search_finds_a_string_ignoring_case_steps_and_wraps() {
+    let v = notice(&two_langdons());
+    v.app.type_text("X");
+    v.app.type_text("/langdon");
+    v.app.press("return");
+    v.await_message("/langdon  at 0x10");
+    v.app.press("escape");
+    assert!(v.model.borrow().search.as_ref().is_some_and(|search| !search.editing), "Esc keeps the search");
+    v.app.type_text("n");
+    v.await_message("/langdon  at 0x30000");
+    assert!(v.hex_top() <= 0x30000 && 0x30000 < v.hex_top() + 16 * 40, "the hit is in view");
+    v.await_screen("4c 41 4e 47 44 4f 4e");
+    v.app.type_text("n");
+    v.await_message("/langdon  at 0x10");
+    v.app.type_text("N");
+    v.await_message("/langdon  at 0x30000");
+}
+
+#[test]
+fn a_search_with_no_hit_says_so_and_esc_drops_the_mark() {
+    let v = notice(&two_langdons());
+    v.app.type_text("X");
+    v.app.type_text("/vittoria");
+    v.app.press("return");
+    v.await_message("/vittoria  no matches");
+    v.app.press("escape");
+    v.app.press("escape");
+    assert!(v.model.borrow().search.is_none(), "a second Esc drops the search");
+}
+
+#[test]
+fn closing_the_view_stops_its_search() {
+    let v = notice(&two_langdons());
+    v.app.type_text("X");
+    v.app.type_text("/langdon");
+    v.app.press("return");
+    let flag = match &v.model.borrow().shown {
+        Shown::Hex(hex) => hex.stop.as_ref().map(|stop| stop.0.clone()),
+        _ => None,
+    };
+    v.app.press("escape");
+    v.app.type_text("q");
+    assert!(!v.model.borrow().shown.is_hex());
+    if let Some(flag) = flag {
+        assert!(flag.load(std::sync::atomic::Ordering::Relaxed), "the closed view's search is stopped");
+    }
+}

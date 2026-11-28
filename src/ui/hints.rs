@@ -133,6 +133,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
             switch_hint(shown),
             ("gg G", "top/bottom"),
             ("^d ^u", "page"),
+            ("/", "search"),
             (":", "offset"),
             ("y", "copy"),
             ("q", "close"),

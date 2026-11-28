@@ -78,6 +78,9 @@ pub fn start(m: &mut Model) {
 /// arrows step, Esc closes (Scouter `handleKey`). Only plain keys and field edits reach here; other Ctrl and Alt keys
 /// keep their commands.
 pub fn prompt_key(m: &mut Model, ui: &Ui, key: Key<'_>) {
+    if m.shown.is_hex() {
+        return super::hex::prompt_key(m, key);
+    }
     let Some(mut search) = m.search.take() else { return };
     let reveal = if let Some(edit) = edit_of(key) {
         edit_query(m, ui, &mut search, edit)
@@ -153,6 +156,9 @@ fn reveal_current(m: &Model, ui: &Ui) {
 
 /// `n` (forward) and `N` or `p` (back): the next hit, wrapping (Scouter `step`).
 pub fn step(m: &mut Model, ui: &Ui, forward: bool) {
+    if m.shown.is_hex() && m.search.is_some() {
+        return super::hex::step(m, forward);
+    }
     let Some(search) = m.search.as_mut() else {
         show(m, NO_SEARCH.into());
         return;

@@ -154,6 +154,8 @@ pub enum Event {
     Apps { target: PathBuf, result: Result<Vec<launch::App>, String> },
     /// Block `index` of the file the hex view shows (`app/hex.rs`); a block of a file no longer shown is dropped.
     Block { path: PathBuf, index: u64, result: Result<Vec<u8>, String> },
+    /// A hex search's answer: the hit's offset, or none. `search` names the search, so an older one's answer is dropped.
+    HexFound { path: PathBuf, search: u64, result: Result<Option<u64>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

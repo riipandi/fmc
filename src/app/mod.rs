@@ -901,7 +901,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // An open prompt replaces the footer's left side, or the compact bottom bar's segments after `Cancel` (`ui/bars.rs`).
     let editing = match (&m.finder, &m.search, &m.command) {
         (Some(finder), _, _) => Some(PromptLine::new(find::prompt(finder).0, &finder.query, &finder.status)),
-        (None, Some(search), _) if search.editing => Some(PromptLine::new("/", &search.query, &search.count_text())),
+        (None, Some(search), _) if search.editing => {
+            let status = hex::status(m).unwrap_or_else(|| search.count_text());
+            Some(PromptLine::new("/", &search.query, &status))
+        }
         (None, _, Some(line)) => Some(PromptLine::new(":", line, "")),
         _ => None,
     };

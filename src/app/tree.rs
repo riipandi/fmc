@@ -274,6 +274,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::Launched { done, result } => open::launched(m, done, result),
         Event::Apps { target, result } => open::listed(m, target, result),
         Event::Block { path, index, result } => super::hex::block(m, path, *index, result),
+        Event::HexFound { path, search, result } => super::hex::found(m, path, *search, result),
     }
 }
 
