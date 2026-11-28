@@ -1,4 +1,4 @@
-//! The overlays over the page (plan-00012, D1): a context menu and a dialog. While one is open it takes every key and
+//! The overlays over the page: a context menu and a dialog. While one is open it takes every key and
 //! every click, so the page under it does not act: `capture.rs` hands the keys here, and a catcher beneath the overlay
 //! takes its clicks. What a row or a button does is the write layer's (`app/write.rs`); a press outside a menu closes it.
 
@@ -61,11 +61,11 @@ pub fn wire_views(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     });
     for (index, row) in views.menu.rows.iter().enumerate() {
         row.on_mouse(press(model, ui, move |m| match &m.overlay {
-            Some(Overlay::Menu(menu)) => menu.pick(index),
+            Some(Overlay::Menu(menu)) => menu.pick(menu.top() + index),
             _ => Outcome::Stay,
         }));
         row.on_mouse(hover(model, ui, move |m| match &mut m.overlay {
-            Some(Overlay::Menu(menu)) => menu.point(index),
+            Some(Overlay::Menu(menu)) => menu.point(menu.top() + index),
             _ => false,
         }));
     }
@@ -230,14 +230,14 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
     let views = &ui.overlay;
     let open = m.overlay.as_ref();
     let dialog_open = matches!(open, Some(Overlay::Dialog(_)));
-    // The Settings page is modal too: the catcher takes its clicks, so the panes beneath it do not act (plan-00015, A21).
+    // The Settings page is modal too: the catcher takes its clicks, so the panes beneath it do not act.
     views.catcher.visible(open.is_some() || m.settings.page.is_some());
     views.scrim.visible(dialog_open);
     views.menu.root.visible(matches!(open, Some(Overlay::Menu(_))));
     views.dialog.root.visible(dialog_open);
     match open {
         Some(Overlay::Menu(menu)) => {
-            let rect = menu::frame(menu.items(), m.overlay_at, screen, tier(columns));
+            let rect = menu::frame(menu.window(), m.overlay_at, screen, tier(columns));
             views.menu.show(menu, rect, p, tint);
         }
         Some(Overlay::Dialog(dialog)) => {

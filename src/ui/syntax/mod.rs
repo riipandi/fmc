@@ -1,11 +1,11 @@
 //! Syntax highlighting (Scouter `src/reader/grammars.ts`, `src/reader/code-view.ts`): the grammars and queries Scouter
-//! uses, the filetype a path gets, and the style of each capture name from the palette (`research/scouter-inventory.md`
-//! §8.3). Rust is registered by `opentui`'s `tree-sitter` feature; the others are registered here.
+//! uses, the filetype a path gets, and the style of each capture name from the palette.
+//! Rust is registered by `opentui`'s `tree-sitter` feature; the others are registered here.
 
 use std::path::Path;
 
 use fmc::reader::associations::{Associations, Language as Association};
-use fmc::reader::language::{extension_filetype, is_highlighted};
+use fmc::reader::language::{fallback_filetype, is_highlighted};
 use fmc::theme::{Hex, Palette};
 use opentui::native::{Context, SyntaxStyle};
 use opentui::prelude::{Result, Style};
@@ -15,7 +15,7 @@ use opentui::syntax::{CompiledGrammar, Grammar, SyntaxTheme, filetype_for_path, 
 use super::styled::color;
 
 /// Registers the grammars, compiled on first use as OpenTUI's bundled ones are. Core's queries replace the bundled
-/// ones for JavaScript, TypeScript, TSX, Markdown, and Zig (`architecture.md`, "Core's highlight queries"). Call it
+/// ones for JavaScript, TypeScript, TSX, Markdown, and Zig. Call it
 /// once, before the first code view is shown.
 pub fn register() {
     register_lazy("javascript", || {
@@ -89,7 +89,13 @@ pub fn register() {
     });
     register_lazy("hcl", || grammar(tree_sitter_hcl::LANGUAGE, include_str!("queries/hcl/highlights.scm")));
     register_lazy("jsdoc", || grammar(tree_sitter_jsdoc::LANGUAGE, include_str!("queries/jsdoc/highlights.scm")));
-    register_lazy("lua", || grammar(tree_sitter_lua::LANGUAGE, include_str!("queries/lua/highlights.scm")));
+    register_lazy("lua", || {
+        injected(
+            tree_sitter_lua::LANGUAGE,
+            include_str!("queries/lua/highlights.scm"),
+            include_str!("queries/lua/injections.scm"),
+        )
+    });
     register_lazy("regex", || grammar(tree_sitter_regex::LANGUAGE, include_str!("queries/regex/highlights.scm")));
     register_lazy("sql", || grammar(tree_sitter_sequel::LANGUAGE, include_str!("queries/sql/highlights.scm")));
     register_lazy("svelte", || {
@@ -108,6 +114,14 @@ pub fn register() {
         )
     });
     register_lazy("vim", || grammar(tree_sitter_vim::language(), include_str!("queries/vim/highlights.scm")));
+    register_lazy("vimdoc", || grammar(vendored::vimdoc(), include_str!("queries/vimdoc/highlights.scm")));
+    register_lazy("luadoc", || grammar(vendored::luadoc(), include_str!("queries/luadoc/highlights.scm")));
+    register_lazy("luap", || grammar(vendored::luap(), include_str!("queries/luap/highlights.scm")));
+    register_lazy("just", || grammar(vendored::just(), include_str!("queries/just/highlights.scm")));
+    register_lazy("query", || grammar(tree_sitter_tsquery::LANGUAGE, include_str!("queries/query/highlights.scm")));
+    register_lazy("json5", || {
+        grammar(tree_sitter_json5_orchard::LANGUAGE, include_str!("queries/json5/highlights.scm"))
+    });
     register_alias("javascriptreact", "javascript");
 }
 
@@ -136,7 +150,7 @@ pub fn language_for(associations: &Associations, root: &Path, path: &Path) -> Op
         Some(Association::Plain) => None,
         Some(Association::Filetype(filetype)) => Some(filetype),
         None => {
-            let filetype = extension_filetype(path).or_else(|| filetype_for_path(&path.to_string_lossy()))?;
+            let filetype = fallback_filetype(path).or_else(|| filetype_for_path(&path.to_string_lossy()))?;
             is_highlighted(filetype).then_some(filetype)
         }
     }
@@ -181,6 +195,7 @@ pub fn theme(p: &Palette) -> SyntaxTheme {
 
 #[cfg(test)]
 mod tests;
+mod vendored;
 
 /// The capture names the queries use (`src/ui/syntax/queries` and OpenTUI's bundled Rust query). The buffer's style
 /// table names each one `opentui.<name>`, so a layer can paint by name; a name missing here is drawn plain.
@@ -195,11 +210,16 @@ const CAPTURE_NAMES: &[&str] = &[
     "comment.doc",
     "comment.doc.__attribute__",
     "comment.documentation",
+    "comment.error",
+    "comment.hint",
     "comment.unused",
+    "comment.warning",
     "conceal",
     "constant",
     "constant.builtin",
+    "constant.builtin.boolean",
     "constant.character",
+    "constant.numeric",
     "constructor",
     "delimiter",
     "embedded",
@@ -292,7 +312,7 @@ const CAPTURE_NAMES: &[&str] = &[
 
 /// The style table of a code buffer: each capture name's style as the widget would register it, plus the search marks,
 /// which layers name as `opentui.search.match` (Scouter `search.match`) and `opentui.search.current` (the match the view
-/// is on, plan-00010 D3). A buffer keeps the table it was given, so this one stands in for the widget's own.
+/// is on). A buffer keeps the table it was given, so this one stands in for the widget's own.
 pub fn table(context: &Context, theme: &SyntaxTheme, search: Style, current: Style) -> Result<SyntaxStyle> {
     let table = SyntaxStyle::new(context)?;
     for name in CAPTURE_NAMES {

@@ -1,5 +1,5 @@
 //! The theme catalog: the 16 bundled themes (bjarneo/editor, MIT, `catalog/LICENSE`), the user's themes, and the choice of
-//! a dark and a light palette from the settings' ids (plan-00015, D6 to D8, A4, A7, A9, A13). Pure: the files are read
+//! a dark and a light palette from the settings' ids. Pure: the files are read
 //! by `services/theme.rs`.
 
 use serde_json::Value;
@@ -7,7 +7,7 @@ use serde_json::Value;
 use super::{DARK, Hex, LIGHT, Mode, Palette, Syntax, channels};
 use crate::text::display_label;
 
-/// The id of Scouter's own pair: `DARK` in a dark slot, `LIGHT` in a light slot (A13).
+/// The id of Scouter's own pair: `DARK` in a dark slot, `LIGHT` in a light slot.
 pub const DEFAULT_THEME: &str = "default";
 
 /// The roles fmc does not map: they are read and must be valid, and no palette field takes them.
@@ -78,8 +78,8 @@ pub fn bundled() -> Vec<Theme> {
     BUNDLED.iter().filter_map(|(id, text)| parse(id, text).ok()).collect()
 }
 
-/// The palette from the 24 roles (A9). The source value is the role the mapping names; a derived value is fmc's own
-/// formula (`mix`), recorded in `architecture.md` ("the catalog"). Every role is read, so a missing one fails the file.
+/// The palette from the 24 roles. The source value is the role the mapping names; a derived value is fmc's own
+/// formula (`mix`). Every role is read, so a missing one fails the file.
 fn palette(role: impl Fn(&str) -> Result<Hex, String>) -> Result<Palette, String> {
     let (bg, bg3, bd, fg, fg2, fg3) = (role("bg")?, role("bg3")?, role("bd")?, role("fg")?, role("fg2")?, role("fg3")?);
     let (ac, ins, warn, err, sel, on) =
@@ -158,7 +158,7 @@ fn merged(user: Vec<Theme>) -> Vec<Theme> {
     themes
 }
 
-/// The ids a slot accepts for `mode` (A13): `default` first, then each bundled or user theme of that mode, in the order
+/// The ids a slot accepts for `mode`: `default` first, then each bundled or user theme of that mode, in the order
 /// `merged` keeps them. The Settings page cycles through these.
 pub fn slot_ids(user: &[Theme], mode: Mode) -> Vec<String> {
     let others = merged(user.to_vec()).into_iter().filter(|theme| theme.mode == mode).map(|theme| theme.id);

@@ -46,8 +46,7 @@ pub struct Options {
 }
 
 impl Default for Options {
-    /// One file, where Scouter opens every file (`scouter:src/diff/diff-screen.ts:82`): an approved deviation
-    /// (architecture.md, "the changes screen opens in one-file mode").
+    /// One file, where Scouter starts with every changed file stacked (`scouter:src/diff/diff-screen.ts:82`); `a` shows them all.
     fn default() -> Self {
         Self { split: false, one_file: true, wide: false }
     }
@@ -344,7 +343,7 @@ pub fn move_list(m: &mut Model, action: Action) {
 }
 
 /// A click on a change row selects it and shows its file, and the focus stays on the list, as a click in the file tree
-/// does (owner request, architecture.md "A change-row click keeps the focus"); Scouter's `ChangeList` `onMouseDown` also
+/// does (owner request); Scouter's `ChangeList` `onMouseDown` also
 /// focuses the body. In compact the list and the body are separate pages, so a tap opens the body as Enter does.
 pub fn click_row(m: &mut Model, index: usize, columns: u16) {
     if m.change_list.select_index(index) {
@@ -482,17 +481,17 @@ pub fn open_changed(m: &mut Model, ui: &Ui) {
                     Some(file) => line_at(&hunks, file, top, first_line(&changes.files[file])),
                     None => 1,
                 };
-                Some((tree_path(changes, &change.path), changes.repository.0.root().join(&change.path), line))
+                Some((tree_path(changes, &change.path), line))
             }
             _ => None,
         }
     };
-    let Some((path, shown, line)) = opened else {
+    let Some((path, line)) = opened else {
         m.message = Some(Message { text: NO_FILE_TO_OPEN.into(), error: false });
         return;
     };
     leave(m);
-    m.open_at = Some(OpenAt { path: path.clone(), line, query: String::new(), shown: Some(shown) });
+    m.open_at = Some(OpenAt { path: path.clone(), line, query: String::new() });
     tree::reveal(m, path, false, true);
 }
 
@@ -557,19 +556,14 @@ pub fn viewer_header(m: &Model) -> (String, Option<String>, Vec<Badge>) {
     (title, parent, badges)
 }
 
-/// The footer's facts for the screen (Scouter `diffFooterFor`): the selected file or the repository, the listed count,
-/// the totals, and the hunk at the top of the body.
+/// The footer's facts for the screen (Scouter `diffFooterFor`): the listed count, the totals, and the hunk at the top of
+/// the body.
 pub fn footer(m: &Model, ui: &Ui) -> Option<DiffInfo> {
     let changes = m.changes.as_ref()?;
-    let location = match m.change_list.selected() {
-        Some(change) => change.path.clone(),
-        None => changes.repository.0.root().file_name().map_or(String::new(), |name| name.to_string_lossy().into()),
-    };
     let totals = totals(&changes.files);
     let top = ui.diff.scroller.position().1.floor() as usize;
     let rows: Vec<usize> = ui.diff.hunks(&changes.files, &changes.folds).iter().map(|hunk| hunk.row).collect();
     Some(DiffInfo {
-        location,
         files: m.change_list.changes().len(),
         all_files: !m.diff_options.one_file,
         truncated: m.change_list.truncated(),

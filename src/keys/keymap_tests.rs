@@ -1,4 +1,4 @@
-//! The keymap file and the merged table (plan-00015, A8, A10, A11): the notices with their line, `null`, sequences, the
+//! The keymap file and the merged table: the notices with their line, `null`, sequences, the
 //! card and `--help` with a rebound key, and the default rows. `keys/tests.rs` pins the defaults; these pin the file.
 
 use crate::keys::bindings::{ACTION_NAMES, Chord, DEFAULTS};

@@ -15,5 +15,57 @@
 {{/each}}</ul>
 <pre>{{text}}</pre>
 {{/each}}
+<h2 id="vendored-grammars">Vendored grammars</h2>
+<p>fmc compiles these tree-sitter parsers from <code>vendor/grammars/</code> into the binary. Each one is built from the upstream commit named here, and its licence applies to that code.</p>
+<ul>
+<li>vimdoc: <a href="https://github.com/neovim/tree-sitter-vimdoc">neovim/tree-sitter-vimdoc</a> at cf5f03718e699c0e37e4f26a4417fb744c714ba2, Apache-2.0 (the Apache-2.0 text is in its entry above).</li>
+<li>just: <a href="https://github.com/casey/tree-sitter-just">casey/tree-sitter-just</a> at 5685543a6e64f66335e25518c9ae8ffa1dae3d01, Apache-2.0 by its LICENSE file (its Cargo.toml says MIT). The Apache-2.0 text is in its entry above.</li>
+<li>luadoc: <a href="https://github.com/tree-sitter-grammars/tree-sitter-luadoc">tree-sitter-grammars/tree-sitter-luadoc</a> at 4d04632a3a398b78af52e83be074883e722f40be, MIT.</li>
+<li>luap: <a href="https://github.com/tree-sitter-grammars/tree-sitter-luap">tree-sitter-grammars/tree-sitter-luap</a> at c134aaec6acf4fa95fe4aa0dc9aba3eacdbbe55a, MIT.</li>
+</ul>
+<h3>luadoc, MIT</h3>
+<pre>The MIT License (MIT)
+
+Copyright (c) 2023 Amaan Qureshi &lt;amaanq12@gmail.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
+<h3>luap, MIT</h3>
+<pre>The MIT License (MIT)
+
+Copyright (c) 2023 Vhyrro &lt;vhyrro@gmail.com&gt;, Amaan Qureshi &lt;amaanq12@gmail.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</pre>
 </body>
 </html>

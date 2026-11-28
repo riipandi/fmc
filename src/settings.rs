@@ -1,10 +1,10 @@
-//! The settings file's values, read from its text, and the text a save writes (`architecture.md`, "fmc writes its
-//! settings.json, atomically"). The binary reads and writes the file and passes its text here; nothing here touches the disk.
+//! The settings file's values, read from its text, and the text a save writes. The binary reads and writes the file and
+//! passes its text here; nothing here touches the disk.
 
 use serde_json::{Map, Value, json};
 
 use crate::find::Matching;
-use crate::reader::associations::{Associations, Language};
+use crate::reader::associations::{Associations, Language, OpenWith};
 use crate::text::display_label;
 use crate::theme::catalog::{DEFAULT_THEME, Theme, slot_ids};
 use crate::theme::{Mode, ModeChoice};
@@ -23,6 +23,10 @@ pub struct Settings {
     pub reader_jump: u32,
     pub git_gutter: bool,
     pub file_associations: Associations,
+    /// An app's name or path that `e` opens the folder with; empty opens the folder in Finder.
+    pub editor: String,
+    /// The apps the Open With picker offers for a file, by the pattern that wins for it.
+    pub open_with: OpenWith,
     pub find_mode: Matching,
     pub theme_mode: ModeChoice,
     /// A catalog id for the dark slot; `default` is Scouter's pair (`theme::catalog`). Checked there, not here.
@@ -38,6 +42,8 @@ impl Default for Settings {
             reader_jump: READER_JUMP,
             git_gutter: GIT_GUTTER,
             file_associations: Associations::default(),
+            editor: String::new(),
+            open_with: OpenWith::default(),
             find_mode: FIND_MODE,
             theme_mode: THEME_MODE,
             dark_theme: DEFAULT_THEME.into(),
@@ -78,6 +84,8 @@ pub fn parse(text: &str) -> Parsed {
         reader_jump: whole(&object, "reader_jump", READER_JUMP, notices),
         git_gutter: boolean(&object, "git_gutter", GIT_GUTTER, notices),
         file_associations: associations(&object, notices),
+        editor: editor(&object, notices),
+        open_with: open_with(&object, notices),
         find_mode: finding(&object, notices),
         theme_mode: theme_mode(&object, notices),
         dark_theme: theme_id(&object, "dark_theme", notices),
@@ -89,12 +97,14 @@ pub fn parse(text: &str) -> Parsed {
 /// The keys `parse` reads: the Settings page's rows and `file_associations`. Every lookup goes through `field`, which
 /// asserts its key is here, and the schema's properties are tested against this list, so a key cannot be parsed
 /// without a schema property.
-pub const KEYS: [&str; 9] = [
+pub const KEYS: [&str; 11] = [
     "auto_preview",
     "sidebar_jump",
     "reader_jump",
     "git_gutter",
     "file_associations",
+    "editor",
+    "open_with",
     "find_mode",
     "theme_mode",
     "dark_theme",
@@ -106,19 +116,19 @@ fn field<'a>(object: &'a Map<String, Value>, key: &str) -> Option<&'a Value> {
     object.get(key)
 }
 
-/// The `$schema` that points `settings.json` at the schema `services::settings::ensure_schema` writes beside it
-/// (plan-00016 O1). Relative to `settings.json`, which editors resolve against the file's folder.
+/// The `$schema` that points `settings.json` at the schema `services::settings::ensure_schema` writes beside it.
+/// Relative to `settings.json`, which editors resolve against the file's folder.
 pub const SCHEMA_LINK: &str = "./meta/config.schema.json";
 
-/// The file's text with `"$schema": SCHEMA_LINK` inserted as its first key, for the startup link (plan-00016 O1, amended
-/// by the owner on 2026-11-28). The rest of the text keeps its bytes, so the values, their order, and the layout stay as
-/// the owner wrote them. `None` when the file already has a `$schema` or is not a JSON object.
+/// The file's text with `"$schema": SCHEMA_LINK` inserted as its first key, for the startup link. The rest of the text
+/// keeps its bytes, so the values, their order, and the layout stay as the owner wrote them. `None` when the file
+/// already has a `$schema` or is not a JSON object.
 pub fn linked(text: &str) -> Option<String> {
     let Ok(Value::Object(mut object)) = serde_json::from_str::<Value>(text) else { return None };
     if object.contains_key("$schema") {
         return None;
     }
-    // Strict JSON (plan-00015 D10): the first `{` opens the object, since only whitespace may come before it.
+    // Strict JSON: the first `{` opens the object, since only whitespace may come before it.
     let (head, rest) = text.split_at(text.find('{')? + 1);
     let body = rest.trim_start();
     let gap = &rest[..rest.len() - body.len()];
@@ -152,7 +162,7 @@ pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
 }
 
 /// The JSON Schema of `settings.json` (draft-07), built from the same rows, defaults, and name lists the parser and the
-/// Settings page use, so a name cannot drift from it (plan-00016, D2). Pretty-printed with a final newline; the same
+/// Settings page use, so a name cannot drift from it. Pretty-printed with a final newline; the same
 /// bytes on every call.
 pub fn schema() -> String {
     let defaults = Settings::default();
@@ -171,6 +181,19 @@ pub fn schema() -> String {
             "description": "Maps a file pattern, such as *.md or docs/**, to the filetype it is shown as.",
             "default": {},
             "additionalProperties": { "type": "string", "enum": Language::names() },
+        }),
+    );
+    properties.insert(
+        "editor".into(),
+        json!({ "type": "string", "default": "", "description": "An app name or path, such as Zed or /Applications/Zed.app, that e opens the folder with. Empty opens the folder in Finder." }),
+    );
+    properties.insert(
+        "open_with".into(),
+        json!({
+            "type": "object",
+            "description": "Maps a file pattern, such as *.md, to the apps the Open With picker offers for a file that matches it: app names or .app paths.",
+            "default": {},
+            "additionalProperties": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         }),
     );
     let root = json!({
@@ -240,8 +263,57 @@ fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Assoc
     table
 }
 
-/// `find_mode`: the name matching the finder starts with (plan-00006 D6). Any other value keeps Scouter's substring match
-/// and says so, as the other keys do.
+/// `editor`: the app `e` opens the folder with, as `open -a` takes it. Empty, the default, opens the folder in Finder. Any
+/// other value is kept as written; `open` reports an app it cannot find.
+fn editor(object: &Map<String, Value>, notices: &mut Vec<String>) -> String {
+    match field(object, "editor") {
+        None => String::new(),
+        Some(Value::String(app)) => app.clone(),
+        Some(_) => {
+            notices.push(
+                "settings.json: editor must be an app name or path, a string; the folder opens in Finder.".into(),
+            );
+            String::new()
+        }
+    }
+}
+
+/// `open_with`: the apps a pattern offers in the Open With picker. A bad entry is skipped with a notice that
+/// names its pattern: a pattern that does not parse, a value that is not an array, or an item that is not a non-empty string.
+fn open_with(object: &Map<String, Value>, notices: &mut Vec<String>) -> OpenWith {
+    let mut table = OpenWith::default();
+    match field(object, "open_with") {
+        None => {}
+        Some(Value::Object(entries)) => {
+            for (pattern, value) in entries {
+                let Some(items) = value.as_array() else {
+                    notices.push(display_label(&format!(
+                        "settings.json: open_with \"{pattern}\" is skipped: its value must be an array of app names."
+                    )));
+                    continue;
+                };
+                let mut apps = Vec::new();
+                for item in items {
+                    match item.as_str() {
+                        Some(app) if !app.is_empty() => apps.push(app.to_owned()),
+                        _ => notices.push(display_label(&format!(
+                            "settings.json: open_with \"{pattern}\" has an item that is not a non-empty string; it is skipped."
+                        ))),
+                    }
+                }
+                if let Err(reason) = table.add_value(pattern, apps) {
+                    notices
+                        .push(display_label(&format!("settings.json: open_with \"{pattern}\" is skipped: {reason}.")));
+                }
+            }
+        }
+        Some(_) => notices.push("settings.json: open_with must be an object; no app is offered.".into()),
+    }
+    table
+}
+
+/// `find_mode`: the name matching the finder starts with. Any other value keeps Scouter's substring match and says so,
+/// as the other keys do.
 fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
     match field(object, "find_mode") {
         None => FIND_MODE,
@@ -252,7 +324,7 @@ fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
     }
 }
 
-/// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode (plan-00015, A7).
+/// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode.
 fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeChoice {
     match field(object, "theme_mode") {
         None => THEME_MODE,
@@ -296,7 +368,7 @@ fn whole(object: &Map<String, Value>, key: &str, default: u32, notices: &mut Vec
     }
 }
 
-/// One row of the Settings page: a key of the file the page edits (plan-00015, D2 and A7). The label is the key's word.
+/// One row of the Settings page: a key of the file the page edits. The label is the key's word.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Row {
     AutoPreview,

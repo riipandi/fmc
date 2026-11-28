@@ -1,4 +1,4 @@
-# License gate: `cargo deny check licenses`. The allowlist mirrors `.agents/docs/rules.md` ("Licenses").
+# License gate: `cargo deny check licenses`. A dependency under any other licence fails the gate.
 [graph]
 targets = ["aarch64-apple-darwin"]
 

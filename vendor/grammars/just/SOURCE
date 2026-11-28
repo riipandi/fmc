@@ -1,0 +1,2 @@
+https://github.com/casey/tree-sitter-just 5685543a6e64f66335e25518c9ae8ffa1dae3d01
+The repository LICENSE file is Apache-2.0; its Cargo.toml says MIT (the crate metadata). The LICENSE file is the licence.

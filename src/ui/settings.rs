@@ -1,4 +1,4 @@
-//! The Settings page's rows (plan-00015, A6): each row is fmc's segments, drawn as the tree draws a row, with the row's
+//! The Settings page's rows: each row is fmc's segments, drawn as the tree draws a row, with the row's
 //! name, the value in a column, and the selected row's help line under the list. The rows sit under their group's
 //! heading (`Row::section`). Not OpenTUI's `Select`: a value column is what `Select`'s name and description do not give.
 

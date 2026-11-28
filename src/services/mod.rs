@@ -1,11 +1,11 @@
-//! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy
-//! (`rust.md`, "Layout rules").
+//! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy.
 
 pub mod changes;
 pub mod find;
 pub mod fs;
 pub mod git;
 pub mod keymap;
+pub mod launch;
 pub mod poll;
 pub mod settings;
 pub mod theme;
@@ -15,12 +15,18 @@ use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
 use std::io::{self, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
+use std::process::{ChildStdout, Command, Stdio};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::{Duration, Instant};
 
 use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
 use fmc::explorer::Entry;
 use fmc::find::Index;
 use fmc::find::text::Progress;
 use fmc::reader::document::Document;
+use fmc::text::display_text;
 use opentui::prelude::AppProxy;
 
 /// `$XDG_CONFIG_HOME/fmc`, or `~/.config/fmc` when `XDG_CONFIG_HOME` is unset, empty, or relative (the XDG Base Directory
@@ -59,7 +65,7 @@ pub fn read_config(file: &Path) -> Result<String, ReadError> {
     String::from_utf8(bytes).map_err(|_| ReadError::NotText)
 }
 
-/// Writes `text` to `path`, or to the file a link at `path` points to (plan-00015 D14). The text goes to a temp file
+/// Writes `text` to `path`, or to the file a link at `path` points to. The text goes to a temp file
 /// beside the target, and the rename replaces the target only once the bytes are on disk, so a crash leaves the old file
 /// or the new one. A new file gets the old file's mode. Nothing outside the target's folder is touched.
 pub fn save_atomic(path: &Path, text: &str) -> io::Result<()> {
@@ -116,12 +122,14 @@ pub enum Event {
     /// the latest one, or a listing no longer shown, is dropped.
     ChangesPatched { session: u64, request: u64, stamp: String, result: Result<Vec<FilePatch>, String> },
     /// A browse poll's answer (Scouter `refreshBrowse`): the fresh listings of the expanded folders that could be
-    /// listed, the marks, and the check of the open document. `chain` is set for a timed poll, which schedules the next.
+    /// listed, the marks, the branch (`None` outside a repository), and the check of the open document. `chain` is set
+    /// for a timed poll, which schedules the next.
     BrowsePolled {
         root: PathBuf,
         chain: bool,
         folders: Vec<(PathBuf, Vec<Entry>)>,
         marks: Result<Option<Listing>, String>,
+        branch: Option<String>,
         document: Option<(PathBuf, fs::Reread)>,
     },
     /// The changes poll's answer for the listing of `session`: the listing and the stamp of the files the body shows.
@@ -131,6 +139,10 @@ pub enum Event {
     Written { kind: write::Kind, source: PathBuf, result: Result<PathBuf, String> },
     /// The Settings page's batch of changes was written, or refused with the reason (`app/settings.rs`).
     SettingsSaved { result: Result<(), String> },
+    /// A launch finished (`app/open.rs`): `done` is the footer's text on success, `result` is `open`'s first error.
+    Launched { done: String, result: Result<(), String> },
+    /// The apps the Open With picker lists for `target` (`app/open.rs`); the picker opens only if `target` is still the one shown.
+    Apps { target: PathBuf, result: Result<Vec<launch::App>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its
@@ -151,6 +163,79 @@ pub fn spawn(proxy: &AppProxy, work: impl FnOnce() -> Event + Send + 'static) {
     std::thread::spawn(move || {
         let _ = proxy.send(work());
     });
+}
+
+/// How often a running command is checked for its exit, for an overflow, and for the timeout.
+const POLL: Duration = Duration::from_millis(5);
+/// The status Bun reports for a process ended by SIGTERM, which is how Scouter's timeout ends git (`src/diff/git.ts:59`).
+const TERMINATED: i32 = 143;
+const NO_OUTPUT: &str = "Command output could not be read.";
+/// What one git call printed: its text, and whether the cap cut it (`src/diff/git.ts:76`).
+struct Output {
+    text: String,
+    truncated: bool,
+}
+
+/// Runs `command` and collects its stdout up to `limit` bytes. The command is killed when it writes past the limit or
+/// runs past `timeout`. Past the limit, a `partial` run keeps the bytes it read; any other run is cut and has no text
+/// (`src/diff/git.ts:47-107`). An error names the program as it was spawned (`git`, `/usr/bin/open`).
+fn capture(mut command: Command, limit: usize, partial: bool, timeout: Duration) -> Result<Output, String> {
+    let program = command.get_program().to_string_lossy().into_owned();
+    command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
+    let mut child = command.spawn().map_err(|_| format!("{program} is not installed or could not be started."))?;
+    let stdout = child.stdout.take().ok_or(NO_OUTPUT)?;
+    let mut stderr = child.stderr.take().ok_or(NO_OUTPUT)?;
+    let overflow = Arc::new(AtomicBool::new(false));
+    let reader = {
+        let overflow = Arc::clone(&overflow);
+        thread::spawn(move || read_capped(stdout, limit, &overflow))
+    };
+    // stderr is drained beside stdout, so a command that fills either pipe cannot wait on this loop.
+    let errors = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let _ = stderr.read_to_end(&mut bytes);
+        bytes
+    });
+    let deadline = Instant::now() + timeout;
+    let status = loop {
+        if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
+            break status;
+        }
+        if overflow.load(Ordering::SeqCst) || Instant::now() >= deadline {
+            let _ = child.kill();
+            break child.wait().map_err(|error| error.to_string())?;
+        }
+        thread::sleep(POLL);
+    };
+    let mut bytes = reader.join().map_err(|_| NO_OUTPUT.to_string())?.map_err(|error| error.to_string())?;
+    let stderr = errors.join().unwrap_or_default();
+    let truncated = overflow.load(Ordering::SeqCst);
+    if !truncated && !status.success() {
+        let code = status.code().unwrap_or(TERMINATED);
+        let stderr = String::from_utf8_lossy(&stderr);
+        let reason = stderr.trim().split('\n').next().unwrap_or_default();
+        return Err(if reason.is_empty() {
+            format!("{program} exited with status {code}.")
+        } else {
+            display_text(reason)
+        });
+    }
+    if truncated {
+        bytes.truncate(limit);
+    }
+    let text = if truncated && !partial { String::new() } else { String::from_utf8_lossy(&bytes).into_owned() };
+    Ok(Output { text, truncated })
+}
+
+/// Reads stdout up to `limit` bytes, and one byte past it, so a cut is told from an output that ends exactly there.
+/// A read past the limit sets `overflow`, and the waiting loop kills the command.
+fn read_capped(stdout: ChildStdout, limit: usize, overflow: &AtomicBool) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    stdout.take(limit as u64 + 1).read_to_end(&mut bytes)?;
+    if bytes.len() > limit {
+        overflow.store(true, Ordering::SeqCst);
+    }
+    Ok(bytes)
 }
 
 #[cfg(test)]

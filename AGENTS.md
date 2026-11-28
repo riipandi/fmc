@@ -8,7 +8,7 @@ Always-on rules. Detail lives in `.agents/docs/` (map: `index.md`). Before a cha
 - Early-stage project: no backward compatibility, no legacy shims; a replaced name or shape is removed.
 - Do not add, remove, or rename a top-level directory unless asked; extend an existing module.
 - No new dependency without the owner's approval (`rules.md`, "Dependencies").
-- A comment carries what the code cannot (a why, a contract, a trap); never restate the next line.
+- A comment carries what the code cannot (a why, a contract, a trap); never restate the next line. A comment in code or config (Rust, `Cargo.toml`, workflows, scripts) never cites a plan, a roadmap entry, a decision ID, or a doc file (`plan-00016 D2`, `RI-9`, `architecture.md`); it states the reason itself. The trail lives in the docs and the commit message (owner, 2026-11-28).
 - Chat follows the user's language. Files, code, identifiers, and commit messages are English.
 - Sample data comes from Dan Brown's novels and Harry Potter, never `John Doe`, `foo`, or lorem ipsum (`rules.md`, "Sample data").
 - Never print a secret or rewrite a `.env` file without consent.

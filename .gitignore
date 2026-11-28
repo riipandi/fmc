@@ -8,7 +8,6 @@
 /[Tt]mp/
 /storage/
 /target/
-/vendor/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
@@ -54,3 +53,6 @@ release/
 .env.*
 !.env.example
 .*.vars
+
+# Claude Code worktrees, created by the agent tooling
+/.claude/worktrees/

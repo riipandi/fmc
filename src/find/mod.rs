@@ -17,8 +17,8 @@ pub const MAX_INDEXED: usize = 20_000;
 /// Rows the name search shows (Scouter `MAX_MATCHES`).
 pub const MAX_MATCHES: usize = 200;
 
-/// How a name query matches a path: Scouter's words (`Substring`, the default) or one fuzzy needle (`Fuzzy`, plan-00006
-/// D5). `settings.json` `find_mode` picks the start, and `Ctrl+F` in the finder flips it.
+/// How a name query matches a path: Scouter's words (`Substring`, the default) or one fuzzy needle (`Fuzzy`).
+/// `settings.json` `find_mode` picks the start, and `Ctrl+F` in the finder flips it.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Matching {
     #[default]

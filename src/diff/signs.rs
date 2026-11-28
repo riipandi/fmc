@@ -1,5 +1,5 @@
-//! The sign of each line of an open file, from its `-U0` patch against the change base (plan-00008, D2). Scouter's code
-//! view has no signs (`src/reader/code-view.ts:99-108`), so the gutter is an approved deviation (`architecture.md`).
+//! The sign of each line of an open file, from its `-U0` patch against the change base. Scouter's code
+//! view has no signs (`src/reader/code-view.ts:99-108`), so the gutter's signs are an addition, not a port.
 //! Pure: `services/git.rs` makes the patch.
 
 use crate::theme::{Hex, Palette};

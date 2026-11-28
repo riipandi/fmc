@@ -1,6 +1,6 @@
 //! A pane header (Scouter `src/ui/header.ts`): the title (with a dim parent folder) and badges, or an error notice in
 //! place of the badges, over a hairline. A lead chevron sits left of the title: `‹` is Back in the compact tier, and in the
-//! medium tier `‹` hides the list and `›` shows it (plan-00005, D3 and records 6 and 10).
+//! medium tier `‹` hides the list and `›` shows it.
 
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -105,7 +105,7 @@ impl PaneHeader {
         self.root.border_color(color(p.border));
         self.lead.visible(state.lead.is_some());
         if let Some(lead) = &state.lead {
-            // The chevron is accent text with two columns after it: one column ran it into the title (plan-00005, D3).
+            // The chevron is accent text with two columns after it: one column ran it into the title.
             self.lead.set_text(content(&[Seg::new(format!("{lead}  "), p.accent)], p.text));
         }
         self.title.set_text(content(&state.title_segments(p), p.text));

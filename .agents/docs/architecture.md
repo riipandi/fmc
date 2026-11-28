@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T14:15:51+07:00
+updated: 2026-11-28T16:05:30+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1386,6 +1386,66 @@ Alternatives considered:
 - Register every injection in one step: not taken. Each injection query was checked against the palette on its own sample, and the Svelte, Astro, and Elixir pairs came first (plan-00013).
 - Wait for the nine missing grammars: not taken. The twelve load and compile their queries today; the seven are parked in the roadmap.
 
+### Approved deviation: the owner's remaining grammars are highlighted (plan-00018)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: the owner's Neovim set (RI-17) had seven filetypes with no crate that loaded on the locked `tree-sitter` 0.27.2 (`research/grammar-load-spike.md`, section 5). Research on 2026-11-28 found two crates that load (`tree-sitter-tsquery` 0.8.0 for `query`, `tree-sitter-json5-orchard` 0.1.1 for `json5`), and the rest split between vendored parsers and no licence (eex). Scouter has none of these grammars, so each is an addition with no baseline.
+
+Decision (owner, 2026-11-28, plan-00018 O1 to O5): fmc highlights `json5` and `query` through the two crates, pinned exactly, each with its query and `LICENSE` under `src/ui/syntax/queries/<filetype>/` (`rules.md`, "Licenses"). `.json5` and `.scm` map to them, and `justfile` by file name (`reader/language.rs`, `EXTENSIONS` and `NAMES`). A `.scm` file is a query, not Scheme: fmc has no Scheme grammar, so the query grammar wins by use (D3). A file name the table lacks is a key too (`NAMES`, D2). Captures a query uses are the palette's, and the tsquery query's `#lua-match?` rules are `#match?` (the binding ignores the Lua form). Upstream's `@spell` captures are dropped.
+
+Consequences:
+
+- (positive) A `.json5` or a `.scm` file is coloured in every view, and `file_associations` and Markdown fences accept `json5` and `query`.
+- (negative) Both files are coloured where Scouter shows them plain. Each is fmc's choice, with no baseline.
+- (negative) Two more grammar crates. Each adds no package to the lock: `cc` 1.11.3 is already there for their build scripts.
+
+Alternatives considered:
+
+- Vendored parsers for these two too: not taken. The crates load, so no C is copied (O2 (b) is not needed for them).
+- `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
+- A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
+
+### Approved deviation: vimdoc, just, luadoc, and luap are vendored and highlighted
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: four filetypes of the owner's set had no crate that loaded on the locked `tree-sitter` 0.27.2: vimdoc, just, luadoc, and luap (`research/grammar-load-spike.md`, section 5). Their upstream parsers are C, and each loads once its `parser.c` is compiled with the locked runtime. Scouter has none of them.
+
+Decision (owner, 2026-11-28, plan-00018 O2, O3, O5): the four parsers are vendored under `vendor/grammars/<name>/` at pinned upstream commits, and `build.rs` compiles them with `cc` (`rules.md`, "Dependencies" and "Licenses"). vimdoc is `neovim/tree-sitter-vimdoc` at cf5f037 (Apache-2.0), just is `casey/tree-sitter-just` at 5685543 (Apache-2.0 by its `LICENSE` file, MIT by its `Cargo.toml`), luadoc is `tree-sitter-grammars/tree-sitter-luadoc` at 4d04632 (MIT), and luap is `tree-sitter-grammars/tree-sitter-luap` at c134aae (MIT). `vendor/` is a new top-level directory the owner approved (O5). vimdoc and just are filetypes: just is named `justfile` and `.justfile` by file name, and vimdoc has no default rule, because a `.txt` file is help text only in a Vim plugin's `doc` folder, so a `file_associations` pattern names it (`doc/*.txt`). luadoc and luap are injection-only, with no file of their own; their injections into Lua are the next record's concern.
+
+Consequences:
+
+- (positive) A Vim help file, a `justfile`, and their highlighting follow the same path as the other grammars: one registration each, a query beside its `LICENSE`, and one `CAPTURE_NAMES` check.
+- (negative) Four C parsers, about 58,000 lines, compile on every clean build. The build needs a C compiler; macOS ships one with the command line tools.
+- (negative) The vendored C is outside `cargo about`'s view, so `about.hbs` lists it by hand.
+
+Alternatives considered:
+
+- The crates' published snapshots (vimdoc 13add92, luap 43916b0, luadoc bb31081, just 5685543): not taken. The pinned commits are the owner's approved sources.
+- Leaving the four parked: not taken (O2 (a)).
+- A `doc/*.txt` default for vimdoc: rejected (every other `doc` folder is plain text).
+
+### Decision: Lua patterns are an injection; Lua documentation comments are not yet
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: the owner's set includes luadoc (`---@param` documentation) and luap (Lua patterns) as injections into Lua (`research/grammar-load-spike.md`, section 5; plan-00018 phase 3). Scouter's Lua has no injection. nvim-treesitter's Lua injections (`runtime/queries/lua/injections.scm`, 04f1788) mark a comment's content for luadoc, and a pattern argument for luap, and cut the luadoc text's leading dash with the offset directive.
+
+Decision: fmc injects luap into the pattern argument of `find`, `match`, `gmatch`, and `gsub`, both as `string.match(s, p)` and as `s:match(p)` (`queries/lua/injections.scm`, Apache-2.0 with `LICENSE.nvim-treesitter`). The luadoc rule is left out. OpenTUI does not evaluate the offset directive, and the luadoc grammar parses a body that starts with optional whitespace and then `@` (`--@param` and `-@param` are a plain comment, `@param` and `@param` are annotations, probed on 2026-11-28). A `---` comment therefore has no luadoc highlighting until OpenTUI evaluates offsets, or until the owner chooses another route (below).
+
+Consequences:
+
+- (positive) A Lua pattern in these four calls is coloured as a pattern (`%d` as a class, `[A-Z]` as a set).
+- (negative) Lua strings that are not patterns, `string.format` included, keep the string colour (`src/ui/syntax/tests.rs`, `lua_match_patterns_are_painted_in_their_own_languages_colours`).
+- (negative) `---@param` comments are plain comments. Scouter shows them plain too, so the gap is only against the plan.
+
+Alternatives considered:
+
+- A luadoc rule that matches the whole comment: not taken; the grammar fails on the leading dash, so the rule adds nothing.
+- Patch the vendored Lua grammar or the luadoc grammar to accept the dash: not taken; upstream C is vendored as it is.
+- A luadoc rule through OpenTUI with an offset: needs OpenTUI support, a new upstream feature, not available on the locked 0.9.9.
+
 ### Decision: an injected sigil's body is left to its injection
 
 Context: Core's cascade orders the captures by fewer dotted parts first, then by start, and a later capture paints over an earlier one (`opentui-0.9.9/src/syntax/highlight.rs`, `highlights`, and `core_captures`). Elixir's highlights paint a whole sigil `string.special` (`src/ui/syntax/queries/elixir/highlights.scm`), a 2-part name, which paints over the 1-part captures inside it. Before the fix, a live run of a `~H` sigil coloured `<div class="owl">` and `if @name do` as strings, although the HEEx injection gave them `tag` and `keyword` (`--format=html` capture, 2026-11-27, plan-00013 phase 1).
@@ -1479,3 +1539,94 @@ Alternatives considered:
 
 - Keep Scouter's text: rejected by the owner, since it says fmc does not write.
 - `Space: file menu.`: not taken; `Space opens the menu.` also fits at 80 columns and reads as a sentence.
+
+### Approved deviation: files and folders open in other apps
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has no action that opens a file or folder in another app. Its only subprocesses are `pbcopy` (`scouter:src/core/clipboard.ts:28`) and `git` (`scouter:src/diff/git.ts:54`); it never runs `open`, `EDITOR`, or `xdg-open`. The owner asked on 2026-11-27 for three actions: a file fmc cannot show opens with its default app (RI-14), the browsed folder opens in Finder or an editor (RI-15), and an Open With picker (RI-16) (`roadmap-00001-post-parity.md`, "Opening with other apps"; `plan-00017-open-with-apps.md`).
+
+Decision (owner, 2026-11-28: every recommendation, O1 to O5 (a), and the go-ahead of plan-00017):
+
+- D1. Every launch is `/usr/bin/open` with argv only: `["--", path]`, `["-a", app, "--", path]`, or `["-R", "--", path]`. The path follows `--` and no shell runs. Without `-g`, the app comes to the front, as a Finder double-click does. Stdin is null and the output is captured, so nothing reaches the terminal. A failure is `open`'s first stderr line. The timeout and the cap are `capture`'s (`services/mod.rs`), shared with git.
+- D2. The apps for Open With come from one constant JXA script, run as `osascript -l JavaScript -e <script> -- <path>`. The script reads the path from `argv[0]` and prints one tab-separated line per app: the default mark, the Finder name, the bundle id (`-` when there is none), and the app path. `NSWorkspace.URLsForApplicationsToOpenURL` gives the apps and `URLForApplicationToOpenURL` the default. Measured on this Mac on 2026-11-28: 0.06 to 0.13 s, and a path with quotes or `$(…)` stayed data.
+- D3. The list keeps the apps under `/Applications`, `/System/Applications`, `~/Applications`, and `/System/Library/CoreServices/Applications`, matched by path component. Helpers and caches elsewhere are dropped; a Chrome for Testing under `~/Library/Caches` appeared in the measurement. The default comes first, then the rest by name. An app is launched by its path, so two apps with one name stay apart.
+- D4. A launch reports in the footer. Success shows `Opened <name> in <app>.` (2 seconds); `o` shows `Opened <name>.`, because `open` does not say which app it used. A failure shows `open`'s first error line, and no timer clears it. A launch runs on a worker and never blocks input.
+- D5. The target is the selected row in the tree or the shown file in the reader. A folder is a target. A link goes to `open` as the link's path, which macOS resolves; fmc does not follow it. The target is inside the browsed root, because the tree and the reader reach only entries there.
+- D6. The actions are deviations, recorded here and listed in `docs/parity.md`. The launch rules are in `rules.md`, "Launches".
+- D7. No new dependency.
+- O1. The keys in the tree and the reader: `o` the default app, `O` Open With, `e` the editor or Finder, `E` reveal in Finder. Each is rebindable in `keymap.json` (`open_default`, `open_with`, `open_in_editor`, `reveal_in_finder`).
+- O2. `o` works on any file or folder, and a folder opens in Finder. The binary notice names the key.
+- O3. `editor` is a string: an app name or an app path, passed to `open -a`. Empty, the default, opens the folder in Finder. It is not on the Settings page, as `file_associations` is not.
+- O4. A file or folder row's context menu has an Open group: Open, Open With…, and Show in Finder. Empty space has Open Folder in Editor.
+- O5. The picker is the context menu filled with app rows, and every context menu scrolls: its window shows up to sixteen rows, fewer on a short screen, and moves with the selection.
+
+Consequences:
+
+- (positive) The apps are the ones macOS already offers, through Launch Services, so fmc keeps no list of its own.
+- (positive) Paths, app names, and the editor value reach `open` as argv, and the script takes its path as data; a test runs the script on a file whose name holds `$(touch …)` and checks that nothing runs (`services/launch_tests.rs`).
+- (negative) The launches are macOS only, as the rest of the file operations are (RI-6 stays out of scope).
+- (negative) `o` cannot name the app it used, so its footer has no app name.
+- (negative) The picker reads Launch Services at each `O` on a worker, about 0.1 s, and does not cache the list.
+
+Alternatives considered:
+
+- `std::process::Command::new("zed")` or `code`: rejected. A CLI is often not on `PATH` (`code` and `cursor` were not, on this Mac), and `open -a` goes through Launch Services.
+- A Launch Services binding through `core-foundation` or `objc2`: rejected, a new dependency (D7).
+- `lsregister -dump`: rejected, slow and undocumented.
+- An editor command line such as `zed {path}`: rejected by O3(c), which needs a shell or a quoting parser.
+
+### Approved deviation: `open_with` in settings.json and the Open With picker
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: `O` needs a list of apps per kind of file. The owner wants the list macOS offers, with the apps set in `settings.json` first (RI-16, "a picker of relevant apps, or the ones set in `settings.json`").
+
+Decision (owner, 2026-11-28, an amendment to plan-00017 that adds D8 and D9):
+
+- D8. `open_with` is a JSON object: a glob pattern to an array of strings, each an app name or an absolute `.app` path, launched as `open -a <value> -- <path>`. A pattern matches with the matcher and precedence of `file_associations`: `Patterns<T>` in `reader/associations.rs` holds both tables, so the one pattern `file_associations` would pick for a file gives its apps. It is not on the Settings page. A bad entry is skipped with a notice that names its pattern: a pattern that does not parse, or a value that is not an array (the pattern is skipped); an item that is not a non-empty string (only the item is skipped).
+- D9. The picker's rows, in order: (1) the configured apps, in their order; (2) the apps macOS lists, minus those configured (by `.app` path, or by a configured name equal to the display name) and minus Finder, the default marked `(default)`; (3) Finder, always last, even when the list is empty or fails. A file is revealed (`open -R -- <path>`) and a folder opens (`open -- <path>`). A configured app is not checked before its launch: `open`'s error shows in the footer. `O` works on files and folders. The list is read on a worker, and the picker opens when it lands for the target still shown.
+
+Consequences:
+
+- (positive) A kind of file can name its apps once, and the picker shows them first with no Launch Services call.
+- (positive) One matcher serves the highlighting and the apps, so a pattern that wins for one wins for the other.
+- (negative) An app named in settings but not installed fails at launch, not in the picker.
+- (negative) The menu's scrolling changes every context menu: a long menu is no longer cut at its last row.
+
+Alternatives considered:
+
+- A second matcher for `open_with`: rejected; two precedence rules would drift apart.
+- Checking the configured apps before the picker opens: rejected; it needs a lookup per name, and `open` reports the same error.
+- The macOS list alone, without the setting: rejected by the owner's D8.
+
+### Approved deviation: the footer shows the browsed root and the git branch
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's footer shows the selected file's or folder's path after the pill, cut from the left (`research/scouter-inventory.md:106-113`, Scouter `src/ui/footer.ts:198-228`). The reader's header already names the open file, so the owner found the path redundant (2026-11-28). The footer had also changed with the selection on the changes screen, so the same place named different things on different screens.
+
+Decision (owner, 2026-11-28; `plan-00019-footer-root-branch.md`):
+
+- D1. The footer's location is the browsed root, tildified, never the selected entry. Rejected: the selection's folder, and the root with the relative folder.
+- D2. From 60 columns up, every screen shows it: the files, the reader, Settings, and the changes screen. The changes screen's selected path leaves the footer, and its diff header names the file. The owner narrowed this on 2026-11-28: below 60 columns the bottom bar keeps record 7's words and shows neither the root nor the branch.
+- D3. The branch follows the root after a gap, as `⎇ <name>`, in the name's colour. A detached `HEAD` shows `⎇ <short hash>`. Outside a repository nothing shows. A repository with no commit shows its branch name, which git has before the first commit.
+- D4. The branch is read with the browse poll, one git call per poll: `git symbolic-ref -q HEAD` (the name, with `refs/heads/` removed), and on a detached `HEAD` `git rev-parse --short HEAD`. `--short` is not used, because it prints `heads/main` when a tag has the same name. A checkout in another terminal shows within one poll, two seconds at the default interval. The first poll is the first timer tick, so the branch shows about two seconds after start.
+- D5. Fitting: the root is cut from the left first, down to `…/<last name>`; then the branch is cut from the right. A message replaces both, as it replaced the path.
+- D6. The selection's path leaves the model: `Model.location`, `location_of`, `DiffInfo.location`, and the `OpenAt.shown` field that only named the footer's path are removed.
+- D7. The branch clears when the browsed root changes (going up a folder), so a branch read for another root never shows. The next browse poll names the new root's branch (owner, 2026-11-28; `fix(footer): clear the branch when the root changes`).
+- Decided (owner, 2026-11-28): the compact bottom bar stays as record 7 has it. A second footer row, and a branch in the compact top bar, were the other options and are not taken.
+
+Consequences:
+
+- (positive) The footer answers where the user is and on which branch, on every screen at 60 columns and wider, and the reader's header keeps naming the file.
+- (positive) Opening a file or a folder no longer changes the footer's location, so there is one place to track.
+- (negative) At 60 to 79 columns a long root is cut from the left, and the branch is cut only once the root is down to its last name.
+- (negative) A branch change shows up to one poll late, and the first branch appears about two seconds after start.
+
+Alternatives considered:
+
+- The selection's folder, or the root with the relative folder: rejected by the owner's D1.
+- Browse screens only: rejected by the owner's D2.
+- A separate timer for the branch: rejected; the poll already runs git on the same folder.
+- A Nerd Font icon for the branch: rejected by the owner's D3.

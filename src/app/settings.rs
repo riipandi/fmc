@@ -1,6 +1,6 @@
-//! The Settings page (plan-00015, phase 3): `Ctrl+,` opens it over the content area, and each change applies and saves to
-//! `settings.json` at once (D5). The page takes every plain key while it is open, as a dialog does. The worker writes
-//! one batch at a time, from the file as it is then (A2), so a hand edit made since the start is kept and two saves never
+//! The Settings page: `Ctrl+,` opens it over the content area, and each change applies and saves to
+//! `settings.json` at once. The page takes every plain key while it is open, as a dialog does. The worker writes
+//! one batch at a time, from the file as it is then, so a hand edit made since the start is kept and two saves never
 //! race; a save that fails takes its changes back. The rows and their steps are `fmc::settings`; the drawing is
 //! `ui/settings.rs`.
 

@@ -1,5 +1,5 @@
 //! The Settings page through the model: its keys, each change applied and saved, the refusal and the revert, and the
-//! number dialog. Every save goes to a temporary config folder (A12), so no test touches the owner's `~/.config/fmc`.
+//! number dialog. Every save goes to a temporary config folder, so no test touches the owner's `~/.config/fmc`.
 
 use std::fs;
 use std::os::unix::fs::symlink;
@@ -34,7 +34,7 @@ fn paged(text: Option<&str>) -> Paged {
         fs::write(&file, text).unwrap();
     }
     let app = TestApp::new(120, 40);
-    let model = Rc::new(RefCell::new(new_model(app.app(), &root, root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     model.borrow_mut().settings.path = Some(file.clone());
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     capture::wire(app.app(), &model, &ui);

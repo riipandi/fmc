@@ -1,4 +1,4 @@
-//! The core of fmc: pure logic with no I/O and no `opentui` (`.agents/docs/rust.md`, "Layout rules").
+//! The core of fmc: pure logic with no I/O and no `opentui`.
 //! The binary (`main.rs`) adds the services, the app loop, and the views on top.
 
 pub mod diff;

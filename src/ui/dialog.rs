@@ -1,4 +1,4 @@
-//! The dialog: a box centred over the page, with the page behind it dimmed by a scrim (plan-00012, D1). A title, a message
+//! The dialog: a box centred over the page, with the page behind it dimmed by a scrim. A title, a message
 //! that wraps, an optional one-line field, an inline error, and buttons. In the compact tier it spans the width less a
 //! column on each side.
 

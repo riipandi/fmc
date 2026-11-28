@@ -1,4 +1,4 @@
-//! The reader's git sign strip on a real repository (plan-00008): the signs of an edited, deleted, and clean text, the
+//! The reader's git sign strip on a real repository: the signs of an edited, deleted, and clean text, the
 //! strip's column, and the answers that are dropped. A text is shown as the app shows it, with its signs read the way
 //! the job reads them.
 
@@ -45,7 +45,7 @@ fn repository(edit: Option<&str>) -> TempDir {
 /// repository, and only with the setting on.
 fn reading(dir: &Path, git_gutter: bool) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(COLUMNS, 24);
-    let model = Rc::new(RefCell::new(new_model(app.app(), dir, dir.to_path_buf(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), dir.to_path_buf(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     let path = dir.join("spells.txt");
     let text = fs::read_to_string(&path).unwrap();
@@ -140,7 +140,7 @@ fn an_answer_for_another_showing_or_file_is_dropped() {
     let dir = repository(Some("Hermione Granger\nLeigh Teabing\nSophie Neveu\n"));
     let path = dir.path().join("spells.txt");
     let app = TestApp::new(COLUMNS, 24);
-    let mut m = new_model(app.app(), dir.path(), dir.path().to_path_buf(), None);
+    let mut m = new_model(app.app(), dir.path().to_path_buf(), None);
     m.shown = Shown::Text {
         path: path.clone(),
         document: decode(b"Hermione Granger\n").unwrap(),

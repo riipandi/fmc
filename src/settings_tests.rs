@@ -474,3 +474,64 @@ fn linked_leaves_a_file_with_its_own_schema_or_that_is_not_an_object() {
 fn a_key_read_outside_keys_fails_the_tests() {
     field(&Map::new(), "invisibility_cloak");
 }
+
+#[test]
+fn editor_names_an_app_or_a_path_and_a_bad_value_is_skipped_with_a_notice() {
+    assert_eq!(parse("{}").settings.editor, "");
+    assert_eq!(parse(r#"{"editor": "Zed"}"#).settings.editor, "Zed");
+    assert_eq!(parse(r#"{"editor": "/Applications/Zed.app"}"#).settings.editor, "/Applications/Zed.app");
+    let parsed = parse(r#"{"editor": ["Zed"]}"#);
+    assert_eq!(parsed.settings.editor, "");
+    assert!(parsed.notices[0].contains("editor must be an app name or path"), "{:?}", parsed.notices);
+}
+
+#[test]
+fn the_schema_gives_editor_a_string_with_an_empty_default() {
+    let schema = schema_value();
+    assert_eq!(schema["properties"]["editor"]["type"], json!("string"));
+    assert_eq!(schema["properties"]["editor"]["default"], json!(""));
+}
+
+#[test]
+fn open_with_names_apps_per_pattern_and_a_bad_entry_is_skipped_with_a_notice_naming_it() {
+    let parsed = parse(
+        r#"{"open_with": {"*.md": ["Zed", "/Applications/Typora.app"], "docs/**": "Zed", "*.png": ["Pixelmator Pro", 3, ""], "*.log": [], "docs/{a": ["Zed"]}}"#,
+    );
+    let table = parsed.settings.open_with;
+    assert_eq!(
+        table.winner(None, "Gringotts.md"),
+        Some(&vec!["Zed".to_string(), "/Applications/Typora.app".to_string()])
+    );
+    assert_eq!(table.winner(None, "vault.png"), Some(&vec!["Pixelmator Pro".to_string()]));
+    assert_eq!(table.winner(None, "vault.log"), Some(&Vec::new()));
+    let notices = parsed.notices.join("\n");
+    assert!(notices.contains("\"docs/**\" is skipped: its value must be an array"), "{notices}");
+    assert_eq!(notices.matches("\"*.png\" has an item that is not a non-empty string").count(), 2, "{notices}");
+    assert!(notices.contains("\"docs/{a\" is skipped"), "{notices}");
+    assert_eq!(parsed.notices.len(), 4, "{notices}");
+}
+
+#[test]
+fn open_with_that_is_not_an_object_offers_no_app() {
+    let parsed = parse(r#"{"open_with": ["Zed"]}"#);
+    assert!(parsed.settings.open_with.winner(None, "Gringotts.md").is_none());
+    assert!(parsed.notices[0].contains("open_with must be an object"), "{:?}", parsed.notices);
+}
+
+#[test]
+fn open_with_picks_the_pattern_file_associations_picks() {
+    let parsed = parse(
+        r#"{"file_associations": {"*.md": "json", "docs/**/*.md": "plaintext"}, "open_with": {"*.md": ["Zed"], "docs/**/*.md": ["Typora"]}}"#,
+    );
+    let relative = Some("docs/hogwarts/notes.md");
+    assert_eq!(parsed.settings.file_associations.language(relative, "notes.md"), Some(Language::Plain));
+    assert_eq!(parsed.settings.open_with.winner(relative, "notes.md"), Some(&vec!["Typora".to_string()]));
+}
+
+#[test]
+fn the_schema_gives_open_with_an_object_of_non_empty_app_lists() {
+    let schema = schema_value();
+    assert_eq!(schema["properties"]["open_with"]["type"], json!("object"));
+    assert_eq!(schema["properties"]["open_with"]["additionalProperties"]["type"], json!("array"));
+    assert_eq!(schema["properties"]["open_with"]["additionalProperties"]["items"]["minLength"], json!(1));
+}

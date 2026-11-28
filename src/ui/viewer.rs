@@ -1,7 +1,7 @@
 //! The reader's scrolling pane (Scouter `src/reader/reader-pane.ts`, the `ScrollBoxRenderable` of the viewer): the
 //! text, the rendered Markdown, and the picture scroll inside it, both ways. Its own bars are hidden; the viewer's
 //! bar is `ui/scrollbar.rs`, which Scouter paints over the same position. A gutter sits beside the box, outside its
-//! scroll, so a sideways pan moves only the text (architecture.md, "the line-number gutter stays put").
+//! scroll, so a sideways pan moves only the text.
 
 use opentui::prelude::*;
 use opentui::widget::ScrollBox;

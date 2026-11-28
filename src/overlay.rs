@@ -1,4 +1,4 @@
-//! The overlays over the page (plan-00012, D1): a context menu and a dialog. While one is open the app gives it every key
+//! The overlays over the page: a context menu and a dialog. While one is open the app gives it every key
 //! (`app/capture.rs`), and these types decide what each key does. A key an overlay does not use is swallowed: `Stay`.
 //! No widget and no I/O; the app draws the overlay and carries out what it answers.
 
@@ -17,17 +17,27 @@ pub struct Item {
     pub rule: bool,
 }
 
+/// A menu's rows, its selection, and its window: the rows it shows at once. A menu longer than its window scrolls, so
+/// the selection stays in view; a menu that fits shows every row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Menu {
     items: Vec<Item>,
     selected: usize,
+    top: usize,
+    shown: usize,
 }
 
 impl Menu {
     /// A menu with its first enabled row selected, or row 0 when no row is enabled.
     pub fn new(items: Vec<Item>) -> Self {
+        let shown = items.len();
+        Self::scrolled(items, shown)
+    }
+
+    /// A menu that shows `shown` rows at once and scrolls to keep the selection in view.
+    pub fn scrolled(items: Vec<Item>, shown: usize) -> Self {
         let selected = items.iter().position(|item| item.enabled).unwrap_or(0);
-        Self { items, selected }
+        Self { items, selected, top: 0, shown: shown.max(1) }
     }
 
     pub fn items(&self) -> &[Item] {
@@ -36,6 +46,16 @@ impl Menu {
 
     pub fn selected(&self) -> usize {
         self.selected
+    }
+
+    /// The index of the first row the window shows. A row's index in `items` is `top` plus its place in the window.
+    pub fn top(&self) -> usize {
+        self.top
+    }
+
+    /// The rows the window shows, in item order.
+    pub fn window(&self) -> &[Item] {
+        &self.items[self.top..(self.top + self.shown).min(self.items.len())]
     }
 
     /// The pointer moved over row `index`: the row is selected when it is enabled, as the keys select it. Returns whether
@@ -82,8 +102,18 @@ impl Menu {
         };
         if let Some(index) = next {
             self.selected = index;
+            self.follow();
         }
         Outcome::Stay
+    }
+
+    /// Moves the window the least that shows the selection.
+    fn follow(&mut self) {
+        if self.selected < self.top {
+            self.top = self.selected;
+        } else if self.selected >= self.top + self.shown {
+            self.top = self.selected + 1 - self.shown;
+        }
     }
 }
 

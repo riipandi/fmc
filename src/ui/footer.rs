@@ -1,5 +1,5 @@
-//! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the location or a message, and facts on
-//! the right; then a row of key hints that fit. In the compact tier the footer is one row, the bottom bar (`ui/bars.rs`).
+//! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the browsed root and its branch or a message,
+//! and facts on the right; then a row of key hints that fit. In the compact tier the footer is one row, the bottom bar (`ui/bars.rs`).
 //! `FooterState::render` is pure; `Footer` holds the widgets.
 
 use std::cell::RefCell;
@@ -30,7 +30,6 @@ pub enum DocumentInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DiffInfo {
-    pub location: String,
     pub files: usize,
     pub all_files: bool,
     pub truncated: bool,
@@ -51,8 +50,10 @@ pub struct FooterState {
     pub pane: Pane,
     pub prompt: Option<Prompt>,
     pub message: Option<Message>,
-    /// Already shortened with `~` for the home folder (`tildify`).
-    pub location: String,
+    /// The browsed root, already shortened with `~` for the home folder (`tildify`).
+    pub root: String,
+    /// The root's branch, or the short hash of a detached `HEAD`; `None` outside a repository.
+    pub branch: Option<String>,
     pub document: Option<DocumentInfo>,
     pub diff: Option<DiffInfo>,
     /// Scroll position per mode: browse, diff.
@@ -63,13 +64,13 @@ pub struct FooterState {
     pub sidebar_hidden: bool,
     /// The `:` command line's text while it is open; it takes the footer's left side (`Prompt::Command`).
     pub command: Option<String>,
-    /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does (plan-00004, P8).
+    /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does.
     pub selection: bool,
     /// The page on screen, which names the compact bottom bar's segments (`ui/bars.rs`).
     pub page: Page,
     /// The open prompt's own text, which the compact bottom bar shows after `Cancel`.
     pub prompt_text: Option<Vec<Seg>>,
-    /// How many tree rows are marked; zero hides the count (plan-00014, D8).
+    /// How many tree rows are marked; zero hides the count.
     pub marked: usize,
 }
 
@@ -80,7 +81,8 @@ impl Default for FooterState {
             pane: Pane::Files,
             prompt: None,
             message: None,
-            location: String::new(),
+            root: String::new(),
+            branch: None,
             document: None,
             diff: None,
             positions: [None, None],
@@ -105,6 +107,34 @@ pub fn tildify(path: &str, home: Option<&Path>) -> String {
     }
 }
 
+/// The gap between the root and the branch on the footer's left side.
+const BRANCH_GAP: &str = "  ";
+
+/// The root as the footer's narrowest form: its last name after `…/`. A root with no folder part, or one short enough
+/// that `/` and its name are shorter than `…/`, is its own form.
+fn last_name(root: &str) -> String {
+    let trimmed = root.trim_end_matches('/');
+    match trimmed.rfind('/') {
+        Some(i) if i > 0 => format!("…/{}", &trimmed[i + 1..]),
+        _ => root.to_string(),
+    }
+}
+
+/// The folder part dim and the last name in `text`; a trailing `/` stays with the name (JS
+/// `lastIndexOf("/", length - 2)`, which still looks at index 0 of a one-character string).
+fn root_segments(shown: &str, p: &Palette) -> Vec<Seg> {
+    let end = shown.len().saturating_sub(1).max(shown.len().min(1));
+    let cut = shown.as_bytes()[..end].iter().rposition(|&b| b == b'/').map_or(0, |i| i + 1);
+    vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.text)]
+}
+
+/// The root's segments with the branch after the gap, in the name's colour.
+fn with_branch(mut segments: Vec<Seg>, branch: &str, p: &Palette) -> Vec<Seg> {
+    segments.push(Seg::plain(BRANCH_GAP));
+    segments.push(Seg::new(branch, p.text));
+    segments
+}
+
 struct Fact {
     key: &'static str,
     segments: Vec<Seg>,
@@ -127,7 +157,7 @@ impl FooterState {
         (left, facts, hints)
     }
 
-    /// The compact bottom bar (plan-00005, D3): an open prompt replaces it, a notice shows in it for its time, and
+    /// The compact bottom bar: an open prompt replaces it, a notice shows in it for its time, and
     /// otherwise the page's segments. Returns each tap's cell and key with the text.
     pub fn bar(
         &self,
@@ -159,16 +189,25 @@ impl FooterState {
             let fg = if message.error { p.error } else { p.accent_soft };
             return vec![Seg::new(fit_start(&message.text, columns, measure), fg)];
         }
-        let location = match self.mode {
-            Mode::Diff => self.diff.as_ref().map_or("", |d| d.location.as_str()),
-            Mode::Browse | Mode::Settings => self.location.as_str(),
-        };
-        let shown = fit_end(location, columns, measure);
-        // The folder part is dim and the last name in `text`; a trailing `/` stays with the name (JS
-        // `lastIndexOf("/", length - 2)`, which still looks at index 0 of a one-character string).
-        let end = shown.len().saturating_sub(1).max(shown.len().min(1));
-        let cut = shown.as_bytes()[..end].iter().rposition(|&b| b == b'/').map_or(0, |i| i + 1);
-        vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.text)]
+        let Some(branch) = &self.branch else { return root_segments(&fit_end(&self.root, columns, measure), p) };
+        let branch = format!("⎇ {branch}");
+        let branch_width = measure(&branch);
+        let gap = BRANCH_GAP.len();
+        if measure(&self.root) + gap + branch_width <= columns {
+            return with_branch(root_segments(&self.root, p), &branch, p);
+        }
+        // The root is cut from the left until it is down to its last name, then the branch is cut from the right.
+        let last = last_name(&self.root);
+        let last_width = measure(&last);
+        if last_width + gap + branch_width <= columns {
+            let root = fit_end(&self.root, columns - gap - branch_width, measure);
+            return with_branch(root_segments(&root, p), &branch, p);
+        }
+        if last_width + gap < columns {
+            let branch = fit_start(&branch, columns - last_width - gap, measure);
+            return with_branch(root_segments(&last, p), &branch, p);
+        }
+        root_segments(&fit_end(&self.root, columns, measure), p)
     }
 
     fn candidate_facts(&self, p: &Palette) -> Vec<Fact> {
@@ -287,7 +326,7 @@ impl FooterState {
             }
         };
         // Below 80 columns a short row keeps the hints that leave the state first, and `Copy` leads while a selection
-        // exists (plan-00004, P6, P8, D3). At 80 columns and wider the order is Scouter's.
+        // exists. At 80 columns and wider the order is Scouter's.
         if tier(u16::try_from(columns).unwrap_or(u16::MAX)) != Tier::Wide {
             if self.selection && self.prompt.is_none() {
                 hints.retain(|hint| hint.0 != "y");
@@ -353,7 +392,7 @@ impl Footer {
     }
 
     pub fn paint(&self, state: &FooterState, columns: usize, p: &Palette, measure: Measure<'_>) {
-        // The compact footer is the bottom bar alone, one row (architecture.md, record 7).
+        // The compact footer is the bottom bar alone, one row.
         if tier(u16::try_from(columns).unwrap_or(u16::MAX)) == Tier::Compact {
             self.root.height(1);
             self.band.visible(false);

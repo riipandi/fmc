@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use fmc::reader::document::decode;
 use opentui::testing::TestApp;
@@ -14,7 +14,7 @@ fn reading(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
 fn reading_text(columns: u16, text: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root, None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);

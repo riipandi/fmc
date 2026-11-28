@@ -34,6 +34,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 - Below 80 columns the sidebar hides once a file is open, and the reader takes the full width. The welcome screen keeps the sidebar from 60 columns up. Scouter always shows the sidebar.
 - At 80 columns and wider, a mark on the border shows or hides the sidebar with a click: `«` on the sidebar's border while it is shown, and `»` on the reader's left border while it is hidden. Below 80 columns those marks are not drawn. The `‹` and `›` chevrons at the start of the header titles take their place from 60 to 79 columns, and a tap on the title beside a chevron does the same. A manual choice holds until the width crosses 80 again.
 - The sidebar's visibility and the dotfile choice are not saved across runs.
+- The footer's left side shows the browsed root, with `~` for the home folder, and the git branch as `⎇ name` (a detached `HEAD` shows `⎇` and its short hash). It shows on the files, reader, Settings, and changes screens from 60 columns up, and the root is cut from the left before the branch. Scouter shows the selected file's or folder's path there, which the reader's header already names (`architecture.md`, "Approved deviation: the footer shows the browsed root and the git branch"). Below 60 columns the bottom bar keeps its words, and neither the root nor the branch is shown there.
 - Below 60 columns (a phone), fmc is a two-page browser. The file list fills the screen, opening a file shows it full screen, and the header's `‹` (or `q` or `Esc`) goes back. The bottom bar has large buttons with words: `Find`, `Changes`, and `Keys` on the list; `Back`, `Search`, and `Keys` on the reader. There is no sidebar and no welcome card. From 60 to 74 columns the welcome keeps its wordmark, tagline, and prompt, and drops its card. A tap acts when the finger lifts without moving, so a swipe never opens a file.
 - From 60 to 79 columns the list sits beside the reader and hides once a file is open. `‹` and `›` in the titles hide and show it.
 
@@ -47,7 +48,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 - Moving through the file list previews each file in the reader while the list keeps the focus (auto-preview). Press `p` in the list to turn it off or on, or set `auto_preview` in the settings file. Scouter shows a file only when you open it.
 - Highlighting follows `file_associations` in the settings file. A pattern can name the filetype a file is shown as: `*.rs.bak` as Rust, `.env.*` as an env file, or `docs/**/*.txt` as Markdown. `plaintext` shows a file with no highlighting. Scouter reads the extension only.
-- Languages beyond Scouter's are coloured: astro, diff, elixir, heex, hcl, jsdoc, lua, regex, sql, svelte, vim, and xml. `.heex`, `.hcl`, `.tf`, and `.tfvars` (Terraform) are read as heex and hcl. Scouter shows these files plain. The code inside some of them is coloured as its own language: a Svelte or Astro `<script>` and `<style>` block, an Astro frontmatter, the markup of a HEEx template, and the HTML of an Elixir `~H` sigil. Scouter shows these plain.
+- Languages beyond Scouter's are coloured: astro, diff, elixir, heex, hcl, jsdoc, json5, just, lua, query, regex, sql, svelte, vim, vimdoc, and xml. `.heex`, `.hcl`, `.tf`, and `.tfvars` (Terraform) are read as heex and hcl; `.json5` as json5; `.scm` (a tree-sitter query) as query; and `justfile` as just. The pattern argument of `find`, `match`, `gmatch`, and `gsub` in a Lua file is coloured as a Lua pattern. Scouter shows these strings plain. Scouter shows these files plain. The code inside some of them is coloured as its own language: a Svelte or Astro `<script>` and `<style>` block, an Astro frontmatter, the markup of a HEEx template, and the HTML of an Elixir `~H` sigil. Scouter shows these plain.
 - HTML's `<script>` and `<style>` blocks are coloured as JavaScript and CSS. Scouter shows them plain.
 - In JavaScript, TypeScript, and Python, a regex is coloured as a pattern: a regex literal, and the string of Python's `re` functions such as `re.compile(r"...")`. A `/** */` comment is coloured by its JSDoc tags, so `@param` reads as a keyword. A `//` comment and an ordinary string are unchanged. Scouter shows these plain. A fenced block in one of these languages in Markdown is coloured the same way.
 - Line numbers stay in place when you scroll sideways. In Scouter they scroll away with the text.
@@ -78,6 +79,11 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 ## File operations
 
 - fmc creates, renames, copies, moves, and deletes files from the file list, and it has a context menu for them (`Space`, or a right-click). Scouter is read-only and has none of this. Writes stay inside the folder fmc opened, links are never followed, and a delete goes to the Trash, except a link, which Finder will not trash, so fmc refuses it. Marks (`s`) and the bulk copy, cut, and delete over them are fmc's own (`architecture.md`, "The file-manager operations are the one write path" and "Marks are a set of paths in the browser").
+
+## Opening in other apps
+
+- fmc opens a file or folder in another app. `o` uses the app macOS picks for it, `O` lists the apps that open it, `e` opens the folder in the editor set in the settings, and `E` shows the row in Finder. Scouter has none of these: it spawns only `pbcopy` and `git`. Every launch goes through `/usr/bin/open` (see [Usage](usage.md#opening-in-other-apps) and `architecture.md`, "Approved deviation: files and folders open in other apps").
+- The `O` picker's rows, and its Finder row, which is always last, are fmc's own (`architecture.md`, "Approved deviation: `open_with` in settings.json and the Open With picker").
 
 ## Help
 

@@ -1,5 +1,5 @@
-//! The compact tier's bottom bar (plan-00005, D3): equal segments, each naming the key its tap presses, so a tap runs the
-//! same action as the key (plan-00004, D2; `app/keys.rs` `hint_presses`).
+//! The compact tier's bottom bar: equal segments, each naming the key its tap presses, so a tap runs the
+//! same action as the key (`app/keys.rs` `hint_presses`).
 
 use std::ops::Range;
 
@@ -22,9 +22,8 @@ fn segment(label: &str, key: &'static str) -> Segment {
     Segment { label: label.into(), key }
 }
 
-/// The segments of a page's bottom bar (D3). `body` is the changes body shown on the reader page, which keeps the
-/// changes labels. `All` names the scope on screen, and `Copy` takes the search's place while text is selected
-/// (architecture.md, record 7 and the phone rule P8).
+/// The segments of a page's bottom bar. `body` is the changes body shown on the reader page, which keeps the
+/// changes labels. `All` names the scope on screen, and `Copy` takes the search's place while text is selected.
 pub fn page_segments(page: Page, body: bool, all_files: bool, selection: bool) -> Vec<Segment> {
     let changes =
         || vec![segment("Back", "q"), segment(if all_files { "All" } else { "One" }, "a"), segment("Split", "s")];
@@ -79,7 +78,7 @@ pub fn render(segments: &[Segment], columns: usize, p: &Palette) -> (Vec<Seg>, V
     (drawn, cells.into_iter().zip(segments.iter().map(|segment| segment.key)).collect())
 }
 
-/// The bottom bar while a prompt is open (D3): `Cancel` in the first cell, then the prompt's own text, which the bar
+/// The bottom bar while a prompt is open: `Cancel` in the first cell, then the prompt's own text, which the bar
 /// clips at its width. The cell's tap presses `Esc`.
 pub fn prompt(text: &[Seg], columns: usize, p: &Palette) -> (Vec<Seg>, Vec<(Range<usize>, &'static str)>) {
     let cancel = cells(columns, 3)[0].clone();

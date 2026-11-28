@@ -125,7 +125,7 @@ A column: a row of two panels that fills the screen, then the footer.
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
 - **Panels**: rounded borders in every tier; the focused panel border is accent, the other is `border`.
 - **Header**: two rows at the top of each panel, with a hairline under it, in every tier.
-- **Footer**: two rows from 60 columns up. Row one: a pill, the location or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last. Below 60 columns it is one row of words (see Tiers).
+- **Footer**: two rows from 60 columns up. Row one: a pill, the browsed root and its git branch (`⎇ name`) or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last. Below 60 columns it is one row of words, with no root or branch (see Tiers).
 
 ### Tiers
 
@@ -210,6 +210,8 @@ One band per changed file on the tinted background: the marker, a fold chevron, 
 ### Context menu
 
 A rounded border in `accent` on the `tint` background, over the page at the pointer or at the selected row (`Space`, or a right-click on a row). Each row is one line, padded two columns on each side: the label in `text` and the row's key at the right edge in `muted`. The selected row fills with `row-active-bg` and its label is bold; it has no `▎` marker (the owner, 2026-11-27). Delete's label is in `error`. A disabled row (Paste with nothing copied) is `muted`, its key `dim`, and the selection skips it. A rule in `border` separates the groups: creating (New file, New folder), changing an entry (Rename to Duplicate), and Delete. The box is the longest label, a three-column gap, and the longest key, plus six columns wide, and the rows and rules plus two tall. It sits at its anchor and flips above it, or moves left, to stay on the screen. In the compact tier it is a bottom sheet across the full width, above the bottom bar. Scouter has no menu (`architecture.md`, "The context menu and the dialog are fmc views").
+
+A menu longer than its window scrolls. The window shows up to sixteen rows, or fewer on a short screen, and moves with the selection, so the Open With picker fits any terminal. The menu's look does not change while it scrolls.
 
 ### Dialog
 

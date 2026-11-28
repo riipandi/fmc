@@ -211,3 +211,31 @@ fn other_option_cmd_and_ctrl_keys_do_nothing_in_the_field_and_a_confirm_has_no_f
     assert_eq!(confirm.key(modified("backspace", true, false, false)), Outcome::Stay);
     assert_eq!(confirm.focus, Stop::Button(0), "a confirm's focus does not move");
 }
+
+/// A scrolled menu shows its window and moves it with the selection, in both directions.
+#[test]
+fn a_scrolled_menu_moves_its_window_with_the_selection() {
+    let items: Vec<Item> = (0..6).map(|n| row(&format!("Hogwarts {n}"), true)).collect();
+    let mut menu = Menu::scrolled(items, 3);
+    assert_eq!((menu.top(), menu.window().len()), (0, 3));
+    for _ in 0..4 {
+        menu.key(key("down", ""));
+    }
+    assert_eq!((menu.selected(), menu.top()), (4, 2), "the window follows the selection down");
+    assert_eq!(menu.window()[2].label, "Hogwarts 4");
+    for _ in 0..3 {
+        menu.key(key("up", ""));
+    }
+    assert_eq!((menu.selected(), menu.top()), (1, 1), "the window follows the selection up");
+}
+
+/// The keys and the pointer name a row by its index in the whole menu: a scrolled window's row is `top` plus its place.
+#[test]
+fn a_scrolled_menu_picks_by_the_whole_menu_index() {
+    let items: Vec<Item> = (0..6).map(|n| row(&format!("Hogwarts {n}"), true)).collect();
+    let mut menu = Menu::scrolled(items, 3);
+    for _ in 0..4 {
+        menu.key(key("down", ""));
+    }
+    assert_eq!(menu.pick(menu.top() + 2), Outcome::Pick(4));
+}

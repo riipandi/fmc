@@ -1,4 +1,4 @@
-//! Every operation and every refusal of plan-00012 D5 and D6, in temporary folders only. Nothing here touches the
+//! Every operation and every refusal of the write layer, in temporary folders only. Nothing here touches the
 //! repository, `$HOME`, or the real Trash: the Trash call is behind `trash_with`, and a test passes its own `delete`.
 
 use std::cell::Cell;

@@ -1,6 +1,6 @@
 //! The patterns of `file_associations`: `*`, `**`, `?`, and `{a,b}`, as VS Code's `files.associations` reads them. A
 //! pattern without `/` matches a file name; a pattern with `/` matches the path relative to the opened folder. Hand
-//! written, so no glob crate is needed (`rules.md`, "Dependencies").
+//! written, so no glob crate is needed.
 
 /// Whether the filesystem ignores case: macOS and Windows do, so a pattern matches `Vault.RS.BAK` as it matches the file.
 pub const CASE_INSENSITIVE: bool = cfg!(any(target_os = "macos", target_os = "windows"));

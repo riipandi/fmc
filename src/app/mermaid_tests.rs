@@ -1,8 +1,8 @@
-//! A Mermaid fence in the rendered Markdown view (plan-00006 phase 2): drawn as a diagram, framed when it cannot be,
-//! measured again on a resize, and left as text in the source view (D1).
+//! A Mermaid fence in the rendered Markdown view: drawn as a diagram, framed when it cannot be,
+//! measured again on a resize, and left as text in the source view.
 
 use std::cell::RefCell;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use fmc::explorer::{Entry, Kind};
@@ -20,7 +20,7 @@ const HOGWARTS_FLOWCHART: &str = "flowchart LR\n    subgraph Hogwarts\n        A
 fn reading_markdown(columns: u16, markdown: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 40);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     let notes = root.join("notes.md");
     {

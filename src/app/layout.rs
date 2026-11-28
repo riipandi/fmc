@@ -1,4 +1,4 @@
-//! The sidebar in the app (plan-00002): whether it shows, the width it takes, its edge and mark on the border, and what
+//! The sidebar in the app: whether it shows, the width it takes, its edge and mark on the border, and what
 //! `Ctrl+/`, a click on the mark, and `Ctrl+←/→` do to it. The rule itself is `fmc::layout`.
 
 use std::cell::RefCell;
@@ -13,7 +13,7 @@ use super::{Model, Ui, pages, paint};
 use crate::ui::sidebar;
 use crate::ui::styled::color;
 
-/// A document is open, or the changes screen's body is: the 80-column rule applies (D7).
+/// A document is open, or the changes screen's body is: the 80-column rule applies.
 fn document(m: &Model) -> bool {
     m.shown.is_some() || m.changes.is_some()
 }
@@ -23,12 +23,12 @@ fn held(m: &Model) -> bool {
     m.finder.is_some()
 }
 
-/// The toggle works where the list can hide: with a document, in the medium and wide tiers (D7).
+/// The toggle works where the list can hide: with a document, in the medium and wide tiers.
 fn can_hide(m: &Model, columns: u16) -> bool {
     !held(m) && document(m) && tier(columns) != Tier::Compact
 }
 
-/// The medium tier's chevron on the list's header: `‹` hides the list while it shows and can hide (plan-00005, record 10).
+/// The medium tier's chevron on the list's header: `‹` hides the list while it shows and can hide.
 pub fn list_chevron(m: &Model, columns: u16) -> Option<String> {
     (tier(columns) == Tier::Medium && shown(m, columns) && can_hide(m, columns)).then(|| "‹".into())
 }
@@ -68,8 +68,7 @@ pub fn sync(m: &mut Model, columns: u16) {
     }
 }
 
-/// `Ctrl+/`, `Ctrl+_`, or a click on the mark: showing the sidebar also focuses it (architecture.md, "Auto-preview in
-/// the sidebar").
+/// `Ctrl+/`, `Ctrl+_`, or a click on the mark: showing the sidebar also focuses it.
 pub fn toggle_key(m: &mut Model, columns: u16) {
     if tier(columns) == Tier::Compact {
         return pages::switch(m);
@@ -112,7 +111,7 @@ pub fn lay_out(ui: &Ui, m: &Model, columns: u16, p: &Palette) -> u16 {
     let width = width(m, columns);
     ui.browser_panel.visible(visible);
     ui.browser_panel.width(width);
-    // In compact the reader is the page when the list is not (plan-00005, D2); the panels are then full width.
+    // In compact the reader is the page when the list is not; the panels are then full width.
     ui.viewer_panel.visible(!compact || !visible);
     ui.handle.visible(visible && !compact);
     ui.handle.position(Edge::Left, width.saturating_sub(1));
@@ -157,9 +156,8 @@ pub fn wire(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
-    // The lead and the title of each header run one press: in compact it is Back, as `q` is (plan-00005, record 6), and in
-    // medium the chevron shows or hides the list (record 10). The press stops at the header, so the pane's own press does
-    // not take the focus back.
+    // The lead and the title of each header run one press: in compact it is Back, as `q` is, and in medium the chevron
+    // shows or hides the list. The press stops at the header, so the pane's own press does not take the focus back.
     {
         let u = ui.borrow();
         for header in [&u.browser_header, &u.viewer_header] {

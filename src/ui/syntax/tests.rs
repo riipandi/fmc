@@ -16,54 +16,94 @@ fn every_vendored_grammar_compiles_with_its_query() {
     for filetype in ["javascript", "typescript", "typescriptreact", "markdown", "markdown_inline", "zig"] {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
-    for filetype in OWNERS {
+    for (filetype, _) in COPIED {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
     assert!(has_grammar("javascriptreact") && has_grammar("rust"));
 }
 
-/// The owner's twelve grammars (RI-2), each with the query it is registered with.
-const OWNERS: [&str; 12] =
-    ["diff", "elixir", "heex", "hcl", "jsdoc", "lua", "regex", "sql", "svelte", "xml", "astro", "vim"];
+/// The grammars whose queries are copied into `queries/`, each with the query it is registered with.
+const COPIED: [(&str, &str); 18] = [
+    ("diff", include_str!("queries/diff/highlights.scm")),
+    ("elixir", include_str!("queries/elixir/highlights.scm")),
+    ("heex", include_str!("queries/heex/highlights.scm")),
+    ("hcl", include_str!("queries/hcl/highlights.scm")),
+    ("jsdoc", include_str!("queries/jsdoc/highlights.scm")),
+    ("lua", include_str!("queries/lua/highlights.scm")),
+    ("regex", include_str!("queries/regex/highlights.scm")),
+    ("sql", include_str!("queries/sql/highlights.scm")),
+    ("svelte", include_str!("queries/svelte/highlights.scm")),
+    ("xml", include_str!("queries/xml/highlights.scm")),
+    ("astro", include_str!("queries/astro/highlights.scm")),
+    ("vim", include_str!("queries/vim/highlights.scm")),
+    ("query", include_str!("queries/query/highlights.scm")),
+    ("json5", include_str!("queries/json5/highlights.scm")),
+    ("vimdoc", include_str!("queries/vimdoc/highlights.scm")),
+    ("just", include_str!("queries/just/highlights.scm")),
+    ("luadoc", include_str!("queries/luadoc/highlights.scm")),
+    ("luap", include_str!("queries/luap/highlights.scm")),
+];
 
-fn owners_queries() -> [&'static str; 12] {
-    [
-        include_str!("queries/diff/highlights.scm"),
-        include_str!("queries/elixir/highlights.scm"),
-        include_str!("queries/heex/highlights.scm"),
-        include_str!("queries/hcl/highlights.scm"),
-        include_str!("queries/jsdoc/highlights.scm"),
-        include_str!("queries/lua/highlights.scm"),
-        include_str!("queries/regex/highlights.scm"),
-        include_str!("queries/sql/highlights.scm"),
-        include_str!("queries/svelte/highlights.scm"),
-        include_str!("queries/xml/highlights.scm"),
-        include_str!("queries/astro/highlights.scm"),
-        include_str!("queries/vim/highlights.scm"),
-    ]
-}
-
-/// The names a query captures, from each `@name`. A name starting with `_` is a predicate's helper (`#eq? @_scope`),
-/// which is never drawn.
-fn capture_names(query: &str) -> Vec<&str> {
-    query
-        .split('@')
+/// The names a query captures, from each `@name`. A string literal (`"@module"` is a keyword) and a comment are not
+/// captures, so both are cut first. A name starting with `_` is a predicate's helper (`#eq? @_scope`), which is never
+/// drawn.
+fn capture_names(query: &str) -> Vec<String> {
+    let mut code = String::new();
+    for line in query.lines() {
+        let mut quoted = false;
+        let mut chars = line.chars();
+        while let Some(c) = chars.next() {
+            if quoted {
+                match c {
+                    '\\' => {
+                        chars.next();
+                    }
+                    '"' => quoted = false,
+                    _ => {}
+                }
+            } else {
+                match c {
+                    '"' => quoted = true,
+                    ';' => break,
+                    _ => code.push(c),
+                }
+            }
+        }
+        code.push('\n');
+    }
+    code.split('@')
         .skip(1)
         .filter_map(|rest| {
             let end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.'))).unwrap_or(rest.len());
             let name = rest[..end].trim_end_matches('.');
-            (!name.is_empty()).then_some(name)
+            (!name.is_empty()).then(|| name.to_owned())
         })
         .collect()
 }
 
 #[test]
-fn every_capture_of_the_owners_queries_has_a_table_entry() {
-    for (filetype, query) in OWNERS.iter().zip(owners_queries()) {
+fn every_capture_of_the_copied_queries_has_a_table_entry() {
+    for (filetype, query) in COPIED {
         for name in capture_names(query) {
             assert!(
-                name.starts_with('_') || CAPTURE_NAMES.contains(&name),
+                name.starts_with('_') || CAPTURE_NAMES.contains(&name.as_str()),
                 "{filetype} captures {name}, not in the table"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_new_queries_capture_only_names_the_palette_styles() {
+    let theme = theme(&DARK);
+    for (filetype, query) in COPIED
+        .into_iter()
+        .filter(|(filetype, _)| matches!(*filetype, "query" | "json5" | "vimdoc" | "just" | "luadoc" | "luap"))
+    {
+        for name in capture_names(query) {
+            assert!(
+                name.starts_with('_') || theme.get(&name).is_some(),
+                "{filetype} captures {name}, which the palette does not style"
             );
         }
     }
@@ -92,6 +132,15 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("regex", "^[A-Z][a-z]+ (Langdon|Neveu)$", "(", "punctuation"),
         ("jsdoc", "/**\n * Opens the vault.\n * @param {string} key Robert Langdon's key\n */\n", "param", "keyword"),
         ("svelte", "<script>\n  let name = 'Hermione Granger';\n</script>\n<h1>{name}</h1>\n", "{", "punctuation"),
+        ("query", "; inherits: javascript\n(named_node name: (identifier) @variable)\n", "inherits", "keyword"),
+        ("query", "; format-ignore\n(named_node name: (identifier) @variable)\n", "format-ignore", "keyword"),
+        ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "'Hedwig'", "string"),
+        ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "3", "constant"),
+        ("vimdoc", "*vault-key*\n\nThe Louvre key: |vault-key|\n", "vault-key", "label"),
+        ("just", "set dotenv-load\nowl := \"Hedwig\"\n", "set", "keyword"),
+        ("just", "set dotenv-load\nowl := \"Hedwig\"\n", "Hedwig", "string"),
+        ("luadoc", "@class Vault\n@field key string\n", "@class", "keyword"),
+        ("luap", "^[A-Z]+%d$", "A", "constant"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");
@@ -113,6 +162,20 @@ fn the_extensions_opentui_lacks_are_highlighted() {
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/owls.ex")), Some("elixir"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/schema.sql")), Some("sql"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/Makefile.mk")), None);
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/justfile")), Some("just"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/Justfile")), Some("just"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/query.scm")), Some("query"));
+}
+
+#[test]
+fn a_vim_help_file_is_highlighted_only_by_its_association() {
+    // No default rule: a `.txt` in a `doc` folder is help text only where an association says so.
+    let root = Path::new("/Hogwarts/Gringotts");
+    let mut associations = Associations::default();
+    assert_eq!(language_for(&associations, root, &root.join("doc/owls.txt")), None);
+    associations.add("doc/*.txt", "vimdoc").unwrap();
+    assert_eq!(language_for(&associations, root, &root.join("doc/owls.txt")), Some("vimdoc"));
+    assert_eq!(language_for(&associations, root, &root.join("notes/owls.txt")), None);
 }
 
 #[test]
@@ -248,6 +311,21 @@ fn jsdoc_and_regex_are_painted_in_their_own_languages_colours() {
         ("python", "import re\nPATTERN = re.compile(r\"^[A-Z][a-z]+ Neveu$\")\n", "A-Z", syntax.constant),
         ("python", "print(\"[A-Z]\")\n", "[", syntax.string),
         ("markdown", "```js\n/** @param {string} key */\n```\n", "param", syntax.keyword),
+    ];
+    for (filetype, sample, token, expected) in cases {
+        let got = painted(sample, filetype, token);
+        assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
+    }
+}
+
+#[test]
+fn lua_match_patterns_are_painted_in_their_own_languages_colours() {
+    let syntax = DARK.syntax;
+    let cases = [
+        ("lua", "local owl = string.match(name, \"%d+\")\n", "%d", syntax.keyword),
+        ("lua", "local owl = (\"Hogwarts 713\"):match(\"%d+\")\n", "%d", syntax.keyword),
+        // string.format is not a pattern: its format string stays a string.
+        ("lua", "local owl = string.format(\"%d owls\", 3)\n", "%d", syntax.string),
     ];
     for (filetype, sample, token, expected) in cases {
         let got = painted(sample, filetype, token);

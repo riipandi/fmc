@@ -51,7 +51,7 @@ pub enum Reveal {
 pub struct Tree {
     root: PathBuf,
     nodes: HashMap<PathBuf, Node>,
-    /// Whether dotfiles and the folders named with a dot show (plan-00002, D5). Hidden, they and their children have no
+    /// Whether dotfiles and the folders named with a dot show. Hidden, they and their children have no
     /// rows; the listing keeps them, so showing them again needs no read.
     dotfiles: bool,
 }
@@ -234,7 +234,7 @@ impl Tree {
 
     /// One step toward showing `path`: the first folder above it that is not listed yet, or `Done` once every
     /// folder above it is expanded. Scouter's `expandTo` (`file-tree.ts:76-81`) stops one level short and leaves
-    /// the file's own parent collapsed; this expands that parent too (the approved deviation in `architecture.md`).
+    /// the file's own parent collapsed; this expands that parent too, so the file has a row to select.
     pub fn reveal(&mut self, path: &Path) -> Reveal {
         let Ok(rest) = path.strip_prefix(&self.root) else { return Reveal::Outside };
         let parts: Vec<&OsStr> = rest.iter().collect();

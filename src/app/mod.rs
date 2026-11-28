@@ -1,5 +1,5 @@
 //! The `opentui` app loop: the two panes and the footer, key and mouse dispatch, the tree's worker events, and theme
-//! changes. Terminal restore on exit and on panic is OpenTUI's (`rust.md`, "Contracts and traps").
+//! changes. Terminal restore on exit and on panic is OpenTUI's.
 
 mod capture;
 mod changes;
@@ -9,6 +9,7 @@ mod gutter;
 mod keys;
 mod layout;
 mod mouse;
+mod open;
 mod overlay;
 mod pages;
 mod poll;
@@ -59,7 +60,7 @@ use crate::ui::viewer::Viewer;
 use crate::ui::{syntax, welcome};
 
 /// Screen rows the list does not use: the footer (2), the panel's borders (2), and the header (2). Compact has a one-row
-/// footer, the bottom bar, and the same borders and header (plan-00007, D1 and D2).
+/// footer, the bottom bar, and the same borders and header.
 const LIST_CHROME_ROWS: usize = 6;
 const COMPACT_CHROME_ROWS: usize = 5;
 
@@ -81,7 +82,7 @@ struct Ui {
     diff: DiffBody,
     reader: CodeView,
     markdown: MarkdownView,
-    /// The git signs beside the rendered view's blocks (plan-00010 D6), over the viewer's left edge.
+    /// The git signs beside the rendered view's blocks, over the viewer's left edge.
     markdown_signs: SignStrip,
     picture: Picture,
     /// The preview of a text hit, in its own view beside the reader while the finder shows (Scouter `HitPreview`).
@@ -110,13 +111,11 @@ struct Pending {
 }
 
 struct Model {
-    /// The location the footer shows: the startup path, then each folder opened.
-    location: String,
     focus: Focus,
     /// The terminal's mode, from its background (`app/theme.rs`).
     mode: Mode,
     background: Option<String>,
-    /// The palettes the settings chose for each mode, and whether `theme_mode` forces one (plan-00015, A7, A13).
+    /// The palettes the settings chose for each mode, and whether `theme_mode` forces one.
     dark: Palette,
     light: Palette,
     choice: ModeChoice,
@@ -129,7 +128,7 @@ struct Model {
     /// A file or folder open is in flight; another open is refused (Scouter `runLoading`).
     loading: bool,
     /// The next file shown is the startup file, which opens with the reader focused as in Scouter (`finishShowing`);
-    /// a file opened from the tree keeps the list focused (approved deviation, architecture.md).
+    /// a file opened from the tree keeps the list focused, where Scouter moves the focus to the reader.
     focus_reader_on_open: bool,
     notice: Option<String>,
     message: Option<Message>,
@@ -195,13 +194,17 @@ struct Model {
     /// the strip shows only when both hold (`app/gutter.rs`).
     git_gutter: bool,
     in_repo: bool,
+    /// The branch of the browsed root, from the last browse poll (`None` outside a repository).
+    branch: Option<String>,
     /// Counts each text shown, so a sign answer finds the showing it was asked for (`app/gutter.rs`).
     serial: u64,
     /// The text of the `:` command line while it is open (`app/command.rs`).
     command: Option<String>,
     /// The terminal's width at the last paint: the tier reads it (`app/pages.rs`).
     columns: u16,
-    /// The page stack the compact tier draws (plan-00005, D2).
+    /// The terminal's height at the last paint: a menu that scrolls sizes its window from it (`app/open.rs`).
+    rows: u16,
+    /// The page stack the compact tier draws.
     pages: fmc::layout::Pages,
     /// The open context menu or dialog, which takes every key and click until it closes (`app/overlay.rs`).
     overlay: Option<fmc::overlay::Overlay>,
@@ -211,8 +214,7 @@ struct Model {
     overlay_task: Option<write::Task>,
     /// The entries `c` or `x` put on the clipboard (`app/write.rs`); cut rows are drawn muted.
     clipboard: Option<write::Clip>,
-    /// The run on the worker, while one is going: a second write is refused until it ends (plan-00012, D8; plan-00014,
-    /// D7).
+    /// The run on the worker, while one is going: a second write is refused until it ends.
     bulk: Option<write::Bulk>,
     /// The Settings page's values, its page while it is open, and its saves (`app/settings.rs`).
     settings: settings::Store,
@@ -235,7 +237,7 @@ impl Model {
         }
     }
 
-    /// The page background (A14): the terminal's tinted, unless a forced mode differs from the terminal's.
+    /// The page background: the terminal's tinted, unless a forced mode differs from the terminal's.
     fn tint(&self) -> Hex {
         page_background(self.background.as_deref(), self.mode, self.effective(), self.palette().fallback_background)
     }
@@ -260,9 +262,8 @@ impl Model {
 }
 
 /// The state a fresh app starts with: the browse root, the startup `pending` reveal, and the empty reader.
-fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) -> Model {
+fn new_model(app: &App, root: PathBuf, pending: Option<Pending>) -> Model {
     Model {
-        location: target.to_string_lossy().into_owned(),
         focus: Focus::List,
         mode: Mode::Dark,
         background: None,
@@ -310,9 +311,11 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         reader_jump: fmc::settings::READER_JUMP,
         git_gutter: fmc::settings::GIT_GUTTER,
         in_repo: false,
+        branch: None,
         serial: 0,
         command: None,
         columns: app.size().0,
+        rows: app.size().1,
         pages: Default::default(),
         overlay: None,
         overlay_at: (0, 0),
@@ -338,7 +341,7 @@ pub fn run(
     let options = AppOptions {
         palette_size: theme::PALETTE_SIZE,
         tab_focus: false,
-        // A drag selects and keeps the selection; `y` copies it (architecture.md, approved deviation).
+        // A drag selects and keeps the selection; `y` copies it, where Scouter copies on release.
         copy_on_select: false,
         theme: dark,
         light_theme: Some(light),
@@ -353,7 +356,7 @@ pub fn run(
         let parent = target.parent().unwrap_or(target).to_path_buf();
         (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
     };
-    let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
+    let model = Rc::new(RefCell::new(new_model(&app, root.clone(), pending)));
     {
         let mut m = model.borrow_mut();
         m.settings.values = settings.settings.clone();
@@ -409,6 +412,10 @@ pub fn run(
                 let mut u = ui.borrow_mut();
                 settings::event(cx.app(), &mut m, &mut u, event);
                 paint(cx.app(), &mut m, &mut u);
+            }
+            // A failed launch stays in the footer, so the reason can be read; a launch that worked clears like a copy does.
+            if matches!(event, Event::Launched { result: Ok(()), .. }) {
+                clear_message_later(cx.app(), &model, &ui);
             }
             repaint_after_layout(cx.app(), &model, &ui);
             poll::schedule(cx.app(), &model, &ui);
@@ -658,6 +665,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let p = &palette;
     let (columns, rows) = app.size();
     m.columns = columns;
+    m.rows = rows;
     let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
     let viewport = usize::from(rows).saturating_sub(chrome);
     m.browser.set_height(viewport);
@@ -740,7 +748,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let shows_preview = previewed.is_some();
     // The preview's line count, copied out: the model is changed below, which the borrow of `previewed` forbids.
     let preview_lines = previewed.map(|shown| shown.document.lines);
-    // The compact tier has no welcome screen: its list is the first page (plan-00005, record 4).
+    // The compact tier has no welcome screen: its list is the first page.
     ui.welcome.root.visible(!m.compact() && !m.shown.is_some() && !shows_preview && !on_changes && !on_settings);
     let previewing = m.shown.previewing();
     ui.reader.visible(m.shown.text().is_some() && !previewing && !shows_preview && !body && !on_settings);
@@ -783,7 +791,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     }
 
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
+    let root = tildify(&fmc::text::display_label(&m.browser.tree.root().to_string_lossy()), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
@@ -791,7 +799,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     // The outside gutters follow the scroll rows, so their numbers stay level with the text (`ui/reader.rs`).
     ui.reader.follow(ui.viewer.position().1);
     ui.preview.follow(ui.preview_viewer.position().1);
-    // The rendered view's git signs sit beside its blocks at the scroll (plan-00010 D6). Nothing shows outside it.
+    // The rendered view's git signs sit beside its blocks at the scroll. Nothing shows outside it.
     let (signs, strip) = gutter::drawn(m);
     let marks = match m.shown.text() {
         Some((document, ..)) if strip && m.shown.previewing() && !signs.is_empty() => {
@@ -812,7 +820,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     }
     ui.preview.set_wrap(false);
     // Unwrapped text takes the pane's inner width, the bar's column included: the pan range is that width less the
-    // viewport, and it stops where Scouter's does (issue-00008).
+    // viewport, and it stops where Scouter's does.
     ui.reader.set_width(u32::from(columns.saturating_sub(width + 2)));
     ui.preview.set_width(u32::from(columns.saturating_sub(width + 2)));
     ui.picture.fill(viewport as u32);
@@ -862,7 +870,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         _ => None,
     };
     let footer = FooterState {
-        location,
+        root,
+        branch: m.branch.clone(),
         mode: if on_settings {
             hints::Mode::Settings
         } else if body {
@@ -888,7 +897,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         sidebar_hidden: !layout::shown(m, columns),
         page: m.pages.top(),
         prompt_text,
-        // The marks are the tree's: the finder and the changes screen show none (plan-00014, D10).
+        // The marks are the tree's: the finder and the changes screen show none.
         marked: if m.finder.is_none() && m.changes.is_none() { m.browser.marked().len() } else { 0 },
     };
     ui.footer.set_background(tint);

@@ -14,7 +14,7 @@ fn plain(segments: &[Seg]) -> String {
 
 #[test]
 fn startup_band_and_hints_at_80_columns() {
-    let state = FooterState { location: "/private/tmp/fmc-ref/demo-repo".into(), ..FooterState::default() };
+    let state = FooterState { root: "/private/tmp/fmc-ref/demo-repo".into(), ..FooterState::default() };
     let (left, right, hints) = state.render(80, &DARK, &chars);
     assert_eq!(plain(&left), " FILES  /private/tmp/fmc-ref/demo-repo");
     assert!(right.is_empty());
@@ -22,6 +22,73 @@ fn startup_band_and_hints_at_80_columns() {
     assert_eq!(plain(&hints), " j k move   Enter open   / find   - up   h back   Tab reader   ^q quit");
     assert_eq!(left[2], Seg::new("/private/tmp/fmc-ref/", DARK.dim));
     assert_eq!(left[3], Seg::new("demo-repo", DARK.text));
+}
+
+/// A browsed root with a branch, which the footer's left side shows from 60 columns up.
+fn rooted(mode: Mode) -> FooterState {
+    FooterState {
+        mode,
+        root: "~/Hogwarts/library/restricted-section/forbidden-shelf".into(),
+        branch: Some("hogwarts".into()),
+        ..FooterState::default()
+    }
+}
+
+#[test]
+fn the_root_and_the_branch_show_on_every_screen() {
+    let diff = DiffInfo { files: 1, all_files: false, ..DiffInfo::default() };
+    for state in [rooted(Mode::Browse), rooted(Mode::Settings), FooterState { diff: Some(diff), ..rooted(Mode::Diff) }]
+    {
+        let mode = state.mode;
+        // At 120 columns the diff's facts on the right leave the whole root room.
+        let (left, _, _) = state.render(120, &DARK, &chars);
+        assert!(
+            plain(&left).ends_with("~/Hogwarts/library/restricted-section/forbidden-shelf  ⎇ hogwarts"),
+            "{mode:?}: {}",
+            plain(&left)
+        );
+        assert_eq!(
+            left.last().map(|seg| seg.fg),
+            Some(Some(DARK.text)),
+            "{mode:?}: the branch is in the name's colour"
+        );
+    }
+}
+
+#[test]
+fn a_message_replaces_the_root_and_the_branch() {
+    let state =
+        FooterState { message: Some(Message { text: "Still loading.".into(), error: false }), ..rooted(Mode::Browse) };
+    let (left, _, _) = state.render(80, &DARK, &chars);
+    assert_eq!(plain(&left), " FILES  Still loading.");
+}
+
+#[test]
+fn the_root_is_cut_before_the_branch_at_each_width() {
+    let state = rooted(Mode::Browse);
+    let left = |columns| plain(&state.render(columns, &DARK, &chars).0);
+    // The whole root fits at 80 columns and wider.
+    assert_eq!(left(120), " FILES  ~/Hogwarts/library/restricted-section/forbidden-shelf  ⎇ hogwarts");
+    assert_eq!(left(80), " FILES  ~/Hogwarts/library/restricted-section/forbidden-shelf  ⎇ hogwarts");
+    // At 60 the root loses its start, and the branch stays whole.
+    assert_eq!(left(60), " FILES  …ry/restricted-section/forbidden-shelf  ⎇ hogwarts");
+    // At 40 the root is down to its last names, and the branch is still whole.
+    assert_eq!(left(40), " FILES  …n/forbidden-shelf  ⎇ hogwarts");
+}
+
+#[test]
+fn the_branch_is_cut_from_the_right_once_the_root_is_down_to_its_last_name() {
+    let state = rooted(Mode::Browse);
+    // Room for `…/forbidden-shelf`, the gap, and one column of the branch: the branch keeps its start.
+    let left = plain(&state.render(30, &DARK, &chars).0);
+    assert_eq!(left, " FILES  …/forbidden-shelf  …");
+}
+
+#[test]
+fn a_detached_head_shows_its_short_hash_with_the_glyph() {
+    let state = FooterState { branch: Some("413519d".into()), ..rooted(Mode::Browse) };
+    let (left, _, _) = state.render(80, &DARK, &chars);
+    assert!(plain(&left).ends_with("  ⎇ 413519d"), "{}", plain(&left));
 }
 
 #[test]
@@ -37,7 +104,7 @@ fn hints_at_160_columns_match_scouter() {
 #[test]
 fn facts_drop_in_scouter_order() {
     let state = FooterState {
-        location: "/hogwarts/library/restricted-section/spells.md".into(),
+        root: "/hogwarts/library/restricted-section/spells.md".into(),
         document: Some(DocumentInfo::Text {
             lines: 120,
             language: "Markdown".into(),
@@ -54,9 +121,9 @@ fn facts_drop_in_scouter_order() {
 }
 
 #[test]
-fn messages_cut_from_the_right_locations_from_the_left() {
+fn messages_cut_from_the_right_roots_from_the_left() {
     let state =
-        FooterState { location: "/louvre/denon-wing/grande-galerie/mona-lisa.txt".into(), ..FooterState::default() };
+        FooterState { root: "/louvre/denon-wing/grande-galerie/mona-lisa.txt".into(), ..FooterState::default() };
     let (left, _, _) = state.render(30, &DARK, &chars);
     assert_eq!(plain(&left), " FILES  …lerie/mona-lisa.txt");
     let state = FooterState {
@@ -69,7 +136,7 @@ fn messages_cut_from_the_right_locations_from_the_left() {
 
 #[test]
 fn root_slash_is_dim() {
-    let state = FooterState { location: "/".into(), ..FooterState::default() };
+    let state = FooterState { root: "/".into(), ..FooterState::default() };
     let (left, _, _) = state.render(80, &DARK, &chars);
     assert_eq!(left[2], Seg::new("/", DARK.dim));
 }

@@ -1,15 +1,14 @@
-//! The layout tiers (architecture.md, "three layout tiers"), the sidebar's visibility in the medium and wide tiers
-//! (plan-00002, D1, D2, D7), and the compact tier's page stack (plan-00005, D2). With a document open, the sidebar hides
-//! below 80 columns; a manual choice holds until the width crosses 80 again, or a document opens or closes. The welcome
-//! screen and an open finder hold the sidebar. Scouter always draws the sidebar.
+//! The layout tiers, the sidebar's visibility in the medium and wide tiers, and the compact tier's page stack. With a
+//! document open, the sidebar hides below 80 columns; a manual choice holds until the width crosses 80 again, or a
+//! document opens or closes. The welcome screen and an open finder hold the sidebar. Scouter always draws the sidebar.
 
-/// The wide tier starts here: at 80 or more the layout is Scouter's, and a document hides the sidebar below it (D1).
+/// The wide tier starts here: at 80 or more the layout is Scouter's, and a document hides the sidebar below it.
 pub const BREAKPOINT: u16 = 80;
 
 /// The compact tier is below this many columns; the medium tier is from here up to `BREAKPOINT`.
 pub const COMPACT: u16 = 60;
 
-/// The three layout tiers by width: each range has its own binding constraint (architecture.md, record 1).
+/// The three layout tiers by width: each range has its own binding constraint.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Tier {
     Compact,
@@ -17,7 +16,7 @@ pub enum Tier {
     Wide,
 }
 
-/// The tier of a terminal `columns` wide. Every caller asks this rather than comparing widths (plan-00005, D1).
+/// The tier of a terminal `columns` wide. Every caller asks this rather than comparing widths.
 pub fn tier(columns: u16) -> Tier {
     if columns < COMPACT {
         Tier::Compact
@@ -28,7 +27,7 @@ pub fn tier(columns: u16) -> Tier {
     }
 }
 
-/// A screen of the compact tier (plan-00005, D2). `Files` is the bottom page and is never removed; the top page is the
+/// A screen of the compact tier. `Files` is the bottom page and is never removed; the top page is the
 /// one on screen.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
@@ -37,7 +36,7 @@ pub enum Page {
     Changes,
     Keys,
     Find,
-    /// The Settings page (plan-00015, D4): its own page in the compact tier, as Keys is.
+    /// The Settings page: its own page in the compact tier, as Keys is.
     Settings,
 }
 
@@ -85,7 +84,7 @@ pub struct Visibility {
 
 impl Visibility {
     /// Records the width and whether a document is open. A crossing of the breakpoint, or a document opening or
-    /// closing, returns a manual choice to automatic (D2, D7).
+    /// closing, returns a manual choice to automatic.
     pub fn observe(&mut self, columns: u16, document: bool) {
         if let Some((last_columns, last_document)) = self.last
             && (crosses(last_columns, columns) || last_document != document)

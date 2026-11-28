@@ -1,6 +1,6 @@
 # Rules
 
-updated: 2026-11-28T14:15:51+07:00
+updated: 2026-11-28T15:32:12+07:00
 
 The cross-area rules behind `AGENTS.md`. Rust code contracts: `rust.md`. Reasoning and decisions: `architecture.md`. Read the section a change touches before touching it.
 
@@ -29,6 +29,16 @@ The file-manager operations (plan-00012) are fmc's only writes to the user's fil
 - **fmc's settings file is written whole, atomically, and never over text it cannot read.** The Settings page writes it (`app/settings.rs`, through `services/settings.rs` `update`), and that save adds `"$schema": "./meta/config.schema.json"` when the file has none (plan-00016, O1 (b)). The one other write is at start: `services/settings.rs` `link_schema` inserts that `$schema` as the first key of an existing file that parses and has none, through `settings::linked`, which keeps every other byte and checks that the result parses to the same values plus the key (O1 amended by the owner, 2026-11-28). A missing file is not created at start; a failed insert is a footer notice. `services/mod.rs` `save_atomic` writes a temp file beside the target (`create_new`, `sync_all`), then renames it over the target; the temp file is removed on any error. The new text is `settings::merged` over the file as it is now: a file that is not a JSON object is refused and keeps its bytes (plan-00015, A2). A link is written through to its target, and the link stays (D14). Keys are sorted on each save (A3). Themes and the keymap are never written.
 - **fmc's schema file is written at start, when it differs, and the `$schema` insert is the only other start write.** `meta/config.schema.json` in the config folder is fmc's own. At each start that opens the UI, `services/settings.rs` `ensure_schema` writes it through `save_atomic` when it is missing, unreadable, or differs from `settings::schema()`, and a failed write is a footer notice. A hand edit is overwritten (plan-00016, D1, D5, O2 (a)).
 - **Copy, move, duplicate, and Trash run on a worker, one item at a time.** A paste or a duplicate runs off the frame, and the footer says `copying` or `moving` while it runs, with `copying 2 of 5…` for several entries. The first error stops a run, and the marks clear only when every item landed (plan-00014, D7 and D13). Create and rename run inline, as one call each (D8). A Trash is a run too, since each one waits for Finder (plan-00014, D12). A duplicate checks its name first, so a taken name keeps its dialog open.
+
+## Launches
+
+fmc hands a file or folder to macOS through `services/launch.rs`, the only place that starts another app (plan-00017, D1 to D3; `architecture.md`, "Approved deviation: files and folders open in other apps").
+
+- **Two programs, and only these.** `/usr/bin/open` for every launch and `/usr/bin/osascript` for the picker's app list. Git stays the other subprocess (`services/git.rs`). Both run with argv only, never through a shell, with stdin null and the output captured, so nothing reaches the terminal.
+- **A path follows `--`.** Every `open` call puts the target after `--`, so a name that starts with `-` is never read as a flag. The target is the path as the tree or the reader holds it.
+- **Paths are data.** The app list comes from one constant script (`APPS_SCRIPT`), which reads its path from `argv[0]` and builds no script text from it. A value from `editor` or `open_with` reaches `open -a` as one argument. Nothing a user types is parsed as code.
+- **A launch never blocks input.** It runs on a worker (`services::spawn`) and answers with an `Event`; the footer shows the answer. A launch writes no file.
+- **Tests never start an app.** The launcher and the app list are stood in (`app/open.rs`, `launch` and `list`), as the Trash is in the write tests. The argv builder and the parser are tested directly, and one test runs the script on a file with a hostile name.
 
 ## Where a fact lives
 
@@ -113,6 +123,23 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 | --- | --- | --- | --- |
 | `trash` | `=5.4.0` | default | Move to the Trash (`src/services/write.rs`); MIT |
 
+### Approved for plan-00018 phase 1 (owner, 2026-11-28)
+
+Decision O1 of `plan-00018-remaining-grammars.md`: two grammar crates that load on the locked `tree-sitter` 0.27.2 with no vendored C (`research/grammar-load-spike.md`, section 5 as corrected by plan-00018). Each is pinned exactly and registered in `src/ui/syntax/mod.rs`; each brings no crate that the lock does not already hold.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `tree-sitter-tsquery` | `=0.8.0` | default | Tree-sitter query files (`.scm`, filetype `query`); Apache-2.0; its build script uses `cc` 1.11.3, already in the lock |
+| `tree-sitter-json5-orchard` | `=0.1.1` | default | JSON5 (`.json5`); MIT; a fork of the grammar Neovim uses; its build script uses `cc` 1.11.3 |
+
+### Approved for plan-00018 phase 2 (owner, 2026-11-28)
+
+Decision O2 of `plan-00018-remaining-grammars.md`: a build dependency that compiles the vendored grammar parsers in `build.rs`. `cc` 1.11.3 is already in the lock, as a dependency of the grammar crates' build scripts, so the lock gains no package for fmc's own build script.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `cc` (build dependency) | `=1.11.3` | default | Compiles `vendor/grammars/<name>/src/parser.c` (and `scanner.c` where present) for `build.rs`; MIT OR Apache-2.0 |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -127,6 +154,9 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 - The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
 - An `injections.scm` beside a highlight query (plan-00013) is the grammar crate's own file, copied under the crate's licence (the header of each file names the crate and version), or fmc's own where no crate ships one (MIT, the project's licence). The Elixir highlights differ from the crate's by one rule, and the JavaScript, TypeScript, and TSX highlights differ from Core's by three host rules that leave injected text to its injection (`rust.md`, "Contracts and traps").
 - The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.
+- The query and JSON5 queries (plan-00018 phase 1) are the crates' own: `queries/query/` is `tree-sitter-tsquery` 0.8.0's (Apache-2.0, with its `LICENSE`; its header names the three changes), and `queries/json5/` is `tree-sitter-json5-orchard` 0.1.1's (MIT, with its `LICENSE`, unchanged).
+- The Lua injections (`queries/lua/injections.scm`, the pattern rules for find, match, gmatch, and gsub) are nvim-treesitter's (Apache-2.0, `runtime/queries/lua/injections.scm` at 04f1788, with its `LICENSE` beside the file as `LICENSE.nvim-treesitter`, since the lua directory's `LICENSE` is the grammar crate's MIT).
+- The vendored grammars are `vendor/grammars/{vimdoc,luadoc,luap,just}/`: each has `src/parser.c` (and `scanner.c` for just), `src/tree_sitter/parser.h`, the repository's `LICENSE`, and a `SOURCE` file (the repository URL and the full commit). vimdoc and just are Apache-2.0; luadoc and luap are MIT. just's `Cargo.toml` says MIT, but its repository `LICENSE` file is Apache-2.0, and the `LICENSE` file is the licence. Their highlight queries (`src/ui/syntax/queries/{vimdoc,luadoc,luap,just}/`) carry the same `LICENSE`, and each query's header names the upstream file and each change. `cargo about` cannot see vendored C, so `about.hbs` lists these grammars by hand: the MIT texts in full, and the Apache-2.0 text through the Apache-2.0 entry the crates already produce.
 
 ## Sample data
 

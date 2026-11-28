@@ -1,7 +1,8 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T23:40:00+07:00
+updated: 2026-11-28T15:32:12+07:00
+
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -28,10 +29,10 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
 | RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
 | RI-13 | Configurable keymap | landed | plan-00015 phase 4 (`1b37a2e`): keys in `keymap.json`; in-UI rebinding is not part of it (D11 (a)) | 2026-11-27 |
-| RI-14 | Open an unsupported file with the default app | parked | owner-deferred | 2026-11-27 |
-| RI-15 | Open the project folder in Finder or an editor | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
-| RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
-| RI-17 | The rest of the owner's grammar set | parked | unlock: a crate that loads | 2026-11-27 |
+| RI-14 | Open an unsupported file with the default app | landed | plan-00017 | 2026-11-28 |
+| RI-15 | Open the project folder in Finder or an editor | landed | plan-00017 | 2026-11-28 |
+| RI-16 | Open With | landed | plan-00017 | 2026-11-28 |
+| RI-17 | The rest of the owner's grammar set | landed in part | plan-00018 phases 1 to 3; luadoc in Lua comments and eex stay parked (the entry) | 2026-11-28 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
 | RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
@@ -189,19 +190,19 @@ Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.
 
 ### RI-14 — Open an unsupported file with the default app
 
-- status: parked (owner-deferred 2026-11-27) · updated 2026-11-27
+- status: landed (plan-00017, phases 1 to 6: `12fdaa1`, `52639c3`, `7adc043`, `8b57fda`, and the docs commit) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for a button or action that opens a file fmc cannot show (the binary notice) with the system's default app (`open <path>` on macOS). Open points: the key and the button on the binary notice; whether it also works for files fmc can show.
 
 ### RI-15 — Open the project folder in Finder or an editor
 
-- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+- status: landed (plan-00017, the same commits as RI-14; `editor` is in `settings.json`) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for an action that opens the browsed folder in Finder or in a chosen editor or IDE (Zed, VS Code), with the editor set in `settings.json`. Open points: the key, the settings key and its shape (an app name or a command line), and quoting of the path.
 
 ### RI-16 — Open With
 
-- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+- status: landed (plan-00017, the same commits as RI-14; `open_with` and the picker are the amendment D8 and D9) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for `Open With …` on text, code, and other supported files: a picker of relevant apps, or the ones set in `settings.json`. Open points: how relevant apps are found on macOS (Launch Services) versus a configured list per extension, and the picker's UI. Shares the launch code and the security rules (no shell interpolation of paths) with RI-14 and RI-15.
 
@@ -209,11 +210,14 @@ The owner asked on 2026-11-27 for `Open With …` on text, code, and other suppo
 
 ### RI-17 — The rest of the owner's Neovim grammar set
 
-- status: parked (unlock: a crate that loads on the locked `tree-sitter` 0.27, per language; RI-18 landed first, owner 2026-11-27) · updated 2026-11-27
+- status: landed in part (plan-00018, 2026-11-28): query and json5 from crates, just and vimdoc vendored under `vendor/grammars/` with their queries, and luap patterns inside Lua. Parked: luadoc in Lua's `---` comments, and eex (`architecture.md`, "the owner's remaining grammars are highlighted" and "Lua patterns are an injection") · updated 2026-11-28
 
-Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Seven have no crate that loads. Six have a crate that pins another `tree-sitter` (json5, luadoc, luap, and query pin 0.20; just and vimdoc pin 0.25), which clashes on the `links` key with 0.27. eex has no published crate. Each also needs a highlight query for fmc's capture names. Nothing is dropped from a loaded set: the phase 3 spike dropped none (`research/grammar-load-spike.md`, section 5).
+Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Of the seven that had no crate loading on `tree-sitter` 0.27, four are now highlighted: query and json5 through crates that load with no vendored C, and just and vimdoc through parsers vendored at pinned commits. luadoc and luap are injections, not filetypes: luap is injected into Lua's pattern arguments, and luadoc is not, as below. Nothing was dropped from a loaded set. The `links` clash is the 0.25 pins' (vimdoc and just); the 0.20 pins (json5, luadoc, luap, and query) link a second C runtime (`research/grammar-load-spike.md`, section 5).
 
-**Unlock:** a crate for one of the seven that loads with `Grammar::compile`, and the owner's go-ahead for its dependency. **First move:** load the candidate with its query, as the spike did.
+**Unlocks:**
+
+- **luadoc in Lua's `---` comments:** OpenTUI must evaluate the offset directive (`#offset!`) that drops the comment's leading dash. The luadoc grammar does not parse a body that starts with a dash, and OpenTUI 0.9.9 does not evaluate offsets (`architecture.md`, "Lua patterns are an injection").
+- **eex:** a licence from the author. The grammar (connorlay/tree-sitter-eex `f742f2f`) loads, but the repository has no `LICENSE` and GitHub reports none, so it cannot ship. Ask the author only if the owner wants it.
 
 ### RI-18 — Injected highlighting for the owner's grammars
 

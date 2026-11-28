@@ -1,6 +1,6 @@
 //! Mermaid fences in rendered Markdown: the engine's box diagram at the reader's width, or the fence's source in a frame
-//! with the reason it was not drawn. Scouter draws the fence as plain code (`research/scouter-inventory.md` §7); this is
-//! fmc's approved deviation (`architecture.md`, "Mermaid in rendered Markdown"). The rows are plain text; `ui/mermaid.rs`
+//! with the reason it was not drawn. Scouter has no Mermaid and shows the fence as plain code; fmc draws it as boxes.
+//! The rows are plain text; `ui/mermaid.rs`
 //! colours and places them.
 
 use mermaid_text::{Error, RenderOptions};
