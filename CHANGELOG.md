@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-28
+
+The rendered Markdown view shows an image paragraph as a box with its alt text, size, and format, and Enter or a click opens the picture.
+
 ### Added
 
 - An image that is a paragraph of its own draws as a box in the rendered Markdown view: its name, its path, its size and format, and a hint. `Enter` or a click opens the picture in the image view, and `Ctrl+o` goes back. A remote image, an SVG, or an image outside the browsed folder shows the box with its reason. Scouter shows the alt text as a link.
@@ -168,7 +172,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/riipandi/fmc/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/riipandi/fmc/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/riipandi/fmc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/riipandi/fmc/compare/v0.4.0...v0.5.0
