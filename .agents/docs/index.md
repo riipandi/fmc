@@ -46,7 +46,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | none open |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00022-inline-images.md` (awaiting-approval: real pictures for local Markdown and HTML images in the rendered view, a spike first). Archived and done: plan-00015 to plan-00021. |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): a status table at the top tracks every entry; RI-2, RI-4, RI-9, RI-10, RI-13, RI-17, RI-18, RI-19, and RI-20 landed (RI-9 and RI-17 in plan-00020; RI-2 and RI-17 close with plan-00018 and plan-00020 phase 3; RI-4 in plan-00012; RI-10 and RI-13 in plan-00015; RI-18 in plan-00013; RI-19 in plan-00014; RI-20 is the Settings page); RI-14 to RI-16 landed (plan-00017, the open actions). |
 | `handover/` | Session compactions. | `handover-00017-markdown-image-boxes.md` (done: plan-00021 closed; image boxes in the rendered Markdown view, `Enter` and a click open the picture, with the owner checks on the fence shape and a real terminal); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |
