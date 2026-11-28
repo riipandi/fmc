@@ -286,7 +286,7 @@ fn a_timed_out_command_ends_with_scouters_status() {
     let mut sleep = Command::new("sleep");
     sleep.arg("5");
     let error = capture(sleep, LIST_LIMIT, false, Duration::from_millis(200)).err();
-    assert_eq!(error.as_deref(), Some("git exited with status 143."));
+    assert_eq!(error.as_deref(), Some("sleep exited with status 143."));
 }
 
 #[test]
@@ -296,7 +296,7 @@ fn a_failing_command_reports_its_first_stderr_line() {
     assert_eq!(capture(fail, LIST_LIMIT, false, TIMEOUT).err().as_deref(), Some("fatal: Dumbledore"));
     let mut silent = Command::new("sh");
     silent.args(["-c", "exit 3"]);
-    assert_eq!(capture(silent, LIST_LIMIT, false, TIMEOUT).err().as_deref(), Some("git exited with status 3."));
+    assert_eq!(capture(silent, LIST_LIMIT, false, TIMEOUT).err().as_deref(), Some("sh exited with status 3."));
 }
 
 #[test]

@@ -1,11 +1,12 @@
 ---
 status: in-progress
 created: 2026-11-28T14:48:05+07:00
-updated: 2026-11-28T14:57:39+07:00
+updated: 2026-11-28T15:02:02+0700
+
 phases:
     - id: 1
       title: The launch service
-      status: pending
+      status: committed
       note: —
     - id: 2
       title: RI-14, open with the default app
