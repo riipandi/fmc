@@ -36,7 +36,7 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
 | RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
-| RI-21 | The heavier and rarer common grammars | parked (unlock: an owner request) | plan-00023 wave 3 and its dropped set; `research/common-grammars.md` | 2026-11-28 |
+| RI-21 | The heavier and rarer common grammars | parked (unlock: an owner request) | plan-00024 wave 3 and its dropped set; `research/common-grammars.md` | 2026-11-28 |
 
 ## Rendering
 
@@ -231,8 +231,8 @@ The owner's grammars highlight their own tokens, but not the code they hold: hee
 
 - status: parked (unlock: an owner request naming the languages) · updated 2026-11-28
 
-plan-00023 highlighted Dockerfiles, build and config files, the git family, and C++, C#, Ruby, PHP, Kotlin, Swift, and Dart. Its research loaded the rest on the locked `tree-sitter` 0.27.2 and measured them (`research/common-grammars.md`, sections 3 and 6): Scala (`tree-sitter-scala` 0.26.14), Haskell (`tree-sitter-haskell` 0.24.1), OCaml (`tree-sitter-ocaml` 0.26.0), Objective-C (`tree-sitter-objc` 3.0.2), R (`tree-sitter-r` 1.3.0), PowerShell (`tree-sitter-powershell` 0.26.6), and Groovy (`dekobon-tree-sitter-groovy` 0.6.0) all load, and together add about 21 MiB to the release binary. Scala, PowerShell, and Objective-C want nvim-treesitter's query (the crates' are thin or use unstyled names).
+plan-00024 highlighted Dockerfiles, build and config files, the git family, and C++, C#, Ruby, PHP, Kotlin, Swift, and Dart. Its research loaded the rest on the locked `tree-sitter` 0.27.2 and measured them (`research/common-grammars.md`, sections 3 and 6): Scala (`tree-sitter-scala` 0.26.14), Haskell (`tree-sitter-haskell` 0.24.1), OCaml (`tree-sitter-ocaml` 0.26.0), Objective-C (`tree-sitter-objc` 3.0.2), R (`tree-sitter-r` 1.3.0), PowerShell (`tree-sitter-powershell` 0.26.6), and Groovy (`dekobon-tree-sitter-groovy` 0.6.0) all load, and together add about 21 MiB to the release binary. Scala, PowerShell, and Objective-C want nvim-treesitter's query (the crates' are thin or use unstyled names).
 
 Not available on the current terms: SSH config (the one loading crate is CC0-1.0, not on the licence allowlist; the MIT grammar Neovim uses would have to be vendored, which the owner declined on 2026-11-28), Perl (no crate loads: `tree-sitter-perl` 1.1.2 pins `tree-sitter` ^0.26, and upstream commits no `parser.c`), and git commit messages (the one grammar is WTFPL).
 
-**First move:** a plan that takes the named languages from section 3's "Pick" column, as plan-00023 phase 3 did.
+**First move:** a plan that takes the named languages from section 3's "Pick" column, as plan-00024 phase 3 did.

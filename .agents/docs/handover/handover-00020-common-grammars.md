@@ -1,18 +1,18 @@
 ---
 status: done
 created: 2026-11-28T19:47:10+07:00
-plan: plan-00023-common-grammars
+plan: plan-00024-common-grammars
 ---
 
 # Handover: Dockerfiles, config files, and seven common languages highlighted
 
 ## State
 
-- plan-00023 on the worktree branch `worktree-common-grammars`, from `main` at `85256b9`. Commits, in order:
+- plan-00024 on the worktree branch `worktree-common-grammars`, from `main` at `85256b9`. Commits, in order:
   - `08bbc80` `feat(syntax): highlight Dockerfile, Makefile, CMake, and common config files` (phase 1, with the research note and the plan). Ten crates: dockerfile, make, cmake, ini, properties, proto, graphql, nix, scss, vue. `reader/language.rs` gains `PREFIXES` (`Dockerfile.*`, `Containerfile.*`, `.env.*`); `.env` files are bash.
   - `e76cefb` `feat(syntax): highlight git and EditorConfig files` (phase 2). The four `konomanoasa-*` crates, under the owner's "avoid vendoring" (O3 (b)); SSH config dropped.
   - `f74c67e` `feat(syntax): highlight C++, C#, Ruby, PHP, Kotlin, Swift, and Dart` (phase 3).
-  - Phase 4 (this commit) closes the ledger: the plan is archived, RI-21 parks wave 3, `handover-00018` moves to `archive/`, and this handover lands.
+  - Phase 4 (this commit) closes the ledger: the plan is archived, RI-21 parks wave 3, and this handover lands. The plan was renumbered from 00023 to 00024 and this handover from 00019 to 00020 when main's hex view took those numbers; `handover-00019-hex-and-text-view` moved to `archive/` at the merge.
 - Docker Compose needed no change: `compose.yaml` and `docker-compose*.yml` were already YAML by extension, in fmc and in Scouter. A test pins it (`the_extensions_opentui_lacks_are_highlighted`).
 - `just verify` is green on phase 3: 960 tests run, 960 passed, 1 skipped; licenses ok. `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `rumdl fmt --check --quiet .`, and `cargo deny check licenses` are green after each phase.
 - `cargo build --release`: 65,972,256 bytes (HEAD before the plan: 39,510,272). The research predicted 65,889,440 for the same set.

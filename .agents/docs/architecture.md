@@ -1432,13 +1432,13 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
-### Approved deviation: Dockerfiles, build files, and common config files are highlighted (plan-00023)
+### Approved deviation: Dockerfiles, build files, and common config files are highlighted (plan-00024)
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter colours its sixteen grammars (`scouter:src/reader/code-view.ts:20-29`, `scouter:grammars/`), and a `Dockerfile`, a `Makefile`, a `.vue` file, or a `.env` file shows plain. OpenTUI names `dockerfile`, `make`, `ini`, `scss`, and `vue` by file name or extension already; fmc left them plain because no grammar was registered. Research on 2026-11-28 (`research/common-grammars.md`) loaded every candidate on the locked `tree-sitter` 0.27.2 and measured its cost: the fourteen config and build grammars add 0.87 MiB to the release binary. Docker Compose files are YAML by extension in both apps, so they need nothing.
 
-Decision (owner, 2026-11-28, plan-00023 O1 to O4, D1 to D6): fmc highlights `dockerfile`, `make`, `cmake`, `ini`, `properties`, `proto`, `graphql`, `nix`, `scss`, and `vue` through ten crates pinned exactly (`rules.md`, "Dependencies"), each query under `src/ui/syntax/queries/<filetype>/` with its `LICENSE`. The crate's own query is used where it compiles and styles the sample; GraphQL's crate ships none, so its query is nvim-treesitter's. Older capture names are renamed to the palette's (Make's `conditional`, `repeat`, `include`, `exception`, `text.*`), `module` is `namespace`, and `@spell` and `@nospell` are dropped. A Vue file's `<script>` and `<style>` are injected (JavaScript, TypeScript, TSX, CSS, SCSS), and a Dockerfile's `RUN` and heredocs are bash. `.env` files are bash (D5): no dotenv grammar exists, and bash reads `KEY=value` and `#` lines. `reader/language.rs` gains a prefix step between `NAMES` and `EXTENSIONS` (`PREFIXES`): `Dockerfile.*`, `Containerfile.*`, and `.env.*` take the filetype of the name before the dot, as Neovim's rules do. `CMakeLists.txt` and `.env` are names; `.dockerfile`, `.containerfile`, `.mk`, `.mak`, `.cmake`, `.env`, `.properties`, `.proto`, `.graphql`, `.graphqls`, `.gql`, and `.nix` are extensions.
+Decision (owner, 2026-11-28, plan-00024 O1 to O4, D1 to D6): fmc highlights `dockerfile`, `make`, `cmake`, `ini`, `properties`, `proto`, `graphql`, `nix`, `scss`, and `vue` through ten crates pinned exactly (`rules.md`, "Dependencies"), each query under `src/ui/syntax/queries/<filetype>/` with its `LICENSE`. The crate's own query is used where it compiles and styles the sample; GraphQL's crate ships none, so its query is nvim-treesitter's. Older capture names are renamed to the palette's (Make's `conditional`, `repeat`, `include`, `exception`, `text.*`), `module` is `namespace`, and `@spell` and `@nospell` are dropped. A Vue file's `<script>` and `<style>` are injected (JavaScript, TypeScript, TSX, CSS, SCSS), and a Dockerfile's `RUN` and heredocs are bash. `.env` files are bash (D5): no dotenv grammar exists, and bash reads `KEY=value` and `#` lines. `reader/language.rs` gains a prefix step between `NAMES` and `EXTENSIONS` (`PREFIXES`): `Dockerfile.*`, `Containerfile.*`, and `.env.*` take the filetype of the name before the dot, as Neovim's rules do. `CMakeLists.txt` and `.env` are names; `.dockerfile`, `.containerfile`, `.mk`, `.mak`, `.cmake`, `.env`, `.properties`, `.proto`, `.graphql`, `.graphqls`, `.gql`, and `.nix` are extensions.
 
 Consequences:
 
@@ -1453,13 +1453,13 @@ Alternatives considered:
 - `tree-sitter-dockerfile` 0.2.0: rejected, it pins `tree-sitter` 0.20 (a second C runtime). `-orchard` 0.1.0 and `-updated` 0.2.0: not taken (D4).
 - A dotenv grammar: none exists.
 
-### Approved deviation: git and EditorConfig files are highlighted from crates (plan-00023)
+### Approved deviation: git and EditorConfig files are highlighted from crates (plan-00024)
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter shows a `.gitignore`, a `.gitattributes`, a `.gitconfig`, and an `.editorconfig` plain (none is in `scouter:grammars/`). The grammars nvim-treesitter uses for them commit their `parser.c` and load when vendored; the only crates are four `konomanoasa-*` crates published on 2026-11-26 by one author (`research/common-grammars.md`, sections 3 and 4).
 
-Decision (owner, 2026-11-28, plan-00023 O3 (b), "avoid vendoring"): fmc highlights `gitignore`, `gitattributes`, `gitconfig`, and `editorconfig` through the four crates, pinned exactly, with each crate's own query (nvim's does not fit these grammars); wildcards are `string.special`. `.gitignore` and the ignore files that copy its syntax (`.dockerignore`, `.containerignore`, `.npmignore`, `.prettierignore`, `.vscodeignore`, `.ignore`, `.rgignore`, `.fdignore`) are `gitignore` by name, as are `.gitattributes`, `.gitconfig`, `.gitmodules`, and `.editorconfig`. SSH config is not highlighted: its one loading crate is CC0-1.0, which the licence allowlist does not hold, and vendoring was declined.
+Decision (owner, 2026-11-28, plan-00024 O3 (b), "avoid vendoring"): fmc highlights `gitignore`, `gitattributes`, `gitconfig`, and `editorconfig` through the four crates, pinned exactly, with each crate's own query (nvim's does not fit these grammars); wildcards are `string.special`. `.gitignore` and the ignore files that copy its syntax (`.dockerignore`, `.containerignore`, `.npmignore`, `.prettierignore`, `.vscodeignore`, `.ignore`, `.rgignore`, `.fdignore`) are `gitignore` by name, as are `.gitattributes`, `.gitconfig`, `.gitmodules`, and `.editorconfig`. SSH config is not highlighted: its one loading crate is CC0-1.0, which the licence allowlist does not hold, and vendoring was declined.
 
 Consequences:
 
@@ -1472,13 +1472,13 @@ Alternatives considered:
 - Vendor the nvim-treesitter grammars (about 50 KiB with SSH config's 270 KiB): declined by the owner (O3 (a)).
 - `tree-sitter-gitattributes` 0.1.6: rejected, it pins `tree-sitter` 0.20 (a second C runtime).
 
-### Approved deviation: C++, C#, Ruby, PHP, Kotlin, Swift, and Dart are highlighted (plan-00023)
+### Approved deviation: C++, C#, Ruby, PHP, Kotlin, Swift, and Dart are highlighted (plan-00024)
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: OpenTUI names these seven filetypes by extension, and by file name for Ruby's `Gemfile` and `Rakefile` (`opentui-0.9.9/src/generated.rs:136-169`), but Scouter registers no grammar for them (`scouter:src/reader/code-view.ts:20-29`), so they show plain in both apps. Their grammars are the heaviest of the research's common set: 1.4 to 6.9 MiB each, 25 MiB together (`research/common-grammars.md`, section 6).
 
-Decision (owner, 2026-11-28, plan-00023 O1 (a), O2): fmc highlights `cpp`, `csharp`, `ruby`, `php`, `kotlin`, `swift`, and `dart` through seven crates pinned exactly. The crate's own query is used, except C++, whose crate query colours five tokens of a sample: its query is nvim-treesitter's c query followed by its cpp query. nvim's ancestry predicates (`#has-ancestor?`, `#has-parent?`), which OpenTUI does not evaluate and which would otherwise match with no condition, are written as structural patterns (a field under a `field_declaration` is a property) or dropped (the attribute builtins, the template-method rule, the four-deep qualified names). A PHP file's text outside `<?php` is injected as HTML, and a heredoc takes the language its label names. The older capture names (Kotlin's `include`, `conditional`, `parameter`, and so on) are renamed to the palette's, and `module` is `namespace`. Wave 3 (Scala, Haskell, OCaml, Objective-C, R, PowerShell, Groovy) is parked in the roadmap.
+Decision (owner, 2026-11-28, plan-00024 O1 (a), O2): fmc highlights `cpp`, `csharp`, `ruby`, `php`, `kotlin`, `swift`, and `dart` through seven crates pinned exactly. The crate's own query is used, except C++, whose crate query colours five tokens of a sample: its query is nvim-treesitter's c query followed by its cpp query. nvim's ancestry predicates (`#has-ancestor?`, `#has-parent?`), which OpenTUI does not evaluate and which would otherwise match with no condition, are written as structural patterns (a field under a `field_declaration` is a property) or dropped (the attribute builtins, the template-method rule, the four-deep qualified names). A PHP file's text outside `<?php` is injected as HTML, and a heredoc takes the language its label names. The older capture names (Kotlin's `include`, `conditional`, `parameter`, and so on) are renamed to the palette's, and `module` is `namespace`. Wave 3 (Scala, Haskell, OCaml, Objective-C, R, PowerShell, Groovy) is parked in the roadmap.
 
 Consequences:
 
@@ -1688,6 +1688,50 @@ Alternatives considered:
 - A Launch Services binding through `core-foundation` or `objc2`: rejected, a new dependency (D7).
 - `lsregister -dump`: rejected, slow and undocumented.
 - An editor command line such as `zed {path}`: rejected by O3(c), which needs a shell or a quoting parser.
+
+### Approved deviation: a file the reader refuses opens in a hex view, or as text
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter refuses a file with a NUL in its first MiB with the binary notice (`scouter:src/core/files.ts:172`, `BinaryFileError` at `:59-61`; `scouter:src/app/app.ts:329-341,411-419`), whose three lines name the file and say it shows only UTF-8 text and images (`scouter:src/reader/binary-view.ts:60-69`). Text that is not UTF-8 is a footer error (`scouter:src/core/files.ts:178-184`). It has no other way to look inside such a file. The owner asked on 2026-11-28 for a text and a hex view from the notice, fast on files of several GiB, with `o` kept, and for a string search in the hex view (plan-00023; `research/hex-view-research.md`).
+
+Decision (owner, 2026-11-28: every recommendation of plan-00023, O1 to O6, plus the string search):
+
+- The notice keeps its title, name and size, and hint, and its last line is buttons: `t as text`, `X hex view`, and `o open in the default app`. A key or a click takes them. `t` and `X` are bound in the `browse` and `reader` contexts (`open_as_text`, `open_as_hex`), so they work whether the list or the reader has the focus, and they move the focus to the reader. In either view they switch to the other.
+- A file that is not UTF-8 shows the same notice, with Scouter's refusal, `Only UTF-8 text files are supported.`, as its title, where Scouter shows it as a footer error. Images past 10 MiB or unreadable keep their footer error, and FIFOs and devices stay refused before their open.
+- `t` reads the first 1 MiB into the reader as any text: search, wrap, selection, `y`, line numbers, and the `first 1 MiB` badge. Invalid UTF-8 becomes `�`; NUL, the C0 controls, and DEL become their control pictures (`␀`, `␛`, `␡`), so a NUL and an ESC still look different; tabs, line ends, C1, and bidi controls are as for any text (`reader/document.rs` `decode_lossy`). OpenTUI measures the pictures one cell wide (`app/hex_tests.rs`). The header's badge is `lossy`, and the text is not polled for changes.
+- The hex view shows rows of an offset, the hex bytes in groups of eight, and an ASCII column. A row holds 32, 16, 8, or 4 bytes, the widest that fits the pane; the offset has eight hex digits, more past 4 GiB. Bytes take a colour by class: NUL `ignored`, printable ASCII `text`, ASCII whitespace `added`, other ASCII controls `accent_soft`, non-ASCII `modified`; the offset is `dim`. The header's badge is `hex`, and the footer shows the size, `hex`, and the position.
+- The reader's scroll keys move it by rows: `j` `k`, `space` `b`, `^d` `^u`, `[` `]`, `gg` `G`, the wheel, and the bar. `:` followed by an offset (`0x1f40`, `8000`, `50%`) puts that offset's row at the top; any other line still runs as a command.
+- `/` searches the whole file for a string: its UTF-8 bytes, ASCII case ignored, as the reader's search ignores case. The query is not searched while it is typed. Enter finds the first hit at or after the view's top, then the next; Shift+Enter, `N`, and `p` the one before; each wraps at the ends of the file. The search runs on a worker in 1 MiB chunks (`services/window.rs` `search`), and a newer search or a closed view stops it. The hit is marked in both columns in the search colours and brought half a screen into view when it was off screen. The prompt and the footer say `searching…`, then `at 0x…` or `no matches`. There is no hit count: a count reads the whole file, about 0.5 s per 2 GiB on this Mac, at each step. Measured live on 2026-11-28: a 2 GiB file with no hit answered `no matches` in about 1.5 s, and the view scrolled meanwhile.
+
+Consequences:
+
+- (positive) A file of any size opens and scrolls at once: only the rows on screen are drawn, and only the blocks around them are read (the decision record below).
+- (negative) The hex view has no text selection: its rows are cells, not text. `y` copies the path.
+- (negative) A file that shrinks while its view is open shows its new end only where fmc reads again; blocks already held keep their old bytes until the view is opened again.
+
+Alternatives considered:
+
+- One key cycling the notice, hex, and text: rejected by the owner (O1), since the order is hidden.
+- A fixed 16 bytes per row with a sideways pan: rejected by the owner (O3); at 80 columns half the row would be off screen.
+
+### A huge file is read in blocks on workers, never mapped
+
+Context: the hex view must open, scroll, and jump on files of several GiB without a frame stall, and `rust.md` forbids file I/O on the UI thread. Measured on 2026-11-28 on 2 GiB files (`research/hex-view-research.md` §3): `read_at` through a 64 KiB block cache opens and reads the last page in 0.03 to 0.07 ms, a page scroll costs 2 µs, and a random jump 7.5 µs; a memory map is 5 µs faster per jump, and a file truncated under a map killed the process with SIGBUS (exit status 138).
+
+Decision: `services/window.rs` reads one 64 KiB block per worker job with `std::os::unix::fs::FileExt::read_at`, opening the file read-only each time. The view (`app/hex.rs`) keeps up to 16 blocks (`reader/hex.rs` `Blocks`), asks for the blocks of the visible rows and one block either side at each paint, and drops the block farthest from the view when it holds too many. A block of a file no longer shown is dropped. A short block is the file's end: the view's size moves down to it. The rows are drawn by a `Custom` widget with `Painter::cells`, outside the reader's `ScrollBox`, which would need a content box of 134 M rows for 2 GiB. The formatter is fmc's own: 1.8 µs per screen, eleven times faster than `pretty-hex`, and it gives cells with colours. No new dependency.
+
+Consequences:
+
+- (positive) A file that shrinks reads short instead of crashing fmc.
+- (positive) Memory stays near 1 MiB per open view, whatever the file's size.
+- (negative) A row whose block is not back yet shows its offset with blank bytes for a frame or two.
+
+Alternatives considered:
+
+- `memmap2`: rejected. SIGBUS on a shrunk file, `unsafe`, and a new dependency, for 5 µs per jump.
+- A long-lived worker that owns the file: rejected. A job per block needs nothing to stop when the view closes, and an open costs tens of µs.
+- Reads on the UI thread: rejected by `rust.md`; a network volume can stall seconds.
 
 ### Approved deviation: `open_with` in settings.json and the Open With picker
 

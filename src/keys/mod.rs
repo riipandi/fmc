@@ -100,6 +100,10 @@ pub enum Action {
     OpenDefault,
     /// `O` in the tree or the reader: lists the apps for the row or the shown file, and picks one.
     OpenWith,
+    /// `X` on a file fmc cannot show, or in the text it was read as: the hex view of the whole file.
+    OpenAsHex,
+    /// `t` on a file fmc cannot show, or in its hex view: its first MiB as text, with the bytes it cannot read marked.
+    OpenAsText,
     /// `Enter` in the rendered view: opens the image box that is in view, or the one a click picks (`app/picture.rs`).
     OpenImage,
     /// `e` in the tree or the reader: opens the browsed folder in the settings' editor, or in Finder.
@@ -188,6 +192,9 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("E", "show the file in Finder"),
             ("O", "pick an app to open the file with"),
             ("Enter", "open the image box in view"),
+            ("t", "a file fmc cannot show: read it as text"),
+            ("X", "a file fmc cannot show: the hex view"),
+            (":0x1f40", "hex view: go to an offset, in hex, decimal, or a share such as 50%"),
         ],
     ),
     (
@@ -276,6 +283,8 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Reader", "E", &[Action::RevealInFinder]),
     ("Reader", "O", &[Action::OpenWith]),
     ("Reader", "Enter", &[Action::OpenImage]),
+    ("Reader", "t", &[Action::OpenAsText]),
+    ("Reader", "X", &[Action::OpenAsHex]),
     ("Changes", "d", &[Action::ToggleChanges]),
     ("Changes", "n N p", &[Action::Hunk(1), Action::Hunk(-1)]),
     ("Changes", "a", &[Action::ToggleScope]),

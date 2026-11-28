@@ -28,6 +28,7 @@ fn reading_text(columns: u16, text: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<Re
         stamp: Some(String::new()),
         serial: 0,
         signs: Vec::new(),
+        lossy: None,
     };
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
     app.render();

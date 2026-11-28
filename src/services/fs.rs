@@ -25,14 +25,21 @@ pub enum Opened {
         info: image::Info,
         bytes: Vec<u8>,
     },
+    /// A file the reader refuses as text: its size, and why (binary, or not UTF-8).
     Binary {
+        size: u64,
+        refusal: document::Refusal,
+    },
+    /// A refused file read as text on request (`t`): its first MiB decoded lossily, and its size.
+    Lossy {
+        document: Document,
         size: u64,
     },
 }
 
 /// Opens an entry as Scouter's `openPath` does: it follows a link and asks whether the target is a folder
 /// (`src/app/app.ts:317-318`). A link to a folder lists it; an image extension reads an image; any other regular
-/// file is read as text, and a binary one is reported by its size.
+/// file is read as text, and one the reader refuses (binary, or not UTF-8) is reported by its size and why.
 pub fn open(path: &Path, loop_parents: &[PathBuf]) -> Result<Opened, String> {
     let metadata = fs::metadata(path).map_err(|error| describe(&error, "stat", Some(path)))?;
     if metadata.is_dir() {
@@ -81,16 +88,29 @@ pub fn reread(path: &Path, shown: &str) -> Reread {
 /// Reads a text document. Like Scouter, it reads one byte past the cap, so the cut can be told from a file that
 /// ends at it.
 fn read(path: &Path, metadata: &fs::Metadata) -> Result<Opened, String> {
+    match document::decode(&read_capped(path)?) {
+        Ok(document) => Ok(Opened::Text { document, stamp: stamp(metadata) }),
+        Err(refusal) => Ok(Opened::Binary { size: metadata.len(), refusal }),
+    }
+}
+
+fn read_capped(path: &Path) -> Result<Vec<u8>, String> {
     let file = File::open(path).map_err(|error| describe(&error, "open", Some(path)))?;
     let mut bytes = Vec::new();
     file.take(document::MAX_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
         .map_err(|error| describe(&error, "read", None))?;
-    match document::decode(&bytes) {
-        Ok(document) => Ok(Opened::Text { document, stamp: stamp(metadata) }),
-        Err(document::Refusal::Binary) => Ok(Opened::Binary { size: metadata.len() }),
-        Err(refusal) => Err(refusal.message().to_string()),
+    Ok(bytes)
+}
+
+/// Reads a file the reader refused as text anyway: its first MiB, with invalid UTF-8 and control bytes made visible
+/// (`document::decode_lossy`). A FIFO or a device is refused before its open, as `open` refuses it.
+pub fn open_lossy(path: &Path) -> Result<Opened, String> {
+    let metadata = fs::metadata(path).map_err(|error| describe(&error, "stat", Some(path)))?;
+    if !metadata.is_file() {
+        return Err("Only regular text files can be viewed.".into());
     }
+    Ok(Opened::Lossy { document: document::decode_lossy(&read_capped(path)?), size: metadata.len() })
 }
 
 /// Reads an image up to the cap and reads its header. A format the decoder does not report, or a header it cannot

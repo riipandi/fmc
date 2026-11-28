@@ -94,6 +94,9 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 | open the file in its default app | `o` |
 | pick an app to open the file with | `O` |
 | open the image box in view | `Enter` |
+| a file fmc cannot show: read it as text | `t` |
+| a file fmc cannot show: the hex view | `X` |
+| hex view: go to an offset, in hex, decimal, or a share such as 50% | `:0x1f40` |
 | open the folder in the editor from settings, or in Finder | `e` |
 | show the file in Finder | `E` |
 

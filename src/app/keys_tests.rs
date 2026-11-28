@@ -31,8 +31,10 @@ fn every_footer_key_taps_except_the_named_few() {
                         for image in [false, true] {
                             for open in [false, true] {
                                 for sidebar_hidden in [false, true] {
-                                    let shown = Shown { markdown, image, open, sidebar_hidden };
-                                    hints.extend(hints_for(mode, pane, wrap, all_files, shown));
+                                    for hex in [false, true] {
+                                        let shown = Shown { markdown, image, hex, open, sidebar_hidden };
+                                        hints.extend(hints_for(mode, pane, wrap, all_files, shown));
+                                    }
                                 }
                             }
                         }

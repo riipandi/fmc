@@ -8,6 +8,7 @@ pub mod diff;
 pub mod find;
 pub mod footer;
 pub mod header;
+pub mod hex;
 pub mod hints;
 pub mod image_box;
 pub mod markdown;

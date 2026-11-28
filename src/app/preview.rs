@@ -10,7 +10,7 @@ use std::time::Duration;
 use fmc::keys::Focus;
 use opentui::prelude::*;
 
-use super::reader::{self, Shown};
+use super::reader;
 use super::{Model, Ui, tree};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
@@ -54,10 +54,7 @@ fn wanted(m: &Model) -> bool {
 }
 
 fn shown_path(m: &Model) -> Option<&Path> {
-    match &m.shown {
-        Shown::Text { path, .. } | Shown::Image { path, .. } | Shown::Binary { path, .. } => Some(path),
-        Shown::None | Shown::Keys { .. } => None,
-    }
+    m.shown.path()
 }
 
 /// A selected file's read arrives: it shows as an open shows it (its views and notices), unless the selection has moved.
@@ -68,7 +65,8 @@ pub fn read(m: &mut Model, ui: &Ui, path: &Path, result: &Result<fs::Opened, Str
     match result {
         Ok(fs::Opened::Text { document, stamp }) => reader::show_text(m, ui, path, document.clone(), stamp.clone()),
         Ok(fs::Opened::Image { info, bytes }) => reader::show_image(m, ui, path, info.clone(), bytes),
-        Ok(fs::Opened::Binary { size }) => reader::show_binary(m, path, *size),
+        Ok(fs::Opened::Binary { size, refusal }) => reader::show_binary(m, path, *size, *refusal),
+        Ok(fs::Opened::Lossy { document, size }) => reader::show_lossy(m, ui, path, document.clone(), *size),
         Ok(fs::Opened::Folder(_)) => {}
         Err(text) => tree::show_error(m, text),
     }
