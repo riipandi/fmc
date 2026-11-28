@@ -59,7 +59,13 @@ cargo install cargo-deny
 cargo install cargo-about --locked --features cli
 ```
 
-CI runs `just verify` on macOS (Apple silicon) for every push to `main` and every pull request, with kache's store kept in the GitHub Actions cache.
+CI runs for every push to `main`, every pull request, and on demand. It first looks at which files changed, then runs only the checks they need:
+
+- A change to the Rust code, the build files, the just tasks, `DESIGN.md`, or `docs/keymaps.md` runs `just verify` on macOS (Apple silicon), with kache's store kept in the GitHub Actions cache. The tests read those two Markdown files.
+- A change to any Markdown file checks its format with rumdl, on Linux.
+- A change to anything else, such as `.claude/` or the release workflow, runs no check.
+
+The `ci` job reports one result for the whole run. A manual run, or a push with no earlier commit to compare against, runs every check.
 
 ## Demo repository
 

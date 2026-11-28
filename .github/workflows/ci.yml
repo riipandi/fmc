@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,7 +20,45 @@ env:
   OPENTUI_VERSION: 0.9.9
 
 jobs:
-  verify:
+  # Decides which checks a change needs, so a docs-only change skips the macOS build. A run with no base to compare
+  # (a manual run, a new branch, a force push) checks everything.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      markdown: ${{ steps.filter.outputs.markdown }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Detect the changed areas
+        id: filter
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+          # The Rust job's inputs: the code, the build and toolchain files, the just tasks, and the two Markdown files
+          # the tests read (DESIGN.md for the palettes, docs/keymaps.md for the key list). This file runs both jobs.
+          RUST: '^(src/|tests/|\.cargo/|scripts/|Cargo\.(toml|lock)$|rust-toolchain\.toml$|rustfmt\.toml$|justfile$|deny\.toml$|about\.(toml|hbs)$|DESIGN\.md$|docs/keymaps\.md$|\.github/workflows/ci\.yml$)'
+          MARKDOWN: '(\.md$|^\.github/workflows/ci\.yml$)'
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            printf 'rust=true\nmarkdown=true\n' >> "$GITHUB_OUTPUT"
+            echo "No base to compare; every check runs."
+            exit 0
+          fi
+          files=$(git diff --name-only "$BASE" "$HEAD")
+          printf '%s\n' "$files"
+          for area in rust markdown; do
+            pattern=$(printenv "$(echo "$area" | tr '[:lower:]' '[:upper:]')")
+            if printf '%s\n' "$files" | grep -qE "$pattern"; then hit=true; else hit=false; fi
+            echo "$area=$hit" | tee -a "$GITHUB_OUTPUT"
+          done
+
+  rust:
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
     # fmc supports macOS on Apple silicon only.
     runs-on: macos-15
     steps:
@@ -60,3 +99,31 @@ jobs:
 
       - name: Verify
         run: just verify
+
+  markdown:
+    needs: changes
+    if: needs.changes.outputs.markdown == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same check as `just format-check`; pinned so a rumdl release cannot change the result.
+      - name: Check the Markdown format
+        run: pipx run rumdl==0.2.60 fmt --check --quiet .
+
+  # One status for branch protection: green when every needed check passed or was skipped as not needed.
+  ci:
+    needs: [changes, rust, markdown]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for result in $RESULTS; do
+            case "$result" in success|skipped) ;; *) exit 1 ;; esac
+          done
