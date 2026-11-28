@@ -151,6 +151,19 @@ pub fn register() {
     register_lazy("editorconfig", || {
         grammar(konomanoasa_tree_sitter_editorconfig::LANGUAGE, include_str!("queries/editorconfig/highlights.scm"))
     });
+    register_lazy("cpp", || grammar(tree_sitter_cpp::LANGUAGE, include_str!("queries/cpp/highlights.scm")));
+    register_lazy("csharp", || grammar(tree_sitter_c_sharp::LANGUAGE, include_str!("queries/csharp/highlights.scm")));
+    register_lazy("ruby", || grammar(tree_sitter_ruby::LANGUAGE, include_str!("queries/ruby/highlights.scm")));
+    register_lazy("php", || {
+        injected(
+            tree_sitter_php::LANGUAGE_PHP,
+            include_str!("queries/php/highlights.scm"),
+            include_str!("queries/php/injections.scm"),
+        )
+    });
+    register_lazy("kotlin", || grammar(tree_sitter_kotlin_sg::LANGUAGE, include_str!("queries/kotlin/highlights.scm")));
+    register_lazy("swift", || grammar(tree_sitter_swift::LANGUAGE, include_str!("queries/swift/highlights.scm")));
+    register_lazy("dart", || grammar(tree_sitter_dart::LANGUAGE, include_str!("queries/dart/highlights.scm")));
     register_lazy("vue", || {
         injected(
             tree_sitter_vue_next::LANGUAGE,

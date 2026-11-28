@@ -54,6 +54,13 @@ pub const HIGHLIGHTED: &[&str] = &[
     "gitattributes",
     "gitconfig",
     "editorconfig",
+    "cpp",
+    "csharp",
+    "ruby",
+    "php",
+    "kotlin",
+    "swift",
+    "dart",
 ];
 
 /// Extensions OpenTUI's table does not know, with the filetype fmc highlights them as. `.tf` and `.tfvars` are
@@ -136,7 +143,7 @@ mod tests {
 
     #[test]
     fn highlights_scouters_languages_and_the_owners_extra_ones_and_no_others() {
-        assert_eq!(HIGHLIGHTED.len(), 48);
+        assert_eq!(HIGHLIGHTED.len(), 55);
         assert!(is_highlighted("rust") && is_highlighted("javascriptreact") && is_highlighted("markdown_inline"));
         assert!(is_highlighted("elixir") && is_highlighted("hcl") && is_highlighted("vim"));
         assert!(!is_highlighted("perl") && !is_highlighted("sshconfig") && !is_highlighted("plain text"));

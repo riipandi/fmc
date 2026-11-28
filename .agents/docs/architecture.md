@@ -1472,6 +1472,26 @@ Alternatives considered:
 - Vendor the nvim-treesitter grammars (about 50 KiB with SSH config's 270 KiB): declined by the owner (O3 (a)).
 - `tree-sitter-gitattributes` 0.1.6: rejected, it pins `tree-sitter` 0.20 (a second C runtime).
 
+### Approved deviation: C++, C#, Ruby, PHP, Kotlin, Swift, and Dart are highlighted (plan-00023)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: OpenTUI names these seven filetypes by extension, and by file name for Ruby's `Gemfile` and `Rakefile` (`opentui-0.9.9/src/generated.rs:136-169`), but Scouter registers no grammar for them (`scouter:src/reader/code-view.ts:20-29`), so they show plain in both apps. Their grammars are the heaviest of the research's common set: 1.4 to 6.9 MiB each, 25 MiB together (`research/common-grammars.md`, section 6).
+
+Decision (owner, 2026-11-28, plan-00023 O1 (a), O2): fmc highlights `cpp`, `csharp`, `ruby`, `php`, `kotlin`, `swift`, and `dart` through seven crates pinned exactly. The crate's own query is used, except C++, whose crate query colours five tokens of a sample: its query is nvim-treesitter's c query followed by its cpp query. nvim's ancestry predicates (`#has-ancestor?`, `#has-parent?`), which OpenTUI does not evaluate and which would otherwise match with no condition, are written as structural patterns (a field under a `field_declaration` is a property) or dropped (the attribute builtins, the template-method rule, the four-deep qualified names). A PHP file's text outside `<?php` is injected as HTML, and a heredoc takes the language its label names. The older capture names (Kotlin's `include`, `conditional`, `parameter`, and so on) are renamed to the palette's, and `module` is `namespace`. Wave 3 (Scala, Haskell, OCaml, Objective-C, R, PowerShell, Groovy) is parked in the roadmap.
+
+Consequences:
+
+- (positive) The common languages outside Scouter's set are coloured in every view, and Markdown fences in them too.
+- (negative) The release binary grows by about 25 MiB (+63 %). A clean release build takes about 13 s more CPU (`research/common-grammars.md`, section 6).
+- (negative) These files are coloured where Scouter shows them plain. `tree-sitter-kotlin-sg` is a fork with no stars.
+
+Alternatives considered:
+
+- All three waves: not taken, about 46 MiB for languages fewer developers open daily (O1 (c)).
+- Wave 1 only, or wave 1 with C++, Ruby, and PHP: not taken (O1 (b), (d)).
+- `tree-sitter-kotlin-ng` 1.1.0: rejected, it ships no query, and nvim's does not fit its grammar.
+
 ### Approved deviation: front matter is a code block in the rendered view
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.

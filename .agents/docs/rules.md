@@ -169,6 +169,20 @@ Decision O3 (b) of `plan-00023-common-grammars.md` ("avoid vendoring"): the only
 | `konomanoasa-tree-sitter-gitconfig` | `=0.7.3` | default | `.gitconfig`, `.gitmodules` (`gitconfig`); MIT |
 | `konomanoasa-tree-sitter-editorconfig` | `=0.9.2` | default | `.editorconfig` (`editorconfig`); MIT |
 
+### Approved for plan-00023 phase 3 (owner, 2026-11-28)
+
+Decisions O1 (a) and O2 of `plan-00023-common-grammars.md`: the wave-2 language grammars, each loading on the locked `tree-sitter` 0.27.2 (`research/common-grammars.md`, section 3). Each is pinned exactly and adds one package to the lock. Together they take the release binary from about 38 to 63 MiB (65,972,256 bytes measured after this phase).
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `tree-sitter-cpp` | `=0.23.4` | default | C++ (`cpp`); MIT; its query colours little, so fmc's is nvim-treesitter's |
+| `tree-sitter-c-sharp` | `=0.24.0` | default | C# (`csharp`); MIT |
+| `tree-sitter-ruby` | `=0.23.1` | default | Ruby (`ruby`); MIT |
+| `tree-sitter-php` | `=0.25.2` | default | PHP (`php`), with its HTML; MIT |
+| `tree-sitter-kotlin-sg` | `=0.4.1` | default | Kotlin (`kotlin`); MIT; ast-grep's fork of the grammar Neovim uses, the only Kotlin crate whose query compiles |
+| `tree-sitter-swift` | `=0.7.4` | default | Swift (`swift`); MIT |
+| `tree-sitter-dart` | `=0.3.0` | default | Dart (`dart`); MIT |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -186,7 +200,7 @@ Decision O3 (b) of `plan-00023-common-grammars.md` ("avoid vendoring"): the only
 - The query and JSON5 queries (plan-00018 phase 1) are the crates' own: `queries/query/` is `tree-sitter-tsquery` 0.8.0's (Apache-2.0, with its `LICENSE`; its header names the three changes), and `queries/json5/` is `tree-sitter-json5-orchard` 0.1.1's (MIT, with its `LICENSE`, unchanged).
 - The Lua injections (`queries/lua/injections.scm`, the pattern rules for find, match, gmatch, and gsub) are nvim-treesitter's (Apache-2.0, `runtime/queries/lua/injections.scm` at 04f1788, with its `LICENSE` beside the file as `LICENSE.nvim-treesitter`, since the lua directory's `LICENSE` is the grammar crate's MIT).
 - The vendored grammars are `vendor/grammars/{vimdoc,luadoc,luap,just}/`: each has `src/parser.c` (and `scanner.c` for just), `src/tree_sitter/parser.h`, the repository's `LICENSE`, and a `SOURCE` file (the repository URL and the full commit). vimdoc and just are Apache-2.0; luadoc and luap are MIT. just's `Cargo.toml` says MIT, but its repository `LICENSE` file is Apache-2.0, and the `LICENSE` file is the licence. Their highlight queries (`src/ui/syntax/queries/{vimdoc,luadoc,luap,just}/`) carry the same `LICENSE`, and each query's header names the upstream file and each change. `cargo about` cannot see vendored C, so `about.hbs` lists these grammars by hand: the MIT texts in full, and the Apache-2.0 text through the Apache-2.0 entry the crates already produce.
-- The plan-00023 queries (`queries/{dockerfile,make,cmake,ini,properties,proto,nix,scss,vue}/`) are the grammar crates' own, each with its `LICENSE` beside it: the crate's file, or the upstream repository's where the archive ships none (make, properties, scss). `dockerfile/` also keeps `LICENSE-MIT-CamdenCheek`, the licence of the grammar the crate forks. `queries/graphql/` is nvim-treesitter's (`runtime/queries/graphql/highlights.scm` at 04f1788, Apache-2.0, with its `LICENSE`). `queries/vue/injections.scm` is adapted from the crate's (MIT), and `queries/dockerfile/injections.scm` is the crate's with one rule dropped. Each file's header names its source and every change. `queries/{gitignore,gitattributes,gitconfig,editorconfig}/` (plan-00023 phase 2) are the konomanoasa crates' own (MIT, with each crate's `LICENSE`).
+- The plan-00023 queries (`queries/{dockerfile,make,cmake,ini,properties,proto,nix,scss,vue}/`) are the grammar crates' own, each with its `LICENSE` beside it: the crate's file, or the upstream repository's where the archive ships none (make, properties, scss). `dockerfile/` also keeps `LICENSE-MIT-CamdenCheek`, the licence of the grammar the crate forks. `queries/graphql/` is nvim-treesitter's (`runtime/queries/graphql/highlights.scm` at 04f1788, Apache-2.0, with its `LICENSE`). `queries/vue/injections.scm` is adapted from the crate's (MIT), and `queries/dockerfile/injections.scm` is the crate's with one rule dropped. Each file's header names its source and every change. `queries/{gitignore,gitattributes,gitconfig,editorconfig}/` (plan-00023 phase 2) are the konomanoasa crates' own (MIT, with each crate's `LICENSE`). The plan-00023 phase 3 queries are the crates' own for csharp, ruby (the upstream `LICENSE`: the archive ships none), php, swift, and dart; `queries/kotlin/` is the crate's, which is based on nvim-treesitter's, so it carries both the crate's MIT `LICENSE` and nvim-treesitter's as `LICENSE.nvim-treesitter`; `queries/cpp/` is nvim-treesitter's c and cpp queries at 04f1788 (Apache-2.0, with its `LICENSE`); `queries/php/injections.scm` is adapted from the crate's two injection files (MIT).
 
 ## Sample data
 

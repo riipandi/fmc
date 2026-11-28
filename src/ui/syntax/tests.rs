@@ -23,7 +23,7 @@ fn every_vendored_grammar_compiles_with_its_query() {
 }
 
 /// The grammars whose queries are copied into `queries/`, each with the query it is registered with.
-const COPIED: [(&str, &str); 32] = [
+const COPIED: [(&str, &str); 39] = [
     ("diff", include_str!("queries/diff/highlights.scm")),
     ("elixir", include_str!("queries/elixir/highlights.scm")),
     ("heex", include_str!("queries/heex/highlights.scm")),
@@ -56,6 +56,13 @@ const COPIED: [(&str, &str); 32] = [
     ("gitattributes", include_str!("queries/gitattributes/highlights.scm")),
     ("gitconfig", include_str!("queries/gitconfig/highlights.scm")),
     ("editorconfig", include_str!("queries/editorconfig/highlights.scm")),
+    ("cpp", include_str!("queries/cpp/highlights.scm")),
+    ("csharp", include_str!("queries/csharp/highlights.scm")),
+    ("ruby", include_str!("queries/ruby/highlights.scm")),
+    ("php", include_str!("queries/php/highlights.scm")),
+    ("kotlin", include_str!("queries/kotlin/highlights.scm")),
+    ("swift", include_str!("queries/swift/highlights.scm")),
+    ("dart", include_str!("queries/dart/highlights.scm")),
 ];
 
 /// The grammars added after the owner's first twelve, whose captures must all be names the palette styles, or one of
@@ -81,6 +88,13 @@ const STYLED_ONLY: &[&str] = &[
     "gitattributes",
     "gitconfig",
     "editorconfig",
+    "cpp",
+    "csharp",
+    "ruby",
+    "php",
+    "kotlin",
+    "swift",
+    "dart",
 ];
 
 /// Names a query may capture that the palettes leave plain: `none` marks text left plain on purpose, and the three
@@ -197,6 +211,19 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("gitattributes", "*.md text eol=lf\n", "eol", "attribute"),
         ("gitconfig", "[user]\n\tname = Robert Langdon\n", "name", "property"),
         ("editorconfig", "root = true\n\n[*.rs]\nindent_size = 4\n", "indent_size", "property"),
+        ("cpp", "namespace hogwarts {\nclass Hat { public: int sort() const { return 0; } };\n}\n", "class", "keyword"),
+        ("cpp", "int main() { return hogwarts::sort(\"Harry\"); }\n", "sort", "function"),
+        ("csharp", "public record Vault(int Number, string Owner);\n", "record", "keyword"),
+        ("ruby", "class Ollivander\n  def sell(wizard) = \"#{wizard} gets holly\"\nend\n", "def", "keyword"),
+        ("php", "<?php\nfunction add(string $name): void { echo \"Wizard {$name}\"; }\n", "function", "keyword"),
+        (
+            "kotlin",
+            "data class Team(val name: String)\nfun main() { println(Team(\"Gryffindor\")) }\n",
+            "fun",
+            "keyword",
+        ),
+        ("swift", "struct Cryptex {\n    let code: String\n}\n", "struct", "keyword"),
+        ("dart", "class Train {\n  final String platform;\n}\n", "class", "keyword"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");
@@ -226,6 +253,13 @@ fn the_extensions_opentui_lacks_are_highlighted() {
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/theme.scss")), Some("scss"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/.gitignore")), Some("gitignore"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/.editorconfig")), Some("editorconfig"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/hat.hpp")), Some("cpp"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/Ledger.cs")), Some("csharp"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Diagon/Gemfile")), Some("ruby"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Ministry/registry.php")), Some("php"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/build.gradle.kts")), Some("kotlin"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Louvre/Cryptex.swift")), Some("swift"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/train.dart")), Some("dart"));
     // Docker Compose files are YAML by their extension.
     assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/compose.yaml")), Some("yaml"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/docker-compose.override.yml")), Some("yaml"));
@@ -353,6 +387,7 @@ fn injected_code_is_painted_in_its_own_languages_colours() {
         ("vue", "<style scoped>\n.house { color: blue; }\n</style>\n", "color", syntax.function),
         ("vue", "<style lang=\"scss\">\n@mixin crest { width: 2rem; }\n</style>\n", "@mixin", syntax.keyword),
         ("dockerfile", "FROM alpine\nRUN echo \"Hedwig\" && apk add curl\n", "echo", syntax.function),
+        ("php", "<div class=\"vault\">\n<?php echo $owner; ?>\n</div>\n", "div", syntax.keyword),
     ];
     for (filetype, sample, token, expected) in cases {
         let got = painted(sample, filetype, token);
