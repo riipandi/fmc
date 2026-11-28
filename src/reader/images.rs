@@ -90,7 +90,7 @@ pub fn from_info(info: &str) -> Option<Image> {
     (word == FENCE).then(|| parse(line.trim())).flatten()
 }
 
-/// Why a box has no picture to open, in the words its last row shows (D2, D3).
+/// Why a box has no picture to open, in the words its last row shows.
 pub const REMOTE: &str = "remote";
 pub const SVG: &str = "SVG";
 pub const NOT_SHOWN: &str = "not an image fmc shows";
@@ -108,7 +108,7 @@ pub enum Header {
     Refused(&'static str),
 }
 
-/// What a box says about its image (D5): the name, the path with the size and format, and the hint or the reason.
+/// What a box says about its image: the name, the path with the size and format, and the hint or the reason.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Card {
     pub title: String,
@@ -166,7 +166,7 @@ pub fn opening(line: &str) -> String {
 }
 
 impl Image {
-    /// The box's name: the alt text, or the file's name when the alt text is empty (D5).
+    /// The box's name: the alt text, or the file's name when the alt text is empty.
     pub fn label(&self) -> String {
         if self.alt.trim().is_empty() {
             let decoded = decoded(&self.target);
@@ -178,7 +178,7 @@ impl Image {
 }
 
 /// Where an image's file is, from its destination as written: a local file the reader may open, or a source it cannot
-/// show (D3, D2). A remote source and an SVG draw their box with the reason; `Other` is any other non-image.
+/// show. A remote source and an SVG draw their box with the reason; `Other` is any other non-image.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Source {
     /// A local path, percent-decoded, relative to the Markdown file's folder (or absolute).

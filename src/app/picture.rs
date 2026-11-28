@@ -42,7 +42,7 @@ pub fn apply(m: &Model, ui: &Ui, path: &Path, serial: u64, headers: &[(String, H
     }
 }
 
-/// `Enter` in the rendered view: opens the first box whose top row is in view (D6). A box with no picture says why.
+/// `Enter` in the rendered view: opens the first box whose top row is in view, and a box with no picture says why.
 pub fn open_first(m: &mut Model, ui: &Ui) {
     let scroll = ui.viewer.position().1.max(0.0);
     let top = scroll as u32;

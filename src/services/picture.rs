@@ -24,7 +24,7 @@ pub struct Entry {
 }
 
 /// Each image's header, by the destination as written. `folder` is the Markdown file's folder, and every local
-/// destination must stay inside `root` (D2).
+/// destination must stay inside `root`, so a path that climbs out of it is refused before it is read.
 pub fn headers(cache: &Cache, root: &Path, folder: &Path, targets: &[String]) -> Vec<(String, Header)> {
     targets.iter().map(|target| (target.clone(), header(cache, root, folder, target))).collect()
 }

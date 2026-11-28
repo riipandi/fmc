@@ -178,7 +178,7 @@ pub fn capture_prose(spans: Vec<InlineSpan>, captured: &RefCell<Vec<Captured>>) 
 }
 
 /// The offscreen index's code renderer: records a code block, and keeps the default block. A diagram has no text the
-/// search can count, so it records nothing; a box counts its name, which is the alt text or the file's name (D7).
+/// search can count, so it records nothing; a box counts its name, which is the alt text or the file's name.
 pub fn capture_code(block: &CodeBlock<'_>, captured: &RefCell<Vec<Captured>>) -> Option<AnyWidget> {
     let text = match block.language {
         "mermaid" => String::new(),
