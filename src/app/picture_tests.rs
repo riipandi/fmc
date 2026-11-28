@@ -54,7 +54,7 @@ fn hogwarts() -> Hogwarts {
 fn reading(fixture: &Hogwarts) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(80, 40);
     let model = Rc::new(RefCell::new(new_model(app.app(), fixture.root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);
     {

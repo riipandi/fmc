@@ -47,7 +47,7 @@ fn reading(dir: &Path, git_gutter: bool, rows: u16) -> (TestApp, Rc<RefCell<Mode
     let app = TestApp::new(80, rows);
     let root = dir.to_path_buf();
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     let path = dir.join("notes.md");
     let text = fs::read_to_string(&path).unwrap();
     let document = decode(text.as_bytes()).expect("a text document");

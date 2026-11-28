@@ -28,7 +28,7 @@ fn notice(bytes: &[u8]) -> Viewing {
     fs::write(root.join("Pensieve.bin"), bytes).unwrap();
     let app = TestApp::new(120, 40);
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);
     {

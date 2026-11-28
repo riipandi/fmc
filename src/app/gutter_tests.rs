@@ -46,7 +46,7 @@ fn repository(edit: Option<&str>) -> TempDir {
 fn reading(dir: &Path, git_gutter: bool) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(COLUMNS, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), dir.to_path_buf(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     let path = dir.join("spells.txt");
     let text = fs::read_to_string(&path).unwrap();
     let document = decode(text.as_bytes()).expect("a text document");

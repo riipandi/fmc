@@ -23,7 +23,7 @@ pub(super) fn reading_text(columns: u16, markdown: &str) -> (TestApp, Rc<RefCell
     let app = TestApp::new(columns, 30);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);
     let notes = root.join("notes.md");

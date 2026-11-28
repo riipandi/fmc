@@ -12,7 +12,7 @@ const HOGWARTS: &str = "# Hogwarts\n\n## Gryffindor\n\n### Dumbledore\n\nThe *So
 /// The rendered view of `markdown` on a screen `columns` wide.
 fn rendered(columns: u16, markdown: &str) -> (TestApp, MarkdownView) {
     let app = TestApp::new(columns, 30);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.show(markdown);

@@ -9,7 +9,7 @@ plan: plan-00023-hex-and-text-view
 ## Closed
 
 - plan-00023 on `feat/hex-view` (the worktree branch `worktree-hex-view`, renamed). Commits, in order: `ab80511` (the research and the plan), `36fad22` (phase 1, the core: row layout, byte classes, `Blocks`, the byte match, `decode_lossy`), `cf1cb26` (phases 2 and 3, the block reads and the hex view with its keys, `:` offsets, and the notice buttons), `e17f9f6` (phase 4, the string search), `b3d2caf` (phase 5, `t` and the not-UTF-8 notice), and the docs commit that adds this handover (phase 6). Phase 7 is the validation below and the PR to `main`, not merged.
-- The plan is archived as `archive/plan-00023-hex-and-text-view.md`. `handover-00017-markdown-image-boxes.md` stays in `handover/`: it belongs to the Markdown image work in the main checkout, and moving it from this branch would collide with that work.
+- The plan is archived as `archive/plan-00023-hex-and-text-view.md`, and `handover-00018-inline-images.md` moved to `archive/` when this one landed. The branch merged `main` at v0.9.0 (the inline images) before the PR; the docs conflicts were resolved by keeping both sides.
 - `just verify` is green (979 tests run, 1 skipped; licenses ok). Live runs in Rex tabs at 80x24 and 160x48 (then about 185 columns): a 2 GiB generated file and a 2 GiB sparse file open, `G` and `:50%` land at once; a 1 MiB file truncated to 4 KiB while shown did not crash; a search with no hit over 2 GiB answered in about 1.5 s while `j` kept scrolling; a hit is drawn with `match-bg` (checked in the HTML capture); a Latin-1 file shows the notice with `Only UTF-8 text files are supported.`, `t` shows `caf�` and `␛[0m`, and `X` shows 32 bytes a row at that width.
 
 ## Decisions taken as planned
@@ -36,4 +36,4 @@ plan: plan-00023-hex-and-text-view
 1. Run fmc in a real terminal on a large binary and press `X`, then scroll, `G`, `:50%`, and `/` with a word you know is inside: confirm the colours read well in both palettes.
 2. For a cold-cache number, run `! sudo purge`, then open the 2 GiB file again and press `G`; the research measured only a warm cache.
 3. Decide whether a not-UTF-8 file should say `not UTF-8` instead of `binary` in its badge and footer.
-4. Review and merge the PR from `feat/hex-view` when ready; it touches `architecture.md`, `index.md`, `rust.md`, and `CHANGELOG.md`, which the Markdown image work may also touch.
+4. Review and merge the PR from `feat/hex-view` when ready.

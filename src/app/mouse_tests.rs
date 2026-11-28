@@ -54,7 +54,7 @@ fn listing_at(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     {
         let mut m = model.borrow_mut();
         m.browser.listed(
@@ -120,7 +120,7 @@ fn phone() -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(49, 40);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     {
         let mut m = model.borrow_mut();
         let files = (0..60).map(|i| Entry::new(&root, &format!("hogwarts-{i:02}.txt"), Kind::File)).collect();
@@ -202,7 +202,7 @@ fn changes_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>, R
     }
     let app = TestApp::new(columns, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), root.to_path_buf(), None)));
-    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     {
         let mut m = model.borrow_mut();
         m.changes_load = Some(1);
@@ -273,7 +273,7 @@ fn tree_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     {
         let mut m = model.borrow_mut();
         m.browser.listed(&root, names.iter().map(|name| Entry::new(&root, name, Kind::File)).collect());
@@ -315,7 +315,7 @@ fn the_first_and_last_finder_rows_open_their_file_in_compact() {
             }
             let app = TestApp::new(columns, 24);
             let model = Rc::new(RefCell::new(new_model(app.app(), dir.path().to_path_buf(), None)));
-            let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+            let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
             crate::app::capture::wire(app.app(), &model, &ui);
             wire_mouse(&model, &ui);
             app.press("/");
@@ -372,7 +372,7 @@ fn the_tree_thumb_reaches_the_bottom_after_the_terminal_shrinks() {
     let app = TestApp::new(80, 40);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     let names: Vec<String> = (0..60).map(|n| format!("owl-{n:02}.txt")).collect();
     model.borrow_mut().browser.listed(&root, names.iter().map(|name| Entry::new(&root, name, Kind::File)).collect());
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());

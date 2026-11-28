@@ -181,7 +181,7 @@ fn probes(kind: &str, source: &str) -> Vec<String> {
 fn drawn(source: &str, width: u16) -> Vec<(Range<u32>, String)> {
     // Tall enough for the design sample at 40 columns, which renders past 400 rows.
     let app = TestApp::new(width, 1200);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.show(source);
@@ -284,7 +284,7 @@ fn mark(spans: Vec<InlineSpan>, query: &str, bg: Color) -> Vec<InlineSpan> {
 fn an_inline_hook_marks_a_match_across_spans() {
     let bg = Color::rgb(0x44, 0x55, 0x22);
     let app = TestApp::new(80, 40);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.widget().inline_hook(move |spans, _| mark(spans, "harry potter", bg));
@@ -303,7 +303,7 @@ fn a_code_block_renderer_draws_the_default_look() {
     let theme = Arc::new(syntax::theme(&DARK));
     let frame = |custom: bool| {
         let app = TestApp::new(60, 24);
-        let view = MarkdownView::new(app.app(), &DARK);
+        let view = MarkdownView::new(app.app(), &DARK, true);
         app.app().root().add(&view.widget());
         view.visible(true);
         if custom {
@@ -338,7 +338,7 @@ fn refresh_cost_on_design_md() {
     let query = Rc::new(RefCell::new(String::from("the")));
     let bg = Color::rgb(0x44, 0x55, 0x22);
     let app = TestApp::new(80, 400);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     let hook_query = Rc::clone(&query);

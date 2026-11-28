@@ -1757,26 +1757,34 @@ Alternatives considered:
 - Unicode word segmentation: rejected. It would differ from the dialog's field, which OpenTUI draws, and it needs a crate the owner has not approved.
 - OpenTUI's `Input` for each prompt: rejected. Each prompt is a `Text` in a bar the app paints, and an `Input` takes the keyboard focus, which the prompts keep for the list and the reader.
 
-### Approved deviation: an image that is a whole paragraph is drawn as a box in rendered Markdown
+### Approved deviation: local images draw as pictures in rendered Markdown
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
-Context: Scouter's rendered Markdown draws `![alt](path)` as its alt text styled as a link. Its preview has no image handling (`scouter:src/reader/code-view.ts:132-142`, `defaultRender()`), and OpenTUI 0.9.9's Markdown has no image block (`opentui-sys-0.9.9/src/generated.rs:483-493`): the inline hook sees the link target, and `![](a.svg)` draws nothing. The owner asked on 2026-11-28 whether the preview can show images.
+Context: Scouter's rendered Markdown draws `![alt](path)` as its alt text styled as a link, and an HTML `<img>` or `<picture>` as text. Its preview has no image handling (`scouter:src/reader/code-view.ts:132-142`, `defaultRender()`), and OpenTUI 0.9.9's Markdown has no image block (`opentui-sys-0.9.9/src/generated.rs:483-493`): the inline hook sees the link target, and `![](a.svg)` draws nothing. The owner asked on 2026-11-28 whether the preview can show images (plan-00021), then for the real pictures in the README's logo (plan-00022).
 
-Decision (owner, 2026-11-28, plan-00021 D1 to D3 and D5 to D7): a top-level paragraph that is one image and nothing else draws as a box of three text rows in a frame. The rows are the image's name (its alt text, or its file's name when the alt is empty), the path as written with the size and format read from the header, and the hint: `Enter opens it`, or the reason the picture cannot open. The reasons are `outside the folder`, `not found`, `not an image fmc shows`, `could not be read`, `too large`, `remote` (an `http` or `https` source), and `SVG`. A destination is resolved against the Markdown file's folder and must stay inside the browsed root, checked on the disk after symbolic links are resolved. No picture is drawn inside the preview, no remote file is fetched, and no SVG is rasterised.
+Decision (owner, 2026-11-28, plan-00021 D1 to D3 and D5 to D7; plan-00022 D1 to D3 and D6): a local image that is a top-level paragraph of its own draws as the picture, and so does an HTML block that is one `<img>` or `<picture>` among headings, paragraphs, divs, links, and centres. The picture is as wide as its HTML `width` in pixels (8 px a column) or its own width, never wider than the pane, and no taller than about three fifths of the viewer. A `<picture>` takes its `(prefers-color-scheme: dark)` source in the dark theme and its `<img>` source otherwise, and the picture changes when the theme does. `align="center"` on the image or a wrapper, and a `<center>` wrapper, centre it. A remote image, an SVG, a path outside the browsed root, a missing file, a file over 10 MiB, a format fmc does not show, and a file that does not decode draw the box instead: three text rows in a frame, with the reason. Until its picture is decoded, a box keeps the picture's rows, so the lines below do not move. `Enter` and a click open the picture in the image view as before, and `Ctrl+o` returns to the Markdown. The source view (`m`) shows the file as written.
 
-Mechanics: the rendered view rewrites the source before OpenTUI reads it (`ui/markdown_images.rs`). The paragraph's line becomes an opening fence whose info string is `fmc-image` and the image's own text, and the blank line after it becomes the closing fence, so no line is added and the git signs and the search keep their rows. A paragraph with no blank line after it, or with a backtick, keeps its text, since a fence cannot carry them. The box is a measured widget (`ui/image_box.rs`) that does no I/O: each image's header is read on a worker (`services/picture.rs`) when the document shows, cached by path and modification time, and drawn when it arrives. The source view (`m`) shows the file as it is.
+Mechanics: the rendered view rewrites the source before OpenTUI reads it (`ui/markdown_images.rs`). A lone image paragraph, or an HTML image block, becomes a fence whose info string carries the source (an HTML block's lines joined onto one line), and the fence keeps the block's line count, so the git signs and the search keep their rows (`reader/images.rs` `parse_html`, `reader/html.rs`). The fence's renderer (`ui/markdown_pictures.rs`) returns an `ImageView` for a decoded picture and the box otherwise, sized by explicit columns and an aspect ratio of the picture's pixels times the cell aspect (`widget/image.rs`, `fitted_size`). The native library decodes only on the thread that owns its context (`opentui-0.9.9/src/native/context.rs:31`), so a worker reads the file's bytes (`services::fs::open`), and the UI thread decodes each picture once. The decoded handles are kept in a cache of 32 by path and modification time (`Pictures`), and a rebuild of the document takes them again.
 
 Consequences:
 
-- (positive) An image in a document reads as what it is: its name, where it lives, and its size, and `Enter` or a click opens the picture in the image view. `Ctrl+o` returns to the Markdown at its scroll.
-- (positive) Search finds a box by its name and counts it once, so `n` and `N` reach it.
-- (negative) A paragraph of two images, or an image in a sentence, a list, or a quote, still shows its alt text as a link, which Scouter also does.
-- (negative) A box is drawn over the fence's two source lines, so the line a deletion sits under is the closing line of the box.
+- (positive) An image reads as what it is: the picture, at its size, in place. The README's logo draws as a picture, and `Enter` or a click opens it at full size.
+- (positive) Search finds a picture by its alt text and counts it once, and the git signs keep their place beside the block.
+- (negative) Each picture decodes once on the UI thread, when its bytes arrive: up to 10 MiB, so a large file can pause one frame.
+- (negative) A picture's width is its pixel width at 8 px a column, since fmc does not read the terminal's cell width, so a terminal with wider or narrower cells shows it at another width.
+- (negative) On a terminal without a graphics protocol, `ImageProtocol::Auto` draws the picture in coloured blocks, which is coarse.
+
+Deviations from plan-00022 as written, found while building it:
+
+- D5 (decode off the frame): the worker reads the bytes and the UI thread decodes them once. The native `Context` is `Rc`-based, so a worker cannot decode (`opentui-0.9.9/src/native/context.rs:31`).
+- D5 (cache key): the key is the path and the modification time, with no target size, since the native paint fits the picture into its rectangle (`packages/native/src/scene.zig:3207`).
+- D3 (60 percent of the viewer): the cap is in rows, from the viewer's height at paint. A percent of the parent cannot reach the viewer's height, since the parent is the document's block.
+- D3 (width): the width is set in columns from the text's width at paint, not left to layout. In the spike, a maximum width was ignored when a width was set, and a box with no width did not take its maximum.
 
 Alternatives considered:
 
-- A picture drawn inside the preview, placed from the block tops and clipped under the scroll: rejected by the owner (D1). It needs a decode cache and overlay placement that are unproven in the terminals.
-- An inline `[image: alt]` marker: rejected by the owner (D1), since it shows no size and no path.
-- The fence's body holds the image's line, with a blank line before the fence too: rejected, because it needs a blank line on both sides and fails for an image at the top of a file. The image sits in the info string instead.
-- Remote images fetched over HTTP, and SVG rasterised: rejected by the owner (D3). Each needs a client or a rasteriser that the approved dependencies do not hold.
+- Boxes only (plan-00021 D1), superseded by the owner's decision for real pictures (plan-00022 D1).
+- A decode on a worker: rejected, since the native context is not `Send`.
+- Remote images fetched over HTTP, and SVG rasterised: rejected by the owner (plan-00021 D3). Each needs a client or a rasteriser the approved dependencies do not hold.
+- A marker `[image: alt]`: rejected by the owner (plan-00021 D1).

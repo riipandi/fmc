@@ -45,7 +45,7 @@ fn match_colour() -> Color {
 /// A view of `source` on a screen `columns` wide, with no marks.
 fn shown(columns: u16, source: &str) -> (TestApp, MarkdownView) {
     let app = TestApp::new(columns, 60);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.show(source);
@@ -133,7 +133,7 @@ fn block_tops_follow_the_blocks_above_the_view() {
     let app = TestApp::new(60, 8);
     let scroll = ScrollBox::new(app.app()).axes(true, true).scrollbars(false).grow(1.0);
     app.app().root().add(&scroll);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     scroll.content_view().add(&view.widget());
     view.visible(true);
     view.show(SHOW);

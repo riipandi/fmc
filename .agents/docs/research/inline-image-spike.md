@@ -1,8 +1,8 @@
 # Inline image spike for plan-00022
 
-updated: 2026-11-28T21:00:00+07:00
+updated: 2026-11-28T23:30:00+07:00
 
-Point-in-time research, 2026-11-28. Plan: `.agents/docs/plans/plan-00022-inline-images.md` phase 1 (the gate for D1 to D6). Agent audience; evidence as `file:line` in the locked crates (`opentui` 0.9.9, `Cargo.lock`) or in the Zig source at tag v0.9.9 (`packages/native/src/`, read from a fresh clone, not kept in the tree).
+Point-in-time research, 2026-11-28. Plan: `.agents/docs/archive/plan-00022-inline-images.md` phase 1 (the gate for D1 to D6). Agent audience; evidence as `file:line` in the locked crates (`opentui` 0.9.9, `Cargo.lock`) or in the Zig source at tag v0.9.9 (`packages/native/src/`, read from a fresh clone, not kept in the tree).
 
 ## 1. Verdict
 

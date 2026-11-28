@@ -25,7 +25,7 @@ fn reading(name: &str, text: &str, associations: &[(&str, &str)]) -> (TestApp, R
     let app = TestApp::new(100, 30);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     let file = root.join(name);
     {
