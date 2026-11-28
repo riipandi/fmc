@@ -1,7 +1,7 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-27T23:40:00+07:00
+updated: 2026-11-28T14:54:32+07:00
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -28,10 +28,10 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
 | RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
 | RI-13 | Configurable keymap | landed | plan-00015 phase 4 (`1b37a2e`): keys in `keymap.json`; in-UI rebinding is not part of it (D11 (a)) | 2026-11-27 |
-| RI-14 | Open an unsupported file with the default app | parked | owner-deferred | 2026-11-27 |
-| RI-15 | Open the project folder in Finder or an editor | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
-| RI-16 | Open With | parked | owner-deferred; unlock: RI-9 | 2026-11-27 |
-| RI-17 | The rest of the owner's grammar set | parked | unlock: a crate that loads | 2026-11-27 |
+| RI-14 | Open an unsupported file with the default app | planned | plan-00017 (in progress) | 2026-11-28 |
+| RI-15 | Open the project folder in Finder or an editor | planned | plan-00017 (in progress) | 2026-11-28 |
+| RI-16 | Open With | planned | plan-00017 (in progress) | 2026-11-28 |
+| RI-17 | The rest of the owner's grammar set | planned | plan-00018 (in progress) | 2026-11-28 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
 | RI-20 | The Settings page on `Ctrl+,` | landed | plan-00015 phase 3 (`d68af26`), the grouped layout `883577d`; owner checks: `Ctrl+,` in Ghostty and Terminal.app | 2026-11-27 |
@@ -189,19 +189,19 @@ Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.
 
 ### RI-14 — Open an unsupported file with the default app
 
-- status: parked (owner-deferred 2026-11-27) · updated 2026-11-27
+- status: planned (plan-00017, in progress) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for a button or action that opens a file fmc cannot show (the binary notice) with the system's default app (`open <path>` on macOS). Open points: the key and the button on the binary notice; whether it also works for files fmc can show.
 
 ### RI-15 — Open the project folder in Finder or an editor
 
-- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+- status: planned (plan-00017, in progress) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for an action that opens the browsed folder in Finder or in a chosen editor or IDE (Zed, VS Code), with the editor set in `settings.json`. Open points: the key, the settings key and its shape (an app name or a command line), and quoting of the path.
 
 ### RI-16 — Open With
 
-- status: parked (owner-deferred 2026-11-27; unlock: settings.json landed) · updated 2026-11-27
+- status: planned (plan-00017, in progress) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for `Open With …` on text, code, and other supported files: a picker of relevant apps, or the ones set in `settings.json`. Open points: how relevant apps are found on macOS (Launch Services) versus a configured list per extension, and the picker's UI. Shares the launch code and the security rules (no shell interpolation of paths) with RI-14 and RI-15.
 
@@ -209,7 +209,7 @@ The owner asked on 2026-11-27 for `Open With …` on text, code, and other suppo
 
 ### RI-17 — The rest of the owner's Neovim grammar set
 
-- status: parked (unlock: a crate that loads on the locked `tree-sitter` 0.27, per language; RI-18 landed first, owner 2026-11-27) · updated 2026-11-27
+- status: planned (plan-00018, in progress; the 2026-11-28 research found crates for query, json5, and just, vendored routes for vimdoc, luadoc, and luap, and no licence for eex) · updated 2026-11-28
 
 Twelve of the nineteen filetypes in RI-2 load and are highlighted (`architecture.md`, "the owner's extra grammars are highlighted"). Seven have no crate that loads. Six have a crate that pins another `tree-sitter` (json5, luadoc, luap, and query pin 0.20; just and vimdoc pin 0.25), which clashes on the `links` key with 0.27. eex has no published crate. Each also needs a highlight query for fmc's capture names. Nothing is dropped from a loaded set: the phase 3 spike dropped none (`research/grammar-load-spike.md`, section 5).
 
