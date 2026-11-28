@@ -173,7 +173,7 @@ fn a_save_sets_its_keys_and_keeps_the_others_sorted_with_a_final_newline() {
     let changes = [("auto_preview", json!(false)), ("reader_jump", json!(8))];
     assert_eq!(
         merged(text, &changes).unwrap(),
-        "{\n  \"auto_preview\": false,\n  \"hogwarts\": {\n    \"house\": \"Gryffindor\"\n  },\n  \"reader_jump\": 8,\n  \"zeta\": 1\n}\n"
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false,\n  \"hogwarts\": {\n    \"house\": \"Gryffindor\"\n  },\n  \"reader_jump\": 8,\n  \"zeta\": 1\n}\n"
     );
 }
 
@@ -433,4 +433,22 @@ fn each_bundled_theme_completes_in_its_own_slot_and_the_default_in_both() {
         };
         assert!(slot.contains(&theme.id), "{} completes in its slot", theme.id);
     }
+}
+
+#[test]
+fn a_save_into_an_empty_file_writes_the_schema_link_first_and_keeps_the_owners_own() {
+    assert_eq!(
+        merged("{}", &[("reader_jump", json!(8))]).unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"reader_jump\": 8\n}\n"
+    );
+    let own = r#"{"$schema": "../hogwarts/settings.schema.json", "reader_jump": 3}"#;
+    let kept = merged(own, &[("reader_jump", json!(8))]).unwrap();
+    assert!(kept.contains(r#""$schema": "../hogwarts/settings.schema.json""#), "{kept}");
+}
+
+#[test]
+fn parse_ignores_the_schema_key_without_a_notice() {
+    let parsed = parse(r#"{"$schema": "./meta/config.schema.json", "reader_jump": 8}"#);
+    assert_eq!(parsed.settings.reader_jump, 8);
+    assert!(parsed.notices.is_empty());
 }

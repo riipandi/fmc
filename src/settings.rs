@@ -86,7 +86,11 @@ pub fn parse(text: &str) -> Parsed {
     parsed
 }
 
-/// The file's text with `changes` set, for a save (`services::settings::save`). Keys the change does not name keep their
+/// The `$schema` a save adds to a file that has none: the schema `services::settings::ensure_schema` writes beside it
+/// (plan-00016 O1 (b)). Relative to `settings.json`, which editors resolve against the file's folder.
+pub const SCHEMA_LINK: &str = "./meta/config.schema.json";
+
+/// The file's text with `changes` set, for a save (`services::settings::update`). Keys the change does not name keep their
 /// values, but serde_json keeps no file order, so a save rewrites the keys sorted. A text that is not a JSON object is
 /// refused, so the caller leaves the file as it is.
 pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
@@ -97,6 +101,8 @@ pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
             return Err(format!("settings.json is not valid JSON (line {}); nothing was saved.", error.line()));
         }
     };
+    // A `$schema` the owner wrote stays; only a file with none gets the link, so an editor completes the keys.
+    object.entry("$schema").or_insert_with(|| Value::from(SCHEMA_LINK));
     for (key, value) in changes {
         object.insert((*key).into(), value.clone());
     }

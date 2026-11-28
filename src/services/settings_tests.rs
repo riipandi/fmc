@@ -137,7 +137,10 @@ fn an_update_creates_a_missing_file_with_only_its_changes() {
     let dir = TempDir::new().unwrap();
     let file = dir.path().join("fmc").join("settings.json");
     update(&file, &[("auto_preview", json!(false))]).unwrap();
-    assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"auto_preview\": false\n}\n");
+    assert_eq!(
+        fs::read_to_string(&file).unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false\n}\n"
+    );
 }
 
 #[test]
@@ -146,7 +149,10 @@ fn an_update_keeps_a_hand_edit_made_since_the_start() {
     let file = dir.path().join("settings.json");
     fs::write(&file, r#"{"hogwarts": "Gryffindor"}"#).unwrap();
     update(&file, &[("reader_jump", json!(8))]).unwrap();
-    assert_eq!(fs::read_to_string(&file).unwrap(), "{\n  \"hogwarts\": \"Gryffindor\",\n  \"reader_jump\": 8\n}\n");
+    assert_eq!(
+        fs::read_to_string(&file).unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"hogwarts\": \"Gryffindor\",\n  \"reader_jump\": 8\n}\n"
+    );
 }
 
 #[test]

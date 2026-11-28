@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-28T14:00:33+07:00
-updated: 2026-11-28T15:00:00+07:00
+updated: 2026-11-28T15:20:00+07:00
 phases:
     - id: 1
       title: The schema, built in the pure core
@@ -9,11 +9,11 @@ phases:
       note: —
     - id: 2
       title: The startup check and write of meta/config.schema.json
-      status: committed
+      status: committed (4412013)
       note: —
     - id: 3
       title: The $schema link in settings.json (per O1)
-      status: pending
+      status: committed
       note: runs, O1 (b)
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
