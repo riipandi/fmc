@@ -1,28 +1,28 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T17:09:52+07:00
 updated: 2026-11-28T17:09:52+07:00
 phases:
     - id: 1
       title: The image paragraphs, found and rewritten as fences
-      status: pending
-      note: —
+      status: done
+      note: d973b5d
     - id: 2
       title: The image box in the rendered view
-      status: pending
-      note: —
+      status: done
+      note: 1cc7a58
     - id: 3
       title: Opening a box's image, and back
-      status: pending
-      note: —
+      status: done
+      note: 027452a
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: done
+      note: the docs commit that adds handover-00017-markdown-image-boxes.md
     - id: 5
       title: Final validation and live run
-      status: pending
-      note: —
+      status: done
+      note: no commit; just verify green and the live runs in handover-00017-markdown-image-boxes.md
 ---
 
 ## Show Markdown images as boxes in the rendered view — alt, file, size, and a key that opens the picture

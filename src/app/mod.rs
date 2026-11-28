@@ -12,6 +12,7 @@ mod mouse;
 mod open;
 mod overlay;
 mod pages;
+mod picture;
 mod poll;
 mod preview;
 mod reader;
@@ -123,6 +124,8 @@ struct Model {
     choice: ModeChoice,
     parser: Parser,
     proxy: AppProxy,
+    /// The image headers the rendered view's boxes read, shared by the workers (`app/picture.rs`).
+    pictures: services::picture::Cache,
     browser: Browser,
     marks: Marks,
     pending: Option<Pending>,
@@ -276,6 +279,7 @@ fn new_model(app: &App, root: PathBuf, pending: Option<Pending>) -> Model {
         choice: ModeChoice::Auto,
         parser: Parser::default(),
         proxy: app.proxy(),
+        pictures: Default::default(),
         browser: Browser::new(Tree::new(root.clone())),
         marks: Marks::default(),
         pending,

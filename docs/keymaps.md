@@ -93,6 +93,7 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 | Markdown: rendered / source | `m` |
 | open the file in its default app | `o` |
 | pick an app to open the file with | `O` |
+| open the image box in view | `Enter` |
 | open the folder in the editor from settings, or in Finder | `e` |
 | show the file in Finder | `E` |
 
@@ -254,6 +255,7 @@ The names are fixed; a name that changes is a breaking change to the file. A def
 | `clear_marks` | `S` |
 | `open_default` | `o` |
 | `open_with` | `O` |
+| `open_image` | `enter` |
 | `open_in_editor` | `e` |
 | `reveal_in_finder` | `E` |
 | `toggle_fuzzy` | `ctrl-f` |

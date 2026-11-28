@@ -4,19 +4,22 @@
 //! go through the inline hook and the code renderers, which the view registers once and rebuilds for each change.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use fmc::reader::frontmatter;
 use fmc::reader::headings;
+use fmc::reader::images::{self, Header, Image};
 use fmc::reader::language::HIGHLIGHTED;
 use fmc::reader::rendered_search::Rendered;
 use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
+use super::image_box::{self, ImageBox};
 use super::markdown_blocks;
+use super::markdown_images;
 use super::markdown_search::{
     Captured, Mark, Paint, Styles, capture_code, capture_prose, count_code, index, paint_code, paint_prose,
 };
@@ -37,6 +40,12 @@ pub struct MarkdownView {
     index: RefCell<Option<(String, Rc<Rendered>)>>,
     /// The source lines of each top-level block of the last source, for the git signs.
     lines: RefCell<Option<(String, BlockLines)>>,
+    /// The headers the boxes draw, by destination as written, from the worker (`app/picture.rs`).
+    headers: Rc<RefCell<HashMap<String, Header>>>,
+    /// The boxes of the shown source: each one's block index and image.
+    boxes: RefCell<Vec<(usize, Image)>>,
+    /// The header a box picked on the last release (`ui/image_box.rs`), until the app takes it.
+    pick: Rc<RefCell<Option<Header>>>,
 }
 
 impl MarkdownView {
@@ -52,6 +61,9 @@ impl MarkdownView {
             captured,
             index: RefCell::new(None),
             lines: RefCell::new(None),
+            headers: Rc::new(RefCell::new(HashMap::new())),
+            boxes: RefCell::new(Vec::new()),
+            pick: Rc::new(RefCell::new(None)),
         };
         view.restyle(p);
         view
@@ -97,6 +109,17 @@ impl MarkdownView {
             let paint = Rc::clone(&self.paint);
             self.doc.code_block_renderer(language, move |block| paint_code(block, &paint));
         }
+        // A lone image's box (`reader/images.rs`): built from its fence and the header the worker read, with no I/O here.
+        // It counts its fence like the search index does, so the slots of the marks hold (`markdown_search.rs`).
+        let (paint, headers, boxed) = (Rc::clone(&self.paint), Rc::clone(&self.headers), image_box::Colors::new(p));
+        let pick = Rc::clone(&self.pick);
+        self.doc.code_block_renderer(images::FENCE, move |block| {
+            count_code(&paint);
+            let image = images::from_info(block.info)?;
+            let header = headers.borrow().get(&image.target).cloned();
+            let widget = ImageBox::new(&image, header.as_ref(), boxed, Rc::clone(&pick));
+            Some(Custom::measured(block.app, widget).as_any())
+        });
         self.apply();
     }
 
@@ -113,11 +136,40 @@ impl MarkdownView {
     pub fn show(&self, markdown: &str) {
         let marked = self.paint.mark.borrow_mut().take().is_some();
         self.paint.restart();
-        self.doc.set_markdown(headings::with_markers(&frontmatter::as_fence(markdown)));
+        let prepared = markdown_images::prepared(markdown);
+        *self.boxes.borrow_mut() = markdown_images::boxes(&prepared, &markdown_blocks::split(&prepared));
+        // The headers name the last document's folder, so they go with it; the worker answers for this one.
+        self.headers.borrow_mut().clear();
+        self.doc.set_markdown(headings::with_markers(&prepared));
         // A block the document keeps from the one shown keeps its marks, so the marked document is built again.
         if marked {
             self.apply();
         }
+    }
+
+    /// Each box's top row in the document and its header, in document order. Empty until a frame lays the document out.
+    pub fn boxes(&self) -> Vec<(u32, Option<Header>)> {
+        let tops = self.block_tops();
+        let headers = self.headers.borrow();
+        self.boxes
+            .borrow()
+            .iter()
+            .filter_map(|(block, image)| {
+                let (top, _) = tops.get(*block)?;
+                Some((*top, headers.get(&image.target).cloned()))
+            })
+            .collect()
+    }
+
+    /// The header the last release over a box picked, if any; taking it clears it.
+    pub fn take_pick(&self) -> Option<Header> {
+        self.pick.borrow_mut().take()
+    }
+
+    /// The headers the boxes draw, and draws them again: a box's rows follow its header.
+    pub fn set_headers(&self, headers: Vec<(String, Header)>) {
+        *self.headers.borrow_mut() = headers.into_iter().collect();
+        self.apply();
     }
 
     /// Sets the search marks the view draws (`None` clears them). Each change rebuilds the document.
@@ -148,7 +200,7 @@ impl MarkdownView {
             return lines;
         }
         let lines = Rc::new(
-            markdown_blocks::split(&frontmatter::as_fence(source))
+            markdown_blocks::split(&markdown_images::prepared(source))
                 .blocks
                 .into_iter()
                 .map(|block| block.lines)
@@ -190,11 +242,12 @@ impl MarkdownView {
     }
 }
 
-/// Registers the offscreen index's hook and renderers: every language the shown view renders and the diagram.
+/// Registers the offscreen index's hook and renderers: every language the shown view renders, the diagram, and the box.
 fn register_capture(offscreen: &Markdown, captured: &Rc<RefCell<Vec<Captured>>>) {
     let hook = Rc::clone(captured);
     offscreen.inline_hook(move |spans, _| capture_prose(spans, &hook));
-    for language in std::iter::once("mermaid").chain(HIGHLIGHTED.iter().copied()) {
+    for language in std::iter::once("mermaid").chain(std::iter::once(images::FENCE)).chain(HIGHLIGHTED.iter().copied())
+    {
         let captured = Rc::clone(captured);
         offscreen.code_block_renderer(language, move |block| capture_code(block, &captured));
     }
