@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The footer's left side shows the browsed root and the git branch (`⎇ name`) on the files, reader, Settings, and changes screens from 60 columns up, in place of the selected file's path. A detached `HEAD` shows its short hash. The reader's header still names the file.
+- The changes screen fits a diff to the pane when its lines do. A diff of short lines no longer pans sideways, and its header's stat bar shows at the right edge. A longer line still pans by its overflow. See [Parity](docs/parity.md#changes-screen).
 
 ## [0.5.0] - 2026-11-28
 
