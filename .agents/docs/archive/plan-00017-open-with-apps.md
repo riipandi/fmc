@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T14:48:05+07:00
-updated: 2026-11-28T15:28:53+07:00
+updated: 2026-11-28T15:32:12+07:00
 
 
 
@@ -20,15 +20,15 @@ phases:
       note: —
     - id: 4
       title: RI-16, Open With
-      status: committed
+      status: committed (8b57fda)
       note: —
     - id: 5
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
+      status: committed (with this commit)
       note: —
     - id: 6
       title: Final validation and live run
-      status: pending
+      status: done (validation and live run green; no commit)
       note: —
 ---
 

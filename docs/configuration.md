@@ -15,6 +15,8 @@ fmc reads one optional settings file when it starts. The [Settings page](usage.m
 | `reader_jump` | whole number, 1 or more | `5` | How many lines `[` and `]` scroll the reader. |
 | `git_gutter` | `true` or `false` | `true` | Whether the reader marks the lines of a file in a git repository that differ from `HEAD`: in a strip left of the line numbers, and beside the changed blocks of the rendered Markdown view. |
 | `file_associations` | object of pattern to filetype name | none | Which filetype a file is highlighted as, and whether `m` renders it as Markdown. See [File associations](#file-associations). |
+| `editor` | string: an app name or an app path | `""` | The app `e` opens the browsed folder with. Empty opens the folder in Finder. See [Opening in other apps](#opening-in-other-apps). |
+| `open_with` | object of pattern to a list of app names or `.app` paths | none | The apps the Open With picker (`O`) offers first for a file that matches the pattern. See [Opening in other apps](#opening-in-other-apps). |
 | `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it for this run only. See [Finder](#finder). |
 | `theme_mode` | `"auto"`, `"dark"`, or `"light"` | `"auto"` | Which palette to show. `auto` follows the terminal's background; `dark` and `light` force one. See [Themes](#themes). |
 | `dark_theme` | a theme id | `"default"` | The palette for dark mode: `default` (Scouter's own) or a theme id that is dark. See [Themes](#themes). |
@@ -42,7 +44,7 @@ fmc writes a JSON Schema for the settings file to `$XDG_CONFIG_HOME/fmc/meta/con
 
 ## Saving from the Settings page
 
-The Settings page edits the eight keys above except `file_associations`: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme`. Edit `file_associations` by hand.
+The Settings page edits the eight keys above except `file_associations`, `editor`, and `open_with`: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme`. Edit `file_associations`, `editor`, and `open_with` by hand.
 
 - Each change is saved when you make it. A save reads the file again and sets only the keys the page changed. Every other key stays as it is, including keys fmc does not know and hand edits made since fmc started.
 - A save writes the keys in alphabetical order, so the first save of a file that was in another order reorders it. Values keep their types.
@@ -108,6 +110,25 @@ A theme file is strict JSON, with no comments:
 `find_mode` sets how the file finder (`/`) matches a name when it opens. `"substring"` is Scouter's match: every word of the query must appear in the path, ignoring case. `"fuzzy"` takes the whole query as one pattern, spaces included, and matches its letters in order anywhere in the path, ignoring case. The best matches come first, and the letters that matched are highlighted.
 
 `Ctrl+F` in the finder flips the match for this run only, and the query runs again; the footer names `fuzzy` while it is on. A restart returns to `find_mode`: a flip is not saved. Change `find_mode` on the Settings page to keep a different start. A value that is not one of the two names is ignored with a notice, and `"substring"` is used.
+
+## Opening in other apps
+
+`editor` names the app that `e` opens the browsed folder with, and `open_with` names the apps the Open With picker (`O`) offers for a file.
+
+```json
+{
+  "editor": "Zed",
+  "open_with": {
+    "*.md": ["Zed", "Typora"],
+    "**/*.png": ["/Applications/Pixelmator Pro.app"]
+  }
+}
+```
+
+- `editor` is an app name or an app path, passed to `open -a`. Empty, the default, opens the folder in Finder. An app that is not installed shows the reason `open` gives in the footer.
+- `open_with` takes the patterns of [File associations](#file-associations): the one pattern that `file_associations` would pick for a file gives its apps. The picker lists those apps first, then the apps macOS lists for the file (the default marked), then Finder, which is always last.
+- An entry that does not parse, a value that is not a list, and an item that is not a non-empty text is skipped with a notice that names its pattern. The rest of the file still applies.
+- Neither key is on the Settings page. Edit them by hand; fmc reads them at start.
 
 ## Keymap file
 

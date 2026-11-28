@@ -91,6 +91,18 @@ fmc never overwrites. A name that is taken is refused with a notice, and the dia
 
 There is no undo beyond the Trash. `r`, `R`, and `a` work on one row; the copy, cut, paste, and delete keys work on every marked row.
 
+## Opening in other apps
+
+fmc hands a file or a folder to macOS, and the app that opens it does what it does with the file. fmc writes nothing.
+
+- `o` opens the selected row, or the file in the reader, with the app macOS picks for it. A folder opens in Finder. A file fmc cannot show, such as a binary, shows a notice that names this key.
+- `O` opens a picker. It lists the apps set for the file in [`open_with`](configuration.md#opening-in-other-apps), then the apps macOS lists for it (the default is marked), then Finder. Finder is always last: it reveals a file and opens a folder. Enter opens the file with the row you pick, and Esc closes the picker with nothing opened. A long list scrolls with the arrows or `j` and `k`.
+- `e` opens the browsed folder in the editor that [`editor`](configuration.md#opening-in-other-apps) names, or in Finder when `editor` is empty.
+- `E` shows the selected row, or the file in the reader, in Finder, selected in its folder.
+- `Space` opens the menu with these actions: Open, Open With…, and Show in Finder on a row, and Open Folder in Editor on empty space.
+
+A launch reports in the footer: `Opened <name>.` when it works, or the reason macOS gives when it does not.
+
 ## Help
 
 `?` shows the key list as tables in the reader, in place of the document. `?` or `Esc` brings the document back, with its scroll position and search.

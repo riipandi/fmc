@@ -1,7 +1,8 @@
 ---
 status: living
 created: 2026-11-26T04:09:25+07:00
-updated: 2026-11-28T14:54:32+07:00
+updated: 2026-11-28T15:32:12+07:00
+
 references: plan-00001-scouter-parity.md, research/dependency-survey.md, research/editor-study.md, research/sqltui-study.md, research/opentui-binding-risk.md
 ---
 
@@ -28,9 +29,9 @@ One row per entry; the entry's own `status` line carries the evidence. Statuses:
 | RI-11 | Adaptive layout and a collapsible sidebar | landed | `55f9b45`, plan-00002 | 2026-11-27 |
 | RI-12 | Toggle hidden files with `Ctrl+.` | landed | `81a735f`, plan-00002 | 2026-11-27 |
 | RI-13 | Configurable keymap | landed | plan-00015 phase 4 (`1b37a2e`): keys in `keymap.json`; in-UI rebinding is not part of it (D11 (a)) | 2026-11-27 |
-| RI-14 | Open an unsupported file with the default app | planned | plan-00017 (in progress) | 2026-11-28 |
-| RI-15 | Open the project folder in Finder or an editor | planned | plan-00017 (in progress) | 2026-11-28 |
-| RI-16 | Open With | planned | plan-00017 (in progress) | 2026-11-28 |
+| RI-14 | Open an unsupported file with the default app | landed | plan-00017 | 2026-11-28 |
+| RI-15 | Open the project folder in Finder or an editor | landed | plan-00017 | 2026-11-28 |
+| RI-16 | Open With | landed | plan-00017 | 2026-11-28 |
 | RI-17 | The rest of the owner's grammar set | planned | plan-00018 (in progress) | 2026-11-28 |
 | RI-18 | Injected highlighting | landed | `1c3857e`, `d619868`, `d68a7e7`; plan-00013 | 2026-11-27 |
 | RI-19 | Multi-select and bulk operations | landed | plan-00014 phases 1 to 4 (`19d119d`, `b669168`, `4c7eac9`, `df88716`); the link refusal (plan-00014 D16) waits for the owner | 2026-11-27 |
@@ -189,19 +190,19 @@ Traps: keys that terminals cannot send in the legacy encoding (`Ctrl+/`, `Ctrl+.
 
 ### RI-14 — Open an unsupported file with the default app
 
-- status: planned (plan-00017, in progress) · updated 2026-11-28
+- status: landed (plan-00017, phases 1 to 6: `12fdaa1`, `52639c3`, `7adc043`, `8b57fda`, and the docs commit) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for a button or action that opens a file fmc cannot show (the binary notice) with the system's default app (`open <path>` on macOS). Open points: the key and the button on the binary notice; whether it also works for files fmc can show.
 
 ### RI-15 — Open the project folder in Finder or an editor
 
-- status: planned (plan-00017, in progress) · updated 2026-11-28
+- status: landed (plan-00017, the same commits as RI-14; `editor` is in `settings.json`) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for an action that opens the browsed folder in Finder or in a chosen editor or IDE (Zed, VS Code), with the editor set in `settings.json`. Open points: the key, the settings key and its shape (an app name or a command line), and quoting of the path.
 
 ### RI-16 — Open With
 
-- status: planned (plan-00017, in progress) · updated 2026-11-28
+- status: landed (plan-00017, the same commits as RI-14; `open_with` and the picker are the amendment D8 and D9) · updated 2026-11-28
 
 The owner asked on 2026-11-27 for `Open With …` on text, code, and other supported files: a picker of relevant apps, or the ones set in `settings.json`. Open points: how relevant apps are found on macOS (Launch Services) versus a configured list per extension, and the picker's UI. Shares the launch code and the security rules (no shell interpolation of paths) with RI-14 and RI-15.
 

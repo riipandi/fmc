@@ -78,6 +78,11 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 
 - fmc creates, renames, copies, moves, and deletes files from the file list, and it has a context menu for them (`Space`, or a right-click). Scouter is read-only and has none of this. Writes stay inside the folder fmc opened, links are never followed, and a delete goes to the Trash, except a link, which Finder will not trash, so fmc refuses it. Marks (`s`) and the bulk copy, cut, and delete over them are fmc's own (`architecture.md`, "The file-manager operations are the one write path" and "Marks are a set of paths in the browser").
 
+## Opening in other apps
+
+- fmc opens a file or folder in another app. `o` uses the app macOS picks for it, `O` lists the apps that open it, `e` opens the folder in the editor set in the settings, and `E` shows the row in Finder. Scouter has none of these: it spawns only `pbcopy` and `git`. Every launch goes through `/usr/bin/open` (see [Usage](usage.md#opening-in-other-apps) and `architecture.md`, "Approved deviation: files and folders open in other apps").
+- The `O` picker's rows, and its Finder row, which is always last, are fmc's own (`architecture.md`, "Approved deviation: `open_with` in settings.json and the Open With picker").
+
 ## Help
 
 - `?` shows the key list as tables in the reader, with the mouse actions in a table of their own. `--help` prints the usage and the options and points to `?` for the keys; Scouter's `--help` lists every key. `?` or `Esc` brings the document back where it was. Scouter shows its key list as a card over the panes.

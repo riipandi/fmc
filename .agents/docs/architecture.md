@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T14:15:51+07:00
+updated: 2026-11-28T15:32:12+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1465,3 +1465,63 @@ Alternatives considered:
 
 - Keep Scouter's text: rejected by the owner, since it says fmc does not write.
 - `Space: file menu.`: not taken; `Space opens the menu.` also fits at 80 columns and reads as a sentence.
+
+### Approved deviation: files and folders open in other apps
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter has no action that opens a file or folder in another app. Its only subprocesses are `pbcopy` (`scouter:src/core/clipboard.ts:28`) and `git` (`scouter:src/diff/git.ts:54`); it never runs `open`, `EDITOR`, or `xdg-open`. The owner asked on 2026-11-27 for three actions: a file fmc cannot show opens with its default app (RI-14), the browsed folder opens in Finder or an editor (RI-15), and an Open With picker (RI-16) (`roadmap-00001-post-parity.md`, "Opening with other apps"; `plan-00017-open-with-apps.md`).
+
+Decision (owner, 2026-11-28: every recommendation, O1 to O5 (a), and the go-ahead of plan-00017):
+
+- D1. Every launch is `/usr/bin/open` with argv only: `["--", path]`, `["-a", app, "--", path]`, or `["-R", "--", path]`. The path follows `--` and no shell runs. Without `-g`, the app comes to the front, as a Finder double-click does. Stdin is null and the output is captured, so nothing reaches the terminal. A failure is `open`'s first stderr line. The timeout and the cap are `capture`'s (`services/mod.rs`), shared with git.
+- D2. The apps for Open With come from one constant JXA script, run as `osascript -l JavaScript -e <script> -- <path>`. The script reads the path from `argv[0]` and prints one tab-separated line per app: the default mark, the Finder name, the bundle id (`-` when there is none), and the app path. `NSWorkspace.URLsForApplicationsToOpenURL` gives the apps and `URLForApplicationToOpenURL` the default. Measured on this Mac on 2026-11-28: 0.06 to 0.13 s, and a path with quotes or `$(…)` stayed data.
+- D3. The list keeps the apps under `/Applications`, `/System/Applications`, `~/Applications`, and `/System/Library/CoreServices/Applications`, matched by path component. Helpers and caches elsewhere are dropped; a Chrome for Testing under `~/Library/Caches` appeared in the measurement. The default comes first, then the rest by name. An app is launched by its path, so two apps with one name stay apart.
+- D4. A launch reports in the footer. Success shows `Opened <name> in <app>.` (2 seconds); `o` shows `Opened <name>.`, because `open` does not say which app it used. A failure shows `open`'s first error line, and no timer clears it. A launch runs on a worker and never blocks input.
+- D5. The target is the selected row in the tree or the shown file in the reader. A folder is a target. A link goes to `open` as the link's path, which macOS resolves; fmc does not follow it. The target is inside the browsed root, because the tree and the reader reach only entries there.
+- D6. The actions are deviations, recorded here and listed in `docs/parity.md`. The launch rules are in `rules.md`, "Launches".
+- D7. No new dependency.
+- O1. The keys in the tree and the reader: `o` the default app, `O` Open With, `e` the editor or Finder, `E` reveal in Finder. Each is rebindable in `keymap.json` (`open_default`, `open_with`, `open_in_editor`, `reveal_in_finder`).
+- O2. `o` works on any file or folder, and a folder opens in Finder. The binary notice names the key.
+- O3. `editor` is a string: an app name or an app path, passed to `open -a`. Empty, the default, opens the folder in Finder. It is not on the Settings page, as `file_associations` is not.
+- O4. A file or folder row's context menu has an Open group: Open, Open With…, and Show in Finder. Empty space has Open Folder in Editor.
+- O5. The picker is the context menu filled with app rows, and every context menu scrolls: its window shows up to sixteen rows, fewer on a short screen, and moves with the selection.
+
+Consequences:
+
+- (positive) The apps are the ones macOS already offers, through Launch Services, so fmc keeps no list of its own.
+- (positive) Paths, app names, and the editor value reach `open` as argv, and the script takes its path as data; a test runs the script on a file whose name holds `$(touch …)` and checks that nothing runs (`services/launch_tests.rs`).
+- (negative) The launches are macOS only, as the rest of the file operations are (RI-6 stays out of scope).
+- (negative) `o` cannot name the app it used, so its footer has no app name.
+- (negative) The picker reads Launch Services at each `O` on a worker, about 0.1 s, and does not cache the list.
+
+Alternatives considered:
+
+- `std::process::Command::new("zed")` or `code`: rejected. A CLI is often not on `PATH` (`code` and `cursor` were not, on this Mac), and `open -a` goes through Launch Services.
+- A Launch Services binding through `core-foundation` or `objc2`: rejected, a new dependency (D7).
+- `lsregister -dump`: rejected, slow and undocumented.
+- An editor command line such as `zed {path}`: rejected by O3(c), which needs a shell or a quoting parser.
+
+### Approved deviation: `open_with` in settings.json and the Open With picker
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: `O` needs a list of apps per kind of file. The owner wants the list macOS offers, with the apps set in `settings.json` first (RI-16, "a picker of relevant apps, or the ones set in `settings.json`").
+
+Decision (owner, 2026-11-28, an amendment to plan-00017 that adds D8 and D9):
+
+- D8. `open_with` is a JSON object: a glob pattern to an array of strings, each an app name or an absolute `.app` path, launched as `open -a <value> -- <path>`. A pattern matches with the matcher and precedence of `file_associations`: `Patterns<T>` in `reader/associations.rs` holds both tables, so the one pattern `file_associations` would pick for a file gives its apps. It is not on the Settings page. A bad entry is skipped with a notice that names its pattern: a pattern that does not parse, or a value that is not an array (the pattern is skipped); an item that is not a non-empty string (only the item is skipped).
+- D9. The picker's rows, in order: (1) the configured apps, in their order; (2) the apps macOS lists, minus those configured (by `.app` path, or by a configured name equal to the display name) and minus Finder, the default marked `(default)`; (3) Finder, always last, even when the list is empty or fails. A file is revealed (`open -R -- <path>`) and a folder opens (`open -- <path>`). A configured app is not checked before its launch: `open`'s error shows in the footer. `O` works on files and folders. The list is read on a worker, and the picker opens when it lands for the target still shown.
+
+Consequences:
+
+- (positive) A kind of file can name its apps once, and the picker shows them first with no Launch Services call.
+- (positive) One matcher serves the highlighting and the apps, so a pattern that wins for one wins for the other.
+- (negative) An app named in settings but not installed fails at launch, not in the picker.
+- (negative) The menu's scrolling changes every context menu: a long menu is no longer cut at its last row.
+
+Alternatives considered:
+
+- A second matcher for `open_with`: rejected; two precedence rules would drift apart.
+- Checking the configured apps before the picker opens: rejected; it needs a lookup per name, and `open` reports the same error.
+- The macOS list alone, without the setting: rejected by the owner's D8.
