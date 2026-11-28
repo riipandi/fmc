@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-27T22:30:00+07:00
+updated: 2026-11-28T14:15:51+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -850,7 +850,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Sco
 
 Context: a save must never lose the file the owner keeps. A hand-edited file may hold keys fmc does not know, a dotfile manager may link it, and a crash can happen mid-write. `serde_json` keeps no file order (no `preserve_order`, `Cargo.toml`).
 
-Decision: the only write to fmc's own config is `services/settings.rs` `save`, called by `update` on the Settings page's worker (`app/settings.rs`), and the text it writes is `settings::merged` over the file as it is now (A2). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
+Decision: fmc's own config is written through `services/mod.rs` `save_atomic` only: by `services/settings.rs` `update` on the Settings page's worker (`app/settings.rs`), whose text is `settings::merged` over the file as it is now (A2), and, at start, for the schema file (plan-00016, below). `merged` refuses text that is not a JSON object and keeps every key the change does not name. `save_atomic` writes a temp file beside the target with `create_new`, calls `sync_all`, and renames it over the target, so a crash leaves the old file or the new one; a failed write removes its own temp file and nothing else. A link is written through to its target, and the link stays (D14); a new file takes the old file's mode. Keys are sorted on each save (A3), which the record names so a diff of a saved file is not read as a change of meaning. Themes and the keymap stay read-only (plan-00015 D1 (a)).
 
 Consequences:
 
@@ -875,7 +875,7 @@ Context: Scouter has no configuration and no settings page (`scouter:docs/decisi
 
 Decision: `Ctrl+,` opens the Settings page over the content area (`app/settings.rs`, drawn by `ui/settings.rs`), and in the compact tier it is a page of the stack (`Page::Settings`). The page edits eight keys: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme` (plan-00015, D2 (a)); `file_associations` is not on it. Each row is fmc's own, drawn like a tree row with a value column, not OpenTUI's `Select` (A6). Enter or Space changes a row: a setting flips, a choice steps to its next value, and a number opens the existing dialog's field, where a whole number of 1 or more is typed (D4 (a), D5 (a)). Left and Right (`h`, `l`) step a choice back and forward (plan-00015, A19). A choice stops at its ends and does not wrap (`fmc::settings::Settings::step`).
 
-Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::settings::save` (A1, D14). After start, the UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3). The UI state RI-9 also names (the sidebar's width and visibility, wrap, the changes screen's split and context lines, dotfiles) is not saved: the owner chose D3 (a) on 2026-11-27, and saving it needs its own decision (`docs/configuration.md`).
+Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::save_atomic` (A1, D14). After start, the UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3). The UI state RI-9 also names (the sidebar's width and visibility, wrap, the changes screen's split and context lines, dotfiles) is not saved: the owner chose D3 (a) on 2026-11-27, and saving it needs its own decision (`docs/configuration.md`).
 
 While the page is open it takes every key, except Ctrl+q and Ctrl+c, and it takes the clicks too: the catcher a dialog uses covers the screen, so the panes beneath do not act (plan-00015, A21). Ctrl+, is the only key for the page (D12, owner): a plain `,` is unbound on every page and `:settings` is not added. Only the kitty keyboard protocol sends `Ctrl+,` (`opentui-0.9.9/src/host.rs:147`, `input-parser.zig:1269-1300`), so a terminal without it has no route to the page; the owner accepted that.
 
@@ -892,6 +892,36 @@ Alternatives considered:
 - A Save row at the end (D5 (c)), or preview on move with Esc to revert and Enter to save (D5 (b)) — rejected: each needs a revert path for every row, and a theme could not preview until saved.
 - A `:settings` command and a plain `,` (D12) — rejected by the owner, who chose `Ctrl+,` only.
 - A watcher that re-reads the file (D13 (c)) — rejected: RI-8 is parked; a restart applies a hand edit.
+
+### Approved deviation: fmc writes a JSON Schema of settings.json to meta/config.schema.json at start
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`. Scouter has no configuration file and ships no schema (`scouter:docs/decision/0001-read-only-and-minimal.md:9`, "no configuration file"), so the file and its schema are fmc's own. The owner asked for the schema on 2026-11-28 (plan-00016).
+
+Context: an editor completes and checks `settings.json` only when it knows the file's schema, and `parse` silently ignores a misspelt key (`src/settings.rs`, the unknown keys are skipped). The owner named the path `~/.config/fmc/meta/config.schema.json`, so fmc checks or writes it at each start.
+
+Decision:
+
+- The start write is `<config folder>/meta/config.schema.json` and nothing else (plan-00016 D1). fmc owns the file and its `meta/` folder, so a hand edit is overwritten at the next start. Rejected: `settings.schema.json` beside `settings.json`, since the owner named the path.
+- The schema is built in code, `settings::schema()` (`src/settings.rs`), from `Row::ALL` and their help lines, `Settings::default()`, and the name lists `Matching::ALL`, `ModeChoice::ALL`, `Language::names()`, and `slot_ids` (D2). Rejected: a checked-in `config.schema.json` read by `include_str!`, which needs a sync test for every enum; `schemars`, a new dependency that needs `Settings` to derive serde (`rules.md`, "Dependencies").
+- The draft is JSON Schema draft-07, with no `$id` (D3). The languageservice reads that draft (`vscode-json-languageservice` `src/parser/jsonParser.ts:216`, with `normalizeId` at `:193-203`). Rejected: 2020-12, which no feature here needs.
+- The schema is strict on keys: `additionalProperties: false`, with `$schema` a string property (D4), so a key the parser would ignore is flagged. A theme key is `anyOf` the slot's bundled ids and `default`, or any string, so a user's theme in `themes/` stays valid (A13). Rejected: `additionalProperties: true`, which loses the typo check.
+- `ensure_schema` compares the bytes. It writes when the file is missing, unreadable, or different, and writes nothing when it is equal, so the mtime holds (D5). Rejected: a write at every start, which churns the mtime for dotfile managers.
+- The write is `services::save_atomic` (`services/mod.rs`, moved from `services/settings.rs` `save`), so a link is written through and a failed write removes its temp file (D6).
+- The check runs for `Command::Open` only, after the terminal check and before `app::run` (D7). `--help`, `--version`, and a refused start write nothing (`tests/cli.rs`).
+- The Settings page's save adds `"$schema": "./meta/config.schema.json"` to a file that has none, and keeps a `$schema` the owner wrote (`settings::merged`, `SCHEMA_LINK`; O1 (b), the owner's choice of 2026-11-28). Rejected: O1 (a), the owner adds the line by hand.
+- Amended by the owner on 2026-11-28 (O1 (c) added to (b)): an existing `settings.json` without `$schema` would never get the link until a Settings save. At start, `services/settings.rs` `link_schema` inserts `"$schema"` as the first key through `settings::linked`, a text insert that keeps every other byte (values, order, layout), and writes only when the result parses to the file's object plus the key. A missing file, a file that does not parse, and a file with its own `$schema` are left alone; a failed write is a footer notice. Rejected: `merged` at start, which sorts the keys and reformats the owner's file.
+- A failed schema write is a footer notice in the startup chain, shown at each start until the write works (O2 (a), the owner's choice). Rejected: O2 (b), a silent failure, which leaves the owner with no completion and no reason.
+
+The path is relative to `settings.json`, and the editors resolve it there. The languageservice resolves a relative `$schema` against the document (`vscode-json-languageservice` `src/services/jsonSchemaService.ts:1367-1372`). Its VS Code host resolves against the document's folder (`microsoft/vscode` `extensions/json-language-features/server/src/jsonServer.ts:67-70`), and Zed's JSON server, `vscode-langservers-extracted` 4.10.0 (`zed-industries/zed` `crates/languages/src/json.rs:41,146`), does the same (`lib/json-language-server/jsonServer.js:115-118`). A completion check in a real editor is the owner's (plan-00016, Owner check).
+
+Consequences:
+
+- (positive) An editor completes the keys, the enum values, and the slot's theme ids, and flags a misspelt key or a value of the wrong type.
+- (positive) A key or a name cannot drift from the parser unnoticed: `settings_tests.rs` checks each key against `schema()`, and each name round-trips through `named`.
+- (negative) A start with a schema that differs rewrites `meta/config.schema.json`, so a hand edit of it is lost.
+- (negative) A save adds a `$schema` line to a file that had none, and the save sorts the keys (A3).
+- (negative) The first start after this change writes the owner's `settings.json` once, to insert the `$schema` line.
+- (negative) A read-only config folder shows a footer notice at each start until the owner fixes it.
 
 ### Approved deviation: fmc offers a theme catalog, chosen in settings.json
 

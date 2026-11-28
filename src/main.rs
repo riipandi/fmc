@@ -51,10 +51,15 @@ fn run() -> Result<(), String> {
             }
             let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
             let target = args::open_target(path, &cwd)?;
-            // Read before the first frame, so a bad value's notice is the first thing the footer shows.
+            // Read and checked before the first frame, so a bad value's notice is the first thing the footer shows.
             let (config_home, home) = (std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"));
             let path = services::settings::path(config_home.clone(), home.clone());
-            let settings = path.as_deref().map(services::settings::load).unwrap_or_default();
+            let link = path.as_deref().and_then(services::settings::link_schema);
+            let mut settings = path.as_deref().map(services::settings::load).unwrap_or_default();
+            settings.notices.extend(link);
+            let schema = services::settings::schema_path(config_home.clone(), home.clone())
+                .and_then(|file| services::settings::ensure_schema(&file));
+            settings.notices.extend(schema);
             let themes =
                 services::theme::folder(config_home, home).map(|dir| services::theme::load(&dir)).unwrap_or_default();
             let keys = keymap();

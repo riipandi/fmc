@@ -27,6 +27,9 @@ pub enum Matching {
 }
 
 impl Matching {
+    /// Every mode, in the order the Settings page and the schema list them.
+    pub const ALL: [Self; 2] = [Self::Substring, Self::Fuzzy];
+
     /// The `find_mode` value that names this mode.
     pub fn name(self) -> &'static str {
         match self {

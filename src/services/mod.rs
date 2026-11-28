@@ -12,8 +12,8 @@ pub mod theme;
 pub mod write;
 
 use std::ffi::OsString;
-use std::fs::File;
-use std::io::{self, ErrorKind, Read};
+use std::fs::{File, OpenOptions};
+use std::io::{self, ErrorKind, Read, Write};
 use std::path::{Path, PathBuf};
 
 use fmc::diff::{ChangeSet, FilePatch, Listing, Sign};
@@ -57,6 +57,35 @@ pub fn read_config(file: &Path) -> Result<String, ReadError> {
         return Err(ReadError::TooLarge);
     }
     String::from_utf8(bytes).map_err(|_| ReadError::NotText)
+}
+
+/// Writes `text` to `path`, or to the file a link at `path` points to (plan-00015 D14). The text goes to a temp file
+/// beside the target, and the rename replaces the target only once the bytes are on disk, so a crash leaves the old file
+/// or the new one. A new file gets the old file's mode. Nothing outside the target's folder is touched.
+pub fn save_atomic(path: &Path, text: &str) -> io::Result<()> {
+    let target = match std::fs::symlink_metadata(path) {
+        Ok(meta) if meta.file_type().is_symlink() => std::fs::canonicalize(path)?,
+        _ => path.to_path_buf(),
+    };
+    let name = target.file_name().ok_or_else(|| io::Error::new(ErrorKind::InvalidInput, "no file name"))?;
+    let dir = target.parent().ok_or_else(|| io::Error::new(ErrorKind::InvalidInput, "no folder"))?;
+    std::fs::create_dir_all(dir)?;
+    let temp = dir.join(format!(".{}.{}.tmp", name.to_string_lossy(), std::process::id()));
+    // create_new: a temp file that is already there is not ours to remove, so it is never reused.
+    let mut file = OpenOptions::new().write(true).create_new(true).open(&temp)?;
+    let written = write_bytes(&mut file, &target, text).and_then(|()| std::fs::rename(&temp, &target));
+    if written.is_err() {
+        let _ = std::fs::remove_file(&temp);
+    }
+    written
+}
+
+fn write_bytes(file: &mut File, target: &Path, text: &str) -> io::Result<()> {
+    if let Ok(meta) = std::fs::metadata(target) {
+        file.set_permissions(meta.permissions())?;
+    }
+    file.write_all(text.as_bytes())?;
+    file.sync_all()
 }
 
 /// What a worker found, for the app to apply on the UI thread.

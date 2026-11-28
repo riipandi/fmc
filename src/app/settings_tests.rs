@@ -173,7 +173,10 @@ fn space_flips_a_toggle_applies_it_at_once_and_saves_it_keeping_the_other_keys()
     assert!(!p.model.borrow().auto_preview, "the app reads the new value at once");
     assert_eq!(p.value(Row::AutoPreview), "false");
     p.await_saved("auto_preview", Value::Bool(false));
-    assert_eq!(p.text().unwrap(), "{\n  \"auto_preview\": false,\n  \"reader_jump\": 8\n}\n");
+    assert_eq!(
+        p.text().unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false,\n  \"reader_jump\": 8\n}\n"
+    );
 }
 
 #[test]
@@ -182,7 +185,7 @@ fn a_change_creates_a_missing_file_with_only_its_key() {
     p.open();
     p.app.press("space");
     p.await_saved("auto_preview", Value::Bool(false));
-    assert_eq!(p.text().unwrap(), "{\n  \"auto_preview\": false\n}\n");
+    assert_eq!(p.text().unwrap(), "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false\n}\n");
 }
 
 #[test]
@@ -209,7 +212,10 @@ fn a_symlinked_settings_file_is_written_through_and_the_link_stays() {
     p.app.press("space");
     p.await_saved("auto_preview", Value::Bool(false));
     assert!(fs::symlink_metadata(&p.file).unwrap().file_type().is_symlink(), "the link stays");
-    assert_eq!(fs::read_to_string(&target).unwrap(), "{\n  \"auto_preview\": false\n}\n");
+    assert_eq!(
+        fs::read_to_string(&target).unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false\n}\n"
+    );
 }
 
 #[test]
@@ -251,7 +257,11 @@ fn two_changes_in_a_row_both_land_in_the_file() {
     p.app.press("space");
     p.await_saved("auto_preview", Value::Bool(false));
     p.await_saved("git_gutter", Value::Bool(false));
-    assert_eq!(p.text().unwrap(), "{\n  \"auto_preview\": false,\n  \"git_gutter\": false\n}\n", "one write at a time");
+    assert_eq!(
+        p.text().unwrap(),
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"auto_preview\": false,\n  \"git_gutter\": false\n}\n",
+        "one write at a time"
+    );
 }
 
 #[test]

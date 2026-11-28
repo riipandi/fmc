@@ -22,6 +22,9 @@ pub enum ModeChoice {
 }
 
 impl ModeChoice {
+    /// Every choice, in the order the Settings page and the schema list them.
+    pub const ALL: [Self; 3] = [Self::Auto, Self::Dark, Self::Light];
+
     /// The word `theme_mode` holds for this choice.
     pub fn name(self) -> &'static str {
         match self {

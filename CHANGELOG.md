@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A JSON Schema for `settings.json`, in `meta/config.schema.json` in the config folder. fmc writes it at each start when it is missing or differs from the running build. At start, fmc adds the schema's `$schema` line as the first key of a settings file that has none, and changes nothing else in it; the Settings page adds it to a file it creates, so an editor completes the keys and their values and flags a misspelt key. See [Configuration](docs/configuration.md#editor-completion).
+
 ## [0.4.0] - 2026-11-27
 
 fmc gets a Settings page on `Ctrl+,`, a theme catalog, and a keymap file, and each change on the page is saved to `settings.json`.

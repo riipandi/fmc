@@ -28,6 +28,18 @@ The file keeps no UI state. The sidebar's width and visibility, wrap, the change
 
 A file that is not valid JSON, whose top level is not an object, or that is over 1 MiB sets nothing: every key keeps its default. A key with the wrong type, or a jump below 1, keeps its own default. A `file_associations` entry that fails is skipped, and the others still apply. fmc shows the problems in the footer once, when it starts. A missing file means the defaults, with no message.
 
+## Editor completion
+
+fmc writes a JSON Schema for the settings file to `$XDG_CONFIG_HOME/fmc/meta/config.schema.json`, or `~/.config/fmc/meta/config.schema.json`, each time it starts. An editor that reads a `$schema` key then completes the keys and their values, and flags a misspelt key or a value of the wrong type.
+
+- When `settings.json` exists and has no `$schema`, fmc adds `"$schema": "./meta/config.schema.json"` as its first key at start. Nothing else in the file changes: your values, their order, and the layout stay. A `$schema` you wrote stays as it is, and a file that is not valid JSON is left alone. The Settings page adds the same line when it creates the file.
+- The path is relative to the folder of `settings.json`, and VS Code and Zed resolve it there. If you move the file, change the path.
+- fmc rewrites the schema only when it is missing or differs from the one this version writes. Do not edit it: a change is overwritten at the next start.
+- A theme id in `dark_theme` or `light_theme` completes from the bundled themes of its mode. The schema accepts any text there, so a theme in your `themes` folder is valid too.
+- A folder fmc cannot write, such as a read-only one, shows a footer notice at each start until the write works. The settings file is still read.
+- `fmc --help` and `fmc --version` write nothing. Starting fmc writes the schema only when it is missing or out of date.
+- VS Code and Zed both use the vscode-json-languageservice library, which reads JSON Schema draft-07.
+
 ## Saving from the Settings page
 
 The Settings page edits the eight keys above except `file_associations`: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme`. Edit `file_associations` by hand.
@@ -35,7 +47,7 @@ The Settings page edits the eight keys above except `file_associations`: `auto_p
 - Each change is saved when you make it. A save reads the file again and sets only the keys the page changed. Every other key stays as it is, including keys fmc does not know and hand edits made since fmc started.
 - A save writes the keys in alphabetical order, so the first save of a file that was in another order reorders it. Values keep their types.
 - A file that is not valid JSON, or whose top level is not an object, is refused. Nothing is written, the file keeps its bytes, the page shows the value the file has, and the footer says `Not saved: settings.json is not valid JSON (line N); nothing was saved. The value went back.`. Fix the file, then make the change again.
-- A missing file is created with the one key. A missing folder is created too.
+- A missing file is created with the one key and the `$schema` line (see [Editor completion](#editor-completion)). A missing folder is created too.
 - A `settings.json` that is a symbolic link is written through to the file it points to, and the link stays. The target can lie anywhere the link reaches.
 - Each save is written to a temporary file beside the target, which then replaces it, so a crash leaves the old file or the new one. Comments in the file are not kept: the parser refuses them, so a save cannot drop them silently.
 - Without a usable home folder (no `HOME`, and no absolute `XDG_CONFIG_HOME`), the page cannot save, and it says so.

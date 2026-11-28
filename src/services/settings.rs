@@ -1,11 +1,9 @@
-//! Reads `settings.json` once, before the first frame, and writes it through `save` (`architecture.md`, "fmc writes its
+//! Reads `settings.json` once, before the first frame, and writes it through `save_atomic` (`architecture.md`, "fmc writes its
 //! settings.json, atomically"). The UI thread never reads the file again.
 
 use std::ffi::OsString;
-use std::fs::{self, File, OpenOptions};
-use std::io::{self, ErrorKind, Write};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::process;
 
 use fmc::settings::{self, Parsed};
 use fmc::text::display_label;
@@ -16,6 +14,36 @@ use super::{MAX_CONFIG_BYTES, ReadError};
 /// `settings.json` in the config folder (`services::config_folder`).
 pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
     Some(super::config_folder(config_home, home)?.join("settings.json"))
+}
+
+/// `meta/config.schema.json` in the config folder: the JSON Schema of `settings.json`, which fmc writes (plan-00016 D1).
+pub fn schema_path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
+    Some(super::config_folder(config_home, home)?.join("meta").join("config.schema.json"))
+}
+
+/// Writes the schema at `path` when the file is missing or differs from `settings::schema()` (plan-00016 D5). A start
+/// whose file is equal writes nothing, so its mtime holds. A failed write is the notice the footer shows, and the next
+/// start tries again (O2 (a)).
+pub fn ensure_schema(path: &Path) -> Option<String> {
+    let schema = settings::schema();
+    if super::read_config(path).is_ok_and(|current| current == schema) {
+        return None;
+    }
+    super::save_atomic(path, &schema)
+        .err()
+        .map(|error| format!("meta/config.schema.json could not be written: {}.", display_label(&error.to_string())))
+}
+
+/// Adds `"$schema"` to an existing `settings.json` that has none, at the start (plan-00016 O1, amended by the owner on
+/// 2026-11-28). Only that key is inserted (`settings::linked`); every value and the layout stay. A missing file, a file
+/// that does not parse, or one with its own `$schema` is left alone; `load` reports a file it cannot read. A failed write
+/// is the notice the footer shows.
+pub fn link_schema(path: &Path) -> Option<String> {
+    let text = super::read_config(path).ok()?;
+    let linked = settings::linked(&text)?;
+    super::save_atomic(path, &linked)
+        .err()
+        .map(|error| format!("settings.json could not be linked to its schema: {}.", display_label(&error.to_string())))
 }
 
 /// The settings the file sets, with a notice for each value it cannot use. A missing file has no notice.
@@ -51,36 +79,8 @@ pub fn update(path: &Path, changes: &[(&str, Value)]) -> Result<(), String> {
         Err(ReadError::NotText) => return Err("settings.json is not UTF-8 text; nothing was saved.".into()),
     };
     let text = settings::merged(&text, changes)?;
-    save(path, &text).map_err(|error| format!("settings.json could not be saved: {error}; nothing was saved."))
-}
-
-/// Writes `text` to the settings file at `path`, or to the file a link at `path` points to (plan-00015 D14). The text goes
-/// to a temp file beside the target, and the rename replaces the target only once the bytes are on disk, so a crash
-/// leaves the old file or the new one. A new file gets the old file's mode. Nothing outside the folder is touched.
-pub fn save(path: &Path, text: &str) -> io::Result<()> {
-    let target = match fs::symlink_metadata(path) {
-        Ok(meta) if meta.file_type().is_symlink() => fs::canonicalize(path)?,
-        _ => path.to_path_buf(),
-    };
-    let name = target.file_name().ok_or_else(|| io::Error::new(ErrorKind::InvalidInput, "no file name"))?;
-    let dir = target.parent().ok_or_else(|| io::Error::new(ErrorKind::InvalidInput, "no folder"))?;
-    fs::create_dir_all(dir)?;
-    let temp = dir.join(format!(".{}.{}.tmp", name.to_string_lossy(), process::id()));
-    // create_new: a temp file that is already there is not ours to remove, so it is never reused.
-    let mut file = OpenOptions::new().write(true).create_new(true).open(&temp)?;
-    let written = write(&mut file, &target, text).and_then(|()| fs::rename(&temp, &target));
-    if written.is_err() {
-        let _ = fs::remove_file(&temp);
-    }
-    written
-}
-
-fn write(file: &mut File, target: &Path, text: &str) -> io::Result<()> {
-    if let Ok(meta) = fs::metadata(target) {
-        file.set_permissions(meta.permissions())?;
-    }
-    file.write_all(text.as_bytes())?;
-    file.sync_all()
+    super::save_atomic(path, &text)
+        .map_err(|error| format!("settings.json could not be saved: {error}; nothing was saved."))
 }
 
 #[cfg(test)]
