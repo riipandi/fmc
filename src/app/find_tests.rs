@@ -14,7 +14,7 @@ use super::*;
 fn finding(dir: &Path, matching: Matching) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(80, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), dir.to_path_buf(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     model.borrow_mut().matching = matching;
     app.press("/");
@@ -72,7 +72,7 @@ fn ctrl_f_outside_the_finder_changes_nothing() {
     let dir = folder();
     let app = TestApp::new(80, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), dir.path().to_path_buf(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     app.press("ctrl+f");
     assert_eq!(model.borrow().matching, Matching::Substring);

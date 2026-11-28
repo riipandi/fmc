@@ -12,7 +12,7 @@ fn model() -> Rc<RefCell<Model>> {
     let app = TestApp::new(80, 24);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root, None)));
-    let _ui = build(app.app(), model.borrow().palette());
+    let _ui = build(app.app(), model.borrow().palette(), true);
     model
 }
 

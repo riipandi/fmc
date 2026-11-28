@@ -13,6 +13,7 @@ pub mod image_box;
 pub mod markdown;
 pub mod markdown_blocks;
 pub mod markdown_images;
+pub mod markdown_pictures;
 pub mod markdown_search;
 pub mod markdown_signs;
 pub mod menu;

@@ -12,7 +12,7 @@ fn screen(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<U
     let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     {
         // One file listed and selected, so the menu has a row to act on.
         let mut m = model.borrow_mut();

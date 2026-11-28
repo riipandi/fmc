@@ -36,7 +36,7 @@ fn paged(text: Option<&str>) -> Paged {
     let app = TestApp::new(120, 40);
     let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     model.borrow_mut().settings.path = Some(file.clone());
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     overlay::wire_views(&model, &ui);
     {

@@ -80,7 +80,7 @@ fn launch(home: &Home) -> Session {
     let state = crate::services::state::load(&file);
     start(&mut model, Loaded { path: Some(file), state });
     let model = Rc::new(RefCell::new(model));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     overlay::wire_views(&model, &ui);
     let writes = Rc::new(Cell::new(0));

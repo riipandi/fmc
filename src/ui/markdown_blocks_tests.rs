@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Instant;
 
-use fmc::reader::frontmatter::as_fence;
+use crate::ui::markdown_images;
 use fmc::theme::DARK;
 use opentui::style::{Color, Span};
 use opentui::testing::TestApp;
@@ -17,7 +17,7 @@ use super::{Block, split};
 
 /// The blocks of the source as the view draws it: its front matter is a fence (`reader/frontmatter.rs`).
 fn rendered(source: &str) -> Vec<Block> {
-    split(&as_fence(source)).blocks
+    split(&markdown_images::prepared(source)).blocks
 }
 use crate::ui::markdown::MarkdownView;
 use crate::ui::styled::color;
@@ -181,7 +181,7 @@ fn probes(kind: &str, source: &str) -> Vec<String> {
 fn drawn(source: &str, width: u16) -> Vec<(Range<u32>, String)> {
     // Tall enough for the design sample at 40 columns, which renders past 400 rows.
     let app = TestApp::new(width, 1200);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.show(source);
@@ -201,12 +201,14 @@ fn the_blocks_match_opentui_at_each_width() {
     for width in [40u16, 60, 80, 120] {
         for (name, source) in samples() {
             let blocks = rendered(&source);
+            let prepared = markdown_images::prepared(&source);
             let drawn = drawn(&source, width);
             assert_eq!(blocks.len(), drawn.len(), "{name} at {width} columns: the block count");
             for (index, (block, (_, screen))) in blocks.iter().zip(&drawn).enumerate() {
                 let text =
-                    source.lines().skip(block.lines.start).take(block.lines.len()).collect::<Vec<_>>().join("\n");
-                if text.starts_with("```mermaid") {
+                    prepared.lines().skip(block.lines.start).take(block.lines.len()).collect::<Vec<_>>().join("\n");
+                // A box is drawn as its box, which its own tests check; a Mermaid diagram is drawn as its rows.
+                if text.starts_with("```mermaid") || text.starts_with("```fmc-image") {
                     continue;
                 }
                 // A word longer than the row wraps mid-word, so the screen is compared without its spaces and breaks.
@@ -282,7 +284,7 @@ fn mark(spans: Vec<InlineSpan>, query: &str, bg: Color) -> Vec<InlineSpan> {
 fn an_inline_hook_marks_a_match_across_spans() {
     let bg = Color::rgb(0x44, 0x55, 0x22);
     let app = TestApp::new(80, 40);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     view.widget().inline_hook(move |spans, _| mark(spans, "harry potter", bg));
@@ -301,7 +303,7 @@ fn a_code_block_renderer_draws_the_default_look() {
     let theme = Arc::new(syntax::theme(&DARK));
     let frame = |custom: bool| {
         let app = TestApp::new(60, 24);
-        let view = MarkdownView::new(app.app(), &DARK);
+        let view = MarkdownView::new(app.app(), &DARK, true);
         app.app().root().add(&view.widget());
         view.visible(true);
         if custom {
@@ -336,7 +338,7 @@ fn refresh_cost_on_design_md() {
     let query = Rc::new(RefCell::new(String::from("the")));
     let bg = Color::rgb(0x44, 0x55, 0x22);
     let app = TestApp::new(80, 400);
-    let view = MarkdownView::new(app.app(), &DARK);
+    let view = MarkdownView::new(app.app(), &DARK, true);
     app.app().root().add(&view.widget());
     view.visible(true);
     let hook_query = Rc::clone(&query);

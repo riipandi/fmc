@@ -2,6 +2,7 @@
 //! kept only for the showing it was asked for, as the git signs are (`app/gutter.rs`).
 
 use std::path::Path;
+use std::time::SystemTime;
 
 use fmc::reader::image;
 use fmc::reader::images::Header;
@@ -32,13 +33,33 @@ pub fn request(m: &Model) {
     });
 }
 
-/// Keeps an answer for the text shown as `serial`: the boxes draw the headers the worker read for them.
+/// Keeps an answer for the text shown as `serial`: the boxes draw the headers the worker read for them, and each picture
+/// they draw that the cache lacks is read on a worker for its decode (`decoded`).
 pub fn apply(m: &Model, ui: &Ui, path: &Path, serial: u64, headers: &[(String, Header)]) {
     if let Shown::Text { path: shown, serial: shown_serial, .. } = &m.shown
         && shown == path
         && *shown_serial == serial
     {
         ui.markdown.set_headers(headers.to_vec());
+        for (picture, modified) in ui.markdown.wanted() {
+            services::spawn(&m.proxy, move || Event::PictureBytes { result: bytes(&picture), path: picture, modified });
+        }
+    }
+}
+
+/// The bytes of a box's picture, read as the picture view reads its file, with the same size cap.
+fn bytes(path: &Path) -> Result<Vec<u8>, String> {
+    match fs::open(path, &[])? {
+        fs::Opened::Image { bytes, .. } => Ok(bytes),
+        _ => Err(image::UNREADABLE.to_owned()),
+    }
+}
+
+/// Decodes the bytes a worker read for a box's picture, on the UI thread and once per file (`ui/markdown_pictures.rs`).
+pub fn decoded(ui: &Ui, path: &Path, modified: Option<SystemTime>, result: &Result<Vec<u8>, String>) {
+    match result {
+        Ok(bytes) => ui.markdown.decode(path, modified, bytes),
+        Err(_) => ui.markdown.unreadable(path, modified, image::UNREADABLE),
     }
 }
 

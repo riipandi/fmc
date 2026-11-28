@@ -337,11 +337,23 @@ fn resolve_base(root: &Path) -> Result<String, String> {
 
 fn create_copy_dir() -> Result<PathBuf, String> {
     static NEXT: AtomicU64 = AtomicU64::new(0);
-    let dir =
-        std::env::temp_dir().join(format!("fmc-index-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
-    fs::create_dir(&dir).map_err(|error| error.to_string())?;
-    copies().push(dir.clone());
-    Ok(dir)
+    // A folder left by a process that did not exit cleanly can carry a name this one would pick once its pid is reused,
+    // so a taken name moves on to the next number instead of failing.
+    loop {
+        let dir = std::env::temp_dir().join(format!(
+            "fmc-index-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        match fs::create_dir(&dir) {
+            Ok(()) => {
+                copies().push(dir.clone());
+                return Ok(dir);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error.to_string()),
+        }
+    }
 }
 
 /// A path's stat as a stamp part: `missing` when it cannot be stat'ed.
