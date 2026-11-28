@@ -1,5 +1,5 @@
 ---
-status: awaiting-approval
+status: in-progress
 created: 2026-11-28T18:29:53+07:00
 updated: 2026-11-28T18:29:53+07:00
 phases:
@@ -51,7 +51,7 @@ On 2026-11-28 the owner opened `README.md` and saw its logo as raw HTML (`<h1><p
 
 ### Execution rules
 
-- **Execution waits for the owner's go-ahead.** Phase 1 is a spike: if a picture cannot draw and scroll correctly inside the rendered view (clipping, a kitty image left behind after scrolling, a crash), the plan stops after phase 1 and reports, and the owner chooses again; the box stays.
+- **The owner gave the go-ahead for all phases in order on 2026-11-28, with D4 to D6 as written.** Phase 1 is a spike: if a picture cannot draw and scroll correctly inside the rendered view (clipping, a kitty image left behind after scrolling, a crash), the plan stops after phase 1 and reports, and the owner chooses again; the box stays.
 - **Every commit ends with** `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`; comments never cite a plan, roadmap entry, decision ID, or doc file.
 - **No new dependency; reads stay inside the browsed root; no network.**
 - **Live runs need a graphics terminal**: the Rex capture shows text only, so phase 1 and phase 5 record what Rex can show (layout, rows, no leftovers in text) and leave the picture check to the owner in Ghostty.
