@@ -17,7 +17,9 @@
         "allow": [
             "Bash(just)",
             "Bash(just *)",
-            "Bash(cargo *)"
+            "Bash(cargo *)",
+            "Bash(git *)",
+            "Bash(gh *)"
         ],
         "ask": [
             "Edit(/Cargo.toml)",
@@ -26,7 +28,48 @@
             "Bash(cargo add *)",
             "Bash(cargo remove *)",
             "Bash(cargo install *)",
-            "Bash(git push *)"
+            "Bash(git push * --delete *)",
+            "Bash(git push * :*)",
+            "Bash(git branch -D *)",
+            "Bash(git tag -d *)",
+            "Bash(git rebase *)",
+            "Bash(git filter-branch *)",
+            "Bash(gh pr merge *)",
+            "Bash(gh pr close *)",
+            "Bash(gh release create *)",
+            "Bash(gh release edit *)",
+            "Bash(gh workflow run *)",
+            "Bash(gh secret *)",
+            "Bash(gh variable *)",
+            "Bash(gh api *)"
+        ],
+        "deny": [
+            "Bash(git push --force*)",
+            "Bash(git push * --force*)",
+            "Bash(git push -f*)",
+            "Bash(git push * -f*)",
+            "Bash(git push * +*)",
+            "Bash(git reset --hard*)",
+            "Bash(git checkout .*)",
+            "Bash(git checkout -- .*)",
+            "Bash(git restore .*)",
+            "Bash(git clean *)",
+            "Bash(git stash*)",
+            "Bash(git commit * --no-verify*)",
+            "Bash(git commit --no-verify*)",
+            "Bash(git commit * -n *)",
+            "Bash(git gc --prune*)",
+            "Bash(git reflog expire *)",
+            "Bash(git update-ref -d *)",
+            "Bash(gh repo delete *)",
+            "Bash(gh repo archive *)",
+            "Bash(gh repo edit *)",
+            "Bash(gh release delete *)",
+            "Bash(gh run delete *)",
+            "Bash(gh cache delete *)",
+            "Bash(gh auth *)",
+            "Bash(gh ssh-key *)",
+            "Bash(gh gpg-key *)"
         ]
     }
 }
