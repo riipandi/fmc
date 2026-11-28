@@ -4,9 +4,10 @@ use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
 use fmc::explorer::Kind;
+use fmc::reader::document::Refusal;
 use tempfile::TempDir;
 
-use super::{Opened, Reread, describe, list, open, reread};
+use super::{Opened, Reread, describe, list, open, open_lossy, reread};
 
 /// A vault with the Harry Potter and Dan Brown names Scouter's fixtures use, plus the noise files it drops.
 fn vault() -> TempDir {
@@ -109,13 +110,17 @@ fn a_text_file_opens_as_a_document() {
 }
 
 #[test]
-fn a_binary_file_opens_as_its_size_and_a_non_utf8_file_is_refused() {
+fn a_binary_or_non_utf8_file_opens_as_its_size_and_refusal_and_reads_lossily_on_request() {
     let dir = vault();
     fs::write(dir.path().join("owl.bin"), b"Hedwig\0").unwrap();
     fs::write(dir.path().join("owl.txt"), b"Hedwig \xff").unwrap();
-    let Opened::Binary { size } = open(&dir.path().join("owl.bin"), &[]).unwrap() else { panic!("a binary") };
-    assert_eq!(size, 7);
-    assert_eq!(open(&dir.path().join("owl.txt"), &[]).unwrap_err(), "Only UTF-8 text files are supported.");
+    let Opened::Binary { size, refusal } = open(&dir.path().join("owl.bin"), &[]).unwrap() else { panic!("a binary") };
+    assert_eq!((size, refusal), (7, Refusal::Binary));
+    let Opened::Binary { refusal, .. } = open(&dir.path().join("owl.txt"), &[]).unwrap() else { panic!("refused") };
+    assert_eq!(refusal.message(), "Only UTF-8 text files are supported.");
+    let Opened::Lossy { document, size } = open_lossy(&dir.path().join("owl.txt")).unwrap() else { panic!("lossy") };
+    assert_eq!((document.text.as_str(), size), ("Hedwig \u{fffd}", 8));
+    assert!(open_lossy(dir.path()).is_err(), "a folder is not read as text");
 }
 
 /// A 1x1 PNG, the smallest valid header the decoder reads.

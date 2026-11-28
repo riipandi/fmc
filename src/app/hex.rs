@@ -85,10 +85,11 @@ impl Hex {
     }
 }
 
-/// `X`: the hex view of the file the notice names. Focus moves to the reader, whose keys scroll it.
+/// `X`: the hex view of the file the notice names, or of the refused file `t` showed as text. Focus moves to the
+/// reader, whose keys scroll it.
 pub fn open_shown(m: &mut Model) {
     let (path, size) = match &m.shown {
-        Shown::Binary { path, size } => (path.clone(), *size),
+        Shown::Binary { path, size, .. } | Shown::Text { path, lossy: Some(size), .. } => (path.clone(), *size),
         _ => return,
     };
     m.shown = Shown::Hex(Box::new(Hex::new(path, size)));

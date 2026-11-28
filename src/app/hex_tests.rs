@@ -229,3 +229,37 @@ fn closing_the_view_stops_its_search() {
         assert!(flag.load(std::sync::atomic::Ordering::Relaxed), "the closed view's search is stopped");
     }
 }
+
+#[test]
+fn t_reads_the_file_as_text_and_x_and_t_switch_views() {
+    let v = notice(b"\0Robert\x1bLangdon\n\xe9\n");
+    assert!(v.screen().contains("t as text"), "the notice lacks its t button");
+    v.app.type_text("t");
+    let lossy = || matches!(v.model.borrow().shown, Shown::Text { lossy: Some(_), .. });
+    assert!(v.app.wait_until(Duration::from_secs(5), lossy), "t shows the text");
+    assert_eq!(v.model.borrow().focus, Focus::Reader);
+    let screen = v.screen();
+    assert!(screen.contains("\u{2400}Robert\u{241b}Langdon"), "{screen}");
+    assert!(screen.contains("lossy"), "the header says the text is lossy");
+    v.app.type_text("X");
+    assert!(v.model.borrow().shown.is_hex(), "X goes from the text to the hex view");
+    v.app.type_text("t");
+    assert!(v.app.wait_until(Duration::from_secs(5), lossy), "t goes from the hex view to the text");
+}
+
+#[test]
+fn a_file_that_is_not_utf8_shows_the_notice_with_its_reason() {
+    let v = notice(b"Sophie Neveu, caf\xe9 du Louvre\n");
+    let screen = v.screen();
+    assert!(screen.contains("Only UTF-8 text files are supported."), "{screen}");
+    assert!(screen.contains("X hex view"), "{screen}");
+}
+
+#[test]
+fn a_control_picture_is_one_cell_wide() {
+    let v = notice(b"\0");
+    let app = v.app.app();
+    for picture in ["\u{2400}", "\u{241b}", "\u{2421}"] {
+        assert_eq!(app.session().context().text_width(picture, app.width_method()).unwrap(), 1, "{picture}");
+    }
+}

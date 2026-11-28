@@ -38,7 +38,9 @@ A file over 1 MiB shows its first 1 MiB.
 
 ## Images and binary files
 
-PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and format in the footer. Any other binary file shows a short notice with its name and size, and two choices: `X` for the hex view, and `o` to open it in its default app. Each choice is also a button you can click.
+PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and format in the footer. Any other binary file, or a text file that is not UTF-8, shows a short notice with its name and size, and three choices: `t` to read it as text, `X` for the hex view, and `o` to open it in its default app. Each choice is also a button you can click.
+
+As text, the reader shows the first 1 MiB with a `lossy` badge. A byte sequence that is not UTF-8 shows as `�`, and a control byte as its symbol, such as `␀` for NUL and `␛` for escape. Search, wrap, selection, and copy work as in any text. `X` switches to the hex view, and `t` back.
 
 The hex view shows each row's offset, its bytes in hex, and the same bytes as ASCII, with a dot for a byte that does not print. A row holds 32, 16, 8, or 4 bytes, as many as the pane fits. The colours tell the kinds of byte apart: NUL, printable text, whitespace, other control bytes, and bytes past ASCII. It reads only the part of the file on screen, so a file of several gigabytes opens and scrolls at once. The scroll keys move it by rows, `gg` and `G` go to the start and the end, and `:` followed by an offset jumps there: `:0x1f40` in hex, `:8000` in decimal, or `:50%` for halfway. `/` searches the whole file for a string, ignoring the case of ASCII letters: type it, then Enter finds the next hit and Shift+Enter the one before, wrapping at the ends. The hit is marked in both columns, and the footer says where it is, or `no matches`. `Esc` closes the prompt and keeps the search, so `n` and `N` step through the hits. A search of a large file runs in the background, and the view keeps scrolling meanwhile.
 

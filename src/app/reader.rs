@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use fmc::diff::Sign;
 use fmc::keys::{Focus, key_page_markdown_with};
 use fmc::reader::binary::format_size;
-use fmc::reader::document::Document;
+use fmc::reader::document::{Document, Refusal};
 use fmc::reader::image;
 use fmc::reader::jump::Jump;
 use fmc::reader::markdown::{View, is_markdown};
@@ -35,6 +35,8 @@ pub enum Shown {
         /// The showing this text is, and its git signs (`app/gutter.rs`).
         serial: u64,
         signs: Vec<(u32, Sign)>,
+        /// The file's size when the reader refused it and `t` read it lossily; such a text is not polled.
+        lossy: Option<u64>,
     },
     /// The key page (`?`): generated Markdown, shown as a Markdown document. `back` is what it replaced.
     Keys {
@@ -49,6 +51,8 @@ pub enum Shown {
     Binary {
         path: PathBuf,
         size: u64,
+        /// Why the reader refused it, which is the notice's title.
+        refusal: Refusal,
     },
     /// The hex view of a file the reader refused (`app/hex.rs`).
     Hex(Box<super::hex::Hex>),
@@ -134,6 +138,19 @@ fn present(ui: &Ui, shown: &Shown) {
 
 /// Shows a text document the worker read. A key page's search does not carry over to the file.
 pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp: String) {
+    show_document(m, ui, path, document, Some(stamp), None);
+}
+
+/// `t`: shows the text the worker read lossily from a refused file of `size` bytes. The reader takes the focus, since
+/// its keys are what the user asked for, and the text is not polled: the refused file has no text to compare.
+pub fn show_lossy(m: &mut Model, ui: &Ui, path: &Path, document: Document, size: u64) {
+    show_document(m, ui, path, document, None, Some(size));
+    if m.shown.path() == Some(path) {
+        m.focus = Focus::Reader;
+    }
+}
+
+fn show_document(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp: Option<String>, lossy: Option<u64>) {
     if !reveal(m, path, true) {
         return;
     }
@@ -145,9 +162,10 @@ pub fn show_text(m: &mut Model, ui: &Ui, path: &Path, document: Document, stamp:
         document,
         language,
         markdown,
-        stamp: Some(stamp),
+        stamp,
         serial: m.serial,
         signs: Vec::new(),
+        lossy,
     };
     present(ui, &shown);
     if m.shown.shows_keys() {
@@ -219,14 +237,29 @@ pub fn show_picture(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, byte
 
 /// Shows a binary file's notice. Focus stays on the list, as in Scouter; the compact tier opens the reader page for the
 /// notice instead, since a list tap there would otherwise show nothing.
-pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
+pub fn show_binary(m: &mut Model, path: &Path, size: u64, refusal: Refusal) {
     if !reveal(m, path, false) {
         return;
     }
     m.focus = if m.compact() { Focus::Reader } else { Focus::List };
-    m.shown = Shown::Binary { path: path.to_path_buf(), size };
+    m.shown = Shown::Binary { path: path.to_path_buf(), size, refusal };
     m.restore = None;
     m.search = None;
+}
+
+/// `t`: reads the refused file the notice or the hex view shows as text, on a worker; the answer shows through
+/// `show_lossy`.
+pub fn open_as_text(m: &mut Model) {
+    let path = match &m.shown {
+        Shown::Binary { path, .. } => path.clone(),
+        Shown::Hex(hex) => hex.path.clone(),
+        _ => return,
+    };
+    let worker = path.clone();
+    crate::services::spawn(&m.proxy, move || crate::services::Event::Opened {
+        result: crate::services::fs::open_lossy(&worker),
+        path,
+    });
 }
 
 /// The place the reader is at, for the jump history (Scouter `here`): a text's row, and the top of an image or binary.
@@ -325,6 +358,7 @@ pub fn badges(shown: &Shown, wrap: bool) -> Vec<Badge> {
         Shown::Image { .. } => badges.push(Badge::quiet("image")),
         Shown::Binary { .. } => badges.push(Badge::quiet("binary")),
         Shown::Hex(_) => badges.push(Badge::quiet("hex")),
+        Shown::Text { lossy: Some(_), .. } => badges.push(Badge::quiet("lossy")),
         _ => {}
     }
     if let Shown::Text { document, .. } = shown
@@ -425,6 +459,7 @@ mod tests {
             stamp: None,
             serial: 0,
             signs: Vec::new(),
+            lossy: None,
         };
         assert!(shown(Some(View::Rendered)).previewing());
         assert!(!shown(Some(View::Source)).previewing());

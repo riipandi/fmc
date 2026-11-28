@@ -11,8 +11,11 @@ use super::styled::{Seg, content};
 pub const HINT: &str = "fmc only displays UTF-8 text and images.";
 
 /// The choices under the hint: the key, what it does, and the action a click runs.
-pub const CHOICES: &[(&str, &str, Action)] =
-    &[("X", "hex view", Action::OpenAsHex), ("o", "open in the default app", Action::OpenDefault)];
+pub const CHOICES: &[(&str, &str, Action)] = &[
+    ("t", "as text", Action::OpenAsText),
+    ("X", "hex view", Action::OpenAsHex),
+    ("o", "open in the default app", Action::OpenDefault),
+];
 
 pub struct BinaryView {
     root: View,
@@ -74,9 +77,10 @@ impl BinaryView {
         self.buttons.iter().cloned().zip(CHOICES.iter().map(|(_, _, action)| *action)).collect()
     }
 
-    /// Paints the notice for `name` (already display-safe) and `size` (already formatted).
-    pub fn paint(&self, name: &str, size: &str, p: &Palette) {
-        self.title.set_text(content(&[Seg::new("Binary files are not supported.", p.text).bold()], p.text));
+    /// Paints the notice: `title` says why the reader refused the file, `name` is already display-safe, and `size` is
+    /// already formatted.
+    pub fn paint(&self, title: &str, name: &str, size: &str, p: &Palette) {
+        self.title.set_text(content(&[Seg::new(title, p.text).bold()], p.text));
         self.meta.set_text(content(
             &[Seg::new(name, p.accent_soft), Seg::new("  ·  ", p.ignored), Seg::new(size, p.muted)],
             p.text,

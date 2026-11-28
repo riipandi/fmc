@@ -135,6 +135,7 @@ pub fn hints_for(mode: Mode, pane: Pane, wrap: bool, all_files: bool, shown: Sho
             ("^d ^u", "page"),
             ("/", "search"),
             (":", "offset"),
+            ("t", "text"),
             ("y", "copy"),
             ("q", "close"),
             ("?", "help"),

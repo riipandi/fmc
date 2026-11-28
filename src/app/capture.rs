@@ -130,6 +130,7 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::ToggleWrap if m.shown.has_document() || m.changes.is_some() => m.wrap = !m.wrap,
         Action::OpenDefault if m.changes.is_none() => open::default_app(&mut m),
         Action::OpenAsHex if m.changes.is_none() => hex::open_shown(&mut m),
+        Action::OpenAsText if m.changes.is_none() => reader::open_as_text(&mut m),
         Action::OpenWith if m.changes.is_none() => open::with(&mut m),
         Action::OpenImage if m.focus == Focus::Reader && m.shown.previewing() => {
             picture::open_first(&mut m, &ui.borrow())

@@ -159,6 +159,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             let mut m = model.borrow_mut();
             match action {
                 Action::OpenAsHex => hex::open_shown(&mut m),
+                Action::OpenAsText => reader::open_as_text(&mut m),
                 Action::OpenDefault => open::default_app(&mut m),
                 _ => {}
             }

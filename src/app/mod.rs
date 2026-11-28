@@ -812,9 +812,9 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
             m.pending_top = Some((top, tries - 1));
         }
     }
-    if let reader::Shown::Binary { path, size } = &m.shown {
+    if let reader::Shown::Binary { path, size, refusal } = &m.shown {
         let name = fmc::text::display_label(&path.file_name().unwrap_or_default().to_string_lossy());
-        ui.binary.paint(&name, &fmc::reader::binary::format_size(*size), p);
+        ui.binary.paint(refusal.message(), &name, &fmc::reader::binary::format_size(*size), p);
     }
 
     let home = std::env::var_os("HOME").map(PathBuf::from);

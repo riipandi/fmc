@@ -251,7 +251,8 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                     reader::show_text(m, ui, path, document.clone(), stamp.clone())
                 }
                 Ok(fs::Opened::Image { info, bytes }) => reader::show_image(m, ui, path, info.clone(), bytes),
-                Ok(fs::Opened::Binary { size }) => reader::show_binary(m, path, *size),
+                Ok(fs::Opened::Binary { size, refusal }) => reader::show_binary(m, path, *size, *refusal),
+                Ok(fs::Opened::Lossy { document, size }) => reader::show_lossy(m, ui, path, document.clone(), *size),
                 Err(text) => {
                     m.focus_reader_on_open = false;
                     m.restore = None;
