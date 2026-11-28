@@ -63,6 +63,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 - The changes screen opens showing one file's diff. Press `a` to stack all files, as Scouter shows them at first.
 - After a change that moves the diff (folding with `c`, or reloading with `r`), the footer and the scrollbar show the new position at once. Scouter can show the old values until you scroll.
 - After switching between one file and all files (`a`), or changing the context (`x`), the selected file stays at the top. Scouter can land elsewhere.
+- A diff whose lines fit the pane does not pan: its header's counts and stat bar sit at the right edge, and `h` and `l` do nothing. Scouter's diff is wider than the pane by its gutter, so it pans and hides the bar until you pan. A longer line still pans, by its own overflow.
 
 ## Finder
 

@@ -23,4 +23,4 @@ pub use patch::utf16_len;
 pub use patch::{ALL_LIMIT, FilePatch, PATCH_LIMIT, Patch, binary, from_diff, from_file, not_shown, split, too_large};
 pub use row::{ListRow, empty_message, header_counts, header_title, index_mark, list_row, split_path, truncated_note};
 pub use signs::{Sign, signs};
-pub use stack::{Totals, active_hunk, block_at, gutter_digits, hunk_starts, totals, widens_stack};
+pub use stack::{Totals, active_hunk, block_at, gutter_digits, hunk_starts, stack_columns, totals, widest_line};

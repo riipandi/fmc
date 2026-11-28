@@ -57,10 +57,18 @@ fn the_followed_block_is_the_last_whose_top_is_above_the_scroll_row() {
 }
 
 #[test]
-fn an_unfolded_diff_widens_the_stack_and_a_folded_diff_or_a_notice_does_not() {
-    assert!(widens_stack([(false, true)]));
-    assert!(widens_stack([(true, true), (false, true)]));
-    assert!(!widens_stack([(true, true), (false, false)]), "a notice is narrower than the pane");
-    assert!(!widens_stack([(true, true)]));
-    assert!(!widens_stack([]));
+fn the_widest_line_is_its_text_after_the_sign_and_a_file_header_is_not_a_line() {
+    let text = "diff --git a/x b/x\n+++ b/some/longer/path/to/file.rs\n@@ -1,3 +1,3 @@\n [package]\n-# old\n+\u{1F4DA}ab\n\\ No newline at end of file\n--- ok\n";
+    assert_eq!(widest_line(text), 9, "` [package]` is nine columns; the emoji line is four");
+    assert_eq!(widest_line("@@ -1 +1 @@\n+\tx\n"), 5, "a tab is four columns");
+    assert_eq!(widest_line("diff --git a/x b/x\n+++ b/x\n"), 0, "no hunk, no line");
+}
+
+#[test]
+fn the_stack_is_the_pane_or_the_widest_shown_diff() {
+    assert_eq!(stack_columns(70, [Some(76)]), 76);
+    assert_eq!(stack_columns(70, [Some(82), Some(90)]), 90);
+    assert_eq!(stack_columns(70, [Some(40), None, Some(60)]), 70, "a folded diff or a notice does not widen it");
+    assert_eq!(stack_columns(70, [None]), 70);
+    assert_eq!(stack_columns(70, []), 70);
 }

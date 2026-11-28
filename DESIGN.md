@@ -201,7 +201,7 @@ A `mermaid` fence in the rendered view is drawn on `fallback-background`, across
 
 ### Diff file band
 
-One band per changed file on the tinted background: the marker, a fold chevron, the bold coloured letter, the bold name (`accent-soft` when active), `← old` for a rename, the dim folder, and on the right the counts and a five-cell stat bar of `▪` (green for added, red for removed, at least one cell each when both exist). Hunk header lines are not drawn.
+One band per changed file on the tinted background: the marker, a fold chevron, the bold coloured letter, the bold name (`accent-soft` when active), `← old` for a rename, the dim folder, and on the right the counts and a five-cell stat bar of `▪` (green for added, red for removed, at least one cell each when both exist). Hunk header lines are not drawn. The stacked body is as wide as the pane, or wider only while a line of an unfolded diff overflows it, so a diff whose lines fit shows its bar at the right edge with nothing to pan.
 
 ### Key list
 

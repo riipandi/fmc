@@ -1,6 +1,8 @@
 //! The stacked diff's facts (Scouter `src/diff/diff-blocks.ts`): the line-number width every block shares, the totals
 //! the footer shows, the hunk at a scroll row, and the block at one. Pure: the view measures the rows and passes them in.
 
+use unicode_width::UnicodeWidthStr;
+
 use super::{FilePatch, Patch};
 
 /// The width of the line numbers every block shares (Scouter `maxGutterDigits`, `src/diff/diff-blocks.ts:55-70`): the
@@ -91,10 +93,27 @@ fn range(text: &str) -> Option<(u64, u64, &str)> {
     Some((start, counted[..end].parse().ok()?, &counted[end..]))
 }
 
-/// Whether the stacked body is wider than the pane. Scouter's stack is as wide as its widest visible block, and only an
-/// unfolded diff is wider than the pane (by its gutter). `blocks` gives each block's `(folded, is a diff)`.
-pub fn widens_stack(blocks: impl IntoIterator<Item = (bool, bool)>) -> bool {
-    blocks.into_iter().any(|(folded, diff)| diff && !folded)
+/// The display columns of a diff's widest line, after its sign column. Only the hunk lines are drawn, so the file header
+/// before the first `@@` is not counted. shortcut: a tab counts as four columns, not the native buffer's tab stop, so a
+/// tab that lands on another stop is off by a few columns; upgrade when the tab width is read from the buffer.
+pub fn widest_line(text: &str) -> usize {
+    let mut in_hunk = false;
+    let mut widest = 0;
+    for line in text.lines() {
+        if line.starts_with("@@") {
+            in_hunk = true;
+        } else if in_hunk && !line.starts_with('\\') {
+            let code = line.get(1..).unwrap_or("");
+            widest = widest.max(UnicodeWidthStr::width(code.replace('\t', "    ").as_str()));
+        }
+    }
+    widest
+}
+
+/// The columns an unwrapped stack takes: the pane, or the widest need of the shown diffs. A folded diff or a notice
+/// passes `None`, so it does not widen the stack.
+pub fn stack_columns(pane: usize, shown: impl IntoIterator<Item = Option<usize>>) -> usize {
+    shown.into_iter().flatten().fold(pane, usize::max)
 }
 
 #[cfg(test)]

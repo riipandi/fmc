@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The changes screen fits a diff to the pane when its lines do. A diff of short lines no longer pans sideways, and its header's stat bar shows at the right edge. A longer line still pans by its overflow. See [Parity](docs/parity.md#changes-screen).
+
 ## [0.5.0] - 2026-11-28
 
 fmc writes a JSON Schema for `settings.json` and links the file to it, so an editor completes and checks your settings.

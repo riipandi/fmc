@@ -6,7 +6,9 @@
 use std::cell::{Cell, RefCell};
 use std::sync::Arc;
 
-use fmc::diff::{Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts, widens_stack};
+use fmc::diff::{
+    Change, FilePatch, Folds, Hunk, Patch, header_counts, header_title, hunk_starts, stack_columns, widest_line,
+};
 use fmc::theme::{Hex, Mode, Palette};
 use opentui::native::{TextView, Viewport};
 use opentui::prelude::*;
@@ -33,8 +35,8 @@ struct Block {
     body: Body,
     /// The active and folded state the header last painted (`None` until the first paint).
     painted: Cell<Option<(bool, bool)>>,
-    /// The line-number width the block was built with, which its gutter takes.
-    digits: Cell<usize>,
+    /// The columns the block's diff needs unwrapped: its gutter and its widest line (0 for a notice).
+    need: usize,
     /// Counts the wrapped rows of the diff's text, for the hunks' rows under wrap (built when first needed).
     counter: RefCell<Option<TextView>>,
 }
@@ -88,8 +90,8 @@ impl DiffBody {
         }
     }
 
-    /// Sizes the blocks to the pane. Unwrapped, a block is as wide as the pane plus its diff's gutter: Scouter's diff
-    /// overflows the pane by that gutter, so the view pans by it (`src/diff/diff-blocks.ts` `gutter`).
+    /// Sizes the blocks to the pane. Scouter's stack is pane-wide and its diff overflows by the gutter; this view
+    /// fits the diff's lines instead, so the view pans only over a line that is wider than the pane.
     pub fn set_pane(&self, columns: u32) {
         if self.pane.replace(columns) == columns {
             return;
@@ -97,25 +99,23 @@ impl DiffBody {
         self.apply_widths();
     }
 
-    /// Scouter's stack is as wide as its widest visible block (its scroll content stretches every block to it), and
-    /// each header is 100% of its block. An unfolded diff is the pane plus its gutter, so while one shows, every
-    /// header is that wide and a header's counts and stat bar fall past the pane's edge. A folded block and a notice
-    /// are pane-wide, so their counts and bar show (`src/diff/diff-blocks.ts` `createBlock`, `createHeader`).
+    /// Scouter's stack is as wide as its widest visible block, and each header is 100% of its block. Here the stack is
+    /// as wide as the widest line of the unfolded diffs, or the pane (`stack_columns`), so a header's counts and stat
+    /// bar sit at the pane's edge while every line fits, and past it while one does not. A folded block and a notice
+    /// are not counted, and a wrapped body is pane-wide.
     fn apply_widths(&self) {
         let blocks = self.blocks.borrow();
-        let wide = widens_stack(blocks.iter().map(|block| {
+        let pane = self.pane.get() as usize;
+        let shown = blocks.iter().map(|block| {
             let folded = block.painted.get().is_none_or(|(_, folded)| folded);
-            (folded, matches!(block.body, Body::Diff(_)))
-        }));
+            let diff = matches!(block.body, Body::Diff(_));
+            (diff && !folded && !self.wrapped.get()).then_some(block.need)
+        });
+        let columns = stack_columns(pane, shown);
+        let width = if columns > pane { Length::Cells(columns as f32) } else { Length::percent(100.0) };
         for block in blocks.iter() {
-            let width = if wide { Length::Cells(self.block_width(block.digits.get())) } else { Length::percent(100.0) };
             block.root.min_width(width);
         }
-    }
-
-    fn block_width(&self, digits: usize) -> f32 {
-        let gutter = if self.wrapped.get() { 0 } else { digits + GUTTER_OUTSIDE_DIGITS };
-        (self.pane.get() as usize + gutter) as f32
     }
 
     /// Shows the empty state: a title and a detail, centred, with no blocks (Scouter `showEmpty`).
@@ -155,9 +155,6 @@ impl DiffBody {
             .enumerate()
             .map(|(index, file)| block(app, index, file, layout, filetype(&file.change), p))
             .collect();
-        for block in &blocks {
-            block.root.min_width(Length::Cells(self.block_width(digits)));
-        }
         for block in &blocks {
             self.scroller.widget().content_view().add(&block.root);
         }
@@ -307,6 +304,12 @@ impl DiffBody {
         height > viewport as f64 && top + viewport as f64 >= height - 0.5
     }
 
+    /// The columns a block takes, as the frame laid it out: the pane, or wider while a line overflows it.
+    #[cfg(test)]
+    pub fn stack_width(&self) -> usize {
+        self.blocks.borrow().first().map_or(0, |block| block.root.rect().width.max(0.0) as usize)
+    }
+
     /// The rows the stack takes, as the frame laid them out.
     pub fn height(&self) -> usize {
         self.scroller.widget().content_view().rect().height.max(0.0) as usize
@@ -331,7 +334,10 @@ fn block(
     language: Option<&'static str>,
     p: &Palette,
 ) -> Block {
-    let digits = layout.digits;
+    let need = match &file.patch {
+        Patch::Text { text, .. } => layout.digits + GUTTER_OUTSIDE_DIGITS + widest_line(text),
+        Patch::Notice(_) => 0,
+    };
     let root = View::new(app).min_width(Length::percent(100.0)).column().shrink(0.0);
     if index > 0 {
         root.margin_edge(Edge::Top, 1);
@@ -359,16 +365,7 @@ fn block(
             Body::Notice(notice)
         }
     };
-    Block {
-        root,
-        header,
-        title,
-        counts,
-        body,
-        painted: Cell::new(None),
-        digits: Cell::new(digits),
-        counter: RefCell::new(None),
-    }
+    Block { root, header, title, counts, body, painted: Cell::new(None), need, counter: RefCell::new(None) }
 }
 
 /// A file's patch as a unified diff, with the file's syntax and the palette's line colors (Scouter `createDiff`).
@@ -407,3 +404,7 @@ fn colors(p: &Palette) -> DiffColors {
         removed_line_number_bg: color(p.removed_gutter),
     }
 }
+
+#[cfg(test)]
+#[path = "diff_tests.rs"]
+mod tests;

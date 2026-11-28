@@ -1007,6 +1007,20 @@ Consequences:
 - (positive) Scrolling by touch no longer folds files by accident.
 - (negative) A click folds on release instead of on press, a small timing difference from Scouter.
 
+### Approved deviation: a diff fits the pane when its lines do
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's unified diff is wider than the pane by its gutter, whatever its lines are. The line numbers and the sign sit in a row with the code view, which takes `width: "100%"` (`@opentui/core` 0.9.9, `index.node.js:6290` the row, `:7267` the code view, `:7451` the unified side). The stack is as wide as its widest visible block (`scouter:src/diff/diff-blocks.ts:148-165`, `:400` the block's `minWidth: "100%"`, `:464-470` the header, `:544` the unwrapped content width `auto`). Checked live on 2026-11-28 at 220x50 and 80x24, Scouter 434d000 with `@opentui/core` 0.9.9, on a diff of 125-column lines: at pan 0 the header reads `−8` at the edge with no stat bar; after `l` the bar shows and the gutter is out of view. A diff of short lines still pans by the gutter.
+
+Decision: the stacked body is as wide as the pane, or as wide as the widest line of its unfolded diffs when that line is wider. A line's need is the line-number digits, the gutter's four cells (the sign column included), and the line's text after its sign, in display columns; a tab counts as four. A folded diff and a notice do not widen the stack, and a wrapped body is pane-wide. The split view takes the same width as the unified view. A pan reveals only what the widest line overflows. Approved by the owner on 2026-11-28.
+
+Consequences:
+
+- (positive) A diff whose lines fit has no sideways overflow: its header's counts and stat bar sit at the pane's edge at pan 0, and `h` and `l` do nothing.
+- (negative) While a line overflows the pane, the header is as wide as the stack, so its counts and stat bar sit past the pane edge until a pan reveals them, as in Scouter. In split view a long line gives each side half of the wider stack.
+- (negative) A tab counts as four columns, not as the native tab stop.
+
 ### Approved deviation: the line-number gutter stays put when the reader pans
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
