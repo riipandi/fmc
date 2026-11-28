@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-28
+
+fmc writes a JSON Schema for `settings.json` and links the file to it, so an editor completes and checks your settings.
+
 ### Added
 
 - A JSON Schema for `settings.json`, in `meta/config.schema.json` in the config folder. fmc writes it at each start when it is missing or differs from the running build. At start, fmc adds the schema's `$schema` line as the first key of a settings file that has none, and changes nothing else in it; the Settings page adds it to a file it creates, so an editor completes the keys and their values and flags a misspelt key. See [Configuration](docs/configuration.md#editor-completion).
@@ -124,7 +128,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/riipandi/fmc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/riipandi/fmc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/riipandi/fmc/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/riipandi/fmc/compare/v0.1.1...v0.2.0
