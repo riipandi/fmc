@@ -86,9 +86,49 @@ pub fn parse(text: &str) -> Parsed {
     parsed
 }
 
-/// The `$schema` a save adds to a file that has none: the schema `services::settings::ensure_schema` writes beside it
-/// (plan-00016 O1 (b)). Relative to `settings.json`, which editors resolve against the file's folder.
+/// The keys `parse` reads: the Settings page's rows and `file_associations`. Every lookup goes through `field`, which
+/// asserts its key is here, and the schema's properties are tested against this list, so a key cannot be parsed
+/// without a schema property.
+pub const KEYS: [&str; 9] = [
+    "auto_preview",
+    "sidebar_jump",
+    "reader_jump",
+    "git_gutter",
+    "file_associations",
+    "find_mode",
+    "theme_mode",
+    "dark_theme",
+    "light_theme",
+];
+
+fn field<'a>(object: &'a Map<String, Value>, key: &str) -> Option<&'a Value> {
+    debug_assert!(KEYS.contains(&key), "{key} is parsed but missing from settings::KEYS and the schema");
+    object.get(key)
+}
+
+/// The `$schema` that points `settings.json` at the schema `services::settings::ensure_schema` writes beside it
+/// (plan-00016 O1). Relative to `settings.json`, which editors resolve against the file's folder.
 pub const SCHEMA_LINK: &str = "./meta/config.schema.json";
+
+/// The file's text with `"$schema": SCHEMA_LINK` inserted as its first key, for the startup link (plan-00016 O1, amended
+/// by the owner on 2026-11-28). The rest of the text keeps its bytes, so the values, their order, and the layout stay as
+/// the owner wrote them. `None` when the file already has a `$schema` or is not a JSON object.
+pub fn linked(text: &str) -> Option<String> {
+    let Ok(Value::Object(mut object)) = serde_json::from_str::<Value>(text) else { return None };
+    if object.contains_key("$schema") {
+        return None;
+    }
+    // Strict JSON (plan-00015 D10): the first `{` opens the object, since only whitespace may come before it.
+    let (head, rest) = text.split_at(text.find('{')? + 1);
+    let body = rest.trim_start();
+    let gap = &rest[..rest.len() - body.len()];
+    let link = format!("\"$schema\": \"{SCHEMA_LINK}\"");
+    let text =
+        if object.is_empty() { format!("{head}\n  {link}\n{body}") } else { format!("{head}{gap}{link},{gap}{body}") };
+    object.insert("$schema".into(), Value::from(SCHEMA_LINK));
+    // INVARIANT: the insert adds one key and changes no value; a text that would parse otherwise is not written.
+    (serde_json::from_str::<Value>(&text).ok() == Some(Value::Object(object))).then_some(text)
+}
 
 /// The file's text with `changes` set, for a save (`services::settings::update`). Keys the change does not name keep their
 /// values, but serde_json keeps no file order, so a save rewrites the keys sorted. A text that is not a JSON object is
@@ -180,7 +220,7 @@ fn theme_property(ids: Vec<String>, default: Value, help: &str) -> Value {
 /// other entries still apply.
 fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Associations {
     let mut table = Associations::default();
-    match object.get("file_associations") {
+    match field(object, "file_associations") {
         None => {}
         Some(Value::Object(entries)) => {
             for (pattern, value) in entries {
@@ -203,7 +243,7 @@ fn associations(object: &Map<String, Value>, notices: &mut Vec<String>) -> Assoc
 /// `find_mode`: the name matching the finder starts with (plan-00006 D6). Any other value keeps Scouter's substring match
 /// and says so, as the other keys do.
 fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
-    match object.get("find_mode") {
+    match field(object, "find_mode") {
         None => FIND_MODE,
         Some(value) => value.as_str().and_then(Matching::named).unwrap_or_else(|| {
             notices.push("settings.json: find_mode must be \"substring\" or \"fuzzy\"; \"substring\" is used.".into());
@@ -214,7 +254,7 @@ fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
 
 /// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode (plan-00015, A7).
 fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeChoice {
-    match object.get("theme_mode") {
+    match field(object, "theme_mode") {
         None => THEME_MODE,
         Some(value) => value.as_str().and_then(ModeChoice::named).unwrap_or_else(|| {
             notices
@@ -226,7 +266,7 @@ fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeCho
 
 /// A theme id is any string here; `theme::catalog::choose` checks it against the catalog and its slot.
 fn theme_id(object: &Map<String, Value>, key: &str, notices: &mut Vec<String>) -> String {
-    match object.get(key) {
+    match field(object, key) {
         None => DEFAULT_THEME.into(),
         Some(Value::String(id)) => id.clone(),
         Some(_) => {
@@ -237,7 +277,7 @@ fn theme_id(object: &Map<String, Value>, key: &str, notices: &mut Vec<String>) -
 }
 
 fn boolean(object: &Map<String, Value>, key: &str, default: bool, notices: &mut Vec<String>) -> bool {
-    match object.get(key) {
+    match field(object, key) {
         None => default,
         Some(value) => value.as_bool().unwrap_or_else(|| {
             notices.push(format!("settings.json: {key} must be true or false; {default} is used."));
@@ -247,7 +287,7 @@ fn boolean(object: &Map<String, Value>, key: &str, default: bool, notices: &mut 
 }
 
 fn whole(object: &Map<String, Value>, key: &str, default: u32, notices: &mut Vec<String>) -> u32 {
-    match object.get(key) {
+    match field(object, key) {
         None => default,
         Some(value) => value.as_u64().and_then(|n| u32::try_from(n).ok()).filter(|&n| n >= 1).unwrap_or_else(|| {
             notices.push(format!("settings.json: {key} must be a positive whole number; {default} is used."));

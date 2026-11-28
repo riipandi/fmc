@@ -34,6 +34,18 @@ pub fn ensure_schema(path: &Path) -> Option<String> {
         .map(|error| format!("meta/config.schema.json could not be written: {}.", display_label(&error.to_string())))
 }
 
+/// Adds `"$schema"` to an existing `settings.json` that has none, at the start (plan-00016 O1, amended by the owner on
+/// 2026-11-28). Only that key is inserted (`settings::linked`); every value and the layout stay. A missing file, a file
+/// that does not parse, or one with its own `$schema` is left alone; `load` reports a file it cannot read. A failed write
+/// is the notice the footer shows.
+pub fn link_schema(path: &Path) -> Option<String> {
+    let text = super::read_config(path).ok()?;
+    let linked = settings::linked(&text)?;
+    super::save_atomic(path, &linked)
+        .err()
+        .map(|error| format!("settings.json could not be linked to its schema: {}.", display_label(&error.to_string())))
+}
+
 /// The settings the file sets, with a notice for each value it cannot use. A missing file has no notice.
 pub fn load(path: &Path) -> Parsed {
     let notice = |text: String| Parsed { notices: vec![text], ..Parsed::default() };

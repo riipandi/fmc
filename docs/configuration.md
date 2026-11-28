@@ -32,7 +32,7 @@ A file that is not valid JSON, whose top level is not an object, or that is over
 
 fmc writes a JSON Schema for the settings file to `$XDG_CONFIG_HOME/fmc/meta/config.schema.json`, or `~/.config/fmc/meta/config.schema.json`, each time it starts. An editor that reads a `$schema` key then completes the keys and their values, and flags a misspelt key or a value of the wrong type.
 
-- The Settings page adds `"$schema": "./meta/config.schema.json"` to `settings.json` when the file has none. A `$schema` you wrote stays as it is. To point an editor at the schema by hand, add that line to the file.
+- When `settings.json` exists and has no `$schema`, fmc adds `"$schema": "./meta/config.schema.json"` as its first key at start. Nothing else in the file changes: your values, their order, and the layout stay. A `$schema` you wrote stays as it is, and a file that is not valid JSON is left alone. The Settings page adds the same line when it creates the file.
 - The path is relative to the folder of `settings.json`, and VS Code and Zed resolve it there. If you move the file, change the path.
 - fmc rewrites the schema only when it is missing or differs from the one this version writes. Do not edit it: a change is overwritten at the next start.
 - A theme id in `dark_theme` or `light_theme` completes from the bundled themes of its mode. The schema accepts any text there, so a theme in your `themes` folder is valid too.

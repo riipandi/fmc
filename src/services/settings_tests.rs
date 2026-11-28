@@ -7,7 +7,7 @@ use tempfile::TempDir;
 
 use serde_json::json;
 
-use super::{ensure_schema, load, path, schema_path, update};
+use super::{ensure_schema, link_schema, load, path, schema_path, update};
 use crate::services::save_atomic;
 
 #[test]
@@ -254,4 +254,49 @@ fn a_schema_link_is_written_through_and_the_link_stays() {
     assert_eq!(ensure_schema(&file), None);
     assert!(fs::symlink_metadata(&file).unwrap().file_type().is_symlink());
     assert_eq!(fs::read_to_string(&target).unwrap(), fmc::settings::schema());
+}
+
+#[test]
+fn link_schema_adds_the_key_to_an_existing_file_and_keeps_its_values() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    let own = "{\n  \"sidebar_jump\": 7,\n  \"auto_preview\": false\n}\n";
+    std::fs::write(&file, own).unwrap();
+    let before = load(&file).settings;
+    assert_eq!(link_schema(&file), None);
+    let text = std::fs::read_to_string(&file).unwrap();
+    assert_eq!(
+        text,
+        "{\n  \"$schema\": \"./meta/config.schema.json\",\n  \"sidebar_jump\": 7,\n  \"auto_preview\": false\n}\n"
+    );
+    assert_eq!(load(&file).settings, before);
+}
+
+#[test]
+fn link_schema_leaves_a_missing_file_a_linked_file_and_a_broken_file_alone() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("settings.json");
+    assert_eq!(link_schema(&file), None);
+    assert!(!file.exists());
+    for text in ["{\"$schema\": \"https://gringotts.test/vault.json\"}", "{\"reader_jump\": "] {
+        std::fs::write(&file, text).unwrap();
+        assert_eq!(link_schema(&file), None);
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), text);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn link_schema_in_a_read_only_folder_is_a_notice_and_the_file_keeps_its_bytes() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = TempDir::new().unwrap();
+    let folder = dir.path().join("fmc");
+    std::fs::create_dir(&folder).unwrap();
+    let file = folder.join("settings.json");
+    std::fs::write(&file, "{\"git_gutter\": false}").unwrap();
+    std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o555)).unwrap();
+    let notice = link_schema(&file);
+    std::fs::set_permissions(&folder, std::fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(notice.unwrap().starts_with("settings.json could not be linked to its schema"));
+    assert_eq!(std::fs::read_to_string(&file).unwrap(), "{\"git_gutter\": false}");
 }

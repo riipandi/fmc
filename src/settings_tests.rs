@@ -326,19 +326,6 @@ fn each_page_group_is_one_run_of_rows_and_every_row_has_a_title() {
     assert!(Row::ALL.iter().all(|row| !row.title().is_empty()));
 }
 
-/// The nine keys `parse` reads: the eight rows of the page and `file_associations`.
-const KEYS: [&str; 9] = [
-    "auto_preview",
-    "sidebar_jump",
-    "reader_jump",
-    "git_gutter",
-    "file_associations",
-    "find_mode",
-    "theme_mode",
-    "dark_theme",
-    "light_theme",
-];
-
 fn schema_value() -> Value {
     serde_json::from_str(&schema()).unwrap()
 }
@@ -451,4 +438,39 @@ fn parse_ignores_the_schema_key_without_a_notice() {
     let parsed = parse(r#"{"$schema": "./meta/config.schema.json", "reader_jump": 8}"#);
     assert_eq!(parsed.settings.reader_jump, 8);
     assert!(parsed.notices.is_empty());
+}
+
+#[test]
+fn linked_puts_the_schema_first_and_keeps_every_other_byte() {
+    let own = "{\n    \"theme_mode\": \"dark\",\n    \"dark_theme\": \"langdon-tweed\",\n    \"reader_jump\": 9\n}\n";
+    assert_eq!(
+        linked(own).unwrap(),
+        "{\n    \"$schema\": \"./meta/config.schema.json\",\n    \"theme_mode\": \"dark\",\n    \"dark_theme\": \"langdon-tweed\",\n    \"reader_jump\": 9\n}\n"
+    );
+    assert_eq!(
+        linked(r#"{"git_gutter":false}"#).unwrap(),
+        r#"{"$schema": "./meta/config.schema.json","git_gutter":false}"#
+    );
+    let linked_text = linked(own).unwrap();
+    assert_eq!(parse(&linked_text).settings, parse(own).settings);
+}
+
+#[test]
+fn linked_gives_an_empty_object_one_key() {
+    assert_eq!(linked("{}\n").unwrap(), "{\n  \"$schema\": \"./meta/config.schema.json\"\n}\n");
+    assert_eq!(linked("  { }").unwrap(), "  {\n  \"$schema\": \"./meta/config.schema.json\"\n}");
+}
+
+#[test]
+fn linked_leaves_a_file_with_its_own_schema_or_that_is_not_an_object() {
+    assert_eq!(linked(r#"{"$schema": "https://hogwarts.test/fmc.json"}"#), None);
+    assert_eq!(linked("{not json"), None);
+    assert_eq!(linked("[true]"), None);
+    assert_eq!(linked(""), None);
+}
+
+#[test]
+#[should_panic(expected = "missing from settings::KEYS")]
+fn a_key_read_outside_keys_fails_the_tests() {
+    field(&Map::new(), "invisibility_cloak");
 }

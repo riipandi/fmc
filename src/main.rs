@@ -54,7 +54,9 @@ fn run() -> Result<(), String> {
             // Read and checked before the first frame, so a bad value's notice is the first thing the footer shows.
             let (config_home, home) = (std::env::var_os("XDG_CONFIG_HOME"), std::env::var_os("HOME"));
             let path = services::settings::path(config_home.clone(), home.clone());
+            let link = path.as_deref().and_then(services::settings::link_schema);
             let mut settings = path.as_deref().map(services::settings::load).unwrap_or_default();
+            settings.notices.extend(link);
             let schema = services::settings::schema_path(config_home.clone(), home.clone())
                 .and_then(|file| services::settings::ensure_schema(&file));
             settings.notices.extend(schema);

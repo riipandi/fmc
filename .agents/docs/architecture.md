@@ -908,7 +908,8 @@ Decision:
 - `ensure_schema` compares the bytes. It writes when the file is missing, unreadable, or different, and writes nothing when it is equal, so the mtime holds (D5). Rejected: a write at every start, which churns the mtime for dotfile managers.
 - The write is `services::save_atomic` (`services/mod.rs`, moved from `services/settings.rs` `save`), so a link is written through and a failed write removes its temp file (D6).
 - The check runs for `Command::Open` only, after the terminal check and before `app::run` (D7). `--help`, `--version`, and a refused start write nothing (`tests/cli.rs`).
-- The Settings page's save adds `"$schema": "./meta/config.schema.json"` to a file that has none, and keeps a `$schema` the owner wrote (`settings::merged`, `SCHEMA_LINK`; O1 (b), the owner's choice of 2026-11-28). Rejected: O1 (a), the owner adds the line by hand; O1 (c), startup adds it to `settings.json`, a second start-time write to the owner's file (`rules.md`, "Writes").
+- The Settings page's save adds `"$schema": "./meta/config.schema.json"` to a file that has none, and keeps a `$schema` the owner wrote (`settings::merged`, `SCHEMA_LINK`; O1 (b), the owner's choice of 2026-11-28). Rejected: O1 (a), the owner adds the line by hand.
+- Amended by the owner on 2026-11-28 (O1 (c) added to (b)): an existing `settings.json` without `$schema` would never get the link until a Settings save. At start, `services/settings.rs` `link_schema` inserts `"$schema"` as the first key through `settings::linked`, a text insert that keeps every other byte (values, order, layout), and writes only when the result parses to the file's object plus the key. A missing file, a file that does not parse, and a file with its own `$schema` are left alone; a failed write is a footer notice. Rejected: `merged` at start, which sorts the keys and reformats the owner's file.
 - A failed schema write is a footer notice in the startup chain, shown at each start until the write works (O2 (a), the owner's choice). Rejected: O2 (b), a silent failure, which leaves the owner with no completion and no reason.
 
 The path is relative to `settings.json`, and the editors resolve it there. The languageservice resolves a relative `$schema` against the document (`vscode-json-languageservice` `src/services/jsonSchemaService.ts:1367-1372`). Its VS Code host resolves against the document's folder (`microsoft/vscode` `extensions/json-language-features/server/src/jsonServer.ts:67-70`), and Zed's JSON server, `vscode-langservers-extracted` 4.10.0 (`zed-industries/zed` `crates/languages/src/json.rs:41,146`), does the same (`lib/json-language-server/jsonServer.js:115-118`). A completion check in a real editor is the owner's (plan-00016, Owner check).
@@ -919,6 +920,7 @@ Consequences:
 - (positive) A key or a name cannot drift from the parser unnoticed: `settings_tests.rs` checks each key against `schema()`, and each name round-trips through `named`.
 - (negative) A start with a schema that differs rewrites `meta/config.schema.json`, so a hand edit of it is lost.
 - (negative) A save adds a `$schema` line to a file that had none, and the save sorts the keys (A3).
+- (negative) The first start after this change writes the owner's `settings.json` once, to insert the `$schema` line.
 - (negative) A read-only config folder shows a footer notice at each start until the owner fixes it.
 
 ### Approved deviation: fmc offers a theme catalog, chosen in settings.json
