@@ -1,16 +1,16 @@
 ---
 status: in-progress
 created: 2026-11-28T18:29:53+07:00
-updated: 2026-11-28T21:00:00+07:00
+updated: 2026-11-28T22:00:00+07:00
 phases:
     - id: 1
       title: Spike, a picture inside the rendered view
       status: done
-      note: go; `.agents/docs/research/inline-image-spike.md` (D5's decode cannot run on a worker, see its section 3)
+      note: fdaa0d7; go; `.agents/docs/research/inline-image-spike.md` (D5's decode cannot run on a worker, see its section 3)
     - id: 2
       title: HTML images found and rewritten
-      status: pending
-      note: —
+      status: done
+      note: the phase 2 commit (see git log); the box shows HTML images; the picture comes in phase 3
     - id: 3
       title: The picture drawn in place of the box
       status: pending

@@ -1,11 +1,13 @@
-//! Images in the rendered Markdown view: a paragraph that is one image is drawn as a box, not as its alt text. This module
-//! reads an image's source, names the fence a lone image is written as, and says where a destination lives. It does no
-//! I/O: the reader's header reads and the canonical paths are the services' (`services/picture.rs`).
+//! Images in the rendered Markdown view: a paragraph that is one image, or an HTML block that is one `<img>` or `<picture>`,
+//! is drawn as a box, not as its text. This module reads an image's source, names the fence an image is written as, and says
+//! where a destination lives. It does no I/O: the reader's header reads and the canonical paths are the services'
+//! (`services/picture.rs`).
 
 use std::path::{Component, Path, PathBuf};
 
 use unicode_width::UnicodeWidthStr;
 
+use super::html::{self, Tag};
 use super::image::{self, is_image_path};
 use super::mermaid::fit;
 
@@ -13,11 +15,18 @@ use super::mermaid::fit;
 /// the fence's info string carries the image, so the renderer reads it back with `from_info`.
 pub const FENCE: &str = "fmc-image";
 
-/// An image as the Markdown wrote it: its alt text and its destination, as written (not percent-decoded).
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// An image as the source wrote it: its alt text and its destination, as written (not percent-decoded). An HTML image
+/// adds its width, whether it is centred, and a `<picture>`'s dark-mode source.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Image {
     pub alt: String,
     pub target: String,
+    /// A `<picture>`'s source for the dark theme: the first candidate of its `srcset`, when its media is the dark scheme.
+    pub dark: Option<String>,
+    /// The `width` attribute in pixels; a percentage or none leaves it to the image.
+    pub width: Option<u32>,
+    /// `align="center"` on the image or a wrapper, or a `<center>` wrapper.
+    pub center: bool,
 }
 
 /// The image `text` is, when it is `![alt](target)` or `![alt](target "title")` and nothing else. A sentence, a link, or
@@ -39,7 +48,63 @@ pub fn parse(text: &str) -> Option<Image> {
     if target.is_empty() || !is_title(title.trim()) {
         return None;
     }
-    Some(Image { alt: alt.to_owned(), target: target.to_owned() })
+    Some(Image { alt: alt.to_owned(), target: target.to_owned(), ..Image::default() })
+}
+
+/// The HTML elements an image block may hold around its `<img>` or `<picture>`: headings, paragraphs, divs, links, and
+/// centres. Any other element, or text, keeps the block as text.
+const WRAPPERS: [&str; 9] = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "a"];
+
+/// The image an HTML block is, when it holds exactly one `<img>` with a `src` (inside a `<picture>` when it has one), and
+/// nothing else but wrappers and the picture's sources. Text, a comment, another element, or a second image is no image.
+pub fn parse_html(text: &str) -> Option<Image> {
+    let tags = html::tags(text)?;
+    let mut images = tags.iter().filter(|tag| tag.name == "img" && !tag.closing);
+    let img = images.next()?;
+    if images.next().is_some() {
+        return None;
+    }
+    let target = img.attr("src").map(str::trim).filter(|target| !target.is_empty())?;
+    let pictures = tags.iter().filter(|tag| tag.name == "picture" && !tag.closing).count();
+    let sources = tags.iter().filter(|tag| tag.name == "source" && !tag.closing).count();
+    if pictures > 1 || (pictures == 0 && sources > 0) {
+        return None;
+    }
+    let known = |tag: &Tag| match tag.name.as_str() {
+        "img" | "picture" => true,
+        "source" => pictures == 1,
+        "center" => true,
+        name => WRAPPERS.contains(&name),
+    };
+    if !tags.iter().all(known) {
+        return None;
+    }
+    let dark = tags
+        .iter()
+        .filter(|tag| tag.name == "source")
+        .find(|tag| tag.attr("media").is_some_and(is_dark_scheme))
+        .and_then(|tag| tag.attr("srcset")?.split(',').next()?.split_whitespace().next())
+        .map(str::to_owned);
+    let center = tags.iter().any(|tag| {
+        tag.name == "center" || tag.attr("align").is_some_and(|align| align.trim().eq_ignore_ascii_case("center"))
+    });
+    Some(Image {
+        alt: img.attr("alt").unwrap_or_default().to_owned(),
+        target: target.to_owned(),
+        dark,
+        width: img.attr("width").and_then(|width| width.trim().parse().ok()),
+        center,
+    })
+}
+
+/// Whether a `media` value is the dark colour scheme, whatever its spacing or case.
+fn is_dark_scheme(media: &str) -> bool {
+    media.chars().filter(|c| !c.is_whitespace()).collect::<String>().eq_ignore_ascii_case("(prefers-color-scheme:dark)")
+}
+
+/// The image a source names: Markdown's `![alt](target)` line, or an HTML block (`parse_html`).
+pub fn parse_source(text: &str) -> Option<Image> {
+    if text.trim_start().starts_with('<') { parse_html(text.trim()) } else { parse(text) }
 }
 
 /// The index of the `]` that closes the alt text: brackets nest, and a backslash escapes the next character.
@@ -87,7 +152,7 @@ fn is_title(title: &str) -> bool {
 /// The image a fence's info string carries: the `FENCE` word, then the image's own text. None for any other fence.
 pub fn from_info(info: &str) -> Option<Image> {
     let (word, line) = info.trim().split_once(char::is_whitespace)?;
-    (word == FENCE).then(|| parse(line.trim())).flatten()
+    (word == FENCE).then(|| parse_source(line)).flatten()
 }
 
 /// Why a box has no picture to open, in the words its last row shows.
@@ -159,10 +224,10 @@ pub fn text_rows(card: &Card, inner: usize) -> [(Tone, String); 3] {
     })
 }
 
-/// The opening fence line for a lone image's line: the image moves into the info string, so the fence takes no line
-/// of its own. The line's indentation goes, since a fence opens at the margin.
-pub fn opening(line: &str) -> String {
-    format!("```{FENCE} {}", line.trim())
+/// The opening fence line for an image's source: the source moves into the info string, so the fence takes no line of
+/// its own. The source's indentation goes, since a fence opens at the margin.
+pub fn opening(source: &str) -> String {
+    format!("```{FENCE} {}", source.trim())
 }
 
 impl Image {

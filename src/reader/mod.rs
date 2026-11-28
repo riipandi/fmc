@@ -7,6 +7,7 @@ pub mod document;
 pub mod frontmatter;
 pub mod glob;
 pub mod headings;
+pub mod html;
 pub mod image;
 pub mod images;
 pub mod jump;

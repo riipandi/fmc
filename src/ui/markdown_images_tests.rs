@@ -51,11 +51,56 @@ fn an_image_with_a_title_is_boxed_with_the_title_in_its_fence() {
 }
 
 #[test]
-fn html_and_a_line_with_no_blank_after_it_keep_their_text() {
-    let html = "<img src=\"maps/marauder.png\">\n\nAfter.\n";
-    assert_eq!(boxed(html), html);
+fn a_line_with_no_blank_after_it_keeps_its_text() {
     let joined = format!("{MARAUDER}\nAfter.\n");
     assert_eq!(boxed(&joined), joined);
+    let html = "<img src=\"maps/marauder.png\">\nAfter.\n";
+    assert_eq!(boxed(html), html);
+}
+
+const README_LOGO: &str = "<h1>\n  <picture>\n    <source media=\"(prefers-color-scheme: dark)\" srcset=\"assets/brand/png/logo-dark@2x.png\">\n    <img alt=\"fmc\" src=\"assets/brand/png/logo-light@2x.png\" width=\"392\">\n  </picture>\n</h1>\n";
+
+#[test]
+fn the_readme_logo_block_is_one_box_that_keeps_its_lines() {
+    let out = boxed(&format!("{README_LOGO}\nAfter.\n"));
+    assert_eq!(
+        out,
+        "```fmc-image <h1> <picture> <source media=\"(prefers-color-scheme: dark)\" srcset=\"assets/brand/png/logo-dark@2x.png\"> <img alt=\"fmc\" src=\"assets/brand/png/logo-light@2x.png\" width=\"392\"> </picture> </h1>\n  <picture>\n    <source media=\"(prefers-color-scheme: dark)\" srcset=\"assets/brand/png/logo-dark@2x.png\">\n    <img alt=\"fmc\" src=\"assets/brand/png/logo-light@2x.png\" width=\"392\">\n  </picture>\n```\n\nAfter.\n"
+    );
+}
+
+#[test]
+fn a_one_line_html_image_is_boxed_and_closes_on_the_blank_line() {
+    let source = "<p align=\"center\"><img src=\"maps/marauder.png\" width=\"120\"></p>\n\nAfter.\n";
+    let out = boxed(source);
+    assert_eq!(
+        out,
+        "```fmc-image <p align=\"center\"><img src=\"maps/marauder.png\" width=\"120\"></p>\n```\nAfter.\n"
+    );
+}
+
+#[test]
+fn an_html_block_with_text_a_second_image_or_another_element_keeps_its_text() {
+    for source in [
+        "<p>See <img src=\"maps/marauder.png\"></p>\n\nAfter.\n",
+        "<img src=\"a.png\"> <img src=\"b.png\">\n\nAfter.\n",
+        "<span><img src=\"maps/marauder.png\"></span>\n\nAfter.\n",
+        "<img src=\"`a`.png\">\n\nAfter.\n",
+    ] {
+        assert_eq!(boxed(source), source, "{source}");
+    }
+}
+
+#[test]
+fn an_html_image_inside_a_list_keeps_its_text() {
+    let source = "- <img src=\"maps/marauder.png\">\n";
+    assert_eq!(boxed(source), source);
+}
+
+#[test]
+fn a_remote_html_image_is_boxed_so_the_box_can_say_why() {
+    let out = boxed("<img src=\"https://hogwarts.test/seal.png\" alt=\"Seal\">\n\nAfter.\n");
+    assert_eq!(out, "```fmc-image <img src=\"https://hogwarts.test/seal.png\" alt=\"Seal\">\n```\nAfter.\n");
 }
 
 #[test]
@@ -93,4 +138,17 @@ fn a_crlf_file_keeps_its_line_endings() {
 fn a_source_without_an_image_is_borrowed_unchanged() {
     let source = "# Hogwarts\n\nPotions.\n";
     assert!(matches!(as_boxes(source), std::borrow::Cow::Borrowed(_)));
+}
+
+#[test]
+fn the_readme_head_is_one_box_and_the_file_keeps_its_line_count() {
+    let head: Vec<&str> = include_str!("../../README.md").lines().take(6).collect();
+    let source = format!("{}\n\nAfter.\n", head.join("\n"));
+    let out = boxed(&source);
+    assert!(out.starts_with("```fmc-image <h1> <picture> <source media=\"(prefers-color-scheme: dark)\" srcset=\"assets/brand/png/logo-dark@2x.png\">"), "{out}");
+    assert!(
+        out.contains("<img alt=\"fmc\" src=\"assets/brand/png/logo-light@2x.png\" width=\"392\"> </picture> </h1>\n"),
+        "{out}"
+    );
+    assert!(out.ends_with("```\n\nAfter.\n"), "{out}");
 }

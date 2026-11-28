@@ -7,7 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Instant;
 
-use fmc::reader::frontmatter::as_fence;
+use crate::ui::markdown_images;
 use fmc::theme::DARK;
 use opentui::style::{Color, Span};
 use opentui::testing::TestApp;
@@ -17,7 +17,7 @@ use super::{Block, split};
 
 /// The blocks of the source as the view draws it: its front matter is a fence (`reader/frontmatter.rs`).
 fn rendered(source: &str) -> Vec<Block> {
-    split(&as_fence(source)).blocks
+    split(&markdown_images::prepared(source)).blocks
 }
 use crate::ui::markdown::MarkdownView;
 use crate::ui::styled::color;
@@ -201,12 +201,14 @@ fn the_blocks_match_opentui_at_each_width() {
     for width in [40u16, 60, 80, 120] {
         for (name, source) in samples() {
             let blocks = rendered(&source);
+            let prepared = markdown_images::prepared(&source);
             let drawn = drawn(&source, width);
             assert_eq!(blocks.len(), drawn.len(), "{name} at {width} columns: the block count");
             for (index, (block, (_, screen))) in blocks.iter().zip(&drawn).enumerate() {
                 let text =
-                    source.lines().skip(block.lines.start).take(block.lines.len()).collect::<Vec<_>>().join("\n");
-                if text.starts_with("```mermaid") {
+                    prepared.lines().skip(block.lines.start).take(block.lines.len()).collect::<Vec<_>>().join("\n");
+                // A box is drawn as its box, which its own tests check; a Mermaid diagram is drawn as its rows.
+                if text.starts_with("```mermaid") || text.starts_with("```fmc-image") {
                     continue;
                 }
                 // A word longer than the row wraps mid-word, so the screen is compared without its spaces and breaks.
