@@ -6,7 +6,7 @@ description = "A terminal file browser with Markdown, code, image, and git diff 
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/riipandi/fmc"
 readme = "README.md"
-rust-version = "1.92"
+rust-version = "1.100"
 keywords = ["tui", "terminal", "file-manager", "git", "markdown"]
 categories = ["command-line-utilities"]
 
