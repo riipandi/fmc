@@ -9,7 +9,7 @@ phases:
       note: query and json5; just is vendored in phase 2 (O3 (a))
     - id: 2
       title: The vendored grammars, vimdoc, luadoc, luap (and just under O3 (a))
-      status: pending
+      status: done
       note: runs, O2 (a)
     - id: 3
       title: Lua's injections for luadoc and luap

@@ -22,9 +22,8 @@ fn every_vendored_grammar_compiles_with_its_query() {
     assert!(has_grammar("javascriptreact") && has_grammar("rust"));
 }
 
-/// The grammars whose queries are copied into `queries/`, each with the query it is registered with: the owner's twelve
-/// (RI-2), then the query and JSON5 grammars (plan-00018).
-const COPIED: [(&str, &str); 14] = [
+/// The grammars whose queries are copied into `queries/`, each with the query it is registered with.
+const COPIED: [(&str, &str); 18] = [
     ("diff", include_str!("queries/diff/highlights.scm")),
     ("elixir", include_str!("queries/elixir/highlights.scm")),
     ("heex", include_str!("queries/heex/highlights.scm")),
@@ -39,18 +38,45 @@ const COPIED: [(&str, &str); 14] = [
     ("vim", include_str!("queries/vim/highlights.scm")),
     ("query", include_str!("queries/query/highlights.scm")),
     ("json5", include_str!("queries/json5/highlights.scm")),
+    ("vimdoc", include_str!("queries/vimdoc/highlights.scm")),
+    ("just", include_str!("queries/just/highlights.scm")),
+    ("luadoc", include_str!("queries/luadoc/highlights.scm")),
+    ("luap", include_str!("queries/luap/highlights.scm")),
 ];
 
-/// The names a query captures, from each `@name`. A name starting with `_` is a predicate's helper (`#eq? @_scope`),
-/// which is never drawn.
-fn capture_names(query: &str) -> Vec<&str> {
-    query
-        .split('@')
+/// The names a query captures, from each `@name`. A string literal (`"@module"` is a keyword) and a comment are not
+/// captures, so both are cut first. A name starting with `_` is a predicate's helper (`#eq? @_scope`), which is never
+/// drawn.
+fn capture_names(query: &str) -> Vec<String> {
+    let mut code = String::new();
+    for line in query.lines() {
+        let mut quoted = false;
+        let mut chars = line.chars();
+        while let Some(c) = chars.next() {
+            if quoted {
+                match c {
+                    '\\' => {
+                        chars.next();
+                    }
+                    '"' => quoted = false,
+                    _ => {}
+                }
+            } else {
+                match c {
+                    '"' => quoted = true,
+                    ';' => break,
+                    _ => code.push(c),
+                }
+            }
+        }
+        code.push('\n');
+    }
+    code.split('@')
         .skip(1)
         .filter_map(|rest| {
             let end = rest.find(|c: char| !(c.is_ascii_alphanumeric() || matches!(c, '_' | '.'))).unwrap_or(rest.len());
             let name = rest[..end].trim_end_matches('.');
-            (!name.is_empty()).then_some(name)
+            (!name.is_empty()).then(|| name.to_owned())
         })
         .collect()
 }
@@ -60,7 +86,7 @@ fn every_capture_of_the_copied_queries_has_a_table_entry() {
     for (filetype, query) in COPIED {
         for name in capture_names(query) {
             assert!(
-                name.starts_with('_') || CAPTURE_NAMES.contains(&name),
+                name.starts_with('_') || CAPTURE_NAMES.contains(&name.as_str()),
                 "{filetype} captures {name}, not in the table"
             );
         }
@@ -68,12 +94,15 @@ fn every_capture_of_the_copied_queries_has_a_table_entry() {
 }
 
 #[test]
-fn the_plan_18_queries_capture_only_names_the_palette_styles() {
+fn the_new_queries_capture_only_names_the_palette_styles() {
     let theme = theme(&DARK);
-    for (filetype, query) in COPIED.into_iter().filter(|(filetype, _)| matches!(*filetype, "query" | "json5")) {
+    for (filetype, query) in COPIED
+        .into_iter()
+        .filter(|(filetype, _)| matches!(*filetype, "query" | "json5" | "vimdoc" | "just" | "luadoc" | "luap"))
+    {
         for name in capture_names(query) {
             assert!(
-                name.starts_with('_') || theme.get(name).is_some(),
+                name.starts_with('_') || theme.get(&name).is_some(),
                 "{filetype} captures {name}, which the palette does not style"
             );
         }
@@ -107,6 +136,11 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("query", "; format-ignore\n(named_node name: (identifier) @variable)\n", "format-ignore", "keyword"),
         ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "'Hedwig'", "string"),
         ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "3", "constant"),
+        ("vimdoc", "*vault-key*\n\nThe Louvre key: |vault-key|\n", "vault-key", "label"),
+        ("just", "set dotenv-load\nowl := \"Hedwig\"\n", "set", "keyword"),
+        ("just", "set dotenv-load\nowl := \"Hedwig\"\n", "Hedwig", "string"),
+        ("luadoc", "@class Vault\n@field key string\n", "@class", "keyword"),
+        ("luap", "^[A-Z]+%d$", "A", "constant"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");
@@ -128,6 +162,20 @@ fn the_extensions_opentui_lacks_are_highlighted() {
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/owls.ex")), Some("elixir"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/schema.sql")), Some("sql"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/Makefile.mk")), None);
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/justfile")), Some("just"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/Justfile")), Some("just"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/query.scm")), Some("query"));
+}
+
+#[test]
+fn a_vim_help_file_is_highlighted_only_by_its_association() {
+    // No default rule: a `.txt` in a `doc` folder is help text only where an association says so.
+    let root = Path::new("/Hogwarts/Gringotts");
+    let mut associations = Associations::default();
+    assert_eq!(language_for(&associations, root, &root.join("doc/owls.txt")), None);
+    associations.add("doc/*.txt", "vimdoc").unwrap();
+    assert_eq!(language_for(&associations, root, &root.join("doc/owls.txt")), Some("vimdoc"));
+    assert_eq!(language_for(&associations, root, &root.join("notes/owls.txt")), None);
 }
 
 #[test]

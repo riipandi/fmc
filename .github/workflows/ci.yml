@@ -38,9 +38,9 @@ jobs:
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD: ${{ github.sha }}
-          # The Rust job's inputs: the code, the build and toolchain files, the just tasks, and the two Markdown files
+          # The Rust job's inputs: the code, the vendored grammar sources, the build script, the build and toolchain files, the just tasks, and the two Markdown files
           # the tests read (DESIGN.md for the palettes, docs/keymaps.md for the key list). This file runs both jobs.
-          RUST: '^(src/|tests/|\.cargo/|scripts/|Cargo\.(toml|lock)$|rust-toolchain\.toml$|rustfmt\.toml$|justfile$|deny\.toml$|about\.(toml|hbs)$|DESIGN\.md$|docs/keymaps\.md$|\.github/workflows/ci\.yml$)'
+          RUST: '^(src/|tests/|vendor/|\.cargo/|scripts/|build\.rs$|Cargo\.(toml|lock)$|rust-toolchain\.toml$|rustfmt\.toml$|justfile$|deny\.toml$|about\.(toml|hbs)$|DESIGN\.md$|docs/keymaps\.md$|\.github/workflows/ci\.yml$)'
           MARKDOWN: '(\.md$|^\.github/workflows/ci\.yml$)'
         run: |
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then

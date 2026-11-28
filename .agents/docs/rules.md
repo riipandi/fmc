@@ -132,6 +132,14 @@ Decision O1 of `plan-00018-remaining-grammars.md`: two grammar crates that load 
 | `tree-sitter-tsquery` | `=0.8.0` | default | Tree-sitter query files (`.scm`, filetype `query`); Apache-2.0; its build script uses `cc` 1.11.3, already in the lock |
 | `tree-sitter-json5-orchard` | `=0.1.1` | default | JSON5 (`.json5`); MIT; a fork of the grammar Neovim uses; its build script uses `cc` 1.11.3 |
 
+### Approved for plan-00018 phase 2 (owner, 2026-11-28)
+
+Decision O2 of `plan-00018-remaining-grammars.md`: a build dependency that compiles the vendored grammar parsers in `build.rs`. `cc` 1.11.3 is already in the lock, as a dependency of the grammar crates' build scripts, so the lock gains no package for fmc's own build script.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `cc` (build dependency) | `=1.11.3` | default | Compiles `vendor/grammars/<name>/src/parser.c` (and `scanner.c` where present) for `build.rs`; MIT OR Apache-2.0 |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -147,6 +155,7 @@ Decision O1 of `plan-00018-remaining-grammars.md`: two grammar crates that load 
 - An `injections.scm` beside a highlight query (plan-00013) is the grammar crate's own file, copied under the crate's licence (the header of each file names the crate and version), or fmc's own where no crate ships one (MIT, the project's licence). The Elixir highlights differ from the crate's by one rule, and the JavaScript, TypeScript, and TSX highlights differ from Core's by three host rules that leave injected text to its injection (`rust.md`, "Contracts and traps").
 - The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.
 - The query and JSON5 queries (plan-00018 phase 1) are the crates' own: `queries/query/` is `tree-sitter-tsquery` 0.8.0's (Apache-2.0, with its `LICENSE`; its header names the three changes), and `queries/json5/` is `tree-sitter-json5-orchard` 0.1.1's (MIT, with its `LICENSE`, unchanged).
+- The vendored grammars are `vendor/grammars/{vimdoc,luadoc,luap,just}/`: each has `src/parser.c` (and `scanner.c` for just), `src/tree_sitter/parser.h`, the repository's `LICENSE`, and a `SOURCE` file (the repository URL and the full commit). vimdoc and just are Apache-2.0; luadoc and luap are MIT. just's `Cargo.toml` says MIT, but its repository `LICENSE` file is Apache-2.0, and the `LICENSE` file is the licence. Their highlight queries (`src/ui/syntax/queries/{vimdoc,luadoc,luap,just}/`) carry the same `LICENSE`, and each query's header names the upstream file and each change. `cargo about` cannot see vendored C, so `about.hbs` lists these grammars by hand: the MIT texts in full, and the Apache-2.0 text through the Apache-2.0 entry the crates already produce.
 
 ## Sample data
 

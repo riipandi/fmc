@@ -61,7 +61,7 @@ cargo install cargo-about --locked --features cli
 
 CI runs for every push to `main`, every pull request, and on demand. It first looks at which files changed, then runs only the checks they need:
 
-- A change to the Rust code, the build files, the just tasks, `DESIGN.md`, or `docs/keymaps.md` runs `just verify` on macOS (Apple silicon), with kache's store kept in the GitHub Actions cache. The tests read those two Markdown files.
+- A change to the Rust code, the build files, the vendored grammars under `vendor/`, the just tasks, `DESIGN.md`, or `docs/keymaps.md` runs `just verify` on macOS (Apple silicon), with kache's store kept in the GitHub Actions cache. The tests read those two Markdown files.
 - A change to any Markdown file checks its format with rumdl, on Linux.
 - A change to anything else, such as `.claude/` or the release workflow, runs no check.
 

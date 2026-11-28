@@ -1392,6 +1392,26 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: vimdoc, just, luadoc, and luap are vendored and highlighted
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: four filetypes of the owner's set had no crate that loaded on the locked `tree-sitter` 0.27.2: vimdoc, just, luadoc, and luap (`research/grammar-load-spike.md`, section 5). Their upstream parsers are C, and each loads once its `parser.c` is compiled with the locked runtime. Scouter has none of them.
+
+Decision (owner, 2026-11-28, plan-00018 O2, O3, O5): the four parsers are vendored under `vendor/grammars/<name>/` at pinned upstream commits, and `build.rs` compiles them with `cc` (`rules.md`, "Dependencies" and "Licenses"). vimdoc is `neovim/tree-sitter-vimdoc` at cf5f037 (Apache-2.0), just is `casey/tree-sitter-just` at 5685543 (Apache-2.0 by its `LICENSE` file, MIT by its `Cargo.toml`), luadoc is `tree-sitter-grammars/tree-sitter-luadoc` at 4d04632 (MIT), and luap is `tree-sitter-grammars/tree-sitter-luap` at c134aae (MIT). `vendor/` is a new top-level directory the owner approved (O5). vimdoc and just are filetypes: just is named `justfile` and `.justfile` by file name, and vimdoc has no default rule, because a `.txt` file is help text only in a Vim plugin's `doc` folder, so a `file_associations` pattern names it (`doc/*.txt`). luadoc and luap are injection-only, with no file of their own; their injections into Lua are the next record's concern.
+
+Consequences:
+
+- (positive) A Vim help file, a `justfile`, and their highlighting follow the same path as the other grammars: one registration each, a query beside its `LICENSE`, and one `CAPTURE_NAMES` check.
+- (negative) Four C parsers, about 58,000 lines, compile on every clean build. The build needs a C compiler; macOS ships one with the command line tools.
+- (negative) The vendored C is outside `cargo about`'s view, so `about.hbs` lists it by hand.
+
+Alternatives considered:
+
+- The crates' published snapshots (vimdoc 13add92, luap 43916b0, luadoc bb31081, just 5685543): not taken. The pinned commits are the owner's approved sources.
+- Leaving the four parked: not taken (O2 (a)).
+- A `doc/*.txt` default for vimdoc: rejected (every other `doc` folder is plain text).
+
 ### Decision: an injected sigil's body is left to its injection
 
 Context: Core's cascade orders the captures by fewer dotted parts first, then by start, and a later capture paints over an earlier one (`opentui-0.9.9/src/syntax/highlight.rs`, `highlights`, and `core_captures`). Elixir's highlights paint a whole sigil `string.special` (`src/ui/syntax/queries/elixir/highlights.scm`), a 2-part name, which paints over the 1-part captures inside it. Before the fix, a live run of a `~H` sigil coloured `<div class="owl">` and `if @name do` as strings, although the HEEx injection gave them `tag` and `keyword` (`--format=html` capture, 2026-11-27, plan-00013 phase 1).

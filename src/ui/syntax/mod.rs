@@ -108,6 +108,10 @@ pub fn register() {
         )
     });
     register_lazy("vim", || grammar(tree_sitter_vim::language(), include_str!("queries/vim/highlights.scm")));
+    register_lazy("vimdoc", || grammar(vendored::vimdoc(), include_str!("queries/vimdoc/highlights.scm")));
+    register_lazy("luadoc", || grammar(vendored::luadoc(), include_str!("queries/luadoc/highlights.scm")));
+    register_lazy("luap", || grammar(vendored::luap(), include_str!("queries/luap/highlights.scm")));
+    register_lazy("just", || grammar(vendored::just(), include_str!("queries/just/highlights.scm")));
     register_lazy("query", || grammar(tree_sitter_tsquery::LANGUAGE, include_str!("queries/query/highlights.scm")));
     register_lazy("json5", || {
         grammar(tree_sitter_json5_orchard::LANGUAGE, include_str!("queries/json5/highlights.scm"))
@@ -185,6 +189,7 @@ pub fn theme(p: &Palette) -> SyntaxTheme {
 
 #[cfg(test)]
 mod tests;
+mod vendored;
 
 /// The capture names the queries use (`src/ui/syntax/queries` and OpenTUI's bundled Rust query). The buffer's style
 /// table names each one `opentui.<name>`, so a layer can paint by name; a name missing here is drawn plain.
@@ -199,7 +204,10 @@ const CAPTURE_NAMES: &[&str] = &[
     "comment.doc",
     "comment.doc.__attribute__",
     "comment.documentation",
+    "comment.error",
+    "comment.hint",
     "comment.unused",
+    "comment.warning",
     "conceal",
     "constant",
     "constant.builtin",

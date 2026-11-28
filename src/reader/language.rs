@@ -39,10 +39,12 @@ pub const HIGHLIGHTED: &[&str] = &[
     "vim",
     "query",
     "json5",
+    "just",
+    "vimdoc",
 ];
 
 /// Extensions OpenTUI's table does not know, with the filetype fmc highlights them as. `.tf` and `.tfvars` are
-/// Terraform, which HCL covers; `.scm` is a tree-sitter query, and Scheme has no grammar here (plan-00018 D3).
+/// Terraform, which HCL covers; `.scm` is a tree-sitter query, because fmc has no Scheme grammar.
 const EXTENSIONS: &[(&str, &str)] = &[
     ("heex", "heex"),
     ("hcl", "hcl"),
@@ -79,12 +81,14 @@ mod tests {
 
     #[test]
     fn highlights_scouters_languages_and_the_owners_extra_ones_and_no_others() {
-        assert_eq!(HIGHLIGHTED.len(), 32);
+        assert_eq!(HIGHLIGHTED.len(), 34);
         assert!(is_highlighted("rust") && is_highlighted("javascriptreact") && is_highlighted("markdown_inline"));
         assert!(is_highlighted("elixir") && is_highlighted("hcl") && is_highlighted("vim"));
         assert!(!is_highlighted("make") && !is_highlighted("cpp") && !is_highlighted("plain text"));
         assert!(is_highlighted("query") && is_highlighted("json5"));
-        assert!(!is_highlighted("eex") && !is_highlighted("just"));
+        assert!(is_highlighted("just") && is_highlighted("vimdoc"));
+        // luadoc and luap are injected into Lua only, so they have no file of their own.
+        assert!(!is_highlighted("eex") && !is_highlighted("luadoc") && !is_highlighted("luap"));
     }
 
     #[test]

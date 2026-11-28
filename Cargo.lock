@@ -197,6 +197,7 @@ name = "fmc"
 version = "0.5.0"
 dependencies = [
  "assert_cmd",
+ "cc",
  "clap",
  "icu_collator",
  "imagesize",
