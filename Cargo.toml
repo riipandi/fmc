@@ -52,6 +52,9 @@ tree-sitter-svelte-ng = "=1.0.2"
 tree-sitter-xml = "=0.7.0"
 tree-sitter-astro-next = "=0.1.1"
 tree-sitter-vim = "=0.4.0"
+# The query and JSON5 grammars of plan-00018 (O1): both load on the lock with no vendored C. Pinned exactly.
+tree-sitter-tsquery = "=0.8.0"
+tree-sitter-json5-orchard = "=0.1.1"
 # Moves a deleted entry to the macOS Trash, so it stays recoverable (`src/services/write.rs`; plan-00012 D4). Pinned exactly.
 trash = "=5.4.0"
 serde_json = "1.0.154"

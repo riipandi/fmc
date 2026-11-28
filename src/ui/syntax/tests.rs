@@ -16,32 +16,30 @@ fn every_vendored_grammar_compiles_with_its_query() {
     for filetype in ["javascript", "typescript", "typescriptreact", "markdown", "markdown_inline", "zig"] {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
-    for filetype in OWNERS {
+    for (filetype, _) in COPIED {
         assert!(prewarm(filetype), "{filetype} does not compile");
     }
     assert!(has_grammar("javascriptreact") && has_grammar("rust"));
 }
 
-/// The owner's twelve grammars (RI-2), each with the query it is registered with.
-const OWNERS: [&str; 12] =
-    ["diff", "elixir", "heex", "hcl", "jsdoc", "lua", "regex", "sql", "svelte", "xml", "astro", "vim"];
-
-fn owners_queries() -> [&'static str; 12] {
-    [
-        include_str!("queries/diff/highlights.scm"),
-        include_str!("queries/elixir/highlights.scm"),
-        include_str!("queries/heex/highlights.scm"),
-        include_str!("queries/hcl/highlights.scm"),
-        include_str!("queries/jsdoc/highlights.scm"),
-        include_str!("queries/lua/highlights.scm"),
-        include_str!("queries/regex/highlights.scm"),
-        include_str!("queries/sql/highlights.scm"),
-        include_str!("queries/svelte/highlights.scm"),
-        include_str!("queries/xml/highlights.scm"),
-        include_str!("queries/astro/highlights.scm"),
-        include_str!("queries/vim/highlights.scm"),
-    ]
-}
+/// The grammars whose queries are copied into `queries/`, each with the query it is registered with: the owner's twelve
+/// (RI-2), then the query and JSON5 grammars (plan-00018).
+const COPIED: [(&str, &str); 14] = [
+    ("diff", include_str!("queries/diff/highlights.scm")),
+    ("elixir", include_str!("queries/elixir/highlights.scm")),
+    ("heex", include_str!("queries/heex/highlights.scm")),
+    ("hcl", include_str!("queries/hcl/highlights.scm")),
+    ("jsdoc", include_str!("queries/jsdoc/highlights.scm")),
+    ("lua", include_str!("queries/lua/highlights.scm")),
+    ("regex", include_str!("queries/regex/highlights.scm")),
+    ("sql", include_str!("queries/sql/highlights.scm")),
+    ("svelte", include_str!("queries/svelte/highlights.scm")),
+    ("xml", include_str!("queries/xml/highlights.scm")),
+    ("astro", include_str!("queries/astro/highlights.scm")),
+    ("vim", include_str!("queries/vim/highlights.scm")),
+    ("query", include_str!("queries/query/highlights.scm")),
+    ("json5", include_str!("queries/json5/highlights.scm")),
+];
 
 /// The names a query captures, from each `@name`. A name starting with `_` is a predicate's helper (`#eq? @_scope`),
 /// which is never drawn.
@@ -58,12 +56,25 @@ fn capture_names(query: &str) -> Vec<&str> {
 }
 
 #[test]
-fn every_capture_of_the_owners_queries_has_a_table_entry() {
-    for (filetype, query) in OWNERS.iter().zip(owners_queries()) {
+fn every_capture_of_the_copied_queries_has_a_table_entry() {
+    for (filetype, query) in COPIED {
         for name in capture_names(query) {
             assert!(
                 name.starts_with('_') || CAPTURE_NAMES.contains(&name),
                 "{filetype} captures {name}, not in the table"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_plan_18_queries_capture_only_names_the_palette_styles() {
+    let theme = theme(&DARK);
+    for (filetype, query) in COPIED.into_iter().filter(|(filetype, _)| matches!(*filetype, "query" | "json5")) {
+        for name in capture_names(query) {
+            assert!(
+                name.starts_with('_') || theme.get(name).is_some(),
+                "{filetype} captures {name}, which the palette does not style"
             );
         }
     }
@@ -92,6 +103,10 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("regex", "^[A-Z][a-z]+ (Langdon|Neveu)$", "(", "punctuation"),
         ("jsdoc", "/**\n * Opens the vault.\n * @param {string} key Robert Langdon's key\n */\n", "param", "keyword"),
         ("svelte", "<script>\n  let name = 'Hermione Granger';\n</script>\n<h1>{name}</h1>\n", "{", "punctuation"),
+        ("query", "; inherits: javascript\n(named_node name: (identifier) @variable)\n", "inherits", "keyword"),
+        ("query", "; format-ignore\n(named_node name: (identifier) @variable)\n", "format-ignore", "keyword"),
+        ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "'Hedwig'", "string"),
+        ("json5", "{ owl: 'Hedwig', count: 3, ok: true }\n", "3", "constant"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");

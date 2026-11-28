@@ -123,6 +123,15 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 | --- | --- | --- | --- |
 | `trash` | `=5.4.0` | default | Move to the Trash (`src/services/write.rs`); MIT |
 
+### Approved for plan-00018 phase 1 (owner, 2026-11-28)
+
+Decision O1 of `plan-00018-remaining-grammars.md`: two grammar crates that load on the locked `tree-sitter` 0.27.2 with no vendored C (`research/grammar-load-spike.md`, section 5 as corrected by plan-00018). Each is pinned exactly and registered in `src/ui/syntax/mod.rs`; each brings no crate that the lock does not already hold.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `tree-sitter-tsquery` | `=0.8.0` | default | Tree-sitter query files (`.scm`, filetype `query`); Apache-2.0; its build script uses `cc` 1.11.3, already in the lock |
+| `tree-sitter-json5-orchard` | `=0.1.1` | default | JSON5 (`.json5`); MIT; a fork of the grammar Neovim uses; its build script uses `cc` 1.11.3 |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -137,6 +146,7 @@ Decision D4 of `plan-00012-write-operations.md`: deleted entries go to the macOS
 - The vendored highlight queries (`src/ui/syntax/queries/<filetype>/highlights.scm`) are Scouter's copies, or `@opentui/core` 0.9.9's for JavaScript, TypeScript, TSX, Markdown, and Zig, each with its MIT `LICENSE` beside it; a copy keeps both files together.
 - An `injections.scm` beside a highlight query (plan-00013) is the grammar crate's own file, copied under the crate's licence (the header of each file names the crate and version), or fmc's own where no crate ships one (MIT, the project's licence). The Elixir highlights differ from the crate's by one rule, and the JavaScript, TypeScript, and TSX highlights differ from Core's by three host rules that leave injected text to its injection (`rust.md`, "Contracts and traps").
 - The owner's twelve queries (plan-00006 phase 4) are the grammar crates' own, each with its upstream `LICENSE` beside it: MIT for most, Apache-2.0 for elixir and astro (the `LICENSE` each crate ships), and nvim-treesitter's Apache-2.0 `LICENSE` for hcl, whose query is adapted from nvim-treesitter's. The archives of heex, lua, diff, svelte, vim, and xml ship no `LICENSE`, so theirs come from the upstream repository.
+- The query and JSON5 queries (plan-00018 phase 1) are the crates' own: `queries/query/` is `tree-sitter-tsquery` 0.8.0's (Apache-2.0, with its `LICENSE`; its header names the three changes), and `queries/json5/` is `tree-sitter-json5-orchard` 0.1.1's (MIT, with its `LICENSE`, unchanged).
 
 ## Sample data
 

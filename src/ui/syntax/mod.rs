@@ -5,7 +5,7 @@
 use std::path::Path;
 
 use fmc::reader::associations::{Associations, Language as Association};
-use fmc::reader::language::{extension_filetype, is_highlighted};
+use fmc::reader::language::{fallback_filetype, is_highlighted};
 use fmc::theme::{Hex, Palette};
 use opentui::native::{Context, SyntaxStyle};
 use opentui::prelude::{Result, Style};
@@ -108,6 +108,10 @@ pub fn register() {
         )
     });
     register_lazy("vim", || grammar(tree_sitter_vim::language(), include_str!("queries/vim/highlights.scm")));
+    register_lazy("query", || grammar(tree_sitter_tsquery::LANGUAGE, include_str!("queries/query/highlights.scm")));
+    register_lazy("json5", || {
+        grammar(tree_sitter_json5_orchard::LANGUAGE, include_str!("queries/json5/highlights.scm"))
+    });
     register_alias("javascriptreact", "javascript");
 }
 
@@ -136,7 +140,7 @@ pub fn language_for(associations: &Associations, root: &Path, path: &Path) -> Op
         Some(Association::Plain) => None,
         Some(Association::Filetype(filetype)) => Some(filetype),
         None => {
-            let filetype = extension_filetype(path).or_else(|| filetype_for_path(&path.to_string_lossy()))?;
+            let filetype = fallback_filetype(path).or_else(|| filetype_for_path(&path.to_string_lossy()))?;
             is_highlighted(filetype).then_some(filetype)
         }
     }
@@ -199,7 +203,9 @@ const CAPTURE_NAMES: &[&str] = &[
     "conceal",
     "constant",
     "constant.builtin",
+    "constant.builtin.boolean",
     "constant.character",
+    "constant.numeric",
     "constructor",
     "delimiter",
     "embedded",

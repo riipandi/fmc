@@ -1,11 +1,11 @@
 ---
 status: in-progress
 created: 2026-11-28T14:53:33+07:00
-updated: 2026-11-28T14:57:39+07:00
+updated: 2026-11-28T16:10:00+07:00
 phases:
     - id: 1
       title: The crate grammars, query, json5, and just
-      status: pending
+      status: done
       note: query and json5; just is vendored in phase 2 (O3 (a))
     - id: 2
       title: The vendored grammars, vimdoc, luadoc, luap (and just under O3 (a))

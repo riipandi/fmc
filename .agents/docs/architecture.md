@@ -1372,6 +1372,26 @@ Alternatives considered:
 - Register every injection in one step: not taken. Each injection query was checked against the palette on its own sample, and the Svelte, Astro, and Elixir pairs came first (plan-00013).
 - Wait for the nine missing grammars: not taken. The twelve load and compile their queries today; the seven are parked in the roadmap.
 
+### Approved deviation: the owner's remaining grammars are highlighted (plan-00018)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: the owner's Neovim set (RI-17) had seven filetypes with no crate that loaded on the locked `tree-sitter` 0.27.2 (`research/grammar-load-spike.md`, section 5). Research on 2026-11-28 found two crates that load (`tree-sitter-tsquery` 0.8.0 for `query`, `tree-sitter-json5-orchard` 0.1.1 for `json5`), and the rest split between vendored parsers and no licence (eex). Scouter has none of these grammars, so each is an addition with no baseline.
+
+Decision (owner, 2026-11-28, plan-00018 O1 to O5): fmc highlights `json5` and `query` through the two crates, pinned exactly, each with its query and `LICENSE` under `src/ui/syntax/queries/<filetype>/` (`rules.md`, "Licenses"). `.json5` and `.scm` map to them, and `justfile` by file name (`reader/language.rs`, `EXTENSIONS` and `NAMES`). A `.scm` file is a query, not Scheme: fmc has no Scheme grammar, so the query grammar wins by use (D3). A file name the table lacks is a key too (`NAMES`, D2). Captures a query uses are the palette's, and the tsquery query's `#lua-match?` rules are `#match?` (the binding ignores the Lua form). Upstream's `@spell` captures are dropped.
+
+Consequences:
+
+- (positive) A `.json5` or a `.scm` file is coloured in every view, and `file_associations` and Markdown fences accept `json5` and `query`.
+- (negative) Both files are coloured where Scouter shows them plain. Each is fmc's choice, with no baseline.
+- (negative) Two more grammar crates. Each adds no package to the lock: `cc` 1.11.3 is already there for their build scripts.
+
+Alternatives considered:
+
+- Vendored parsers for these two too: not taken. The crates load, so no C is copied (O2 (b) is not needed for them).
+- `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
+- A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
+
 ### Decision: an injected sigil's body is left to its injection
 
 Context: Core's cascade orders the captures by fewer dotted parts first, then by start, and a later capture paints over an earlier one (`opentui-0.9.9/src/syntax/highlight.rs`, `highlights`, and `core_captures`). Elixir's highlights paint a whole sigil `string.special` (`src/ui/syntax/queries/elixir/highlights.scm`), a 2-part name, which paints over the 1-part captures inside it. Before the fix, a live run of a `~H` sigil coloured `<div class="owl">` and `if @name do` as strings, although the HEEx injection gave them `tag` and `keyword` (`--format=html` capture, 2026-11-27, plan-00013 phase 1).
