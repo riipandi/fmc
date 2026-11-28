@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-28
+
+A file fmc cannot show, a binary or text that is not UTF-8, opens as text or in a hex view that reads only what is on screen, jumps to an offset, and searches the whole file for a string.
+
 ### Added
 
 - A binary file, or a text file that is not UTF-8, can open as text or in a hex view: `t` or `X` on its notice, or a click on the notice's buttons, and either key switches between the two. The text is the first 1 MiB, with `�` for bytes that are not UTF-8 and symbols such as `␀` for control bytes. The hex view shows the offset, the bytes in hex coloured by kind, and an ASCII column, and the row width follows the pane. Only the rows on screen are read, so a file of several gigabytes opens, scrolls, and jumps at once. `:` with an offset (`:0x1f40`, `:8000`, `:50%`) jumps there, and `/` searches the whole file for a string, ignoring case, with `n` and `N` for the next and previous hit. Scouter's notice has no action, and it shows a file that is not UTF-8 as a footer error.
@@ -188,7 +192,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/riipandi/fmc/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/riipandi/fmc/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/riipandi/fmc/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/riipandi/fmc/compare/v0.6.0...v0.7.0

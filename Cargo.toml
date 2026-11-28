@@ -1,6 +1,6 @@
 [package]
 name = "fmc"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2024"
 description = "A terminal file browser with Markdown, code, image, and git diff views"
 license = "MIT OR Apache-2.0"
