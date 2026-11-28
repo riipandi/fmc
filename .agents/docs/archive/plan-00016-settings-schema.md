@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T14:00:33+07:00
-updated: 2026-11-28T15:20:00+07:00
+updated: 2026-11-28T14:16:10+07:00
 phases:
     - id: 1
       title: The schema, built in the pure core
@@ -13,16 +13,16 @@ phases:
       note: —
     - id: 3
       title: The $schema link in settings.json (per O1)
-      status: committed
+      status: committed (82ab4b3)
       note: runs, O1 (b)
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: committed
+      note: "the commit named `docs: the settings JSON Schema`; its hash is in git log"
     - id: 5
       title: Final validation and live run
-      status: pending
-      note: —
+      status: done
+      note: "run before the phase 4 commit so its result is in the ledger; the O2 read-only check was not run (denied)"
 ---
 
 ## Ship a JSON Schema for settings.json — fmc checks or writes `<config folder>/meta/config.schema.json` at every start

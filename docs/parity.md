@@ -40,6 +40,7 @@ fmc is a port of [Scouter](https://github.com/indrazm/scouter), a read-only term
 ## Settings
 
 - fmc reads a settings file and writes it from the Settings page (see [Configuration](configuration.md)). Each change saves at once. Scouter has no settings file, and the values fmc reads from it are fixed in Scouter.
+- fmc writes a JSON Schema for the settings file to `meta/config.schema.json` in its config folder at each start, so an editor can complete and check `settings.json` ([Configuration](configuration.md), "Editor completion"). Scouter has no configuration file and no schema.
 - Scouter has one fixed palette pair, dark and light, and the terminal picks between them. fmc offers a catalog of 16 themes and a theme mode, chosen in the settings file; the default is Scouter's own pair ([Configuration](configuration.md), "Themes").
 
 ## Reader
