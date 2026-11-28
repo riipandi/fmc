@@ -60,6 +60,7 @@ A skill advises; this file and `.agents/docs/` win. Project skills live in `.age
 - `parity-audit`: screen-by-screen comparison of fmc with Scouter.
 - `security-review`: before a change that reads paths, runs subprocesses, or renders file content claims done.
 - `clarity`: human prose (commit and PR text, docs).
+- `rebase`: sync the current branch onto the default branch, keeping uncommitted work without stash.
 - `ship`: commit, push, PR, merge, and, when the merged work warrants it, the release and its distribution (Homebrew tap).
 
 ## Git
