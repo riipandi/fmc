@@ -237,6 +237,11 @@ impl Model {
         }
     }
 
+    /// Whether the dark palette is shown: a `<picture>` takes its dark source then (`reader/images.rs` `target_for`).
+    fn dark(&self) -> bool {
+        self.effective() == Mode::Dark
+    }
+
     fn palette(&self) -> &Palette {
         match self.effective() {
             Mode::Dark => &self.dark,
@@ -390,7 +395,7 @@ pub fn run(
             m.message = Some(Message { text: notices.join(" "), error: true });
         }
     }
-    let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(&app, model.borrow().palette(), model.borrow().dark())));
     #[cfg(debug_assertions)]
     overlay::debug_open(&mut model.borrow_mut(), &ui.borrow());
     paint(&app, &mut model.borrow_mut(), &mut ui.borrow_mut());
@@ -588,7 +593,7 @@ fn pane_columns(app: &App, m: &Model) -> u32 {
     u32::from(columns.saturating_sub(layout::width(m, columns) + 3))
 }
 
-fn build(app: &App, p: &Palette) -> Ui {
+fn build(app: &App, p: &Palette, dark: bool) -> Ui {
     let layout = View::new(app).width(Length::percent(100.0)).height(Length::percent(100.0)).column();
     let panes = View::new(app).width(Length::percent(100.0)).row().grow(1.0).min_height(0);
     let browser_panel = View::new(app).shrink(0.0).column().border(BorderStyle::Rounded);
@@ -602,7 +607,7 @@ fn build(app: &App, p: &Palette) -> Ui {
     let viewer_header = PaneHeader::new(app);
     let welcome = welcome::welcome(app, p);
     let reader = CodeView::new(app, p);
-    let markdown = MarkdownView::new(app, p);
+    let markdown = MarkdownView::new(app, p, dark);
     let markdown_signs = SignStrip::new(app);
     let viewer = Viewer::new(app);
     let picture = Picture::new(app);
@@ -668,7 +673,7 @@ fn restyle(app: &App, m: &mut Model, ui: &mut Ui) {
     ui.welcome = welcome::welcome(app, m.palette());
     ui.stack.add(&ui.welcome.root);
     ui.reader.restyle(m.palette());
-    ui.markdown.restyle(m.palette());
+    ui.markdown.restyle(m.palette(), m.dark());
     paint(app, m, ui);
 }
 
@@ -813,6 +818,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
+    // The text's columns: the viewer's inner width, less the bar's column and the view's padding on each side.
+    ui.markdown.fit(usize::from(columns.saturating_sub(width + 2 + 1 + 4)), viewport);
     m.top = if body { ui.diff.scroller.position().1 } else { ui.viewer.position().1 };
     // The outside gutters follow the scroll rows, so their numbers stay level with the text (`ui/reader.rs`).
     ui.reader.follow(ui.viewer.position().1);

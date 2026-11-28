@@ -19,7 +19,7 @@ const NOTES: &str = "# Hogwarts\n\nThe *Sorting Hat* waits for **Harry Potter** 
 fn finding(dir: &Path) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(100, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), dir.to_path_buf(), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     model.borrow_mut().matching = Matching::Substring;
     app.press("/");
@@ -98,7 +98,7 @@ fn ctrl_left_edits_the_finder_query_and_leaves_the_sidebar_alone() {
 fn ctrl_left_resizes_the_sidebar_when_no_prompt_is_open() {
     let app = TestApp::new(100, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), PathBuf::from("/hogwarts"), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     app.press("ctrl+left");
     assert!(model.borrow().sidebar.is_some(), "without a prompt, Ctrl+Left resizes the sidebar");
@@ -177,7 +177,7 @@ fn a_caret_move_in_the_search_keeps_the_hit_where_it_is() {
 fn option_left_edits_the_command_line_at_the_caret() {
     let app = TestApp::new(80, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), PathBuf::from("/hogwarts"), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     app.press(":");
     app.type_text("qx");
@@ -197,7 +197,7 @@ fn option_left_edits_the_command_line_at_the_caret() {
 fn ctrl_k_cuts_the_command_line_from_the_caret_and_escape_cancels_it() {
     let app = TestApp::new(80, 24);
     let model = Rc::new(RefCell::new(new_model(app.app(), PathBuf::from("/hogwarts"), None)));
-    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
+    let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette(), true)));
     capture::wire(app.app(), &model, &ui);
     app.press(":");
     app.type_text("qa!");

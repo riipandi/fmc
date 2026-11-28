@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-28T18:29:53+07:00
-updated: 2026-11-28T22:00:00+07:00
+updated: 2026-11-28T23:00:00+07:00
 phases:
     - id: 1
       title: Spike, a picture inside the rendered view
@@ -13,8 +13,8 @@ phases:
       note: the phase 2 commit (see git log); the box shows HTML images; the picture comes in phase 3
     - id: 3
       title: The picture drawn in place of the box
-      status: pending
-      note: —
+      status: done
+      note: the phase 3 commit (see git log); deviations in architecture.md (decode on the UI thread once, the cap in rows, the width set at paint)
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
       status: pending

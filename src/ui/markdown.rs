@@ -3,23 +3,27 @@
 //! Mermaid fences are drawn as diagrams (`ui/mermaid.rs`); Scouter draws them as code. Search marks (`ui/markdown_search.rs`)
 //! go through the inline hook and the code renderers, which the view registers once and rebuilds for each change.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::ops::Range;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use fmc::reader::headings;
 use fmc::reader::images::{self, Header, Image};
 use fmc::reader::language::HIGHLIGHTED;
 use fmc::reader::rendered_search::Rendered;
 use fmc::theme::{Hex, Palette};
+use opentui::native::Context;
 use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
-use super::image_box::{self, ImageBox};
+use super::image_box;
 use super::markdown_blocks;
 use super::markdown_images;
+use super::markdown_pictures::{self, Draw, Pictures, Slot};
 use super::markdown_search::{
     Captured, Mark, Paint, Styles, capture_code, capture_prose, count_code, index, paint_code, paint_prose,
 };
@@ -46,10 +50,20 @@ pub struct MarkdownView {
     boxes: RefCell<Vec<(usize, Image)>>,
     /// The header a box picked on the last release (`ui/image_box.rs`), until the app takes it.
     pick: Rc<RefCell<Option<Header>>>,
+    /// The decoded pictures the boxes draw (`ui/markdown_pictures.rs`), kept across rebuilds.
+    pictures: Rc<RefCell<Pictures>>,
+    /// The context the native library decodes a picture in; the UI thread owns it.
+    context: Context,
+    /// Whether the dark theme is shown: a `<picture>` takes its dark source then (`reader/images.rs` `target_for`).
+    dark: Rc<Cell<bool>>,
+    /// The most rows a picture takes, from the viewer's height (`fit`).
+    cap: Rc<Cell<u32>>,
+    /// The columns the text takes, which a picture takes at most (`fit`).
+    pane: Rc<Cell<u32>>,
 }
 
 impl MarkdownView {
-    pub fn new(app: &App, p: &Palette) -> Self {
+    pub fn new(app: &App, p: &Palette, dark: bool) -> Self {
         let doc = Markdown::new(app).padding_x(2).visible(false);
         let offscreen = Markdown::new(app);
         let captured = Rc::new(RefCell::new(Vec::new()));
@@ -64,8 +78,13 @@ impl MarkdownView {
             headers: Rc::new(RefCell::new(HashMap::new())),
             boxes: RefCell::new(Vec::new()),
             pick: Rc::new(RefCell::new(None)),
+            pictures: Rc::new(RefCell::new(Pictures::default())),
+            context: app.session().context().clone(),
+            dark: Rc::new(Cell::new(dark)),
+            cap: Rc::new(Cell::new(markdown_pictures::row_cap(0))),
+            pane: Rc::new(Cell::new(0)),
         };
-        view.restyle(p);
+        view.restyle(p, dark);
         view
     }
 
@@ -75,7 +94,8 @@ impl MarkdownView {
 
     /// Scouter's prose takes the syntax styles (`scopeStyles`); the colours are the fallbacks for scopes the theme
     /// leaves out, which Core draws in the text colour. Inline and block code have no background there.
-    pub fn restyle(&self, p: &Palette) {
+    pub fn restyle(&self, p: &Palette, dark: bool) {
+        self.dark.set(dark);
         let text = color(p.text);
         let colors = MarkdownColors {
             text,
@@ -109,16 +129,32 @@ impl MarkdownView {
             let paint = Rc::clone(&self.paint);
             self.doc.code_block_renderer(language, move |block| paint_code(block, &paint));
         }
-        // A lone image's box (`reader/images.rs`): built from its fence and the header the worker read, with no I/O here.
-        // It counts its fence like the search index does, so the slots of the marks hold (`markdown_search.rs`).
-        let (paint, headers, boxed) = (Rc::clone(&self.paint), Rc::clone(&self.headers), image_box::Colors::new(p));
-        let pick = Rc::clone(&self.pick);
+        // A box fence (`reader/images.rs`): its picture or its box, from the header the worker read, with no I/O here. It
+        // counts its fence like the search index does, so the slots of the marks hold (`markdown_search.rs`).
+        let (paint, headers, colors) = (Rc::clone(&self.paint), Rc::clone(&self.headers), image_box::Colors::new(p));
+        let (pick, pictures, cap, dark, pane) = (
+            Rc::clone(&self.pick),
+            Rc::clone(&self.pictures),
+            Rc::clone(&self.cap),
+            Rc::clone(&self.dark),
+            Rc::clone(&self.pane),
+        );
         self.doc.code_block_renderer(images::FENCE, move |block| {
             count_code(&paint);
             let image = images::from_info(block.info)?;
-            let header = headers.borrow().get(&image.target).cloned();
-            let widget = ImageBox::new(&image, header.as_ref(), boxed, Rc::clone(&pick));
-            Some(Custom::measured(block.app, widget).as_any())
+            let target = images::target_for(&image, dark.get());
+            let header = headers.borrow().get(target).cloned();
+            let draw = Draw {
+                image: &image,
+                target,
+                header: header.as_ref(),
+                pictures: pictures.as_ref(),
+                colors,
+                pane: pane.get(),
+                cap: cap.get(),
+                pick: Rc::clone(&pick),
+            };
+            Some(markdown_pictures::widget(block.app, &draw))
         });
         self.apply();
     }
@@ -151,14 +187,58 @@ impl MarkdownView {
     pub fn boxes(&self) -> Vec<(u32, Option<Header>)> {
         let tops = self.block_tops();
         let headers = self.headers.borrow();
+        let dark = self.dark.get();
         self.boxes
             .borrow()
             .iter()
             .filter_map(|(block, image)| {
                 let (top, _) = tops.get(*block)?;
-                Some((*top, headers.get(&image.target).cloned()))
+                Some((*top, headers.get(images::target_for(image, dark)).cloned()))
             })
             .collect()
+    }
+
+    /// The pictures the boxes draw that the cache lacks, by path and modification time, each once: the app reads them.
+    pub fn wanted(&self) -> Vec<(PathBuf, Option<SystemTime>)> {
+        let (headers, pictures, boxes, dark) =
+            (self.headers.borrow(), self.pictures.borrow(), self.boxes.borrow(), self.dark.get());
+        let mut wanted: Vec<(PathBuf, Option<SystemTime>)> = Vec::new();
+        for (_, image) in boxes.iter() {
+            let Some(Header::Picture { path, modified, .. }) = headers.get(images::target_for(image, dark)) else {
+                continue;
+            };
+            if !pictures.contains(path, *modified) && !wanted.iter().any(|(of, _)| of == path) {
+                wanted.push((path.clone(), *modified));
+            }
+        }
+        wanted
+    }
+
+    /// Decodes the bytes a worker read for `path` at `modified`, and draws the boxes again. A decode that fails keeps the box.
+    pub fn decode(&self, path: &Path, modified: Option<SystemTime>, bytes: &[u8]) {
+        let slot = markdown_pictures::decode(&self.context, bytes);
+        self.store(path, modified, slot);
+    }
+
+    /// Records that the bytes of `path` could not be read, so its box keeps the reason.
+    pub fn unreadable(&self, path: &Path, modified: Option<SystemTime>, reason: &'static str) {
+        self.store(path, modified, Slot::Failed(reason));
+    }
+
+    fn store(&self, path: &Path, modified: Option<SystemTime>, slot: Slot) {
+        self.pictures.borrow_mut().insert(path, modified, slot);
+        self.apply();
+    }
+
+    /// Sets the text's columns and the viewer's rows, which bound a picture (`markdown_pictures::Draw`). A change draws the
+    /// boxes again.
+    pub fn fit(&self, columns: usize, viewer_rows: usize) {
+        let (pane, cap) = (columns as u32, markdown_pictures::row_cap(viewer_rows as u32));
+        if self.pane.get() != pane || self.cap.get() != cap {
+            self.pane.set(pane);
+            self.cap.set(cap);
+            self.apply();
+        }
     }
 
     /// The header the last release over a box picked, if any; taking it clears it.

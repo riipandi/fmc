@@ -4,6 +4,7 @@
 //! (`services/picture.rs`).
 
 use std::path::{Component, Path, PathBuf};
+use std::time::SystemTime;
 
 use unicode_width::UnicodeWidthStr;
 
@@ -163,12 +164,31 @@ pub const OUTSIDE: &str = "outside the folder";
 pub const NOT_FOUND: &str = "not found";
 pub const UNREADABLE: &str = "could not be read";
 pub const TOO_LARGE: &str = "too large (over 10 MiB)";
+pub const DECODE_FAILED: &str = "could not be decoded";
+
+/// A cell's width in pixels, which turns an image's width into columns. A terminal's cell size is not read, so this is the
+/// size a cell is taken to have.
+pub const CELL_WIDTH: u32 = 8;
+
+/// The columns a width in pixels takes: at least one.
+pub fn columns(pixels: u32) -> u32 {
+    pixels.div_ceil(CELL_WIDTH).max(1)
+}
+
+/// The target a box draws for the theme: a `<picture>`'s dark source in the dark theme, else the image's own source.
+pub fn target_for(image: &Image, dark: bool) -> &str {
+    match (dark, &image.dark) {
+        (true, Some(dark)) => dark,
+        _ => &image.target,
+    }
+}
 
 /// What the reader found for one image, read from the disk on a worker (`services/picture.rs`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Header {
-    /// A picture the reader opens: its canonical path, and its size and format.
-    Picture { path: PathBuf, info: image::Info },
+    /// A picture the reader opens: its canonical path, its modification time (the key of the decoded picture), and its size
+    /// and format.
+    Picture { path: PathBuf, info: image::Info, modified: Option<SystemTime> },
     /// No picture: the reason, from the constants above.
     Refused(&'static str),
 }
@@ -197,16 +217,17 @@ pub enum Tone {
     Muted,
 }
 
-pub fn card(image: &Image, header: Option<&Header>) -> Card {
+/// The card of a box for `image` as drawn from `target` (`target_for`), with the header read for that target.
+pub fn card(image: &Image, target: &str, header: Option<&Header>) -> Card {
     let title = format!("▣ {}", image.label());
     match header {
         Some(Header::Picture { info, .. }) => Card {
             title,
-            detail: format!("{} · {}×{} · {}", image.target, info.width, info.height, info.format),
+            detail: format!("{target} · {}×{} · {}", info.width, info.height, info.format),
             hint: Hint::Open,
         },
-        Some(Header::Refused(reason)) => Card { title, detail: image.target.clone(), hint: Hint::Reason(reason) },
-        None => Card { title, detail: image.target.clone(), hint: Hint::Reading },
+        Some(Header::Refused(reason)) => Card { title, detail: target.to_owned(), hint: Hint::Reason(reason) },
+        None => Card { title, detail: target.to_owned(), hint: Hint::Reading },
     }
 }
 

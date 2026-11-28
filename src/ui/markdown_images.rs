@@ -33,11 +33,13 @@ pub fn boxes(prepared: &str, split: &Split) -> Vec<(usize, Image)> {
         .collect()
 }
 
-/// The destinations of the boxes in `source`, each once: what the headers are read for.
+/// The destinations of the boxes in `source`, each once: what the headers are read for, a `<picture>`'s dark source too.
 pub fn targets(source: &str) -> Vec<String> {
     let prepared = prepared(source);
-    let mut targets: Vec<String> =
-        boxes(&prepared, &markdown_blocks::split(&prepared)).into_iter().map(|(_, image)| image.target).collect();
+    let mut targets: Vec<String> = boxes(&prepared, &markdown_blocks::split(&prepared))
+        .into_iter()
+        .flat_map(|(_, image)| std::iter::once(image.target).chain(image.dark))
+        .collect();
     targets.sort();
     targets.dedup();
     targets

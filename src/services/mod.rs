@@ -107,6 +107,8 @@ pub enum Event {
     Picture { path: PathBuf, result: Result<fs::Opened, String> },
     /// The image headers of a shown Markdown text's boxes (`app/picture.rs`), kept for the showing they were asked for.
     Headers { path: PathBuf, serial: u64, headers: Vec<(String, fmc::reader::images::Header)> },
+    /// The bytes of a picture a box draws, read for its decode (`app/picture.rs`), by the file and its modification time.
+    PictureBytes { path: PathBuf, modified: Option<std::time::SystemTime>, result: Result<Vec<u8>, String> },
     /// A file the list selected, read for auto-preview (`app/preview.rs`): it never moves the focus or the history.
     Selected { path: PathBuf, result: Result<fs::Opened, String> },
     /// The git marks of the browsed folder; `None` outside a repository.

@@ -47,7 +47,11 @@ fn header(cache: &Cache, root: &Path, folder: &Path, target: &str) -> Header {
         return Header::Refused(images::OUTSIDE);
     }
     match read(cache, &real) {
-        Ok(info) => Header::Picture { path: real, info },
+        Ok(info) => Header::Picture {
+            modified: fs::metadata(&real).ok().and_then(|meta| meta.modified().ok()),
+            path: real,
+            info,
+        },
         Err(reason) => Header::Refused(reason),
     }
 }

@@ -51,7 +51,12 @@ fn a_local_picture_is_read_for_its_size_and_format() {
     let fixture = fixture();
     let header = one(&fixture, "../maps/marauder.png");
     let path = fs::canonicalize(fixture.root.join("maps/marauder.png")).expect("the real path");
-    assert_eq!(header, Header::Picture { path, info: Info { width: 480, height: 270, format: "png" } });
+    let Header::Picture { modified, .. } = &header else { panic!("a picture: {header:?}") };
+    assert!(modified.is_some(), "the modification time keys the decoded picture");
+    assert_eq!(
+        header,
+        Header::Picture { path, info: Info { width: 480, height: 270, format: "png" }, modified: *modified }
+    );
 }
 
 #[test]
