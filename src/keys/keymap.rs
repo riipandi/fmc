@@ -1,4 +1,4 @@
-//! The keymap: the default table merged with `keymap.json` (plan-00015, A10, A11). `parse` takes the file's text and
+//! The keymap: the default table merged with `keymap.json`. `parse` takes the file's text and
 //! returns the merged keys and a notice for each entry it skips. The file itself is read by `services/keymap.rs`.
 
 use serde_json::Value;
@@ -35,7 +35,7 @@ impl Keymap {
     }
 }
 
-/// The merged keys, and a notice for each entry of the file that was skipped (plan-00015, A11).
+/// The merged keys, and a notice for each entry of the file that was skipped.
 #[derive(Clone, Debug)]
 pub struct Parsed {
     pub keymap: Keymap,

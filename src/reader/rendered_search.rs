@@ -1,4 +1,4 @@
-//! Search in the rendered Markdown view (plan-00010, D1 to D4). The text searched is the text OpenTUI draws: the spans of
+//! Search in the rendered Markdown view. The text searched is the text OpenTUI draws: the spans of
 //! each paragraph, heading, and table cell, and each code block's text, so `Harry Potter` finds `**Harry** Potter`.
 //! A match is an occurrence, not a line as in the code view, and occurrences count in document order.
 
@@ -7,7 +7,7 @@ use std::ops::Range;
 use super::search::match_ranges;
 
 /// Which piece a mark belongs to, counted in document order as OpenTUI builds the view: a prose piece (a paragraph,
-/// heading, or table cell) or a code block the renderer draws. A fence the renderer does not draw has no slot (D5).
+/// heading, or table cell) or a code block the renderer draws. A fence the renderer does not draw has no slot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Slot {
     Prose(usize),
@@ -61,7 +61,7 @@ impl Rendered {
 }
 
 /// The row inside a block of `rows` rows that an offset falls on. OpenTUI does not expose a byte's row, so the row is
-/// the offset's share of the block's text, the estimate plan-00010 D4 names.
+/// the offset's share of the block's text, an estimate.
 pub fn row_within(offset: usize, len: usize, rows: u32) -> u32 {
     if len == 0 || rows == 0 {
         return 0;

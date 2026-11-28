@@ -1,5 +1,5 @@
-//! Reads `settings.json` once, before the first frame, and writes it through `save_atomic` (`architecture.md`, "fmc writes its
-//! settings.json, atomically"). The UI thread never reads the file again.
+//! Reads `settings.json` once, before the first frame, and writes it through `save_atomic`. The UI thread never reads
+//! the file again.
 
 use std::ffi::OsString;
 use std::io::ErrorKind;
@@ -16,14 +16,14 @@ pub fn path(config_home: Option<OsString>, home: Option<OsString>) -> Option<Pat
     Some(super::config_folder(config_home, home)?.join("settings.json"))
 }
 
-/// `meta/config.schema.json` in the config folder: the JSON Schema of `settings.json`, which fmc writes (plan-00016 D1).
+/// `meta/config.schema.json` in the config folder: the JSON Schema of `settings.json`, which fmc writes.
 pub fn schema_path(config_home: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
     Some(super::config_folder(config_home, home)?.join("meta").join("config.schema.json"))
 }
 
-/// Writes the schema at `path` when the file is missing or differs from `settings::schema()` (plan-00016 D5). A start
+/// Writes the schema at `path` when the file is missing or differs from `settings::schema()`. A start
 /// whose file is equal writes nothing, so its mtime holds. A failed write is the notice the footer shows, and the next
-/// start tries again (O2 (a)).
+/// start tries again.
 pub fn ensure_schema(path: &Path) -> Option<String> {
     let schema = settings::schema();
     if super::read_config(path).is_ok_and(|current| current == schema) {
@@ -34,10 +34,9 @@ pub fn ensure_schema(path: &Path) -> Option<String> {
         .map(|error| format!("meta/config.schema.json could not be written: {}.", display_label(&error.to_string())))
 }
 
-/// Adds `"$schema"` to an existing `settings.json` that has none, at the start (plan-00016 O1, amended by the owner on
-/// 2026-11-28). Only that key is inserted (`settings::linked`); every value and the layout stay. A missing file, a file
-/// that does not parse, or one with its own `$schema` is left alone; `load` reports a file it cannot read. A failed write
-/// is the notice the footer shows.
+/// Adds `"$schema"` to an existing `settings.json` that has none, at the start. Only that key is inserted
+/// (`settings::linked`); every value and the layout stay. A missing file, a file that does not parse, or one with its
+/// own `$schema` is left alone; `load` reports a file it cannot read. A failed write is the notice the footer shows.
 pub fn link_schema(path: &Path) -> Option<String> {
     let text = super::read_config(path).ok()?;
     let linked = settings::linked(&text)?;

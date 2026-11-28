@@ -2,7 +2,7 @@ use fmc::layout::tier;
 
 use super::*;
 
-/// Sample copy from Harry Potter, as `rules.md` asks.
+/// Sample copy from Harry Potter: the sample data uses the novels' names, never placeholders.
 const MESSAGE: &str = "Hermione Granger's essay on house-elves goes to the Trash. Finder's Put Back restores it.";
 
 #[test]

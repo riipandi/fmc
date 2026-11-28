@@ -366,7 +366,7 @@ fn a_tap_on_the_find_segment_of_the_bottom_bar_opens_the_finder_at_59_columns() 
     assert!(model.borrow().finder.is_some(), "the Find segment presses /");
 }
 
-/// issue-00013: after the terminal gets shorter, the tree's thumb still ends on the list's last row.
+/// After the terminal gets shorter, the tree's thumb still ends on the list's last row.
 #[test]
 fn the_tree_thumb_reaches_the_bottom_after_the_terminal_shrinks() {
     let app = TestApp::new(80, 40);

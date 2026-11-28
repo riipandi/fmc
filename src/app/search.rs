@@ -41,7 +41,7 @@ fn go(m: &Model, ui: &Ui, line: Option<usize>) {
 }
 
 /// Moves the rendered view to the current hit: its block's top, plus the hit's estimated row inside a block taller than
-/// the view (plan-00010 D4). Nothing moves until a frame has laid the blocks out.
+/// the view. Nothing moves until a frame has laid the blocks out.
 fn go_mark(m: &Model, ui: &Ui, search: &Search) {
     let Some(hit) = search.current_mark() else { return };
     let rendered = ui.markdown.index(&source(m));
@@ -164,7 +164,7 @@ pub fn dismiss(m: &mut Model) -> bool {
     }
 }
 
-/// `m` clears the search: the view it searched is no longer the one shown (plan-00010, D8).
+/// `m` clears the search: the view it searched is no longer the one shown.
 pub fn clear(m: &mut Model) {
     if m.search.take().is_some() {
         m.message = None;

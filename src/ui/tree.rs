@@ -18,8 +18,8 @@ use super::styled::{Seg, color, content};
 pub const LIST_TOP: u16 = 3;
 
 /// One row's text: the selection bar, depth guides, folder marker, icon, and name (Scouter `paintRow`). A cut row is
-/// muted until its paste or Esc (plan-00012, D2), even when it is selected, so the cut stays visible. A marked row
-/// takes a `✓` in the bar's cell; its background still shows the selection (plan-00014, D3).
+/// muted until its paste or Esc, even when it is selected, so the cut stays visible. A marked row
+/// takes a `✓` in the bar's cell; its background still shows the selection.
 pub fn row_segments(
     row: &Row<'_>,
     selected: bool,
@@ -67,7 +67,7 @@ pub fn row_segments(
     }
     segments.push(Seg::new(marker, if selected { p.accent } else { p.dim }));
     segments.push(Seg::new(format!("{} ", icon(row.entry, folder, row.expanded)), glyph_fg));
-    // A finder row names the file first and its folder after it, dimmed, so a cut row keeps the name (plan-00004, P4).
+    // A finder row names the file first and its folder after it, dimmed, so a cut row keeps the name.
     let (parent, label) = match row.entry.name.rsplit_once('/') {
         Some((parent, label)) if name_first => (Some(parent), label),
         _ => (None, row.entry.name.as_str()),
@@ -344,7 +344,7 @@ impl TreeView {
                         marks.is_ignored(&key),
                         browser.is_flat() && narrow,
                         cut.is_some_and(|paths| paths.contains(&row.entry.path)),
-                        // The finder's rows take no marks: the set is the tree's (plan-00014, D10).
+                        // The finder's rows take no marks: the set is the tree's.
                         !browser.is_flat() && browser.is_marked(&row.entry.path),
                         p,
                     ),

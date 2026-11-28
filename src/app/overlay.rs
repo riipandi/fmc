@@ -1,4 +1,4 @@
-//! The overlays over the page (plan-00012, D1): a context menu and a dialog. While one is open it takes every key and
+//! The overlays over the page: a context menu and a dialog. While one is open it takes every key and
 //! every click, so the page under it does not act: `capture.rs` hands the keys here, and a catcher beneath the overlay
 //! takes its clicks. What a row or a button does is the write layer's (`app/write.rs`); a press outside a menu closes it.
 
@@ -230,7 +230,7 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
     let views = &ui.overlay;
     let open = m.overlay.as_ref();
     let dialog_open = matches!(open, Some(Overlay::Dialog(_)));
-    // The Settings page is modal too: the catcher takes its clicks, so the panes beneath it do not act (plan-00015, A21).
+    // The Settings page is modal too: the catcher takes its clicks, so the panes beneath it do not act.
     views.catcher.visible(open.is_some() || m.settings.page.is_some());
     views.scrim.visible(dialog_open);
     views.menu.root.visible(matches!(open, Some(Overlay::Menu(_))));

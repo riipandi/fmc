@@ -36,8 +36,8 @@ fn line(app: &App, segments: &[Seg], p: &Palette, margin_top: u16) -> Text {
 }
 
 const PROMPT: &str = "Select a file and press Enter.";
-/// The tagline, after the wordmark: fmc is a file manager as well as a viewer (owner, 2026-11-27; Scouter says
-/// `a quiet, read-only file viewer`, `src/ui/welcome.ts:46`).
+/// The tagline, after the wordmark: fmc is a file manager as well as a viewer, where Scouter says
+/// `a quiet, read-only file viewer` (`src/ui/welcome.ts:46`).
 const TAGLINE: &str = "a quiet terminal file manager";
 /// The closing line after `Press ? for every key.`; Scouter says `No editing. Just reading.` (`src/ui/welcome.ts:80`).
 const MENU_HINT: &str = "Space opens the menu.";
@@ -46,7 +46,7 @@ const MENU_HINT: &str = "Space opens the menu.";
 pub struct Welcome {
     pub root: View,
     prompt: Text,
-    /// The closing line in one row, and the same line broken at its ` · ` below 80 columns (plan-00004, P5, amended).
+    /// The closing line in one row, and the same line broken at its ` · ` below 80 columns.
     closing: Text,
     closing_parts: [Text; 2],
     card: View,
@@ -54,7 +54,7 @@ pub struct Welcome {
 
 impl Welcome {
     /// Fits the welcome to `columns`, beside a sidebar `sidebar` columns wide: below 80 the closing line breaks at its
-    /// separator, and in the medium tier the card goes when the reader is narrower than it (architecture.md, follow-ups).
+    /// separator, and in the medium tier the card goes when the reader is narrower than it.
     pub fn fit(&self, columns: u16, sidebar: u16, p: &Palette) {
         let tier = fmc::layout::tier(columns);
         let phone = tier != fmc::layout::Tier::Wide;

@@ -1,4 +1,4 @@
-//! The reader's git sign strip on a real repository (plan-00008): the signs of an edited, deleted, and clean text, the
+//! The reader's git sign strip on a real repository: the signs of an edited, deleted, and clean text, the
 //! strip's column, and the answers that are dropped. A text is shown as the app shows it, with its signs read the way
 //! the job reads them.
 

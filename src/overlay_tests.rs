@@ -212,7 +212,7 @@ fn other_option_cmd_and_ctrl_keys_do_nothing_in_the_field_and_a_confirm_has_no_f
     assert_eq!(confirm.focus, Stop::Button(0), "a confirm's focus does not move");
 }
 
-/// A scrolled menu shows its window and moves it with the selection, in both directions (plan-00017, O5).
+/// A scrolled menu shows its window and moves it with the selection, in both directions.
 #[test]
 fn a_scrolled_menu_moves_its_window_with_the_selection() {
     let items: Vec<Item> = (0..6).map(|n| row(&format!("Hogwarts {n}"), true)).collect();

@@ -1,4 +1,4 @@
-//! The rendered view's git signs (plan-00010, D6): a column over the viewer's left edge, where the rendered text's padding
+//! The rendered view's git signs: a column over the viewer's left edge, where the rendered text's padding
 //! is, with a bar beside each changed block and a `▁` or `▔` beside a deletion. The column is absolutely positioned, so the
 //! text does not move; each mark sits at its block's document row less the scroll, and it is laid out again at each paint.
 

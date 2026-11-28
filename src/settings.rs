@@ -1,5 +1,5 @@
-//! The settings file's values, read from its text, and the text a save writes (`architecture.md`, "fmc writes its
-//! settings.json, atomically"). The binary reads and writes the file and passes its text here; nothing here touches the disk.
+//! The settings file's values, read from its text, and the text a save writes. The binary reads and writes the file and
+//! passes its text here; nothing here touches the disk.
 
 use serde_json::{Map, Value, json};
 
@@ -23,9 +23,9 @@ pub struct Settings {
     pub reader_jump: u32,
     pub git_gutter: bool,
     pub file_associations: Associations,
-    /// An app's name or path that `e` opens the folder with (plan-00017, O3); empty opens the folder in Finder.
+    /// An app's name or path that `e` opens the folder with; empty opens the folder in Finder.
     pub editor: String,
-    /// The apps the Open With picker offers for a file, by the pattern that wins for it (plan-00017, D8).
+    /// The apps the Open With picker offers for a file, by the pattern that wins for it.
     pub open_with: OpenWith,
     pub find_mode: Matching,
     pub theme_mode: ModeChoice,
@@ -116,19 +116,19 @@ fn field<'a>(object: &'a Map<String, Value>, key: &str) -> Option<&'a Value> {
     object.get(key)
 }
 
-/// The `$schema` that points `settings.json` at the schema `services::settings::ensure_schema` writes beside it
-/// (plan-00016 O1). Relative to `settings.json`, which editors resolve against the file's folder.
+/// The `$schema` that points `settings.json` at the schema `services::settings::ensure_schema` writes beside it.
+/// Relative to `settings.json`, which editors resolve against the file's folder.
 pub const SCHEMA_LINK: &str = "./meta/config.schema.json";
 
-/// The file's text with `"$schema": SCHEMA_LINK` inserted as its first key, for the startup link (plan-00016 O1, amended
-/// by the owner on 2026-11-28). The rest of the text keeps its bytes, so the values, their order, and the layout stay as
-/// the owner wrote them. `None` when the file already has a `$schema` or is not a JSON object.
+/// The file's text with `"$schema": SCHEMA_LINK` inserted as its first key, for the startup link. The rest of the text
+/// keeps its bytes, so the values, their order, and the layout stay as the owner wrote them. `None` when the file
+/// already has a `$schema` or is not a JSON object.
 pub fn linked(text: &str) -> Option<String> {
     let Ok(Value::Object(mut object)) = serde_json::from_str::<Value>(text) else { return None };
     if object.contains_key("$schema") {
         return None;
     }
-    // Strict JSON (plan-00015 D10): the first `{` opens the object, since only whitespace may come before it.
+    // Strict JSON: the first `{` opens the object, since only whitespace may come before it.
     let (head, rest) = text.split_at(text.find('{')? + 1);
     let body = rest.trim_start();
     let gap = &rest[..rest.len() - body.len()];
@@ -162,7 +162,7 @@ pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
 }
 
 /// The JSON Schema of `settings.json` (draft-07), built from the same rows, defaults, and name lists the parser and the
-/// Settings page use, so a name cannot drift from it (plan-00016, D2). Pretty-printed with a final newline; the same
+/// Settings page use, so a name cannot drift from it. Pretty-printed with a final newline; the same
 /// bytes on every call.
 pub fn schema() -> String {
     let defaults = Settings::default();
@@ -278,7 +278,7 @@ fn editor(object: &Map<String, Value>, notices: &mut Vec<String>) -> String {
     }
 }
 
-/// `open_with` (plan-00017, D8): the apps a pattern offers in the Open With picker. A bad entry is skipped with a notice that
+/// `open_with`: the apps a pattern offers in the Open With picker. A bad entry is skipped with a notice that
 /// names its pattern: a pattern that does not parse, a value that is not an array, or an item that is not a non-empty string.
 fn open_with(object: &Map<String, Value>, notices: &mut Vec<String>) -> OpenWith {
     let mut table = OpenWith::default();
@@ -312,8 +312,8 @@ fn open_with(object: &Map<String, Value>, notices: &mut Vec<String>) -> OpenWith
     table
 }
 
-/// `find_mode`: the name matching the finder starts with (plan-00006 D6). Any other value keeps Scouter's substring match
-/// and says so, as the other keys do.
+/// `find_mode`: the name matching the finder starts with. Any other value keeps Scouter's substring match and says so,
+/// as the other keys do.
 fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
     match field(object, "find_mode") {
         None => FIND_MODE,
@@ -324,7 +324,7 @@ fn finding(object: &Map<String, Value>, notices: &mut Vec<String>) -> Matching {
     }
 }
 
-/// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode (plan-00015, A7).
+/// `theme_mode`: `auto` follows the terminal, `dark` and `light` force a mode.
 fn theme_mode(object: &Map<String, Value>, notices: &mut Vec<String>) -> ModeChoice {
     match field(object, "theme_mode") {
         None => THEME_MODE,
@@ -368,7 +368,7 @@ fn whole(object: &Map<String, Value>, key: &str, default: u32, notices: &mut Vec
     }
 }
 
-/// One row of the Settings page: a key of the file the page edits (plan-00015, D2 and A7). The label is the key's word.
+/// One row of the Settings page: a key of the file the page edits. The label is the key's word.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Row {
     AutoPreview,

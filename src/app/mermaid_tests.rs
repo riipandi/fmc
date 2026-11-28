@@ -1,5 +1,5 @@
-//! A Mermaid fence in the rendered Markdown view (plan-00006 phase 2): drawn as a diagram, framed when it cannot be,
-//! measured again on a resize, and left as text in the source view (D1).
+//! A Mermaid fence in the rendered Markdown view: drawn as a diagram, framed when it cannot be,
+//! measured again on a resize, and left as text in the source view.
 
 use std::cell::RefCell;
 use std::path::PathBuf;

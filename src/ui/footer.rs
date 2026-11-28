@@ -64,13 +64,13 @@ pub struct FooterState {
     pub sidebar_hidden: bool,
     /// The `:` command line's text while it is open; it takes the footer's left side (`Prompt::Command`).
     pub command: Option<String>,
-    /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does (plan-00004, P8).
+    /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does.
     pub selection: bool,
     /// The page on screen, which names the compact bottom bar's segments (`ui/bars.rs`).
     pub page: Page,
     /// The open prompt's own text, which the compact bottom bar shows after `Cancel`.
     pub prompt_text: Option<Vec<Seg>>,
-    /// How many tree rows are marked; zero hides the count (plan-00014, D8).
+    /// How many tree rows are marked; zero hides the count.
     pub marked: usize,
 }
 
@@ -157,7 +157,7 @@ impl FooterState {
         (left, facts, hints)
     }
 
-    /// The compact bottom bar (plan-00005, D3): an open prompt replaces it, a notice shows in it for its time, and
+    /// The compact bottom bar: an open prompt replaces it, a notice shows in it for its time, and
     /// otherwise the page's segments. Returns each tap's cell and key with the text.
     pub fn bar(
         &self,
@@ -326,7 +326,7 @@ impl FooterState {
             }
         };
         // Below 80 columns a short row keeps the hints that leave the state first, and `Copy` leads while a selection
-        // exists (plan-00004, P6, P8, D3). At 80 columns and wider the order is Scouter's.
+        // exists. At 80 columns and wider the order is Scouter's.
         if tier(u16::try_from(columns).unwrap_or(u16::MAX)) != Tier::Wide {
             if self.selection && self.prompt.is_none() {
                 hints.retain(|hint| hint.0 != "y");
@@ -392,7 +392,7 @@ impl Footer {
     }
 
     pub fn paint(&self, state: &FooterState, columns: usize, p: &Palette, measure: Measure<'_>) {
-        // The compact footer is the bottom bar alone, one row (architecture.md, record 7).
+        // The compact footer is the bottom bar alone, one row.
         if tier(u16::try_from(columns).unwrap_or(u16::MAX)) == Tier::Compact {
             self.root.height(1);
             self.band.visible(false);

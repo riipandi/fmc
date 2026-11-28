@@ -1,4 +1,4 @@
-//! Git signs beside the rendered view's blocks (plan-00010, D6). A block takes the signs of its source lines: a block with
+//! Git signs beside the rendered view's blocks. A block takes the signs of its source lines: a block with
 //! an added or changed line gets a bar in its strongest colour (modified over added), a deletion is drawn under the block
 //! above it (`▁`), and a deletion above line 1 over the first block (`▔`). Signs on a blank line between blocks belong to
 //! no block, so an added blank line draws nothing; a deletion there goes under the block above it.
@@ -51,7 +51,7 @@ pub fn block_marks(blocks: &[Range<usize>], signs: &[(u32, Sign)]) -> Vec<BlockM
     marks
 }
 
-/// The sign a block's bar shows when two of its lines change: modified over added (D6).
+/// The sign a block's bar shows when two of its lines change: modified over added.
 fn stronger(current: Option<Sign>, next: Sign) -> Sign {
     match (current, next) {
         (Some(Sign::Modified), _) | (_, Sign::Modified) => Sign::Modified,

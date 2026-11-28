@@ -7,7 +7,7 @@ use icu_collator::{CollatorBorrowed, CollatorPreferences};
 
 use super::{Entry, Kind};
 
-/// Entries the tree never lists. Not configurable in Scouter (`docs/decision/0004-...`).
+/// Entries the tree never lists. Not configurable in Scouter.
 const NOISE: [&str; 7] = [".git", ".hg", ".svn", ".DS_Store", ".AppleDouble", "Thumbs.db", "desktop.ini"];
 
 pub fn is_noise(name: &str) -> bool {

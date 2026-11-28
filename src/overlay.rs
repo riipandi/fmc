@@ -1,4 +1,4 @@
-//! The overlays over the page (plan-00012, D1): a context menu and a dialog. While one is open the app gives it every key
+//! The overlays over the page: a context menu and a dialog. While one is open the app gives it every key
 //! (`app/capture.rs`), and these types decide what each key does. A key an overlay does not use is swallowed: `Stay`.
 //! No widget and no I/O; the app draws the overlay and carries out what it answers.
 
@@ -18,7 +18,7 @@ pub struct Item {
 }
 
 /// A menu's rows, its selection, and its window: the rows it shows at once. A menu longer than its window scrolls, so
-/// the selection stays in view (plan-00017, O5); a menu that fits shows every row.
+/// the selection stays in view; a menu that fits shows every row.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Menu {
     items: Vec<Item>,

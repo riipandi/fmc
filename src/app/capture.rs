@@ -13,7 +13,7 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
 }
 
 /// One key press, from the keyboard or from a tap on a footer hint (`app/mouse.rs`). A tap sends the hint's own
-/// keys through here, so it runs the same Action as the key (plan-00004, D2).
+/// keys through here, so it runs the same Action as the key.
 pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>, named: &keys::Named) {
     let mut m = model.borrow_mut();
     // Scouter clears the reader's error notice on every key (`src/app/app.ts:531-534`).
@@ -73,9 +73,9 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::Quit => return cx.quit(),
         Action::Help => reader::toggle_keys(&mut m, &ui.borrow()),
         Action::OpenSettings => settings::open(&mut m),
-        // In compact `q` goes back a page; the list page at the root has nothing to go back to (plan-00005, record 11).
+        // In compact `q` goes back a page; the list page at the root has nothing to go back to.
         Action::Close if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
-        // `q` on the changes screen goes back to browsing, as `d` does (architecture.md, approved deviation).
+        // `q` on the changes screen goes back to browsing, as `d` does, where Scouter's `q` quits.
         Action::Close if body => changes::leave(&mut m),
         Action::Close => reader::close(&mut m, &ui.borrow()),
         Action::ToggleChanges => changes::toggle(&mut m),
@@ -100,9 +100,9 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         Action::SwitchPane if m.focus == Focus::List && m.shown.has_document() => m.focus = Focus::Reader,
         Action::Escape if m.focus == Focus::Reader && search::dismiss(&mut m) => {}
         Action::Escape if m.compact() && m.pages.top() != Page::Files => pages::back(&mut m, &ui.borrow()),
-        // Esc in the list drops a copy or cut (plan-00012, D2); with nothing to drop it is the list's own Esc.
+        // Esc in the list drops a copy or cut; with nothing to drop it is the list's own Esc.
         Action::Escape if m.focus == Focus::List && m.clipboard.is_some() && m.changes.is_none() => m.clipboard = None,
-        // Esc drops the marks once the clipboard is empty (plan-00014, D9).
+        // Esc drops the marks once the clipboard is empty.
         Action::Escape if m.focus == Focus::List && !m.browser.marked().is_empty() && m.changes.is_none() => {
             m.browser.clear_marks()
         }

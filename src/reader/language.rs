@@ -1,10 +1,10 @@
-//! The filetypes fmc highlights: Scouter's (`src/reader/code-view.ts:20-29`, `languageFor`) and the owner's extra grammars
-//! (RI-2, plan-00006). Other files show as plain text.
+//! The filetypes fmc highlights: Scouter's (`src/reader/code-view.ts:20-29`, `languageFor`) and the owner's extra
+//! grammars. Other files show as plain text.
 
 use std::path::Path;
 
 /// OpenTUI's bundled grammars (JavaScript, TypeScript, TSX, Markdown, Zig, and Rust), the ten vendored ones Scouter
-/// uses, and the twelve the owner added (`research/grammar-load-spike.md`). `javascriptreact` is an alias of the
+/// uses, and the twelve the owner added. `javascriptreact` is an alias of the
 /// JavaScript grammar.
 pub const HIGHLIGHTED: &[&str] = &[
     "javascript",

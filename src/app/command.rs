@@ -1,4 +1,4 @@
-//! The `:` command line (architecture.md, "`:q` quits, as in Neovim"): one line in the footer. `q`, `q!`, `qa`, `qa!`, and
+//! The `:` command line, where `:q` quits as in Neovim: one line in the footer. `q`, `q!`, `qa`, `qa!`, and
 //! `quit` quit on Enter; Esc or an empty Enter cancels; anything else is a notice.
 
 use fmc::keys::Key;

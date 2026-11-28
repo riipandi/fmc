@@ -1,4 +1,4 @@
-//! The source-to-block mapping against the blocks OpenTUI draws (plan-00010 phase 1). The samples are Harry Potter
+//! The source-to-block mapping against the blocks OpenTUI draws. The samples are Harry Potter
 //! fixtures with the constructs the mapping must follow, and the repository's own Markdown files.
 
 use std::cell::RefCell;
@@ -177,7 +177,7 @@ fn probes(kind: &str, source: &str) -> Vec<String> {
 
 /// Renders `source` in a tall app and returns the rows of each top-level block OpenTUI drew, with their text.
 fn drawn(source: &str, width: u16) -> Vec<(Range<u32>, String)> {
-    // Tall enough for DESIGN.md at 40 columns, which renders past 400 rows.
+    // Tall enough for the design sample at 40 columns, which renders past 400 rows.
     let app = TestApp::new(width, 1200);
     let view = MarkdownView::new(app.app(), &DARK);
     app.app().root().add(&view.widget());
@@ -325,7 +325,7 @@ fn a_code_block_renderer_draws_the_default_look() {
     assert!(differ.is_empty(), "{} cells differ, first {:?}", differ.len(), differ.first());
 }
 
-/// The refresh cost on DESIGN.md for the research note (`cargo test -- --ignored --nocapture`).
+/// The refresh cost on the design sample, for the timing report (`cargo test -- --ignored --nocapture`).
 #[test]
 #[ignore = "a timing report, not a check"]
 fn refresh_cost_on_design_md() {

@@ -1,6 +1,6 @@
 //! Syntax highlighting (Scouter `src/reader/grammars.ts`, `src/reader/code-view.ts`): the grammars and queries Scouter
-//! uses, the filetype a path gets, and the style of each capture name from the palette (`research/scouter-inventory.md`
-//! §8.3). Rust is registered by `opentui`'s `tree-sitter` feature; the others are registered here.
+//! uses, the filetype a path gets, and the style of each capture name from the palette.
+//! Rust is registered by `opentui`'s `tree-sitter` feature; the others are registered here.
 
 use std::path::Path;
 
@@ -15,7 +15,7 @@ use opentui::syntax::{CompiledGrammar, Grammar, SyntaxTheme, filetype_for_path, 
 use super::styled::color;
 
 /// Registers the grammars, compiled on first use as OpenTUI's bundled ones are. Core's queries replace the bundled
-/// ones for JavaScript, TypeScript, TSX, Markdown, and Zig (`architecture.md`, "Core's highlight queries"). Call it
+/// ones for JavaScript, TypeScript, TSX, Markdown, and Zig. Call it
 /// once, before the first code view is shown.
 pub fn register() {
     register_lazy("javascript", || {
@@ -312,7 +312,7 @@ const CAPTURE_NAMES: &[&str] = &[
 
 /// The style table of a code buffer: each capture name's style as the widget would register it, plus the search marks,
 /// which layers name as `opentui.search.match` (Scouter `search.match`) and `opentui.search.current` (the match the view
-/// is on, plan-00010 D3). A buffer keeps the table it was given, so this one stands in for the widget's own.
+/// is on). A buffer keeps the table it was given, so this one stands in for the widget's own.
 pub fn table(context: &Context, theme: &SyntaxTheme, search: Style, current: Style) -> Result<SyntaxStyle> {
     let table = SyntaxStyle::new(context)?;
     for name in CAPTURE_NAMES {

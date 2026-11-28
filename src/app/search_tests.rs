@@ -1,4 +1,4 @@
-//! Search in the rendered Markdown view through the key path (plan-00010 phase 2): `/` opens the prompt, the query counts
+//! Search in the rendered Markdown view through the key path: `/` opens the prompt, the query counts
 //! the occurrences, `n` and `N` step through them, Esc clears the marks, and `m` clears the search.
 
 use std::path::PathBuf;

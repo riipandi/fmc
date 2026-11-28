@@ -1,4 +1,4 @@
-//! The default key table (plan-00015, A8): every key the parser binds is one row of (context, key, typing, action).
+//! The default key table: every key the parser binds is one row of (context, key, typing, action).
 //! The parser walks it, the `?` card and `--help` read it, and `keymap.json` edits it (`keymap.rs`). Count digits and
 //! `z` are not rows: the parser keeps them (`parser.rs`).
 

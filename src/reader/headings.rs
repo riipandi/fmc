@@ -1,7 +1,7 @@
-//! Rendered Markdown keeps each heading's ATX marker (plan-00011, D2): `# Title` at level 1 to `###### Title` at 6.
-//! The engine conceals a heading's `#` run and its inline hook cannot see the level (`ui/markdown.rs`, `architecture.md`,
-//! "Heading markers"), so the source is rewritten before the widget reads it: each heading keeps its real ATX run, which
-//! stays concealed, and the same run is written as entities (`&#35;&#35;`) into the heading's text, where it shows in the heading's style.
+//! Rendered Markdown keeps each heading's ATX marker: `# Title` at level 1 to `###### Title` at 6.
+//! The engine conceals a heading's `#` run and its inline hook cannot see the level (`ui/markdown.rs`), so the
+//! source is rewritten before the widget reads it: each heading keeps its real ATX run, which stays concealed, and
+//! the same run is written as entities (`&#35;&#35;`) into the heading's text, where it shows in the heading's style.
 //! Fenced code, indented code, and HTML blocks keep their text. Every line stays a line, so the source line numbers hold.
 
 /// The Markdown source with each heading's marker written into its text.

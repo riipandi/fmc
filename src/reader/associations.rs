@@ -46,7 +46,7 @@ struct Rule<T> {
 }
 
 /// A table of patterns, each with a value, in no particular order: precedence is decided by the patterns, not by the
-/// order they were added. `file_associations` is `Associations`; `open_with` is `OpenWith` (plan-00017, D8), so both
+/// order they were added. `file_associations` is `Associations`; `open_with` is `OpenWith`, so both
 /// pick the same pattern for a file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Patterns<T> {
@@ -112,7 +112,7 @@ impl Associations {
     }
 }
 
-/// The `open_with` table (plan-00017, D8): a pattern's apps, by name or `.app` path, in the order the file lists them.
+/// The `open_with` table: a pattern's apps, by name or `.app` path, in the order the file lists them.
 pub type OpenWith = Patterns<Vec<String>>;
 
 #[cfg(test)]

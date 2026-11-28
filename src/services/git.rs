@@ -1,6 +1,6 @@
 //! Git reads for the changes screen and the tree's marks (Scouter `src/diff/git.ts` and `src/diff/patch.ts`). Git never
 //! reads the repository's own index: a `Repository` keeps a copy and runs every command against it, because `git diff`
-//! rewrites the index it reads (`architecture.md`, "Git is read by running `git`"; Scouter decision 0007). The parsing
+//! rewrites the index it reads. The parsing
 //! and the patch text are in `fmc::diff`.
 
 use std::collections::HashMap;
@@ -27,7 +27,7 @@ const LIST_LIMIT: usize = 8 * 1024 * 1024;
 /// Scouter's time limit for a git call (`src/diff/git.ts:9`).
 const TIMEOUT: Duration = Duration::from_secs(15);
 /// An index written this recently can hide a same-second change from git's stat check, so its copy is never reused
-/// (`src/diff/git.ts:10`, Scouter decision 0007).
+/// (`src/diff/git.ts:10`).
 const RACY_WINDOW: Duration = Duration::from_secs(2);
 /// Scouter's diff options (`src/diff/git.ts:32`).
 const DIFF_OPTIONS: [&str; 4] = ["--no-ext-diff", "--no-textconv", "--no-color", "-M"];
@@ -146,8 +146,8 @@ impl Repository {
         parts.join("\n")
     }
 
-    /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`, plan-00008
-    /// D2). The whole tree's status is read with the listing's rename detection, so a renamed file diffs from its old
+    /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`).
+    /// The whole tree's status is read with the listing's rename detection, so a renamed file diffs from its old
     /// path, and a pure rename has no signs, as the changes screen shows it. An untracked file is all added.
     fn file_signs(&self, path: &str) -> Result<Vec<(u32, Sign)>, String> {
         let change = {
@@ -313,8 +313,8 @@ pub fn branch(dir: &Path) -> Option<String> {
         .filter(|name| !name.is_empty())
 }
 
-/// The signs of the file at `path` against the change base (plan-00008, D2). `Err` outside a repository and on a git
-/// failure; the reader clears its signs then, with no notice (D5).
+/// The signs of the file at `path` against the change base. `Err` outside a repository and on a git
+/// failure; the reader clears its signs then, with no notice.
 pub fn signs(path: &Path) -> Result<Vec<(u32, Sign)>, String> {
     let folder = fs::canonicalize(path.parent().unwrap_or(Path::new("."))).map_err(|error| error.to_string())?;
     let repository = Repository::open(&folder)?;

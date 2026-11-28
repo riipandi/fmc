@@ -6,10 +6,10 @@ use opentui::prelude::*;
 
 use super::styled::{Seg, content};
 
-/// The line under the title: what the reader shows instead (the product name is fmc, `docs/parity.md`).
+/// The line under the title: what the reader shows instead (the product name is fmc).
 pub const HINT: &str = "fmc only displays UTF-8 text and images.";
 
-/// The line under the hint: the key that hands the file to its default app (plan-00017, D5).
+/// The line under the hint: the key that hands the file to its default app.
 pub const OPEN_HINT: &str = "Press o to open it in the default app.";
 
 pub struct BinaryView {

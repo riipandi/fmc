@@ -44,8 +44,8 @@ impl ModeChoice {
     }
 }
 
-/// A `#rrggbb` colour in lowercase: seven ASCII bytes, so a palette read is a copy and needs no borrow or allocation
-/// (plan-00015 A15). Built-in values come from `Hex::new`, user and catalog values from `Hex::parse`.
+/// A `#rrggbb` colour in lowercase: seven ASCII bytes, so a palette read is a copy and needs no borrow or allocation.
+/// Built-in values come from `Hex::new`, user and catalog values from `Hex::parse`.
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Hex([u8; 7]);
 
@@ -255,7 +255,7 @@ pub fn tinted_background(background: &str) -> Hex {
     Hex::rgb(mix[0], mix[1], mix[2])
 }
 
-/// The page's background (A14): the terminal's background tinted when the palette is the terminal's mode. Otherwise,
+/// The page's background: the terminal's background tinted when the palette is the terminal's mode. Otherwise,
 /// or when the terminal did not answer, the palette's own fallback, since a tint of the other mode's background is
 /// not that mode's page.
 pub fn page_background(background: Option<&str>, terminal: Mode, palette: Mode, fallback: Hex) -> Hex {

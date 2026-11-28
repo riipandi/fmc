@@ -1,4 +1,4 @@
-//! The compact tier's page stack (plan-00005, D2). The stack follows the screens: Find, Changes, and Keys are open while
+//! The compact tier's page stack. The stack follows the screens: Find, Changes, and Keys are open while
 //! their screen is, and Reader while the focus is in the reader on a document or on the changes body. The top page is
 //! the one on screen in compact. Medium and wide keep the stack too, so a resize into compact shows the open page.
 
@@ -29,8 +29,8 @@ pub fn sync(m: &mut Model) {
     }
 }
 
-/// The compact header's lead while a page is open over Files: a `‹` that Back runs (plan-00005, record 6; the page name
-/// is dropped so the path has the columns, and the bottom bar still names Back).
+/// The compact header's lead while a page is open over Files: a `‹` that Back runs; the page name
+/// is dropped so the path has the columns, and the bottom bar still names Back.
 pub fn back_lead(m: &Model) -> Option<String> {
     (m.compact() && m.pages.top() != Page::Files).then(|| "‹".into())
 }
@@ -47,7 +47,7 @@ pub fn back(m: &mut Model, ui: &Ui) {
     }
 }
 
-/// `Ctrl+/` in compact: switches between the list and the reader, as `Tab` does (architecture.md, record 11).
+/// `Ctrl+/` in compact: switches between the list and the reader, as `Tab` does.
 pub fn switch(m: &mut Model) {
     if m.finder.is_some() {
         return;

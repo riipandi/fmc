@@ -14,7 +14,7 @@ use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
 /// `Ctrl+.` and `.`: shows or hides dotfiles. The selection falls back as for a removed row, and an open finder walks
-/// the folder again (plan-00002, D5).
+/// the folder again.
 pub fn toggle_dotfiles(m: &mut Model) {
     let shown = !m.browser.dotfiles();
     m.browser.set_dotfiles(shown);
@@ -49,7 +49,7 @@ pub fn activate(m: &mut Model) {
     open(m, path);
 }
 
-/// `s`: marks the selected row and moves down one row, so a run of rows takes one key each (plan-00014, D1). The mark is
+/// `s`: marks the selected row and moves down one row, so a run of rows takes one key each. The mark is
 /// the browser's, so it survives scrolling and collapse.
 pub fn toggle_mark(m: &mut Model) {
     let Some(entry) = m.browser.selected_entry() else { return };
@@ -57,14 +57,13 @@ pub fn toggle_mark(m: &mut Model) {
     m.browser.move_by(1);
 }
 
-/// `]` and `[`: the list moves by the settings' sidebar jump (architecture.md, "`[` and `]` jump in the sidebar").
+/// `]` and `[`: the list moves by the settings' sidebar jump.
 pub fn jump(m: &mut Model, step: i8) {
     let rows = isize::try_from(m.sidebar_jump).unwrap_or(isize::MAX);
     m.browser.move_by(rows * isize::from(step));
 }
 
-/// A click on the focused list: a folder toggles as Enter does; a file is only selected, because only Enter opens one
-/// (architecture.md, "Auto-preview in the sidebar, and Enter alone opens").
+/// A click on the focused list: a folder toggles as Enter does; a file is only selected, because only Enter opens one.
 pub fn click(m: &mut Model) {
     let file = is_file(m, m.browser.selected());
     if !file {
@@ -78,7 +77,7 @@ pub fn is_file(m: &Model, path: &Path) -> bool {
 }
 
 /// `l` and Right: expand a folder; on an expanded folder with children, step into the first one. A file takes no key:
-/// only Enter opens one (architecture.md).
+/// only Enter opens one.
 fn expand(m: &mut Model) {
     let path = m.browser.selected().to_path_buf();
     if is_file(m, &path) {
@@ -177,7 +176,7 @@ pub fn list(m: &mut Model, folder: PathBuf) {
 }
 
 /// Lists `folder` again, then reveals `target` in it: a write changed the folder, so its listing is stale, and the
-/// result is selected as D9 asks (`app/write.rs`).
+/// result is selected, as `app/write.rs` asks.
 pub fn relist_to(m: &mut Model, folder: PathBuf, target: PathBuf) {
     m.pending = Some(Pending { target, expand: false, open: false });
     list(m, folder);

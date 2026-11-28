@@ -1,4 +1,4 @@
-//! The finder's fuzzy matching through the keys (plan-00006 phase 5): `find_mode` sets the start, `Ctrl+F` flips it for
+//! The finder's fuzzy matching through the keys: `find_mode` sets the start, `Ctrl+F` flips it for
 //! the session, and the footer names fuzzy while it is on. The index is walked at once, as the finder's worker walks it.
 
 use std::cell::RefCell;

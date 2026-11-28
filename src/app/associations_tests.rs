@@ -1,4 +1,4 @@
-//! `file_associations` in the reader (plan-00009 phase 2): an association decides how a file is highlighted and whether
+//! `file_associations` in the reader: an association decides how a file is highlighted and whether
 //! `m` renders it as Markdown, and a file with no association keeps Scouter's lookup.
 
 use std::cell::RefCell;

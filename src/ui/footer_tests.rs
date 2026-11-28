@@ -24,7 +24,7 @@ fn startup_band_and_hints_at_80_columns() {
     assert_eq!(left[3], Seg::new("demo-repo", DARK.text));
 }
 
-/// A browsed root with a branch, which every screen shows on the footer's left side (plan-00019, D1 to D5).
+/// A browsed root with a branch, which the footer's left side shows from 60 columns up.
 fn rooted(mode: Mode) -> FooterState {
     FooterState {
         mode,

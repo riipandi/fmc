@@ -1,4 +1,4 @@
-//! Opens the selected row, the shown file, or the browsed folder in another app (plan-00017): `o` hands the target to
+//! Opens the selected row, the shown file, or the browsed folder in another app: `o` hands the target to
 //! macOS's default app, `O` offers the apps that open it (Open With), `e` opens the folder in the editor the settings
 //! name (Finder when none is set), and `E` reveals the target in Finder. The launch runs on a worker
 //! (`services/launch.rs`); this file picks the target, builds the picker's rows, and words the answer.
@@ -20,7 +20,7 @@ pub struct Picker {
     pub choices: Vec<Choice>,
 }
 
-/// One row of the picker (plan-00017, D9): an app by the value `open -a` takes, or Finder.
+/// One row of the picker: an app by the value `open -a` takes, or Finder.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Choice {
     App { value: String, name: String, default: bool },
@@ -30,7 +30,7 @@ pub enum Choice {
 /// Rows a menu keeps clear of the screen's edge, so a menu does not fill it.
 const MENU_CHROME: usize = 8;
 
-/// The rows a menu shows at once on a screen of `rows` (plan-00017, O5): the pool, or fewer on a short screen. A longer
+/// The rows a menu shows at once on a screen of `rows`: the pool, or fewer on a short screen. A longer
 /// menu scrolls.
 pub fn shown_rows(rows: u16) -> usize {
     MAX_ROWS.min(usize::from(rows).saturating_sub(MENU_CHROME)).max(1)
@@ -43,7 +43,7 @@ pub fn default_app(m: &mut Model) {
     spawn_open(m, &target, How::Default, done);
 }
 
-/// `O`, and the menu's Open With row: the picker lists the apps for the target (D9). The list is read on a worker, and
+/// `O`, and the menu's Open With row: the picker lists the apps for the target. The list is read on a worker, and
 /// the picker opens when it lands.
 pub fn with(m: &mut Model) {
     let Some(target) = target(m) else { return };
@@ -55,7 +55,7 @@ pub fn with(m: &mut Model) {
     });
 }
 
-/// The picker's list (`Event::Apps`). The picker opens when `target` is still the target, in D9's order: the apps the
+/// The picker's list (`Event::Apps`). The picker opens when `target` is still the target, in this order: the apps the
 /// `open_with` pattern names, the apps macOS lists minus those, then Finder.
 pub fn listed(m: &mut Model, target: &Path, result: &Result<Vec<launch::App>, String>) {
     if self::target(m).as_deref() != Some(target) {
@@ -99,7 +99,7 @@ pub fn listed(m: &mut Model, target: &Path, result: &Result<Vec<launch::App>, St
     m.overlay = Some(Overlay::Menu(Menu::scrolled(items, shown)));
 }
 
-/// Carries out the picker row `index` (`write::pick`): the target goes to the chosen app, or to Finder (D9). Finder
+/// Carries out the picker row `index` (`write::pick`): the target goes to the chosen app, or to Finder. Finder
 /// reveals a file and opens a folder.
 pub fn run(m: &Model, picker: &Picker, index: usize) {
     let Some(choice) = picker.choices.get(index) else { return };
@@ -143,7 +143,7 @@ pub fn launched(m: &mut Model, done: &str, result: &Result<(), String>) {
     });
 }
 
-/// The target of `o`, `O`, and `E`: the selected row in the tree, or the shown file in the reader (D5). The key page is
+/// The target of `o`, `O`, and `E`: the selected row in the tree, or the shown file in the reader. The key page is
 /// a reader with no file, so it has no target.
 fn target(m: &Model) -> Option<PathBuf> {
     match m.focus {
@@ -158,7 +158,7 @@ fn app_name(app: &str) -> &str {
     file.strip_suffix(".app").unwrap_or(file)
 }
 
-/// Whether a configured value names `app`: its `.app` path, or, for a name, its name (D9).
+/// Whether a configured value names `app`: its `.app` path, or, for a name, its name.
 fn same(value: &str, app: &launch::App) -> bool {
     if value.contains('/') { Path::new(value) == app.path } else { value == app.name }
 }

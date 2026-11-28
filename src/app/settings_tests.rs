@@ -1,5 +1,5 @@
 //! The Settings page through the model: its keys, each change applied and saved, the refusal and the revert, and the
-//! number dialog. Every save goes to a temporary config folder (A12), so no test touches the owner's `~/.config/fmc`.
+//! number dialog. Every save goes to a temporary config folder, so no test touches the owner's `~/.config/fmc`.
 
 use std::fs;
 use std::os::unix::fs::symlink;

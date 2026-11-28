@@ -1,4 +1,4 @@
-//! The rendered view keeps each heading's marker in the heading's colour (plan-00011, D1 and D2): the `#` runs show,
+//! The rendered view keeps each heading's marker in the heading's colour: the `#` runs show,
 //! and emphasis and code markers stay concealed.
 
 use fmc::theme::DARK;

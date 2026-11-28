@@ -1,4 +1,4 @@
-//! The context menu: a bordered list over the page, at a cell and kept on the screen (plan-00012, D1). In the compact tier
+//! The context menu: a bordered list over the page, at a cell and kept on the screen. In the compact tier
 //! it is a bottom sheet across the width. Its rows are fmc's own rather than OpenTUI's `Select`: a row can be disabled
 //! (muted, skipped by the selection), and a press picks it at once.
 
@@ -98,8 +98,8 @@ impl MenuView {
     }
 
     /// Draws `menu` in `rect` on the `background` tint. A disabled row is muted, a destructive one takes the error
-    /// colour, and the selected row has the row surface and a bold label (no marker: the owner, 2026-11-27). A key hint sits at the right edge, and a
-    /// rule in the border colour opens each group after the first.
+    /// colour, and the selected row has the row surface and a bold label, with no marker. A key hint sits at the right
+    /// edge, and a rule in the border colour opens each group after the first.
     pub fn show(&self, menu: &Menu, rect: Rect, p: &Palette, background: Hex) {
         self.root
             .position(Edge::Left, Length::Cells(f32::from(rect.x)))

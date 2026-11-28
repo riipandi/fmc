@@ -1,4 +1,4 @@
-//! The git signs beside the rendered view's blocks on a real repository (plan-00010 phase 3): an edited paragraph, an
+//! The git signs beside the rendered view's blocks on a real repository: an edited paragraph, an
 //! added section, a deletion, the setting off, and a bar that follows its block when the view scrolls.
 
 use std::cell::RefCell;

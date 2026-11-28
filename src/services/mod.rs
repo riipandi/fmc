@@ -1,5 +1,4 @@
-//! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy
-//! (`rust.md`, "Layout rules").
+//! I/O workers. Each one runs off the UI thread and sends an `Event` back through the app's proxy.
 
 pub mod changes;
 pub mod find;
@@ -66,7 +65,7 @@ pub fn read_config(file: &Path) -> Result<String, ReadError> {
     String::from_utf8(bytes).map_err(|_| ReadError::NotText)
 }
 
-/// Writes `text` to `path`, or to the file a link at `path` points to (plan-00015 D14). The text goes to a temp file
+/// Writes `text` to `path`, or to the file a link at `path` points to. The text goes to a temp file
 /// beside the target, and the rename replaces the target only once the bytes are on disk, so a crash leaves the old file
 /// or the new one. A new file gets the old file's mode. Nothing outside the target's folder is touched.
 pub fn save_atomic(path: &Path, text: &str) -> io::Result<()> {
