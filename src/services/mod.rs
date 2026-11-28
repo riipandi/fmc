@@ -8,6 +8,8 @@ pub mod keymap;
 pub mod launch;
 pub mod poll;
 pub mod settings;
+#[cfg_attr(not(test), allow(dead_code))] // the app reads and writes the state file once it applies the values
+pub mod state;
 pub mod theme;
 pub mod write;
 

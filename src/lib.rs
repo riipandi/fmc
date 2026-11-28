@@ -9,5 +9,6 @@ pub mod layout;
 pub mod overlay;
 pub mod reader;
 pub mod settings;
+pub mod state;
 pub mod text;
 pub mod theme;
