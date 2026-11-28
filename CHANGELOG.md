@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-28
+
+fmc remembers its layout, wrap, diff view, dotfiles, and finder mode across runs, edits its prompts at a caret by word and by line, shows Markdown front matter as a code block, and colours Lua doc comments and eex templates.
+
 ### Added
 
 - The finder's query, the in-file search, and the `:` line take a caret. `←` and `→` move it, `Option` or `Ctrl` with them moves by word, `Option+Backspace` and `Ctrl+W` delete a word, and `Cmd+←` or `Ctrl+A` go to the start of the line. The keys match the name field of a dialog. `Ctrl+←` and `Ctrl+→` edit the prompt while one is open, rather than resizing the sidebar.
@@ -160,7 +164,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/riipandi/fmc/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/riipandi/fmc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/riipandi/fmc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/riipandi/fmc/compare/v0.3.0...v0.4.0
