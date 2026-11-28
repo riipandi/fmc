@@ -1,27 +1,27 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T14:53:33+07:00
-updated: 2026-11-28T16:10:00+07:00
+updated: 2026-11-28T18:00:00+07:00
 phases:
     - id: 1
       title: The crate grammars, query, json5, and just
-      status: done
+      status: committed (4acb036)
       note: query and json5; just is vendored in phase 2 (O3 (a))
     - id: 2
       title: The vendored grammars, vimdoc, luadoc, luap (and just under O3 (a))
-      status: done
+      status: committed (25e0f14)
       note: runs, O2 (a)
     - id: 3
       title: Lua's injections for luadoc and luap
-      status: landed in part
+      status: committed in part (21cde7b)
       note: luap landed; luadoc blocked, OpenTUI has no offset directive (architecture.md, Lua patterns)
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
+      status: committed (docs commit)
       note: —
     - id: 5
       title: Final validation and live run
-      status: pending
+      status: done (no commit; the live run is in the handover)
       note: —
 ---
 

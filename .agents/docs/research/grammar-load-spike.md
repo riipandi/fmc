@@ -55,7 +55,9 @@ Notes:
 
 ## 5. Parked for the roadmap
 
-Not candidates in this spike, because no crate loads: json5 (`tree-sitter` ~0.20), just (~0.25.5), luadoc (~0.20.10), luap (~0.20.10), query (0.20.9), vimdoc (0.25.10), and eex (no published crate). Each version was read from the crate archive on 2026-11-27, after the spike; they are the reason the seven are parked (RI-17). The roadmap gets one parked entry for these and for any grammar that a later phase drops. Dropped in phase 3: none.
+Not candidates in this spike, because no crate loads: json5 (`tree-sitter` ~0.20), just (~0.25.5), luadoc (~0.20.10), luap (~0.20.10), query (0.20.9), vimdoc (0.25.10), and eex (no published crate).
+
+Correction (plan-00018, 2026-11-28): the `links` clash on the locked `tree-sitter` is the 0.25 pins' (just and vimdoc). The 0.20 pins (json5, luadoc, luap, and query) link, with a second C runtime. The later outcome: query and json5 load from crates (`tree-sitter-tsquery`, `tree-sitter-json5-orchard`); just, vimdoc, luadoc, and luap are vendored C parsers, of which luap is injected into Lua's patterns; eex stays parked on its licence. See `architecture.md`, "the owner's remaining grammars are highlighted". Each version was read from the crate archive on 2026-11-27, after the spike; they are the reason the seven are parked (RI-17). The roadmap gets one parked entry for these and for any grammar that a later phase drops. Dropped in phase 3: none.
 
 ## 6. Unverified
 
