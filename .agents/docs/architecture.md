@@ -1725,7 +1725,7 @@ Mechanics: the rendered view rewrites the source before OpenTUI reads it (`ui/ma
 
 Consequences:
 
-- (positive) An image in a document reads as what it is: its name, where it lives, and its size, and the picture is one key away once the open is in place.
+- (positive) An image in a document reads as what it is: its name, where it lives, and its size, and `Enter` or a click opens the picture in the image view. `Ctrl+o` returns to the Markdown at its scroll.
 - (positive) Search finds a box by its name and counts it once, so `n` and `N` reach it.
 - (negative) A paragraph of two images, or an image in a sentence, a list, or a quote, still shows its alt text as a link, which Scouter also does.
 - (negative) A box is drawn over the fence's two source lines, so the line a deletion sits under is the closing line of the box.

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- An image that is a paragraph of its own draws as a box in the rendered Markdown view: its name, its path, its size and format, and a hint. A remote image, an SVG, or an image outside the browsed folder shows the box with its reason. Scouter shows the alt text as a link.
+- An image that is a paragraph of its own draws as a box in the rendered Markdown view: its name, its path, its size and format, and a hint. `Enter` or a click opens the picture in the image view, and `Ctrl+o` goes back. A remote image, an SVG, or an image outside the browsed folder shows the box with its reason. Scouter shows the alt text as a link.
 
 ## [0.7.0] - 2026-11-28
 

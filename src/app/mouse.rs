@@ -93,6 +93,11 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event| {
             if event.kind == MouseEventKind::Up(MouseButton::Left) {
+                // A box under the pointer picks its header on the release; the box opens as `Enter` on it would.
+                let picked = ui.borrow().markdown.take_pick();
+                if let Some(header) = picked {
+                    picture::clicked(&mut model.borrow_mut(), &ui.borrow(), header);
+                }
                 repaint_after_layout(cx.app(), &model, &ui);
             }
         }

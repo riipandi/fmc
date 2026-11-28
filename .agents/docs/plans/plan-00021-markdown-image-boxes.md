@@ -10,10 +10,10 @@ phases:
     - id: 2
       title: The image box in the rendered view
       status: done
-      note: —
+      note: 1cc7a58
     - id: 3
       title: Opening a box's image, and back
-      status: pending
+      status: done
       note: —
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover

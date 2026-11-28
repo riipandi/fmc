@@ -44,6 +44,8 @@ pub struct MarkdownView {
     headers: Rc<RefCell<HashMap<String, Header>>>,
     /// The boxes of the shown source: each one's block index and image.
     boxes: RefCell<Vec<(usize, Image)>>,
+    /// The header a box picked on the last release (`ui/image_box.rs`), until the app takes it.
+    pick: Rc<RefCell<Option<Header>>>,
 }
 
 impl MarkdownView {
@@ -61,6 +63,7 @@ impl MarkdownView {
             lines: RefCell::new(None),
             headers: Rc::new(RefCell::new(HashMap::new())),
             boxes: RefCell::new(Vec::new()),
+            pick: Rc::new(RefCell::new(None)),
         };
         view.restyle(p);
         view
@@ -109,11 +112,13 @@ impl MarkdownView {
         // A lone image's box (`reader/images.rs`): built from its fence and the header the worker read, with no I/O here.
         // It counts its fence like the search index does, so the slots of the marks hold (`markdown_search.rs`).
         let (paint, headers, boxed) = (Rc::clone(&self.paint), Rc::clone(&self.headers), image_box::Colors::new(p));
+        let pick = Rc::clone(&self.pick);
         self.doc.code_block_renderer(images::FENCE, move |block| {
             count_code(&paint);
             let image = images::from_info(block.info)?;
             let header = headers.borrow().get(&image.target).cloned();
-            Some(Custom::measured(block.app, ImageBox::new(&image, header.as_ref(), boxed)).as_any())
+            let widget = ImageBox::new(&image, header.as_ref(), boxed, Rc::clone(&pick));
+            Some(Custom::measured(block.app, widget).as_any())
         });
         self.apply();
     }
@@ -140,6 +145,25 @@ impl MarkdownView {
         if marked {
             self.apply();
         }
+    }
+
+    /// Each box's top row in the document and its header, in document order. Empty until a frame lays the document out.
+    pub fn boxes(&self) -> Vec<(u32, Option<Header>)> {
+        let tops = self.block_tops();
+        let headers = self.headers.borrow();
+        self.boxes
+            .borrow()
+            .iter()
+            .filter_map(|(block, image)| {
+                let (top, _) = tops.get(*block)?;
+                Some((*top, headers.get(&image.target).cloned()))
+            })
+            .collect()
+    }
+
+    /// The header the last release over a box picked, if any; taking it clears it.
+    pub fn take_pick(&self) -> Option<Header> {
+        self.pick.borrow_mut().take()
     }
 
     /// The headers the boxes draw, and draws them again: a box's rows follow its header.

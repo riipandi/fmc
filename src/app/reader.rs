@@ -182,13 +182,16 @@ pub fn reread(m: &mut Model, ui: &Ui, path: &Path, result: Reread) {
     }
 }
 
-/// A shown file starts at its top, as Scouter's `revealViewer` does; a jump opens at the row it was left at.
+/// A shown file starts at its top, as Scouter's `revealViewer` does; a jump opens at the row it was left at. The row is
+/// set from the paint too: a view that is still laid out for the last document takes no scroll, so a scroll set now
+/// would clamp to the rows drawn before.
 fn reset_scroll(m: &mut Model, ui: &Ui, path: &Path) {
     let top = match m.restore.take() {
         Some((restored, top)) if restored == path => top,
         _ => 0,
     };
     ui.viewer.scroll_to(0.0, top as f64);
+    m.pending_top = (top > 0).then_some((top, super::find::OPEN_SCROLL_TRIES));
 }
 
 /// Shows an image: the picture is decoded by the view, and the header facts go to the footer.
@@ -196,6 +199,11 @@ pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes:
     if !reveal(m, path, true) {
         return;
     }
+    show_picture(m, ui, path, info, bytes);
+}
+
+/// Shows a picture a box opened. Unlike `show_image`, the tree keeps its selection, and the picture need not be in the tree.
+pub fn show_picture(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes: &[u8]) {
     ui.picture.show(bytes);
     m.shown = Shown::Image { path: path.to_path_buf(), info };
     m.search = None;

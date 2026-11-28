@@ -46,7 +46,7 @@ Markdown files open rendered: headings, emphasis, links, lists, task boxes, quot
 
 Front matter at the top of a file, between `---` lines (YAML) or `+++` lines (TOML), is a highlighted code block in the rendered view, and `m` shows the file as it is.
 
-An image that is a paragraph of its own draws as a box in the rendered view: its name, its path as written, its size and format, and `Enter opens it`. A remote image, an SVG, or a file outside the folder you browse draws the box with the reason instead. An image inside a sentence, a list, or a quote shows its alt text. `m` shows the file as it is.
+An image that is a paragraph of its own draws as a box in the rendered view: its name, its path as written, its size and format, and `Enter opens it`. `Enter` opens the first box whose top is on screen, and a click on a box opens that one. The picture shows in the image view, and `Ctrl+o` goes back to the Markdown at the same scroll. The tree's selection does not move. A remote image, an SVG, or a file outside the folder you browse draws the box with the reason instead, and `Enter` or a click says why in the footer. An image inside a sentence, a list, or a quote shows its alt text. `m` shows the file as it is.
 
 A `mermaid` code fence is drawn as a box diagram at the reader's width. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason.
 

@@ -103,6 +103,8 @@ pub enum Event {
     Listed { path: PathBuf, result: Result<Vec<Entry>, String> },
     /// A user's open of an entry: a folder to expand, or a file.
     Opened { path: PathBuf, result: Result<fs::Opened, String> },
+    /// The picture a box opened (`app/picture.rs`), read as the tree reads a file.
+    Picture { path: PathBuf, result: Result<fs::Opened, String> },
     /// The image headers of a shown Markdown text's boxes (`app/picture.rs`), kept for the showing they were asked for.
     Headers { path: PathBuf, serial: u64, headers: Vec<(String, fmc::reader::images::Header)> },
     /// A file the list selected, read for auto-preview (`app/preview.rs`): it never moves the focus or the history.

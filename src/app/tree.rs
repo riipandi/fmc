@@ -238,6 +238,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         },
         Event::Selected { path, result } => preview::read(m, ui, path, result),
         Event::Headers { path, serial, headers } => super::picture::apply(m, ui, path, *serial, headers),
+        Event::Picture { path, result } => super::picture::opened(m, ui, path, result),
         Event::Opened { path, result } => {
             m.loading = false;
             match result {
