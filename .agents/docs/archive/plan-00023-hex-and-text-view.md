@@ -1,36 +1,36 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T18:50:00+07:00
-updated: 2026-11-28T18:55:32+07:00
+updated: 2026-11-28T19:20:00+07:00
 phases:
     - id: 1
       title: The hex layout, the string match, and the lossy text in the core
-      status: pending
-      note: —
+      status: committed
+      note: 36fad22
     - id: 2
       title: Block reads and the string search on workers
-      status: pending
-      note: —
+      status: committed
+      note: cf1cb26; landed with phase 3, since the binary crate rejects an unused worker under -D warnings; the search half landed in phase 4
     - id: 3
       title: The hex view, its keys, the jump, and the notice's choices
-      status: pending
-      note: —
+      status: committed
+      note: cf1cb26; live run at 80x24 and 160x48 on 2 GiB files, G and :50% at once
     - id: 4
       title: String search in the hex view
-      status: pending
-      note: —
+      status: committed
+      note: e17f9f6; live, a 2 GiB file with no hit answered in about 1.5 s while the view scrolled
     - id: 5
       title: Text mode from the notice and the refusals
-      status: pending
-      note: —
+      status: committed
+      note: b3d2caf; control pictures measured one cell wide, so no fallback
     - id: 6
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: committed
+      note: the docs commit after b3d2caf; handover-00018
     - id: 7
       title: Final validation, live run, PR
-      status: pending
-      note: —
+      status: done
+      note: just verify green (979 tests); PR to main, not merged
 ---
 
 ## Open a file fmc refuses as text or in a hex view — fast at any size, read-only
