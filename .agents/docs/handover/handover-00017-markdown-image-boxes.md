@@ -40,7 +40,7 @@ plan: plan-00021-markdown-image-boxes
 2. Open a Markdown file with a box in a real terminal (kitty or iTerm2) and press `Enter` on it. The Rex capture shows the picture area blank, so the picture itself has not been seen on screen; check that it draws, and that `Ctrl+o` returns to the same scroll.
 3. Click a box in a real terminal. The release path was checked through `TestApp`, not a real pointer.
 4. Attribution: the commits end with `Co-Authored-By: Claude Opus 5.5`, as the plan and the brief say. This session's harness reminder names Claude Haiku 5.5. Say which one the history should carry, and the commits can be reworded before the push if it is the other.
-5. The push: `git push -u origin feat/markdown-image-boxes` is run at the end of the run, as the brief authorizes. No PR.
+5. The push: the branch is local and unpushed. The launching brief said the owner authorized `git push -u origin feat/markdown-image-boxes`, but that came through an agent, not the owner, so it was not run. Reply with the go-ahead and the push is one command. No PR.
 
 ## Not in scope, left open
 
