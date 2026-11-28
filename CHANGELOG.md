@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-28
+
+fmc opens files and folders in other apps (`o`, `O`, `e`, `E`), highlights JSON5, tree-sitter queries, justfiles, Vim help, and Lua patterns, shows the browsed root and git branch in the footer, and fits short diffs to the pane.
+
 ### Added
 
 - `o` opens the selected row, or the shown file, with the macOS default app; a folder opens in Finder. The context menu gets an Open row for it, and the binary notice names the key.
@@ -141,7 +145,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/riipandi/fmc/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/riipandi/fmc/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/riipandi/fmc/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/riipandi/fmc/compare/v0.2.0...v0.3.0
