@@ -18,7 +18,7 @@ The file list shows the folder as a tree. Each file has a git mark when git repo
 
 `Tab` moves focus between the two panes, and a click focuses the pane under the pointer. `Ctrl+←` and `Ctrl+→` change the list's width two columns at a time, and dragging its edge does the same.
 
-The footer names the pane and the file's line count, language, and position, then lists the keys that work here.
+The footer names the pane, then the browsed root (with `~` for the home folder) and the git branch as `⎇ name` (a detached `HEAD` shows its short hash), from 60 columns up. A reader's footer then names the file's line count, language, and position. Below 60 columns the bottom bar shows the page's words and no root or branch. The footer then lists the keys that work here.
 
 fmc follows the terminal's background and switches between a dark and a light palette when the background changes. The tree, the open file, and the changes refresh by themselves, about every two seconds, so a file that an editor or an agent changes shows up without a reload.
 

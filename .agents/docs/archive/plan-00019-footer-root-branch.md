@@ -1,7 +1,7 @@
 ---
-status: in-progress
+status: done
 created: 2026-11-28T15:21:18+07:00
-updated: 2026-11-28T15:21:18+07:00
+updated: 2026-11-28T16:05:30+07:00
 phases:
     - id: 1
       title: The branch, read with the browse poll
@@ -10,15 +10,15 @@ phases:
     - id: 2
       title: The footer shows the root and the branch on every screen
       status: done
-      note: —
+      note: "the screens at 60 columns and up; compact unchanged (owner, 2026-11-28)"
     - id: 3
       title: Docs sync, agent docs sync, ledger close, handover
-      status: pending
-      note: —
+      status: done
+      note: "the docs commit and the handover (handover-00015-footer-root-branch.md)"
     - id: 4
       title: Final validation and live run
-      status: pending
-      note: —
+      status: done
+      note: "no commit; the live run is in handover-00015-footer-root-branch.md
 ---
 
 ## The footer shows the browsed root and the git branch — not the open file's path
@@ -37,7 +37,7 @@ The owner found the footer's location redundant on 2026-11-28: it repeats the op
 ### Decisions
 
 - **D1 (owner, 2026-11-28): the footer's location is the browsed root.** The root fmc browses (the startup folder, or the root after a move to a parent), tildified, never the selected file or folder. The reader header names the file. Rejected: the selection's folder, and the root with the relative folder (the owner's pick).
-- **D2 (owner, 2026-11-28): every screen.** Files, reader, Settings, and the changes screen show the root and the branch. The changes screen's selected path leaves the footer; its diff header names the file. Rejected: browse only.
+- **D2 (owner, 2026-11-28): every screen, at 60 columns and up.** Files, reader, Settings, and the changes screen show the root and the branch. The changes screen's selected path leaves the footer; its diff header names the file. Rejected: browse only. Amended by the owner on 2026-11-28: below 60 columns the compact bottom bar keeps its words and shows neither the root nor the branch (the second row and the compact top bar were the other options, not taken).
 - **D3 (owner, 2026-11-28): the branch is `⎇ <name>`.** A detached `HEAD` shows `⎇ <short hash>`; outside a repository, or in a repository with no commit and no branch name, nothing is shown. Rejected: plain text with no glyph; a Nerd Font icon.
 - **D4 (2026-11-28): the branch is read with the browse poll.** `git::branch(dir)` runs `git symbolic-ref --short -q HEAD`, and on no name, `git rev-parse --short HEAD`, through `capture`, and `Event::BrowsePolled` carries it; the first poll runs at start, so the branch shows within the first tick. A checkout in another terminal shows within 3 s. Rejected: a separate timer — the poll already runs git on the same folder.
 - **D5 (2026-11-28): fitting.** The left side is `<root>  ⎇ <branch>`, the branch in the location's colour. When it does not fit, the root is cut from the left first (`fit_end`, as now), down to `…` plus its last segment; then the branch is cut from the right. A message replaces both, as now.
@@ -73,3 +73,15 @@ The owner found the footer's location redundant on 2026-11-28: it repeats the op
 
 - The header's content (it already names the file).
 - Other git facts in the footer (ahead/behind, dirty count).
+
+## Owner decisions and deviations taken during the run (2026-11-28)
+
+- **Compact (below 60 columns):** option 1 of the owner's question: the one-row bottom bar stays as `architecture.md` record 7 has it. D2 is amended above and recorded in `architecture.md` (D2 and "Decided").
+- **Root change (D7 in `architecture.md`):** going up a folder clears the branch until the next poll names the new root's branch. Commit `02ff5b7`, `fix(footer): clear the branch when the root changes`.
+- **Accepted deviations** (owner, 2026-11-28; each is recorded in `architecture.md` D3 to D6 or in the commit):
+  - the branch is read with `git symbolic-ref -q HEAD` (name, with `refs/heads/` removed), without `--short`, which prints `heads/main` when a tag has the same name;
+  - an unborn repository shows its branch name (D3's wording; the test matrix's "no commit: nothing" was not met);
+  - the first browse poll is the first timer tick, about two seconds after start, not at start;
+  - `OpenAt.shown` is removed as well as D6's list, because its only reader was the footer's path;
+  - the branch takes the name's colour (`p.text`), which is how this plan read "the location's colour".
+- **Commits:** `55b31f8` (phase 1), `4383d53` (phase 2), `02ff5b7` (the root-change fix), and the phase 3 docs commit (`docs: the footer shows the root and the branch`).

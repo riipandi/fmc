@@ -125,7 +125,7 @@ A column: a row of two panels that fills the screen, then the footer.
 - **Reader** (right): the file, the rendered Markdown, the image, or the stacked diff.
 - **Panels**: rounded borders in every tier; the focused panel border is accent, the other is `border`.
 - **Header**: two rows at the top of each panel, with a hairline under it, in every tier.
-- **Footer**: two rows from 60 columns up. Row one: a pill, the browsed root and its git branch (`⎇ name`) or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last. Below 60 columns it is one row of words (see Tiers).
+- **Footer**: two rows from 60 columns up. Row one: a pill, the browsed root and its git branch (`⎇ name`) or a message, and facts on the right separated by ` · `. Row two: key hints, dropped from the end to fit, with `^q quit` kept last. Below 60 columns it is one row of words, with no root or branch (see Tiers).
 
 ### Tiers
 

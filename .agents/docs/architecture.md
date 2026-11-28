@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T15:32:12+07:00
+updated: 2026-11-28T16:05:30+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1595,12 +1595,13 @@ Context: Scouter's footer shows the selected file's or folder's path after the p
 Decision (owner, 2026-11-28; `plan-00019-footer-root-branch.md`):
 
 - D1. The footer's location is the browsed root, tildified, never the selected entry. Rejected: the selection's folder, and the root with the relative folder.
-- D2. Every screen shows it: the files, the reader, Settings, and the changes screen. The changes screen's selected path leaves the footer, and its diff header names the file.
+- D2. From 60 columns up, every screen shows it: the files, the reader, Settings, and the changes screen. The changes screen's selected path leaves the footer, and its diff header names the file. The owner narrowed this on 2026-11-28: below 60 columns the bottom bar keeps record 7's words and shows neither the root nor the branch.
 - D3. The branch follows the root after a gap, as `⎇ <name>`, in the name's colour. A detached `HEAD` shows `⎇ <short hash>`. Outside a repository nothing shows. A repository with no commit shows its branch name, which git has before the first commit.
 - D4. The branch is read with the browse poll, one git call per poll: `git symbolic-ref -q HEAD` (the name, with `refs/heads/` removed), and on a detached `HEAD` `git rev-parse --short HEAD`. `--short` is not used, because it prints `heads/main` when a tag has the same name. A checkout in another terminal shows within one poll, two seconds at the default interval. The first poll is the first timer tick, so the branch shows about two seconds after start.
 - D5. Fitting: the root is cut from the left first, down to `…/<last name>`; then the branch is cut from the right. A message replaces both, as it replaced the path.
 - D6. The selection's path leaves the model: `Model.location`, `location_of`, `DiffInfo.location`, and the `OpenAt.shown` field that only named the footer's path are removed.
-- Open, not decided: below 60 columns the bottom bar keeps record 7's words, so the root and the branch are not shown there. The owner decides whether the compact footer shows them (a second row or a place in the top bar), and the record changes with that decision.
+- D7. The branch clears when the browsed root changes (going up a folder), so a branch read for another root never shows. The next browse poll names the new root's branch (owner, 2026-11-28; `fix(footer): clear the branch when the root changes`).
+- Decided (owner, 2026-11-28): the compact bottom bar stays as record 7 has it. A second footer row, and a branch in the compact top bar, were the other options and are not taken.
 
 Consequences:
 
