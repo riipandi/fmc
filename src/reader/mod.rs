@@ -4,6 +4,7 @@
 pub mod associations;
 pub mod binary;
 pub mod document;
+pub mod frontmatter;
 pub mod glob;
 pub mod headings;
 pub mod image;

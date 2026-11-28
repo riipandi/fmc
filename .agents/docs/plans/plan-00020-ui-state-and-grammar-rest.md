@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-28T16:31:56+07:00
-updated: 2026-11-28T17:30:00+07:00
+updated: 2026-11-28T18:10:00+07:00
 phases:
     - id: 1
       title: The state file, read at start and written after a change
@@ -17,8 +17,8 @@ phases:
       note: the sub-span is not possible (probed; D8 fallback: the whole line takes comment.documentation, same colour as a comment in both palettes); .eex and .leex read as heex, live run checked the tags
     - id: 4
       title: Markdown front matter as a code block in the rendered view
-      status: pending
-      note: —
+      status: done
+      note: live run in a new Rex tab: YAML and TOML drawn as yaml and toml blocks at 120 and 50 columns, colours checked, m shows the markers; Scouter 0.3.1 run for the baseline
     - id: 5
       title: Docs sync, agent docs sync, ledger close, handover
       status: pending

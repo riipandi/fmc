@@ -7,6 +7,7 @@ use std::cell::{Cell, RefCell};
 use std::ops::Range;
 use std::sync::Arc;
 
+use fmc::reader::frontmatter;
 use fmc::reader::headings;
 use fmc::reader::rendered_search::{Piece, Rendered, Slot};
 use fmc::reader::search::match_ranges;
@@ -187,8 +188,11 @@ pub fn capture_code(block: &CodeBlock<'_>, captured: &RefCell<Vec<Captured>>) ->
 /// with the link definitions above each, so a reference resolves as it does in the whole document. A block with no
 /// captured text that is a code or HTML block is counted as plain text, and it is not marked.
 pub fn index(offscreen: &Markdown, captured: &RefCell<Vec<Captured>>, source: &str) -> Rendered {
-    let split = markdown_blocks::split(source);
-    let shown = headings::with_markers(source);
+    // The view draws the source with its front matter as a fence (`reader/frontmatter.rs`), so the blocks and the lines
+    // are read from the same text.
+    let source = frontmatter::as_fence(source);
+    let split = markdown_blocks::split(&source);
+    let shown = headings::with_markers(&source);
     let lines: Vec<&str> = shown.split('\n').collect();
     let definitions: String =
         split.definitions.iter().flat_map(|range| lines_of(&lines, range)).collect::<Vec<_>>().join("\n");

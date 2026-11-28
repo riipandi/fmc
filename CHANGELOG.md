@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A Markdown file's front matter, YAML between `---` lines or TOML between `+++` lines at the very start of the file, is a highlighted code block in the rendered view. The source view shows the file as it is.
 - `.eex` and `.leex` templates are highlighted as HEEx: their tags and HTML are coloured, and the text around them stays plain.
 - fmc keeps the sidebar's width, the reader's wrap, the changes screen's side by side, wide context, and all-files choices, the dotfiles, and the finder's fuzzy or substring matching across runs, in `meta/state.json` in its config folder. A change is written about a second after it, and the sidebar's visibility is not kept. See [Configuration](docs/configuration.md#remembered-state).
 

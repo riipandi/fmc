@@ -7,6 +7,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Instant;
 
+use fmc::reader::frontmatter::as_fence;
 use fmc::theme::DARK;
 use opentui::style::{Color, Span};
 use opentui::testing::TestApp;
@@ -14,8 +15,9 @@ use opentui::widget::{Code, Container, InlineSpan, View, Widget, WrapMode};
 
 use super::{Block, split};
 
-fn top_level(source: &str) -> Vec<Block> {
-    split(source).blocks
+/// The blocks of the source as the view draws it: its front matter is a fence (`reader/frontmatter.rs`).
+fn rendered(source: &str) -> Vec<Block> {
+    split(&as_fence(source)).blocks
 }
 use crate::ui::markdown::MarkdownView;
 use crate::ui::styled::color;
@@ -198,7 +200,7 @@ fn drawn(source: &str, width: u16) -> Vec<(Range<u32>, String)> {
 fn the_blocks_match_opentui_at_each_width() {
     for width in [40u16, 60, 80, 120] {
         for (name, source) in samples() {
-            let blocks = top_level(&source);
+            let blocks = rendered(&source);
             let drawn = drawn(&source, width);
             assert_eq!(blocks.len(), drawn.len(), "{name} at {width} columns: the block count");
             for (index, (block, (_, screen))) in blocks.iter().zip(&drawn).enumerate() {
@@ -221,12 +223,13 @@ fn the_blocks_match_opentui_at_each_width() {
     }
 }
 
+/// The front matter is a fence in the view (`reader/frontmatter.rs`), so OpenTUI does not read it as a rule and a heading;
+/// the blocks after it follow OpenTUI.
 #[test]
-fn front_matter_and_link_definitions_follow_opentui() {
-    let kinds: Vec<(String, Range<usize>)> = top_level(EDGES).into_iter().map(|b| (b.kind, b.lines)).collect();
+fn front_matter_is_a_fence_and_link_definitions_follow_opentui() {
+    let kinds: Vec<(String, Range<usize>)> = rendered(EDGES).into_iter().map(|b| (b.kind, b.lines)).collect();
     let expected = [
-        ("thematic_break", 0..1),
-        ("setext_heading", 1..3),
+        ("fenced_code_block", 0..3),
         ("atx_heading", 4..5),
         ("paragraph", 6..7),
         ("html_block", 10..13),

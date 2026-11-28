@@ -44,6 +44,8 @@ PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and
 
 Markdown files open rendered: headings, emphasis, links, lists, task boxes, quotes, tables, and highlighted code blocks. Headings keep their `#` markers in the heading's colour, so the level shows without a bigger font. `m` switches to the source, with line numbers, and back.
 
+Front matter at the top of a file, between `---` lines (YAML) or `+++` lines (TOML), is a highlighted code block in the rendered view, and `m` shows the file as it is.
+
 A `mermaid` code fence is drawn as a box diagram at the reader's width. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason.
 
 `/` searches the rendered text as you read it, so `**Harry** Potter` matches `Harry Potter`. Every match is marked and the current one has its own colour. `n` and `N` step through them.

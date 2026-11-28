@@ -8,6 +8,7 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use fmc::reader::frontmatter;
 use fmc::reader::headings;
 use fmc::reader::language::HIGHLIGHTED;
 use fmc::reader::rendered_search::Rendered;
@@ -112,7 +113,7 @@ impl MarkdownView {
     pub fn show(&self, markdown: &str) {
         let marked = self.paint.mark.borrow_mut().take().is_some();
         self.paint.restart();
-        self.doc.set_markdown(headings::with_markers(markdown));
+        self.doc.set_markdown(headings::with_markers(&frontmatter::as_fence(markdown)));
         // A block the document keeps from the one shown keeps its marks, so the marked document is built again.
         if marked {
             self.apply();
@@ -146,8 +147,13 @@ impl MarkdownView {
         if let Some(lines) = cached {
             return lines;
         }
-        let lines =
-            Rc::new(markdown_blocks::split(source).blocks.into_iter().map(|block| block.lines).collect::<Vec<_>>());
+        let lines = Rc::new(
+            markdown_blocks::split(&frontmatter::as_fence(source))
+                .blocks
+                .into_iter()
+                .map(|block| block.lines)
+                .collect::<Vec<_>>(),
+        );
         *self.lines.borrow_mut() = Some((source.to_owned(), Rc::clone(&lines)));
         lines
     }

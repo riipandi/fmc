@@ -1432,6 +1432,20 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: front matter is a code block in the rendered view
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: OpenTUI's Markdown has no front matter. An opening `---` is a thematic break, the YAML or TOML lines after it are a paragraph, and the closing `---` turns the line before it into a heading. Scouter draws through the same OpenTUI and has no front matter handling. A live run of Scouter through Rex on 2026-11-28 (the installed binary is 0.3.1, not the v0.3.4 baseline) showed a `vault.md` with YAML front matter as a rule, the fields as a paragraph, and a `---` heading line, and an `owls.md` with TOML front matter as its `+++` lines and fields in plain text.
+
+Decision (owner, 2026-11-28, plan-00020 D11 and D12): in the rendered view only, a front matter block at the very start of the file is written as a code fence before the view reads it. An opening `---` line becomes a `yaml` fence and its closing `---` becomes a fence closing; `+++` lines become a `toml` fence (`reader/frontmatter.rs` `as_fence`). The rewrite runs in `ui/markdown.rs` (`show`, and `block_lines` for the git signs), and in `ui/markdown_search.rs` (`index`), before the block split and the heading markers, so the grammar and OpenTUI read the same fence. Each line stays a line, so the search, the git signs, and the block mapping keep their rows. The source view (`m`) shows the file as it is. A file whose first line is not a marker, with no closing marker, with an empty block, or with a fence inside the block is left alone, and a `---` rule later in the file is untouched. Rejected: a property table (nested values read poorly, and its rows no longer match the source), and hiding the block.
+
+Consequences:
+
+- (positive) The fields are highlighted as YAML or TOML, and the block is set apart from the text below.
+- (negative) Front matter is drawn as code, not as text, which Scouter does not do.
+- (negative) JSON front matter, and front matter below the first line, are drawn as OpenTUI draws them.
+
 ### Approved deviation: `.eex` and `.leex` are read as HEEx
 
 Context: Elixir's EEx templates (`.eex`, and `.leex` for LiveView) have a grammar, connorlay/tree-sitter-eex, that has no licence, so fmc cannot vendor it (plan-00018, O4). Scouter shows these files plain (`docs/parity.md`, "Languages beyond Scouter's"). The HEEx grammar (`tree-sitter-heex`, MIT, registered in `src/reader/language.rs`) covers the tags and HTML of a template, which is most of what an `.eex` file holds.

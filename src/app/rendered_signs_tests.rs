@@ -165,3 +165,22 @@ fn a_bar_moves_with_its_block_when_the_view_scrolls() {
     let row = rows_of(&capture, "Minerva McGonagall");
     assert!(!row.is_empty() && bars == row, "{bars:?} {row:?}\n{}", app.text());
 }
+
+#[test]
+fn front_matter_and_an_edit_below_it_keep_their_rows_and_signs() {
+    let edit = format!("---\ntitle: Hermione Granger\n---\n\n{}", NOTES.replace("Sophie Neveu", "Robert Langdon"));
+    let dir = repository(Some(&edit));
+    let (app, model, _) = reading(dir.path(), true, 24);
+    let palette = model.borrow().palette().clone();
+    let p = &palette;
+    let capture = app.render();
+    let drawn = signs_drawn(&capture, p);
+    // The front matter is added lines drawn as a fence, and the edited paragraph below it is modified; each keeps its row.
+    let title = rows_of(&capture, "title: Hermione Granger");
+    let robert = rows_of(&capture, "Robert Langdon");
+    let rows: Vec<u32> = drawn.iter().map(|(y, _, _)| *y).collect();
+    assert_eq!(rows, [title[0], robert[0]].to_vec(), "{drawn:?}\n{}", app.text());
+    let colour_at = |row: u32| drawn.iter().find(|(y, _, _)| *y == row).map(|(_, _, c)| *c);
+    assert_eq!(colour_at(title[0]), Some(color(p.added)), "{}", app.text());
+    assert_eq!(colour_at(robert[0]), Some(color(p.modified)), "{}", app.text());
+}
