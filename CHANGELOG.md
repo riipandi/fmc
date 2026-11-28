@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Building fmc needs Rust 1.100 or newer (`rust-version` in `Cargo.toml`), the toolchain `rust-toolchain.toml` pins.
+
 ## [0.10.0] - 2026-11-28
 
 A file fmc cannot show, a binary or text that is not UTF-8, opens as text or in a hex view that reads only what is on screen, jumps to an offset, and searches the whole file for a string.

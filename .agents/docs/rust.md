@@ -11,7 +11,7 @@ Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cr
   - `gen` is a reserved keyword.
   - Tail-expression temporaries and `if let` scrutinee drop order changed in 2024: check them when a lock guard or a borrow is involved.
 - The engine is `opentui` and `opentui-sys` =0.9.9 with the `tree-sitter` feature (`Cargo.toml`). Read the API from the locked source; docs.rs for the locked version is the second source.
-- `rust-version = "1.92"`: the floor set by `mermaid-text` 0.58.0 (owner decision O4, plan-00006; it was 1.90 for `tree-sitter` 0.27.2). The pinned toolchain (`rust-toolchain.toml`, 1.100.0) builds it. No 1.92 toolchain is installed here, so `cargo +1.92 check` has not run.
+- `rust-version = "1.100"`: the toolchain the owner builds with and pins in `rust-toolchain.toml` (owner, 2026-11-28). The crates alone need 1.92 (`mermaid-text` 0.58.0); the floor is the owner's toolchain, not theirs. The pinned toolchain (`rust-toolchain.toml`, 1.100.0) builds it. No 1.92 toolchain is installed here, so `cargo +1.92 check` has not run.
 
 ## Layout rules
 
