@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use opentui::testing::TestApp;
 
 use super::*;
@@ -8,7 +6,7 @@ use super::*;
 fn panes(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root, None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
     wire_mouse(&model, &ui);

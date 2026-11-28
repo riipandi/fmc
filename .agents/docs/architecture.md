@@ -1585,3 +1585,33 @@ Alternatives considered:
 - A second matcher for `open_with`: rejected; two precedence rules would drift apart.
 - Checking the configured apps before the picker opens: rejected; it needs a lookup per name, and `open` reports the same error.
 - The macOS list alone, without the setting: rejected by the owner's D8.
+
+### Approved deviation: the footer shows the browsed root and the git branch
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's footer shows the selected file's or folder's path after the pill, cut from the left (`research/scouter-inventory.md:106-113`, Scouter `src/ui/footer.ts:198-228`). The reader's header already names the open file, so the owner found the path redundant (2026-11-28). The footer had also changed with the selection on the changes screen, so the same place named different things on different screens.
+
+Decision (owner, 2026-11-28; `plan-00019-footer-root-branch.md`):
+
+- D1. The footer's location is the browsed root, tildified, never the selected entry. Rejected: the selection's folder, and the root with the relative folder.
+- D2. Every screen shows it: the files, the reader, Settings, and the changes screen. The changes screen's selected path leaves the footer, and its diff header names the file.
+- D3. The branch follows the root after a gap, as `⎇ <name>`, in the name's colour. A detached `HEAD` shows `⎇ <short hash>`. Outside a repository nothing shows. A repository with no commit shows its branch name, which git has before the first commit.
+- D4. The branch is read with the browse poll, one git call per poll: `git symbolic-ref -q HEAD` (the name, with `refs/heads/` removed), and on a detached `HEAD` `git rev-parse --short HEAD`. `--short` is not used, because it prints `heads/main` when a tag has the same name. A checkout in another terminal shows within one poll, two seconds at the default interval. The first poll is the first timer tick, so the branch shows about two seconds after start.
+- D5. Fitting: the root is cut from the left first, down to `…/<last name>`; then the branch is cut from the right. A message replaces both, as it replaced the path.
+- D6. The selection's path leaves the model: `Model.location`, `location_of`, `DiffInfo.location`, and the `OpenAt.shown` field that only named the footer's path are removed.
+- Open, not decided: below 60 columns the bottom bar keeps record 7's words, so the root and the branch are not shown there. The owner decides whether the compact footer shows them (a second row or a place in the top bar), and the record changes with that decision.
+
+Consequences:
+
+- (positive) The footer answers where the user is and on which branch, on every screen at 60 columns and wider, and the reader's header keeps naming the file.
+- (positive) Opening a file or a folder no longer changes the footer's location, so there is one place to track.
+- (negative) At 60 to 79 columns a long root is cut from the left, and the branch is cut only once the root is down to its last name.
+- (negative) A branch change shows up to one poll late, and the first branch appears about two seconds after start.
+
+Alternatives considered:
+
+- The selection's folder, or the root with the relative folder: rejected by the owner's D1.
+- Browse screens only: rejected by the owner's D2.
+- A separate timer for the branch: rejected; the poll already runs git on the same folder.
+- A Nerd Font icon for the branch: rejected by the owner's D3.

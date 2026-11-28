@@ -13,7 +13,7 @@ use super::*;
 
 fn finding(dir: &Path, matching: Matching) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(80, 24);
-    let model = Rc::new(RefCell::new(new_model(app.app(), dir, dir.to_path_buf(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), dir.to_path_buf(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     capture::wire(app.app(), &model, &ui);
     model.borrow_mut().matching = matching;
@@ -71,7 +71,7 @@ fn a_fuzzy_start_mode_matches_from_the_first_letter_and_the_flip_keeps_the_query
 fn ctrl_f_outside_the_finder_changes_nothing() {
     let dir = folder();
     let app = TestApp::new(80, 24);
-    let model = Rc::new(RefCell::new(new_model(app.app(), dir.path(), dir.path().to_path_buf(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), dir.path().to_path_buf(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     capture::wire(app.app(), &model, &ui);
     app.press("ctrl+f");

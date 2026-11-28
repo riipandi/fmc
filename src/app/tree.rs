@@ -138,7 +138,7 @@ pub fn open_entry(m: &mut Model, path: PathBuf) {
     match m.browser.tree.expand(&path) {
         Expand::Ready => {
             m.browser.select(&path);
-            folder_opened(m, &path);
+            folder_opened(m);
         }
         Expand::NeedsListing if m.loading => {
             m.message = Some(Message { text: "Still loading. Try again when it finishes.".into(), error: false });
@@ -154,10 +154,9 @@ pub fn open_entry(m: &mut Model, path: PathBuf) {
     }
 }
 
-/// The footer shows the folder just opened (Scouter `openDirectory`, with no document open).
-fn folder_opened(m: &mut Model, path: &Path) {
+/// The list takes the focus for a folder just opened, as Scouter `openDirectory` does with no document open.
+fn folder_opened(m: &mut Model) {
     m.focus = Focus::List;
-    m.location = path.to_string_lossy().into_owned();
     m.message = None;
 }
 
@@ -240,7 +239,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                 Ok(fs::Opened::Folder(entries)) => {
                     m.browser.listed(path, entries.clone());
                     m.browser.select(path);
-                    folder_opened(m, path);
+                    folder_opened(m);
                 }
                 Ok(fs::Opened::Text { document, stamp }) => {
                     reader::show_text(m, ui, path, document.clone(), stamp.clone())

@@ -46,7 +46,7 @@ fn repository(edit: Option<&str>) -> TempDir {
 fn reading(dir: &Path, git_gutter: bool, rows: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(80, rows);
     let root = dir.to_path_buf();
-    let model = Rc::new(RefCell::new(new_model(app.app(), dir, root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     let path = dir.join("notes.md");
     let text = fs::read_to_string(&path).unwrap();

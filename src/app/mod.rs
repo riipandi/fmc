@@ -111,8 +111,6 @@ struct Pending {
 }
 
 struct Model {
-    /// The location the footer shows: the startup path, then each folder opened.
-    location: String,
     focus: Focus,
     /// The terminal's mode, from its background (`app/theme.rs`).
     mode: Mode,
@@ -265,9 +263,8 @@ impl Model {
 }
 
 /// The state a fresh app starts with: the browse root, the startup `pending` reveal, and the empty reader.
-fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) -> Model {
+fn new_model(app: &App, root: PathBuf, pending: Option<Pending>) -> Model {
     Model {
-        location: target.to_string_lossy().into_owned(),
         focus: Focus::List,
         mode: Mode::Dark,
         background: None,
@@ -360,7 +357,7 @@ pub fn run(
         let parent = target.parent().unwrap_or(target).to_path_buf();
         (parent, Some(Pending { target: target.to_path_buf(), expand: false, open: true }))
     };
-    let model = Rc::new(RefCell::new(new_model(&app, target, root.clone(), pending)));
+    let model = Rc::new(RefCell::new(new_model(&app, root.clone(), pending)));
     {
         let mut m = model.borrow_mut();
         m.settings.values = settings.settings.clone();
@@ -795,7 +792,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     }
 
     let home = std::env::var_os("HOME").map(PathBuf::from);
-    let location = tildify(&fmc::text::display_label(&m.location), home.as_deref());
+    let root = tildify(&fmc::text::display_label(&m.browser.tree.root().to_string_lossy()), home.as_deref());
     let pane = if m.focus == Focus::List { Pane::Files } else { Pane::Reader };
     // The position is the one the last frame laid out; a move made since then lands in the next frame.
     m.viewport = viewport;
@@ -874,7 +871,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         _ => None,
     };
     let footer = FooterState {
-        location,
+        root,
+        branch: m.branch.clone(),
         mode: if on_settings {
             hints::Mode::Settings
         } else if body {

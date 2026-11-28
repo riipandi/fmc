@@ -35,7 +35,7 @@ fn browsing(names: &[&str]) -> Browsing {
         }
     }
     let app = TestApp::new(120, 40);
-    let model = Rc::new(RefCell::new(new_model(app.app(), &root, root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);

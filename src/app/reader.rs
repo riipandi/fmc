@@ -99,8 +99,7 @@ impl Shown {
     }
 }
 
-/// Reveals a file the worker read: it is selected, and the footer shows its path. A file that left the tree while
-/// the read ran is dropped (`rust.md`, "Workers answer through events"). The reader takes focus only for the startup
+/// Reveals a file the worker read: it is selected. A file that left the tree while the read ran is dropped (`rust.md`, "Workers answer through events"). The reader takes focus only for the startup
 /// file, which Scouter opens with the reader focused; a binary keeps the list, as Scouter's `showBinary` does.
 fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
     let startup = std::mem::take(&mut m.focus_reader_on_open);
@@ -108,22 +107,12 @@ fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
         return false;
     }
     m.browser.select(path);
-    m.location = location_of(m, path);
     m.message = None;
     m.notice = None;
     if startup && focus_reader {
         m.focus = Focus::Reader;
     }
     true
-}
-
-/// The path the footer names a shown file by: the tree's, or the one a change opened from the changes screen names
-/// (`OpenAt::shown`).
-fn location_of(m: &Model, path: &Path) -> String {
-    match &m.open_at {
-        Some(open) if open.path == path => open.shown.as_deref().unwrap_or(path).to_string_lossy().into_owned(),
-        _ => path.to_string_lossy().into_owned(),
-    }
 }
 
 /// Puts a shown text into the views that draw it: the code view, and the rendered view for Markdown.

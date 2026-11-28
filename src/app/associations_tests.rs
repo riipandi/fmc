@@ -2,7 +2,7 @@
 //! `m` renders it as Markdown, and a file with no association keeps Scouter's lookup.
 
 use std::cell::RefCell;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use fmc::explorer::{Entry, Kind};
@@ -24,7 +24,7 @@ const OWLS: &str = "# Hedwig\n\n**Harry Potter** receives a letter.\n";
 fn reading(name: &str, text: &str, associations: &[(&str, &str)]) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(100, 30);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     capture::wire(app.app(), &model, &ui);
     let file = root.join(name);

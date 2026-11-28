@@ -1,7 +1,7 @@
 //! Search in the rendered Markdown view through the key path (plan-00010 phase 2): `/` opens the prompt, the query counts
 //! the occurrences, `n` and `N` step through them, Esc clears the marks, and `m` clears the search.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use fmc::reader::document::decode;
 use fmc::theme::DARK;
@@ -22,7 +22,7 @@ fn reading(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
 fn reading_text(columns: u16, markdown: &str) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 30);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     wire_mouse(&model, &ui);
     capture::wire(app.app(), &model, &ui);

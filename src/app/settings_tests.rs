@@ -34,7 +34,7 @@ fn paged(text: Option<&str>) -> Paged {
         fs::write(&file, text).unwrap();
     }
     let app = TestApp::new(120, 40);
-    let model = Rc::new(RefCell::new(new_model(app.app(), &root, root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     model.borrow_mut().settings.path = Some(file.clone());
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     capture::wire(app.app(), &model, &ui);

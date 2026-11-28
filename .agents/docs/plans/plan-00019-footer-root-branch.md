@@ -9,7 +9,7 @@ phases:
       note: —
     - id: 2
       title: The footer shows the root and the branch on every screen
-      status: pending
+      status: done
       note: —
     - id: 3
       title: Docs sync, agent docs sync, ledger close, handover

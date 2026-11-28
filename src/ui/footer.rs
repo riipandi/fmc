@@ -1,5 +1,5 @@
-//! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the location or a message, and facts on
-//! the right; then a row of key hints that fit. In the compact tier the footer is one row, the bottom bar (`ui/bars.rs`).
+//! The two-row footer (Scouter `src/ui/footer.ts`): a band with the pill, the browsed root and its branch or a message,
+//! and facts on the right; then a row of key hints that fit. In the compact tier the footer is one row, the bottom bar (`ui/bars.rs`).
 //! `FooterState::render` is pure; `Footer` holds the widgets.
 
 use std::cell::RefCell;
@@ -30,7 +30,6 @@ pub enum DocumentInfo {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct DiffInfo {
-    pub location: String,
     pub files: usize,
     pub all_files: bool,
     pub truncated: bool,
@@ -51,8 +50,10 @@ pub struct FooterState {
     pub pane: Pane,
     pub prompt: Option<Prompt>,
     pub message: Option<Message>,
-    /// Already shortened with `~` for the home folder (`tildify`).
-    pub location: String,
+    /// The browsed root, already shortened with `~` for the home folder (`tildify`).
+    pub root: String,
+    /// The root's branch, or the short hash of a detached `HEAD`; `None` outside a repository.
+    pub branch: Option<String>,
     pub document: Option<DocumentInfo>,
     pub diff: Option<DiffInfo>,
     /// Scroll position per mode: browse, diff.
@@ -80,7 +81,8 @@ impl Default for FooterState {
             pane: Pane::Files,
             prompt: None,
             message: None,
-            location: String::new(),
+            root: String::new(),
+            branch: None,
             document: None,
             diff: None,
             positions: [None, None],
@@ -103,6 +105,34 @@ pub fn tildify(path: &str, home: Option<&Path>) -> String {
         Some(rest) if rest.is_empty() || rest.starts_with('/') => format!("~{rest}"),
         _ => path.to_string(),
     }
+}
+
+/// The gap between the root and the branch on the footer's left side.
+const BRANCH_GAP: &str = "  ";
+
+/// The root as the footer's narrowest form: its last name after `…/`. A root with no folder part, or one short enough
+/// that `/` and its name are shorter than `…/`, is its own form.
+fn last_name(root: &str) -> String {
+    let trimmed = root.trim_end_matches('/');
+    match trimmed.rfind('/') {
+        Some(i) if i > 0 => format!("…/{}", &trimmed[i + 1..]),
+        _ => root.to_string(),
+    }
+}
+
+/// The folder part dim and the last name in `text`; a trailing `/` stays with the name (JS
+/// `lastIndexOf("/", length - 2)`, which still looks at index 0 of a one-character string).
+fn root_segments(shown: &str, p: &Palette) -> Vec<Seg> {
+    let end = shown.len().saturating_sub(1).max(shown.len().min(1));
+    let cut = shown.as_bytes()[..end].iter().rposition(|&b| b == b'/').map_or(0, |i| i + 1);
+    vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.text)]
+}
+
+/// The root's segments with the branch after the gap, in the name's colour.
+fn with_branch(mut segments: Vec<Seg>, branch: &str, p: &Palette) -> Vec<Seg> {
+    segments.push(Seg::plain(BRANCH_GAP));
+    segments.push(Seg::new(branch, p.text));
+    segments
 }
 
 struct Fact {
@@ -159,16 +189,25 @@ impl FooterState {
             let fg = if message.error { p.error } else { p.accent_soft };
             return vec![Seg::new(fit_start(&message.text, columns, measure), fg)];
         }
-        let location = match self.mode {
-            Mode::Diff => self.diff.as_ref().map_or("", |d| d.location.as_str()),
-            Mode::Browse | Mode::Settings => self.location.as_str(),
-        };
-        let shown = fit_end(location, columns, measure);
-        // The folder part is dim and the last name in `text`; a trailing `/` stays with the name (JS
-        // `lastIndexOf("/", length - 2)`, which still looks at index 0 of a one-character string).
-        let end = shown.len().saturating_sub(1).max(shown.len().min(1));
-        let cut = shown.as_bytes()[..end].iter().rposition(|&b| b == b'/').map_or(0, |i| i + 1);
-        vec![Seg::new(&shown[..cut], p.dim), Seg::new(&shown[cut..], p.text)]
+        let Some(branch) = &self.branch else { return root_segments(&fit_end(&self.root, columns, measure), p) };
+        let branch = format!("⎇ {branch}");
+        let branch_width = measure(&branch);
+        let gap = BRANCH_GAP.len();
+        if measure(&self.root) + gap + branch_width <= columns {
+            return with_branch(root_segments(&self.root, p), &branch, p);
+        }
+        // The root is cut from the left until it is down to its last name, then the branch is cut from the right.
+        let last = last_name(&self.root);
+        let last_width = measure(&last);
+        if last_width + gap + branch_width <= columns {
+            let root = fit_end(&self.root, columns - gap - branch_width, measure);
+            return with_branch(root_segments(&root, p), &branch, p);
+        }
+        if last_width + gap < columns {
+            let branch = fit_start(&branch, columns - last_width - gap, measure);
+            return with_branch(root_segments(&last, p), &branch, p);
+        }
+        root_segments(&fit_end(&self.root, columns, measure), p)
     }
 
     fn candidate_facts(&self, p: &Palette) -> Vec<Fact> {

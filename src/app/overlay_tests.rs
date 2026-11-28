@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use fmc::explorer::{Entry, Kind};
 use fmc::overlay::{Dialog, FieldEdit, Stop};
@@ -10,7 +10,7 @@ use super::*;
 fn screen(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         // One file listed and selected, so the menu has a row to act on.
