@@ -325,3 +325,112 @@ fn each_page_group_is_one_run_of_rows_and_every_row_has_a_title() {
     assert_eq!(seen, ["Browsing", "Appearance"]);
     assert!(Row::ALL.iter().all(|row| !row.title().is_empty()));
 }
+
+/// The nine keys `parse` reads: the eight rows of the page and `file_associations`.
+const KEYS: [&str; 9] = [
+    "auto_preview",
+    "sidebar_jump",
+    "reader_jump",
+    "git_gutter",
+    "file_associations",
+    "find_mode",
+    "theme_mode",
+    "dark_theme",
+    "light_theme",
+];
+
+fn schema_value() -> Value {
+    serde_json::from_str(&schema()).unwrap()
+}
+
+fn strings(value: &Value) -> Vec<String> {
+    value.as_array().unwrap().iter().map(|item| item.as_str().unwrap().to_string()).collect()
+}
+
+#[test]
+fn the_schema_is_draft_07_strict_on_keys_and_the_same_bytes_each_call() {
+    let text = schema();
+    let value = schema_value();
+    assert_eq!(value["$schema"], "http://json-schema.org/draft-07/schema#");
+    assert_eq!(value["type"], "object");
+    assert_eq!(value["additionalProperties"], false);
+    assert!(text.ends_with("}\n"));
+    assert_eq!(schema(), text);
+}
+
+#[test]
+fn the_schema_has_a_property_for_each_key_parse_reads_and_for_dollar_schema() {
+    let schema = schema_value();
+    let mut names: Vec<&str> = schema["properties"].as_object().unwrap().keys().map(String::as_str).collect();
+    names.sort_unstable();
+    let mut expected = KEYS.to_vec();
+    expected.push("$schema");
+    expected.sort_unstable();
+    assert_eq!(names, expected);
+    for key in KEYS {
+        let parsed = parse(&format!(r#"{{"{key}": []}}"#));
+        assert_eq!(parsed.notices.len(), 1, "parse reads {key}");
+        assert!(parsed.notices[0].contains(key), "{key}: {:?}", parsed.notices);
+    }
+}
+
+#[test]
+fn each_schema_default_is_the_constant_the_parser_uses() {
+    let schema = schema_value();
+    let properties = &schema["properties"];
+    assert_eq!(properties["auto_preview"]["default"], AUTO_PREVIEW);
+    assert_eq!(properties["sidebar_jump"]["default"], SIDEBAR_JUMP);
+    assert_eq!(properties["reader_jump"]["default"], READER_JUMP);
+    assert_eq!(properties["git_gutter"]["default"], GIT_GUTTER);
+    assert_eq!(properties["find_mode"]["default"], FIND_MODE.name());
+    assert_eq!(properties["theme_mode"]["default"], THEME_MODE.name());
+    assert_eq!(properties["dark_theme"]["default"], DEFAULT_THEME);
+    assert_eq!(properties["light_theme"]["default"], DEFAULT_THEME);
+    assert_eq!(properties["file_associations"]["default"], json!({}));
+}
+
+#[test]
+fn the_find_and_theme_mode_enums_are_the_names_their_parsers_accept() {
+    let schema = schema_value();
+    let properties = &schema["properties"];
+    let find = strings(&properties["find_mode"]["enum"]);
+    let mode = strings(&properties["theme_mode"]["enum"]);
+    assert_eq!(find, ["substring", "fuzzy"]);
+    assert_eq!(mode, ["auto", "dark", "light"]);
+    for name in &find {
+        assert!(Matching::named(name).is_some(), "find_mode {name}");
+    }
+    for name in &mode {
+        assert!(ModeChoice::named(name).is_some(), "theme_mode {name}");
+    }
+    assert!(Matching::ALL.iter().all(|matching| find.contains(&matching.name().to_string())));
+    assert!(ModeChoice::ALL.iter().all(|choice| mode.contains(&choice.name().to_string())));
+}
+
+#[test]
+fn the_file_associations_value_enum_is_the_names_the_association_parser_accepts() {
+    let schema = schema_value();
+    let names = strings(&schema["properties"]["file_associations"]["additionalProperties"]["enum"]);
+    assert_eq!(names, Language::names());
+    for name in &names {
+        assert!(Language::named(name).is_some(), "file_associations {name}");
+    }
+    assert!(names.contains(&"plaintext".to_string()) && names.contains(&"shellscript".to_string()));
+    assert!(Language::named("klingon").is_none());
+}
+
+#[test]
+fn each_bundled_theme_completes_in_its_own_slot_and_the_default_in_both() {
+    let schema = schema_value();
+    let properties = &schema["properties"];
+    let dark = strings(&properties["dark_theme"]["anyOf"][0]["enum"]);
+    let light = strings(&properties["light_theme"]["anyOf"][0]["enum"]);
+    assert!(dark.contains(&DEFAULT_THEME.to_string()) && light.contains(&DEFAULT_THEME.to_string()));
+    for theme in bundled() {
+        let slot = match theme.mode {
+            Mode::Dark => &dark,
+            Mode::Light => &light,
+        };
+        assert!(slot.contains(&theme.id), "{} completes in its slot", theme.id);
+    }
+}

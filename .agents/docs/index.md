@@ -45,7 +45,7 @@ Each file keeps its name for life; an archived file moves unchanged to `archive/
 
 | Path | Holds | Now |
 | --- | --- | --- |
-| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | None in progress. `plan-00015-settings.md` is archived (done: the settings write path, the theme catalog, the Settings page on `Ctrl+,`, and the keymap file; RI-9, RI-10, RI-13). `plan-00014-multi-select.md`, `plan-00013-injected-highlighting.md`, and `plan-00012-write-operations.md` are archived (done). |
+| `plans/` | Plan contracts, run phase by phase on the owner's go-ahead. | `plan-00016-settings-schema.md` (in-progress: a JSON Schema for `settings.json`, checked or written at start to `meta/config.schema.json` in the config folder; in progress, O1 (b), O2 (a)). `plan-00015-settings.md` is archived (done: the settings write path, the theme catalog, the Settings page on `Ctrl+,`, and the keymap file; RI-9, RI-10, RI-13). `plan-00014-multi-select.md`, `plan-00013-injected-highlighting.md`, and `plan-00012-write-operations.md` are archived (done). |
 | `issues/` | Findings that outlive a turn. | none open |
 | `roadmap/` | Parked improvements with a named unlock. | `roadmap-00001-post-parity.md` (living): a status table at the top tracks every entry; RI-4, RI-10, RI-13, RI-18, RI-19, and RI-20 landed (plan-00012, plan-00015, plan-00013, plan-00014; RI-20 is the Settings page); RI-9 landed in part (the UI state stays unsaved, plan-00015 D3 (a)); RI-17 parked (unlock: a crate that loads). |
 | `handover/` | Session compactions. | `handover-00011-settings.md` (done: plan-00015 closed; RI-9 landed in part, RI-10 and RI-13 landed; with the owner checks); `handover-00001-parity-w0-w3.md` (partial, older: its open threads are closed or listed in 00002) |

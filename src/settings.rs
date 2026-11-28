@@ -1,10 +1,10 @@
 //! The settings file's values, read from its text, and the text a save writes (`architecture.md`, "fmc writes its
 //! settings.json, atomically"). The binary reads and writes the file and passes its text here; nothing here touches the disk.
 
-use serde_json::{Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::find::Matching;
-use crate::reader::associations::Associations;
+use crate::reader::associations::{Associations, Language};
 use crate::text::display_label;
 use crate::theme::catalog::{DEFAULT_THEME, Theme, slot_ids};
 use crate::theme::{Mode, ModeChoice};
@@ -103,6 +103,71 @@ pub fn merged(text: &str, changes: &[(&str, Value)]) -> Result<String, String> {
     let mut text = serde_json::to_string_pretty(&Value::Object(object)).map_err(|error| error.to_string())?;
     text.push('\n');
     Ok(text)
+}
+
+/// The JSON Schema of `settings.json` (draft-07), built from the same rows, defaults, and name lists the parser and the
+/// Settings page use, so a name cannot drift from it (plan-00016, D2). Pretty-printed with a final newline; the same
+/// bytes on every call.
+pub fn schema() -> String {
+    let defaults = Settings::default();
+    let mut properties = Map::new();
+    properties.insert(
+        "$schema".into(),
+        json!({ "type": "string", "description": "The schema this file is checked against. fmc writes it." }),
+    );
+    for row in Row::ALL {
+        properties.insert(row.key().into(), row_property(row, &defaults));
+    }
+    properties.insert(
+        "file_associations".into(),
+        json!({
+            "type": "object",
+            "description": "Maps a file pattern, such as *.md or docs/**, to the filetype it is shown as.",
+            "default": {},
+            "additionalProperties": { "type": "string", "enum": Language::names() },
+        }),
+    );
+    let root = json!({
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "fmc settings.json",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": properties,
+    });
+    // INVARIANT: a Value built from literals and strings always serializes.
+    let mut text = serde_json::to_string_pretty(&root).expect("a schema value always serializes");
+    text.push('\n');
+    text
+}
+
+fn row_property(row: Row, defaults: &Settings) -> Value {
+    let (default, help) = (defaults.json(row), row.help());
+    match row {
+        Row::AutoPreview | Row::GitGutter => {
+            json!({ "type": "boolean", "default": default, "description": help })
+        }
+        Row::SidebarJump | Row::ReaderJump => {
+            json!({ "type": "integer", "minimum": 1, "maximum": u32::MAX, "default": default, "description": help })
+        }
+        Row::FindMode => {
+            json!({ "type": "string", "enum": Matching::ALL.map(Matching::name), "default": default, "description": help })
+        }
+        Row::ThemeMode => {
+            json!({ "type": "string", "enum": ModeChoice::ALL.map(ModeChoice::name), "default": default, "description": help })
+        }
+        Row::DarkTheme => theme_property(slot_ids(&[], Mode::Dark), default, help),
+        Row::LightTheme => theme_property(slot_ids(&[], Mode::Light), default, help),
+    }
+}
+
+/// A theme id completes from the slot's bundled ids and the default, but any string is accepted: a user's theme in
+/// `themes/` is a valid id that the schema cannot list.
+fn theme_property(ids: Vec<String>, default: Value, help: &str) -> Value {
+    json!({
+        "anyOf": [{ "type": "string", "enum": ids }, { "type": "string" }],
+        "default": default,
+        "description": help,
+    })
 }
 
 /// The `file_associations` object: each pattern's language. A bad entry is skipped with a notice that names it, so the
@@ -335,13 +400,8 @@ impl Settings {
             Row::AutoPreview => next.auto_preview = !self.auto_preview,
             Row::GitGutter => next.git_gutter = !self.git_gutter,
             Row::SidebarJump | Row::ReaderJump => return None,
-            Row::FindMode => {
-                next.find_mode = along(&[Matching::Substring, Matching::Fuzzy], &self.find_mode, forward)?;
-            }
-            Row::ThemeMode => {
-                next.theme_mode =
-                    along(&[ModeChoice::Auto, ModeChoice::Dark, ModeChoice::Light], &self.theme_mode, forward)?;
-            }
+            Row::FindMode => next.find_mode = along(&Matching::ALL, &self.find_mode, forward)?,
+            Row::ThemeMode => next.theme_mode = along(&ModeChoice::ALL, &self.theme_mode, forward)?,
             Row::DarkTheme => {
                 next.dark_theme = along(&slot_ids(themes, Mode::Dark), &self.dark_theme, forward)?;
             }

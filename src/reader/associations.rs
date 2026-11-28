@@ -18,6 +18,12 @@ pub enum Language {
 }
 
 impl Language {
+    /// Every name `named` accepts: the highlighted filetypes, the aliases, and `plaintext`.
+    pub fn names() -> Vec<&'static str> {
+        let aliases = ALIASES.iter().map(|(alias, _)| *alias);
+        HIGHLIGHTED.iter().copied().chain(aliases).chain(["plaintext"]).collect()
+    }
+
     /// The language a value names, or `None` for a name fmc does not know.
     pub fn named(value: &str) -> Option<Self> {
         if value == "plaintext" {
