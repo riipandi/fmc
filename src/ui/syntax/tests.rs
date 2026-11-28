@@ -23,7 +23,7 @@ fn every_vendored_grammar_compiles_with_its_query() {
 }
 
 /// The grammars whose queries are copied into `queries/`, each with the query it is registered with.
-const COPIED: [(&str, &str); 28] = [
+const COPIED: [(&str, &str); 32] = [
     ("diff", include_str!("queries/diff/highlights.scm")),
     ("elixir", include_str!("queries/elixir/highlights.scm")),
     ("heex", include_str!("queries/heex/highlights.scm")),
@@ -52,6 +52,10 @@ const COPIED: [(&str, &str); 28] = [
     ("nix", include_str!("queries/nix/highlights.scm")),
     ("scss", include_str!("queries/scss/highlights.scm")),
     ("vue", include_str!("queries/vue/highlights.scm")),
+    ("gitignore", include_str!("queries/gitignore/highlights.scm")),
+    ("gitattributes", include_str!("queries/gitattributes/highlights.scm")),
+    ("gitconfig", include_str!("queries/gitconfig/highlights.scm")),
+    ("editorconfig", include_str!("queries/editorconfig/highlights.scm")),
 ];
 
 /// The grammars added after the owner's first twelve, whose captures must all be names the palette styles, or one of
@@ -73,6 +77,10 @@ const STYLED_ONLY: &[&str] = &[
     "nix",
     "scss",
     "vue",
+    "gitignore",
+    "gitattributes",
+    "gitconfig",
+    "editorconfig",
 ];
 
 /// Names a query may capture that the palettes leave plain: `none` marks text left plain on purpose, and the three
@@ -184,6 +192,11 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("nix", "{ pkgs }: pkgs.mkShell { name = \"hogwarts\"; }\n", "hogwarts", "string"),
         ("scss", "$scarlet: #740001;\n@mixin crest($size) { width: $size; }\n", "@mixin", "keyword"),
         ("vue", "<template>\n  <div class=\"house\">{{ house }}</div>\n</template>\n", "div", "tag"),
+        ("gitignore", "# Hogwarts build output\n/target\n*.horcrux\n", "*", "string.special"),
+        ("gitignore", "# Hogwarts build output\n/target\n*.horcrux\n", "# Hogwarts", "comment"),
+        ("gitattributes", "*.md text eol=lf\n", "eol", "attribute"),
+        ("gitconfig", "[user]\n\tname = Robert Langdon\n", "name", "property"),
+        ("editorconfig", "root = true\n\n[*.rs]\nindent_size = 4\n", "indent_size", "property"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");
@@ -211,6 +224,8 @@ fn the_extensions_opentui_lacks_are_highlighted() {
     assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/.env.local")), Some("bash"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/House.vue")), Some("vue"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/theme.scss")), Some("scss"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/.gitignore")), Some("gitignore"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/.editorconfig")), Some("editorconfig"));
     // Docker Compose files are YAML by their extension.
     assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/compose.yaml")), Some("yaml"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/docker-compose.override.yml")), Some("yaml"));

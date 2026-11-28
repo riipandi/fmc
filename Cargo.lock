@@ -201,6 +201,10 @@ dependencies = [
  "clap",
  "icu_collator",
  "imagesize",
+ "konomanoasa-tree-sitter-editorconfig",
+ "konomanoasa-tree-sitter-gitattributes",
+ "konomanoasa-tree-sitter-gitconfig",
+ "konomanoasa-tree-sitter-gitignore",
  "mermaid-text",
  "neo_frizbee",
  "opentui",
@@ -527,6 +531,46 @@ dependencies = [
  "cfg-if",
  "futures-util",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "konomanoasa-tree-sitter-editorconfig"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "628d69efa973e2e985c0b9722e2730752d94af94a44352519fb73c6132225dd4"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "konomanoasa-tree-sitter-gitattributes"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64e42b6ee41ee721176b43ad13988bb6ce0585367f2b595a43a6644a343e5199"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "konomanoasa-tree-sitter-gitconfig"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c42cafc48fa2dad8959db6b9ef549db97b55ab12473796ce75bcef0c1bdbe86d"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "konomanoasa-tree-sitter-gitignore"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc2fe204b2673e33e64a33d5c6622512f494fb2191eb58a396f28f6e9aa74eb7"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
 ]
 
 [[package]]

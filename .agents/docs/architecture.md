@@ -1453,6 +1453,25 @@ Alternatives considered:
 - `tree-sitter-dockerfile` 0.2.0: rejected, it pins `tree-sitter` 0.20 (a second C runtime). `-orchard` 0.1.0 and `-updated` 0.2.0: not taken (D4).
 - A dotenv grammar: none exists.
 
+### Approved deviation: git and EditorConfig files are highlighted from crates (plan-00023)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter shows a `.gitignore`, a `.gitattributes`, a `.gitconfig`, and an `.editorconfig` plain (none is in `scouter:grammars/`). The grammars nvim-treesitter uses for them commit their `parser.c` and load when vendored; the only crates are four `konomanoasa-*` crates published on 2026-11-26 by one author (`research/common-grammars.md`, sections 3 and 4).
+
+Decision (owner, 2026-11-28, plan-00023 O3 (b), "avoid vendoring"): fmc highlights `gitignore`, `gitattributes`, `gitconfig`, and `editorconfig` through the four crates, pinned exactly, with each crate's own query (nvim's does not fit these grammars); wildcards are `string.special`. `.gitignore` and the ignore files that copy its syntax (`.dockerignore`, `.containerignore`, `.npmignore`, `.prettierignore`, `.vscodeignore`, `.ignore`, `.rgignore`, `.fdignore`) are `gitignore` by name, as are `.gitattributes`, `.gitconfig`, `.gitmodules`, and `.editorconfig`. SSH config is not highlighted: its one loading crate is CC0-1.0, which the licence allowlist does not hold, and vendoring was declined.
+
+Consequences:
+
+- (positive) No C is copied into the tree; `build.rs` is unchanged.
+- (negative) Four one-author crates, each pinning `tree-sitter-language` =0.1.9, so a bump of that crate waits for theirs. Their queries are thinner than nvim's (15 captures against 49 on the gitignore sample).
+- (negative) These files are coloured where Scouter shows them plain.
+
+Alternatives considered:
+
+- Vendor the nvim-treesitter grammars (about 50 KiB with SSH config's 270 KiB): declined by the owner (O3 (a)).
+- `tree-sitter-gitattributes` 0.1.6: rejected, it pins `tree-sitter` 0.20 (a second C runtime).
+
 ### Approved deviation: front matter is a code block in the rendered view
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.

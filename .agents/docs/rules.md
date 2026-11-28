@@ -158,6 +158,17 @@ Decisions O1 and O2 of `plan-00023-common-grammars.md`: the wave-1 grammar crate
 | `tree-sitter-scss` | `=1.0.0` | default | SCSS (`scss`); MIT |
 | `tree-sitter-vue-next` | `=0.1.0` | default | Vue single-file components (`vue`); MIT |
 
+### Approved for plan-00023 phase 2 (owner, 2026-11-28)
+
+Decision O3 (b) of `plan-00023-common-grammars.md` ("avoid vendoring"): the only crates for these four filetypes. Each is one author's, published on 2026-11-26, and pins `tree-sitter-language` =0.1.9 exactly, the locked version; a later bump of that crate waits for theirs. Each adds one package to the lock.
+
+| Crate | Version | Features | For |
+| --- | --- | --- | --- |
+| `konomanoasa-tree-sitter-gitignore` | `=0.7.3` | default | `.gitignore` and the ignore files that copy its syntax (`gitignore`); MIT |
+| `konomanoasa-tree-sitter-gitattributes` | `=0.8.2` | default | `.gitattributes` (`gitattributes`); MIT |
+| `konomanoasa-tree-sitter-gitconfig` | `=0.7.3` | default | `.gitconfig`, `.gitmodules` (`gitconfig`); MIT |
+| `konomanoasa-tree-sitter-editorconfig` | `=0.9.2` | default | `.editorconfig` (`editorconfig`); MIT |
+
 ### Approved for after parity (owner, 2026-11-26)
 
 - `serde` (feature `derive`) and `serde_json`: persistent settings and themes (`roadmap-00001-post-parity.md`, RI-9 and RI-10). Not before plan-00001 closes.
@@ -175,7 +186,7 @@ Decisions O1 and O2 of `plan-00023-common-grammars.md`: the wave-1 grammar crate
 - The query and JSON5 queries (plan-00018 phase 1) are the crates' own: `queries/query/` is `tree-sitter-tsquery` 0.8.0's (Apache-2.0, with its `LICENSE`; its header names the three changes), and `queries/json5/` is `tree-sitter-json5-orchard` 0.1.1's (MIT, with its `LICENSE`, unchanged).
 - The Lua injections (`queries/lua/injections.scm`, the pattern rules for find, match, gmatch, and gsub) are nvim-treesitter's (Apache-2.0, `runtime/queries/lua/injections.scm` at 04f1788, with its `LICENSE` beside the file as `LICENSE.nvim-treesitter`, since the lua directory's `LICENSE` is the grammar crate's MIT).
 - The vendored grammars are `vendor/grammars/{vimdoc,luadoc,luap,just}/`: each has `src/parser.c` (and `scanner.c` for just), `src/tree_sitter/parser.h`, the repository's `LICENSE`, and a `SOURCE` file (the repository URL and the full commit). vimdoc and just are Apache-2.0; luadoc and luap are MIT. just's `Cargo.toml` says MIT, but its repository `LICENSE` file is Apache-2.0, and the `LICENSE` file is the licence. Their highlight queries (`src/ui/syntax/queries/{vimdoc,luadoc,luap,just}/`) carry the same `LICENSE`, and each query's header names the upstream file and each change. `cargo about` cannot see vendored C, so `about.hbs` lists these grammars by hand: the MIT texts in full, and the Apache-2.0 text through the Apache-2.0 entry the crates already produce.
-- The plan-00023 queries (`queries/{dockerfile,make,cmake,ini,properties,proto,nix,scss,vue}/`) are the grammar crates' own, each with its `LICENSE` beside it: the crate's file, or the upstream repository's where the archive ships none (make, properties, scss). `dockerfile/` also keeps `LICENSE-MIT-CamdenCheek`, the licence of the grammar the crate forks. `queries/graphql/` is nvim-treesitter's (`runtime/queries/graphql/highlights.scm` at 04f1788, Apache-2.0, with its `LICENSE`). `queries/vue/injections.scm` is adapted from the crate's (MIT), and `queries/dockerfile/injections.scm` is the crate's with one rule dropped. Each file's header names its source and every change.
+- The plan-00023 queries (`queries/{dockerfile,make,cmake,ini,properties,proto,nix,scss,vue}/`) are the grammar crates' own, each with its `LICENSE` beside it: the crate's file, or the upstream repository's where the archive ships none (make, properties, scss). `dockerfile/` also keeps `LICENSE-MIT-CamdenCheek`, the licence of the grammar the crate forks. `queries/graphql/` is nvim-treesitter's (`runtime/queries/graphql/highlights.scm` at 04f1788, Apache-2.0, with its `LICENSE`). `queries/vue/injections.scm` is adapted from the crate's (MIT), and `queries/dockerfile/injections.scm` is the crate's with one rule dropped. Each file's header names its source and every change. `queries/{gitignore,gitattributes,gitconfig,editorconfig}/` (plan-00023 phase 2) are the konomanoasa crates' own (MIT, with each crate's `LICENSE`).
 
 ## Sample data
 

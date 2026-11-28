@@ -50,6 +50,10 @@ pub const HIGHLIGHTED: &[&str] = &[
     "nix",
     "scss",
     "vue",
+    "gitignore",
+    "gitattributes",
+    "gitconfig",
+    "editorconfig",
 ];
 
 /// Extensions OpenTUI's table does not know, with the filetype fmc highlights them as. `.tf` and `.tfvars` are
@@ -80,10 +84,28 @@ const EXTENSIONS: &[(&str, &str)] = &[
     ("nix", "nix"),
 ];
 
-/// File names OpenTUI's table does not know. A `justfile` has no extension, so the name is the only key (`Justfile` is
+/// File names OpenTUI's table does not know: the ignore files other tools copy from git's syntax are gitignore. A
+/// `justfile` has no extension, so the name is the only key (`Justfile` is
 /// matched through the lowercased name).
-const NAMES: &[(&str, &str)] =
-    &[("justfile", "just"), (".justfile", "just"), ("cmakelists.txt", "cmake"), (".env", "bash")];
+const NAMES: &[(&str, &str)] = &[
+    ("justfile", "just"),
+    (".justfile", "just"),
+    ("cmakelists.txt", "cmake"),
+    (".env", "bash"),
+    (".gitignore", "gitignore"),
+    (".dockerignore", "gitignore"),
+    (".containerignore", "gitignore"),
+    (".npmignore", "gitignore"),
+    (".prettierignore", "gitignore"),
+    (".vscodeignore", "gitignore"),
+    (".ignore", "gitignore"),
+    (".rgignore", "gitignore"),
+    (".fdignore", "gitignore"),
+    (".gitattributes", "gitattributes"),
+    (".gitconfig", "gitconfig"),
+    (".gitmodules", "gitconfig"),
+    (".editorconfig", "editorconfig"),
+];
 
 /// File-name prefixes, for the names a variant suffix follows: `Dockerfile.dev`, `Containerfile.prod`, `.env.local`.
 /// The dot keeps `.envrc` out.
@@ -114,7 +136,7 @@ mod tests {
 
     #[test]
     fn highlights_scouters_languages_and_the_owners_extra_ones_and_no_others() {
-        assert_eq!(HIGHLIGHTED.len(), 44);
+        assert_eq!(HIGHLIGHTED.len(), 48);
         assert!(is_highlighted("rust") && is_highlighted("javascriptreact") && is_highlighted("markdown_inline"));
         assert!(is_highlighted("elixir") && is_highlighted("hcl") && is_highlighted("vim"));
         assert!(!is_highlighted("perl") && !is_highlighted("sshconfig") && !is_highlighted("plain text"));
@@ -154,6 +176,11 @@ mod tests {
         assert_eq!(at("Gringotts/Containerfile.prod"), Some("dockerfile"));
         assert_eq!(at("Gringotts/.env.local"), Some("bash"));
         assert_eq!(at("Gringotts/.envrc"), None);
+        assert_eq!(at("Hogwarts/.gitignore"), Some("gitignore"));
+        assert_eq!(at("Hogwarts/.dockerignore"), Some("gitignore"));
+        assert_eq!(at("Hogwarts/.gitattributes"), Some("gitattributes"));
+        assert_eq!(at("Hogwarts/.gitmodules"), Some("gitconfig"));
+        assert_eq!(at("Hogwarts/.editorconfig"), Some("editorconfig"));
         // OpenTUI knows these, so they are left to its lookup.
         assert_eq!(at("Gringotts/Dockerfile"), None);
         assert_eq!(at("Gringotts/Makefile"), None);

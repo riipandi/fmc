@@ -139,6 +139,18 @@ pub fn register() {
     register_lazy("graphql", || grammar(tree_sitter_graphql::LANGUAGE, include_str!("queries/graphql/highlights.scm")));
     register_lazy("nix", || grammar(tree_sitter_nix::LANGUAGE, include_str!("queries/nix/highlights.scm")));
     register_lazy("scss", || grammar(tree_sitter_scss::language(), include_str!("queries/scss/highlights.scm")));
+    register_lazy("gitignore", || {
+        grammar(konomanoasa_tree_sitter_gitignore::LANGUAGE, include_str!("queries/gitignore/highlights.scm"))
+    });
+    register_lazy("gitattributes", || {
+        grammar(konomanoasa_tree_sitter_gitattributes::LANGUAGE, include_str!("queries/gitattributes/highlights.scm"))
+    });
+    register_lazy("gitconfig", || {
+        grammar(konomanoasa_tree_sitter_gitconfig::LANGUAGE, include_str!("queries/gitconfig/highlights.scm"))
+    });
+    register_lazy("editorconfig", || {
+        grammar(konomanoasa_tree_sitter_editorconfig::LANGUAGE, include_str!("queries/editorconfig/highlights.scm"))
+    });
     register_lazy("vue", || {
         injected(
             tree_sitter_vue_next::LANGUAGE,
