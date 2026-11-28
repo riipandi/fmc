@@ -5,15 +5,16 @@
 use std::ops::Range;
 
 use super::rendered_search::Hit;
+use crate::line_edit::Line;
 
 /// Scouter marks at most this many occurrences in a file (`src/reader/match-style.ts:11`).
 pub const MAX_MARKS: usize = 2000;
 
-/// The search in progress: the query, the hits it has in the view, the hit the view is on, and whether the prompt is
-/// open. The code view's hits are lines; the rendered view's are occurrences (`marks`, `rendered`).
+/// The search in progress: the query and its caret, the hits it has in the view, the hit the view is on, and whether
+/// the prompt is open. The code view's hits are lines; the rendered view's are occurrences (`marks`, `rendered`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Search {
-    pub query: String,
+    pub query: Line,
     pub lines: Vec<usize>,
     pub marks: Vec<Hit>,
     /// The search runs in the rendered Markdown view, so `marks` holds its hits.
@@ -49,16 +50,9 @@ impl Search {
         if self.rendered { self.marks.get(self.at) } else { None }
     }
 
-    /// Replaces the query and the rendered hits, and moves to the first hit at or below `top`, as `retype` does; `row`
-    /// is a hit's row in the document. Returns the hit the view shows.
-    pub fn retype_marks(
-        &mut self,
-        marks: Vec<Hit>,
-        query: String,
-        top: u32,
-        row: impl Fn(&Hit) -> u32,
-    ) -> Option<&Hit> {
-        self.query = query;
+    /// Replaces the rendered hits for the edited query, and moves to the first hit at or below `top`, as `retype`
+    /// does; `row` is a hit's row in the document. Returns the hit the view shows.
+    pub fn retype_marks(&mut self, marks: Vec<Hit>, top: u32, row: impl Fn(&Hit) -> u32) -> Option<&Hit> {
         self.at = marks.iter().position(|hit| row(hit) >= top).unwrap_or(0);
         self.marks = marks;
         self.current_mark()
@@ -70,20 +64,24 @@ impl Search {
         self.at = self.at.min(self.marks.len().saturating_sub(1));
     }
 
-    /// The footer's text for the search (Scouter `show`): the query and the hit count, or nothing for an empty query.
+    /// The footer's text for the search (Scouter `show`): the query and the hit count.
     pub fn message(&self) -> String {
-        let count = match (self.query.is_empty(), self.hit_count()) {
+        format!("/{}{}", self.query.text(), self.count_text())
+    }
+
+    /// The hit count after the query, or nothing for an empty query.
+    pub fn count_text(&self) -> String {
+        match (self.query.text().is_empty(), self.hit_count()) {
             (true, _) => String::new(),
             (false, 0) => "  no matches".into(),
             (false, n) => format!("  {} of {n}", self.at + 1),
-        };
-        format!("/{}{count}", self.query)
+        }
     }
 
-    /// Replaces the query, and moves to the first hit at or below `top` (Scouter `type`). Returns the line to show.
-    pub fn retype(&mut self, text: &str, query: String, top: usize) -> Option<usize> {
-        self.query = query;
-        self.lines = matching_lines(text, &self.query);
+    /// Finds the hits of the query again, and moves to the first hit at or below `top` (Scouter `type`). The caller has
+    /// edited the query. Returns the line to show.
+    pub fn retype(&mut self, text: &str, top: usize) -> Option<usize> {
+        self.lines = matching_lines(text, self.query.text());
         self.at = self.lines.iter().position(|&line| line >= top).unwrap_or(0);
         self.current_line()
     }
@@ -101,12 +99,12 @@ impl Search {
     pub fn seed(text: &str, query: &str, line: usize) -> Self {
         let lines = matching_lines(text, query);
         let at = lines.iter().position(|&hit| hit == line).unwrap_or(0);
-        Self { query: query.to_owned(), lines, at, ..Self::default() }
+        Self { query: Line::with_text(query), lines, at, ..Self::default() }
     }
 
     /// Recomputes the hits for a text that changed or was shown (Scouter `refresh`), keeping the hit in range.
     pub fn refresh(&mut self, text: &str) {
-        self.lines = matching_lines(text, &self.query);
+        self.lines = matching_lines(text, self.query.text());
         self.at = self.at.min(self.lines.len().saturating_sub(1));
     }
 }
@@ -159,17 +157,20 @@ mod tests {
     #[test]
     fn typing_moves_to_the_first_hit_at_or_below_the_top_line() {
         let mut search = Search::start();
-        assert_eq!(search.retype(VAULT, "hermione".into(), 2), Some(3));
+        search.query = Line::with_text("hermione");
+        assert_eq!(search.retype(VAULT, 2), Some(3));
         assert_eq!(search.message(), "/hermione  2 of 2");
-        assert_eq!(search.retype(VAULT, "hermione".into(), 9), Some(1));
-        assert_eq!(search.retype(VAULT, "azkaban".into(), 0), None);
+        assert_eq!(search.retype(VAULT, 9), Some(1));
+        search.query = Line::with_text("azkaban");
+        assert_eq!(search.retype(VAULT, 0), None);
         assert_eq!(search.message(), "/azkaban  no matches");
     }
 
     #[test]
     fn stepping_wraps_both_ways() {
         let mut search = Search::start();
-        search.retype(VAULT, "hermione".into(), 0);
+        search.query = Line::with_text("hermione");
+        search.retype(VAULT, 0);
         assert_eq!(search.step(true), Some(3));
         assert_eq!(search.step(true), Some(1));
         assert_eq!(search.step(false), Some(3));
@@ -179,7 +180,8 @@ mod tests {
     #[test]
     fn a_refresh_keeps_the_query_and_the_hit_in_range() {
         let mut search = Search::start();
-        search.retype(VAULT, "hermione".into(), 0);
+        search.query = Line::with_text("hermione");
+        search.retype(VAULT, 0);
         search.step(true);
         search.refresh("Hermione only\n");
         assert_eq!((search.lines.clone(), search.at), (vec![0], 0));

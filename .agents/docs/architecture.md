@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T16:56:09+07:00
+updated: 2026-11-28T17:15:44+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -1684,3 +1684,31 @@ Alternatives considered:
 - Browse screens only: rejected by the owner's D2.
 - A separate timer for the branch: rejected; the poll already runs git on the same folder.
 - A Nerd Font icon for the branch: rejected by the owner's D3.
+
+### Approved deviation: the prompts edit at a caret, by word and by line
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's finder query, its in-file search, and its footer prompts only add a character at the end and delete the last one. The caret is always at the end: the finder draws the `▎` after the query (`scouter:src/find/file-finder.ts:49-55`), and its keys edit with `query.slice(0, -1)` and `query + key.sequence` (`scouter:src/find/file-finder.ts:140-154`). The in-file search does the same (`scouter:src/reader/document-search.ts:38-52`). fmc's dialog name field already edits by word and by line through OpenTUI's `Input`. The owner asked that every text input take Ctrl or Option with the arrows (2026-11-28). Scouter has no `:` line; fmc's own takes the same edits.
+
+Decision (owner, 2026-11-28):
+
+- The finder's query, the in-file search, and the `:` line hold a caret. `←` and `→` move it by one character. `Option+←` and `Option+→`, and `Ctrl+←` and `Ctrl+→`, move it by word. `Option+Delete` and `Option+D` delete the word after it, and `Option+Backspace` and `Ctrl+W` the word before it. `Cmd+←` and `Ctrl+A` go to the start of the line, `Cmd+→` and `Ctrl+E` to the end, `Cmd+Backspace` and `Ctrl+U` delete to the start, and `Ctrl+K` deletes to the end. These are the dialog name field's keys (`line_edit.rs` `edit_of`), so a key does the same thing in every text input.
+- A word is what OpenTUI's `Input` finds. The native rule at the locked 0.9.9 tag is `packages/native/src/edit-buffer.zig` `getNextWordBoundary` and `getPrevWordBoundary`, with the breaks in `utf8.zig` (`asciiLayoutWrapBreakKind`, `unicodeLayoutWrapBreakKind`, `isCjkAsciiTransition`, and `isWordBoundary`). The crate ships only the native query, so `line_edit_tests.rs` carries the cases of OpenTUI's own test, `tests/edit-buffer_test.zig` "word boundary and line end walks", with CJK positions in characters.
+- An edit that changes the text runs what typing runs: the finder finds again and the list follows, and the in-file search finds its hits again. A caret move runs nothing, so it keeps the search's hit and the finder's list.
+- While a prompt or a dialog is open, its edit keys reach it before the global bindings (`app/capture.rs` `prompt_takes`). So `Ctrl+←` and `Ctrl+→` edit the query and do not resize the sidebar. Plain keys, Esc, Enter, Tab, and `↑` `↓` keep their meaning, and `Ctrl+F` still flips fuzzy matching.
+- The prompt's bar draws the caret where it is, with the same glyph and colours. A query wider than the bar shows the part around the caret, with `…` where text is cut. The wide footer's search prompt draws its glyph and count as the finder's bar does; it used to show the search's text as a notice.
+
+Consequences:
+
+- (positive) A typo in the middle of a query is fixed in place, and the same keys work in the finder, the search, the `:` line, and the dialogs.
+- (positive) The word rule is OpenTUI's, so a word here is a word in the dialog's field.
+- (negative) In the in-file search, `Ctrl+U` deletes to the start of the query while the prompt is open; it scrolled half a page before. `Esc` closes the prompt, and then `Ctrl+U` scrolls again.
+- (negative) The word rule lives in OpenTUI's native library, which the crate does not ship as source. `line_edit_tests.rs` is the check: when OpenTUI moves, its test cases are read again from the new tag.
+- (negative) The caret is a glyph, so it takes one column; a long query is cut around it.
+
+Alternatives considered:
+
+- Append-only prompts, as Scouter has: rejected by the owner's request.
+- Unicode word segmentation: rejected. It would differ from the dialog's field, which OpenTUI draws, and it needs a crate the owner has not approved.
+- OpenTUI's `Input` for each prompt: rejected. Each prompt is a `Text` in a bar the app paints, and an `Input` takes the keyboard focus, which the prompts keep for the list and the reader.

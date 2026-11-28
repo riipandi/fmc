@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-28T16:56:09+07:00
+updated: 2026-11-28T17:15:44+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -32,6 +32,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 ## Contracts and traps
 
+- **A prompt's word edits are OpenTUI's native word rule, and its caret is a byte offset.** `line_edit.rs` `Line` keeps the caret on a character boundary. `prev_word` and `next_word` follow `packages/native/src/edit-buffer.zig` `getPrevWordBoundary` and `getNextWordBoundary` at the locked 0.9.9 tag (its `utf8.zig` breaks, not in the crate: the crate binds only the native query, `opentui-0.9.9/src/widget/editor.rs` `goto_word`). `line_edit_tests.rs` holds the native test's cases. A prompt takes its edit keys before the global Ctrl bindings (`app/capture.rs` `prompt_takes`), so a Ctrl or Option key that `edit_of` names is never a command while a prompt is open.
 - **File operations never reach the Trash in a test.** `app/write.rs` calls `services::write::trash` in the binary and a test function in its tests, which removes the entry through `trash_with`, so the root and name checks still run and the owner's Trash is untouched. A new write test uses the same stand-in.
 - **A write is a name in a folder, never a path.** `services::write::create_dir` takes the name without a trailing `/`: the dialog strips one (`app/write.rs`), and a name that still holds a `/` is refused. Names are `&str`; a name that is not UTF-8 or holds a control character is refused before a field can show it.
 - **Terminal restore is OpenTUI's.** `App::run` enters the alternate screen and leaves it on return; the host installs a panic hook that restores the terminal before the panic message prints (`opentui-0.9.9/src/host.rs`, `install_panic_hook`). fmc adds no hook of its own. `tests/cli.rs` checks both paths; the panic path uses the debug-only `FMC_PANIC_AFTER_START` variable (`src/app/mod.rs`), compiled out of release builds.

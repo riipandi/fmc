@@ -64,7 +64,7 @@ fn a_fuzzy_start_mode_matches_from_the_first_letter_and_the_flip_keeps_the_query
     let (app, model, _ui) = finding(dir.path(), Matching::Fuzzy);
     app.type_text("hgw");
     assert_eq!(status(&model), "fuzzy, 2 matches");
-    assert_eq!(model.borrow().finder.as_ref().map(|finder| finder.query.clone()), Some("hgw".to_string()));
+    assert_eq!(model.borrow().finder.as_ref().map(|finder| finder.query.text().to_owned()), Some("hgw".to_string()));
 }
 
 #[test]

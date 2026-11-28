@@ -78,6 +78,11 @@ pub fn render(segments: &[Segment], columns: usize, p: &Palette) -> (Vec<Seg>, V
     (drawn, cells.into_iter().zip(segments.iter().map(|segment| segment.key)).collect())
 }
 
+/// The columns a prompt's text may take in the bar: the bar less `Cancel`'s cell, the `·`, and the space after it.
+pub fn prompt_room(columns: usize) -> usize {
+    columns.saturating_sub(cells(columns, 3)[0].len() + 2)
+}
+
 /// The bottom bar while a prompt is open: `Cancel` in the first cell, then the prompt's own text, which the bar
 /// clips at its width. The cell's tap presses `Esc`.
 pub fn prompt(text: &[Seg], columns: usize, p: &Palette) -> (Vec<Seg>, Vec<(Range<usize>, &'static str)>) {

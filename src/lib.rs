@@ -6,6 +6,7 @@ pub mod explorer;
 pub mod find;
 pub mod keys;
 pub mod layout;
+pub mod line_edit;
 pub mod overlay;
 pub mod reader;
 pub mod settings;

@@ -4,9 +4,10 @@
 
 use fmc::keys::Key;
 use fmc::layout::tier;
+use fmc::line_edit::FieldEdit;
 #[cfg(any(debug_assertions, test))]
 use fmc::overlay::Dialog;
-use fmc::overlay::{FieldEdit, Outcome, Overlay, Stop};
+use fmc::overlay::{Outcome, Overlay, Stop};
 use opentui::prelude::*;
 
 use super::*;

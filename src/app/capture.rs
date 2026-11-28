@@ -2,6 +2,8 @@
 //! parser hands to fmc stops here, so a focused OpenTUI widget cannot act on it as well: the reader's scroll box binds
 //! the arrows and h/j/k/l, and a tree arrow must not pan the reader too.
 
+use fmc::line_edit::edit_of;
+
 use super::*;
 
 pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
@@ -10,6 +12,12 @@ pub fn wire(app: &App, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         let Some(named) = keys::name(event) else { return };
         press_key(cx, &model, &ui, &named);
     });
+}
+
+/// Whether an open prompt takes the key: a plain key, or a field edit such as Option+Left or Ctrl+Left. The edit keys
+/// come first, so Ctrl+Left edits the query and does not resize the sidebar.
+fn prompt_takes(key: fmc::keys::Key<'_>) -> bool {
+    key.plain() || edit_of(key).is_some()
 }
 
 /// One key press, from the keyboard or from a tap on a footer hint (`app/mouse.rs`). A tap sends the hint's own
@@ -34,16 +42,17 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
         return;
     }
-    // While the finder is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
-    if m.finder.is_some() && named.key().plain() {
+    // While the finder is open, its plain keys and field edits edit the query before any command (Scouter
+    // `onKeyPress`).
+    if m.finder.is_some() && prompt_takes(named.key()) {
         cx.stop_propagation();
         find::prompt_key(&mut m, named.key());
         paint(cx.app(), &mut m, &mut ui.borrow_mut());
         repaint_after_layout(cx.app(), model, ui);
         return;
     }
-    // While the command line is open, its plain keys edit it; Enter runs it and `:q` quits.
-    if m.command.is_some() && named.key().plain() {
+    // While the command line is open, its plain keys and field edits edit it; Enter runs it and `:q` quits.
+    if m.command.is_some() && prompt_takes(named.key()) {
         cx.stop_propagation();
         if command::prompt_key(&mut m, named.key()) {
             return cx.quit();
@@ -52,8 +61,9 @@ pub fn press_key(cx: &mut Cx<'_>, model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui
         repaint_after_layout(cx.app(), model, ui);
         return;
     }
-    // While the search prompt is open, its plain keys edit the query before any command (Scouter `onKeyPress`).
-    if m.search.as_ref().is_some_and(|search| search.editing) && named.key().plain() {
+    // While the search prompt is open, its plain keys and field edits edit the query before any command (Scouter
+    // `onKeyPress`).
+    if m.search.as_ref().is_some_and(|search| search.editing) && prompt_takes(named.key()) {
         cx.stop_propagation();
         search::prompt_key(&mut m, &ui.borrow(), named.key());
         paint(cx.app(), &mut m, &mut ui.borrow_mut());

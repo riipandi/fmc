@@ -34,7 +34,7 @@ Text files show line numbers and syntax colours. `j` and `k` scroll, `gg` and `G
 
 A file over 1 MiB shows its first 1 MiB.
 
-`/` searches the file. `Enter` goes to the next match, `n` and `N` step through the matches, and `Esc` ends the prompt and keeps them.
+`/` searches the file. `Enter` goes to the next match, `n` and `N` step through the matches, and `Esc` ends the prompt and keeps them. Its query takes the same caret keys as the finder's.
 
 ## Images and binary files
 
@@ -68,7 +68,7 @@ Inside a git repository, the reader marks the lines that differ from `HEAD`. A s
 
 ## Find a file
 
-`/` in the file list opens the finder. Its matches replace the tree until you press `Esc`, and the tree returns where it was.
+`/` in the file list opens the finder. Its matches replace the tree until you press `Esc`, and the tree returns where it was. The query has a caret: `←` and `→` move it, and `Option` or `Ctrl` with them moves by word, with the other [text field keys](keymaps.md#text-fields).
 
 Typing filters by name. By default (`substring`) every word of the query must appear in the path, ignoring case, and up to 200 matches are listed with the total. `Ctrl+F` switches to fuzzy matching: the whole query is one pattern whose letters must appear in order anywhere in the path, the best matches come first, and the matched letters are highlighted. `find_mode` in the settings sets the start. The footer names `fuzzy` while it is on, including before the first letter.
 

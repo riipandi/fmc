@@ -4,6 +4,7 @@
 //! over its rendered text (`reader/rendered_search.rs`); the code view's hits are lines.
 
 use fmc::keys::Key;
+use fmc::line_edit::{FieldEdit, edit_of, is_text};
 use fmc::reader::rendered_search::{Hit, Rendered, row_within};
 use fmc::reader::search::Search;
 
@@ -56,13 +57,14 @@ fn row_of(rendered: &Rendered, tops: &[(u32, u32)], hit: &Hit) -> Option<u32> {
     Some(top + row_within(hit.offset, rendered.block_len(hit.block), rows))
 }
 
-/// Replaces a rendered search's query and hits, and moves to the first hit at or below the top row (Scouter `type`).
-fn retype_marks(m: &Model, ui: &Ui, search: &mut Search, query: String) {
+/// Finds the rendered view's hits of the edited query, and moves to the first hit at or below the top row (Scouter
+/// `type`).
+fn retype_marks(m: &Model, ui: &Ui, search: &mut Search) {
     let rendered = ui.markdown.index(&source(m));
     let tops = ui.markdown.block_tops();
-    let marks = rendered.hits(&query);
+    let marks = rendered.hits(search.query.text());
     let row = |hit: &Hit| row_of(&rendered, &tops, hit).unwrap_or(0);
-    search.retype_marks(marks, query, top(m) as u32, row);
+    search.retype_marks(marks, top(m) as u32, row);
 }
 
 /// `/` in the reader: opens the prompt on an empty query (Scouter `startSearch`). The rendered view searches its own
@@ -72,43 +74,49 @@ pub fn start(m: &mut Model) {
     show(m, "/".into());
 }
 
-/// A key while the prompt is open: the query edits, Enter and the arrows step, Esc closes (Scouter `handleKey`).
-/// Only plain keys reach here; Ctrl keys keep their commands.
+/// A key while the prompt is open: the query takes the field edits and the typed text at its caret, Enter and the
+/// arrows step, Esc closes (Scouter `handleKey`). Only plain keys and field edits reach here; other Ctrl and Alt keys
+/// keep their commands.
 pub fn prompt_key(m: &mut Model, ui: &Ui, key: Key<'_>) {
     let Some(mut search) = m.search.take() else { return };
-    let reveal = match key.name {
-        "escape" => {
-            if search.query.is_empty() {
-                m.message = None;
-                return;
+    let reveal = if let Some(edit) = edit_of(key) {
+        edit_query(m, ui, &mut search, edit)
+    } else {
+        match key.name {
+            "escape" => {
+                if search.query.text().is_empty() {
+                    m.message = None;
+                    return;
+                }
+                search.editing = false;
+                false
             }
-            search.editing = false;
-            false
-        }
-        "return" => {
-            search.step(!key.shift);
-            true
-        }
-        "down" => {
-            search.step(true);
-            true
-        }
-        "up" => {
-            search.step(false);
-            true
-        }
-        "backspace" => {
-            let mut query = search.query.clone();
-            query.pop();
-            retype(m, ui, &mut search, query)
-        }
-        _ => match key.text.chars().collect::<Vec<char>>().as_slice() {
-            [typed] if !typed.is_control() => {
-                let query = format!("{}{typed}", search.query);
-                retype(m, ui, &mut search, query)
+            "return" => {
+                search.step(!key.shift);
+                true
+            }
+            "down" => {
+                search.step(true);
+                true
+            }
+            "up" => {
+                search.step(false);
+                true
+            }
+            "left" => {
+                search.query.left();
+                false
+            }
+            "right" => {
+                search.query.right();
+                false
+            }
+            _ if is_text(key.text) => {
+                search.query.insert(key.text);
+                retype(m, ui, &mut search)
             }
             _ => false,
-        },
+        }
     };
     show(m, search.message());
     m.search = Some(search);
@@ -117,13 +125,20 @@ pub fn prompt_key(m: &mut Model, ui: &Ui, key: Key<'_>) {
     }
 }
 
-/// Replaces the query for whichever view the search runs in; returns whether the view should move to the hit.
-fn retype(m: &Model, ui: &Ui, search: &mut Search, query: String) -> bool {
+/// A field edit of the query: the hits are found again only when the text changed, as typing does. A caret move keeps
+/// the view where it is.
+fn edit_query(m: &Model, ui: &Ui, search: &mut Search, edit: FieldEdit) -> bool {
+    if search.query.edit(edit) { retype(m, ui, search) } else { false }
+}
+
+/// Finds the hits of the edited query in whichever view the search runs in; returns whether the view should move to the
+/// hit.
+fn retype(m: &Model, ui: &Ui, search: &mut Search) -> bool {
     if search.rendered {
-        retype_marks(m, ui, search, query);
+        retype_marks(m, ui, search);
         return search.current_mark().is_some();
     }
-    search.retype(&text(m), query, top(m)).is_some()
+    search.retype(&text(m), top(m)).is_some()
 }
 
 /// Moves the view to the current hit, in whichever view the search runs in.
@@ -175,7 +190,7 @@ pub fn clear(m: &mut Model) {
 pub fn follow(m: &mut Model, ui: &Ui) {
     let Some(search) = m.search.as_ref() else { return };
     if search.rendered {
-        let marks = ui.markdown.index(&source(m)).hits(&search.query);
+        let marks = ui.markdown.index(&source(m)).hits(search.query.text());
         if let Some(search) = m.search.as_mut() {
             search.refresh_marks(marks);
         }
@@ -191,8 +206,8 @@ pub fn follow(m: &mut Model, ui: &Ui) {
 /// nothing in the rendered view, and the rendered view's marks clear when it is not shown.
 pub fn sync(m: &Model, ui: &Ui) {
     let mark = match m.search.as_ref() {
-        Some(search) if search.rendered && m.shown.previewing() && !search.query.is_empty() => Some(Mark {
-            query: search.query.clone(),
+        Some(search) if search.rendered && m.shown.previewing() && !search.query.text().is_empty() => Some(Mark {
+            query: search.query.text().to_owned(),
             current: search.current_mark().and_then(|hit| hit.slot.map(|slot| (slot, hit.at.clone()))),
         }),
         _ => None,

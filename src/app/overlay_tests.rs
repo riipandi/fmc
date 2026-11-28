@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use fmc::explorer::{Entry, Kind};
-use fmc::overlay::{Dialog, FieldEdit, Stop};
+use fmc::line_edit::FieldEdit;
+use fmc::overlay::{Dialog, Stop};
 use opentui::testing::TestApp;
 
 use super::*;
