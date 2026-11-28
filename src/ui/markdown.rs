@@ -8,7 +8,6 @@ use std::ops::Range;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use fmc::reader::frontmatter;
 use fmc::reader::headings;
 use fmc::reader::language::HIGHLIGHTED;
 use fmc::reader::rendered_search::Rendered;
@@ -17,6 +16,7 @@ use opentui::prelude::*;
 use opentui::widget::{Markdown, MarkdownColors};
 
 use super::markdown_blocks;
+use super::markdown_images;
 use super::markdown_search::{
     Captured, Mark, Paint, Styles, capture_code, capture_prose, count_code, index, paint_code, paint_prose,
 };
@@ -113,7 +113,7 @@ impl MarkdownView {
     pub fn show(&self, markdown: &str) {
         let marked = self.paint.mark.borrow_mut().take().is_some();
         self.paint.restart();
-        self.doc.set_markdown(headings::with_markers(&frontmatter::as_fence(markdown)));
+        self.doc.set_markdown(headings::with_markers(&markdown_images::prepared(markdown)));
         // A block the document keeps from the one shown keeps its marks, so the marked document is built again.
         if marked {
             self.apply();
@@ -148,7 +148,7 @@ impl MarkdownView {
             return lines;
         }
         let lines = Rc::new(
-            markdown_blocks::split(&frontmatter::as_fence(source))
+            markdown_blocks::split(&markdown_images::prepared(source))
                 .blocks
                 .into_iter()
                 .map(|block| block.lines)

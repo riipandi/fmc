@@ -5,7 +5,7 @@ updated: 2026-11-28T17:09:52+07:00
 phases:
     - id: 1
       title: The image paragraphs, found and rewritten as fences
-      status: pending
+      status: done
       note: —
     - id: 2
       title: The image box in the rendered view

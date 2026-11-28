@@ -8,6 +8,7 @@ pub mod frontmatter;
 pub mod glob;
 pub mod headings;
 pub mod image;
+pub mod images;
 pub mod jump;
 pub mod language;
 pub mod markdown;
