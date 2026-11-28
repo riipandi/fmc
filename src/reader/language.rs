@@ -44,9 +44,12 @@ pub const HIGHLIGHTED: &[&str] = &[
 ];
 
 /// Extensions OpenTUI's table does not know, with the filetype fmc highlights them as. `.tf` and `.tfvars` are
-/// Terraform, which HCL covers; `.scm` is a tree-sitter query, because fmc has no Scheme grammar.
+/// Terraform, which HCL covers; `.scm` is a tree-sitter query, because fmc has no Scheme grammar; `.eex` and `.leex` are
+/// Elixir templates, which HEEx covers for their tags and HTML.
 const EXTENSIONS: &[(&str, &str)] = &[
     ("heex", "heex"),
+    ("eex", "heex"),
+    ("leex", "heex"),
     ("hcl", "hcl"),
     ("tf", "hcl"),
     ("tfvars", "hcl"),
@@ -98,6 +101,8 @@ mod tests {
         assert_eq!(at("Hogwarts/owls.TFVARS"), Some("hcl"));
         assert_eq!(at("Louvre/keys.hcl"), Some("hcl"));
         assert_eq!(at("Hogwarts/live.heex"), Some("heex"));
+        assert_eq!(at("Hogwarts/page.eex"), Some("heex"));
+        assert_eq!(at("Hogwarts/page.LEEX"), Some("heex"));
         assert_eq!(at("Diagon/owls.json5"), Some("json5"));
         assert_eq!(at("Diagon/query.SCM"), Some("query"));
         // The name of a file with no extension is its key, in any case.

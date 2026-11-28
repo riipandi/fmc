@@ -17,14 +17,28 @@ fmc reads one optional settings file when it starts. The [Settings page](usage.m
 | `file_associations` | object of pattern to filetype name | none | Which filetype a file is highlighted as, and whether `m` renders it as Markdown. See [File associations](#file-associations). |
 | `editor` | string: an app name or an app path | `""` | The app `e` opens the browsed folder with. Empty opens the folder in Finder. See [Opening in other apps](#opening-in-other-apps). |
 | `open_with` | object of pattern to a list of app names or `.app` paths | none | The apps the Open With picker (`O`) offers first for a file that matches the pattern. See [Opening in other apps](#opening-in-other-apps). |
-| `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it for this run only. See [Finder](#finder). |
+| `find_mode` | `"substring"` or `"fuzzy"` | `"substring"` | How the file finder matches names when it opens. `Ctrl+F` in the finder flips it, and the choice is kept in `meta/state.json`, which wins over this setting once it holds one. See [Finder](#finder) and [Remembered state](#remembered-state). |
 | `theme_mode` | `"auto"`, `"dark"`, or `"light"` | `"auto"` | Which palette to show. `auto` follows the terminal's background; `dark` and `light` force one. See [Themes](#themes). |
 | `dark_theme` | a theme id | `"default"` | The palette for dark mode: `default` (Scouter's own) or a theme id that is dark. See [Themes](#themes). |
 | `light_theme` | a theme id | `"default"` | The palette for light mode: `default` or a theme id that is light. See [Themes](#themes). |
 
 A key that is not listed is ignored.
 
-The file keeps no UI state. The sidebar's width and visibility, wrap, the changes screen's split and context lines, and dotfiles are not saved: a change to them lasts until fmc quits.
+The file keeps no UI state. The state fmc remembers is in its own file: see [Remembered state](#remembered-state).
+
+## Remembered state
+
+fmc keeps some of your choices across runs in `$XDG_CONFIG_HOME/fmc/meta/state.json`, or `~/.config/fmc/meta/state.json` when `XDG_CONFIG_HOME` is unset, empty, or relative. fmc writes it about a second after your last change, and a change still waiting when you quit is written before fmc exits. The choices are:
+
+- the sidebar's width (`Ctrl+←` and `Ctrl+→`, or a drag on its edge);
+- wrapping in the reader (`w`);
+- on the changes screen, side by side (`s`), the wide context (`x`), and all files (`a`);
+- the dotfiles (`Ctrl+.` or `.`), which stay as you set them when you go up a folder with `-`;
+- the finder's name matching (`Ctrl+F`), and a `find_mode` you set on the Settings page.
+
+Not kept: the sidebar's visibility (`Ctrl+/`), which returns to automatic when a document opens or closes and at the 80-column crossing, and the folds of the changes screen.
+
+Once the state holds a finder matching, `find_mode` in `settings.json` no longer sets the start, so a hand edit of it does not apply. The file is a JSON object of these keys. A file that does not parse, or a value of the wrong type, reads as its default, with no message, and the next save replaces the file. If the folder cannot be written, the footer says so once in a run.
 
 ## Errors
 
@@ -100,7 +114,7 @@ A theme file is strict JSON, with no comments:
 - A pattern with no `/` matches the file name, in any folder. A pattern with a `/` matches the path from the folder fmc opened. A file outside that folder matches by its name only.
 - `*` matches any run of characters within one name or folder, `**` any number of folders (`docs/**/*.txt` matches `docs/owls.txt` too), `?` one character, and `{a,b}` either alternative.
 - Case follows the filesystem: a pattern ignores case on macOS and Windows, and matches case exactly elsewhere.
-- Values are fmc's filetype names, such as `rust`, `bash`, `json`, `markdown`, or `typescriptreact`. Besides the languages Scouter colours, fmc highlights `astro`, `diff`, `elixir`, `heex`, `hcl`, `jsdoc`, `json5`, `just`, `lua`, `query`, `regex`, `sql`, `svelte`, `vim`, `vimdoc`, and `xml`. `query` is a tree-sitter query (`.scm` files). `vimdoc` is Vim help, which a file gets only from an association, such as `"doc/*.txt": "vimdoc"` for a plugin's help folder, because a `.txt` file is plain text. `shellscript` means `bash`, `jsonc` means `json`, and `dotenv` and `env` mean `bash`, which reads `KEY=value` and `#` comments. `plaintext` shows the file as plain text, with no highlighting. A name fmc does not know is skipped with a notice that names the pattern.
+- Values are fmc's filetype names, such as `rust`, `bash`, `json`, `markdown`, or `typescriptreact`. Besides the languages Scouter colours, fmc highlights `astro`, `diff`, `elixir`, `heex`, `hcl`, `jsdoc`, `json5`, `just`, `lua`, `query`, `regex`, `sql`, `svelte`, `vim`, `vimdoc`, and `xml`. `query` is a tree-sitter query (`.scm` files). `.eex` and `.leex` files are read as `heex` without an association. `vimdoc` is Vim help, which a file gets only from an association, such as `"doc/*.txt": "vimdoc"` for a plugin's help folder, because a `.txt` file is plain text. `shellscript` means `bash`, `jsonc` means `json`, and `dotenv` and `env` mean `bash`, which reads `KEY=value` and `#` comments. `plaintext` shows the file as plain text, with no highlighting. A name fmc does not know is skipped with a notice that names the pattern.
 - When several patterns match a file, a path pattern wins over a name pattern, then the longer pattern wins, then the pattern that sorts first.
 - An association decides the highlighting in the reader, in the finder's preview, and on the changes screen. A file with a `markdown` association opens rendered, and `m` shows its source.
 - fmc has no built-in association for env files. The example above is only an example.

@@ -60,10 +60,11 @@ fn run() -> Result<(), String> {
             let schema = services::settings::schema_path(config_home.clone(), home.clone())
                 .and_then(|file| services::settings::ensure_schema(&file));
             settings.notices.extend(schema);
+            let remembered = services::state::read(config_home.clone(), home.clone());
             let themes =
                 services::theme::folder(config_home, home).map(|dir| services::theme::load(&dir)).unwrap_or_default();
             let keys = keymap();
-            app::run(&target, settings, themes, keys, path).map_err(|e| e.to_string())?;
+            app::run(&target, settings, themes, keys, path, remembered).map_err(|e| e.to_string())?;
         }
     }
     Ok(())

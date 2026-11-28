@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, gutter, open, preview, reader, write};
+use super::{Model, Pending, Ui, changes, find, gutter, open, preview, reader, remember, write};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -116,9 +116,12 @@ fn go_up(m: &mut Model) {
         m.message = Some(Message { text: "Already at the top of the file system.".into(), error: false });
         return;
     };
+    // A new tree shows dotfiles again, so the session's choice is carried over: it is not a property of the root.
+    let dotfiles = m.browser.dotfiles();
     let height = m.browser.height();
     m.browser = Browser::new(Tree::new(parent.clone()));
     m.browser.set_height(height);
+    m.browser.set_dotfiles(dotfiles);
     // The branch belongs to the root it was read for: a stale one never shows until the next poll answers.
     m.branch = None;
     m.pending = Some(Pending { target: root, expand: true, open: false });
@@ -265,6 +268,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::Written { kind, source, result } => write::written(m, *kind, source, result.clone()),
         // `app/settings.rs` answers it: a refused save takes a colour back, which needs the UI.
         Event::SettingsSaved { .. } => {}
+        Event::StateSaved { result } => remember::saved(m, result),
         Event::Launched { done, result } => open::launched(m, done, result),
         Event::Apps { target, result } => open::listed(m, target, result),
     }

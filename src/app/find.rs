@@ -11,6 +11,7 @@ use fmc::explorer::{Entry, Flat, Kind};
 use fmc::find::text::{Generation, Progress, SCAN_DELAY_MS, text_status, wants_scan};
 use fmc::find::{self, Index};
 use fmc::keys::Key;
+use fmc::line_edit::{FieldEdit, Line, edit_of, is_text};
 use fmc::reader::document::Document;
 use fmc::reader::search::Search;
 use fmc::theme::Palette;
@@ -40,7 +41,7 @@ pub struct Finder {
     /// Names the workers that answer this finder; answers from an earlier finder are dropped.
     session: u64,
     pub mode: Mode,
-    pub query: String,
+    pub query: Line,
     /// The footer's text after the query: a hint, `indexing…`, the search's progress, or its count.
     pub status: String,
     /// `None` until the worker has walked the folder.
@@ -112,7 +113,7 @@ pub fn start(m: &mut Model) {
     m.finder = Some(Finder {
         session,
         mode: Mode::Files,
-        query: String::new(),
+        query: Line::default(),
         status: String::new(),
         index: None,
         returned_to: m.browser.selected().to_path_buf(),
@@ -177,9 +178,14 @@ pub fn toggle_fuzzy(m: &mut Model) {
     update(m);
 }
 
-/// A plain key while the finder is open (Scouter `FileFinder.handleKey`): typing edits the query, the arrows move the
-/// highlight, Tab switches the search, and Enter and Esc end the finder. Other plain keys do nothing.
+/// A key while the finder is open (Scouter `FileFinder.handleKey`): the query takes the field edits and the typed
+/// text at its caret, the arrows move the caret or the highlight, Tab switches the search, and Enter and Esc end the
+/// finder. Other keys do nothing.
 pub fn prompt_key(m: &mut Model, key: Key<'_>) {
+    if let Some(edit) = edit_of(key) {
+        edit_query(m, edit);
+        return;
+    }
     match key.name {
         "escape" => end(m, None),
         "return" => pick(m),
@@ -194,24 +200,29 @@ pub fn prompt_key(m: &mut Model, key: Key<'_>) {
             m.browser.move_by(if key.name == "up" { -1 } else { 1 });
             preview_selected(m);
         }
-        "backspace" => {
+        "left" | "right" => {
             if let Some(finder) = m.finder.as_mut() {
-                finder.query.pop();
+                if key.name == "left" { finder.query.left() } else { finder.query.right() }
+            }
+        }
+        _ if is_text(key.text) => {
+            if let Some(finder) = m.finder.as_mut() {
+                finder.query.insert(key.text);
             }
             restart_scan(m);
             update(m);
         }
-        _ => {
-            let mut chars = key.text.chars();
-            if let (Some(typed), None) = (chars.next(), chars.next())
-                && !typed.is_control()
-                && let Some(finder) = m.finder.as_mut()
-            {
-                finder.query.push(typed);
-                restart_scan(m);
-                update(m);
-            }
-        }
+        _ => {}
+    }
+}
+
+/// A field edit of the query. The scan and the list follow only a change of the text, as typing does; a caret move
+/// keeps both.
+fn edit_query(m: &mut Model, edit: FieldEdit) {
+    let Some(finder) = m.finder.as_mut() else { return };
+    if finder.query.edit(edit) {
+        restart_scan(m);
+        update(m);
     }
 }
 
@@ -224,7 +235,7 @@ fn restart_scan(m: &mut Model) {
         flag.store(true, Ordering::Relaxed);
     }
     finder.text = None;
-    if finder.mode != Mode::Text || finder.index.is_none() || !wants_scan(&finder.query) {
+    if finder.mode != Mode::Text || finder.index.is_none() || !wants_scan(finder.query.text()) {
         return;
     }
     let session = finder.session;
@@ -240,7 +251,7 @@ pub fn scan_due(m: &mut Model, session: u64, scan: u64) {
     if finder.session != session || !finder.scan.is_current(scan) || finder.mode != Mode::Text {
         return;
     }
-    let (Some(index), query) = (finder.index.clone(), finder.query.clone()) else { return };
+    let (Some(index), query) = (finder.index.clone(), finder.query.text().to_owned()) else { return };
     let cancelled = Arc::new(AtomicBool::new(false));
     finder.cancelled = Some(cancelled.clone());
     services::stream(&m.proxy, move |send| {
@@ -281,7 +292,7 @@ pub fn previewed(m: &mut Model, session: u64, request: u64, result: Result<Docum
 /// then the names or the text hits.
 fn update(m: &mut Model) {
     let Some(finder) = m.finder.as_ref() else { return };
-    let (index, query, mode) = (finder.index.clone(), finder.query.clone(), finder.mode);
+    let (index, query, mode) = (finder.index.clone(), finder.query.text().to_owned(), finder.mode);
     if query.is_empty() {
         // The mode shows before the first letter too: a Ctrl+F pressed on an empty prompt must change what is drawn.
         let hint = if mode == Mode::Files { HINT_FILES } else { HINT_TEXT };
@@ -368,7 +379,7 @@ fn preview_selected(m: &mut Model) {
 fn request_preview(m: &mut Model, path: PathBuf, line: usize) {
     let Some(finder) = m.finder.as_mut() else { return };
     finder.request += 1;
-    let (session, request, query) = (finder.session, finder.request, finder.query.clone());
+    let (session, request, query) = (finder.session, finder.request, finder.query.text().to_owned());
     let preview = finder.preview.get_or_insert(Preview { shown: None, pending: None });
     if let Some(shown) = preview.shown.as_mut().filter(|shown| shown.path == path) {
         shown.line = line;
@@ -392,7 +403,7 @@ fn end_preview(m: &mut Model) {
 /// is revealed (a folder expanded, a file opened) when it is not. A text hit opens at its line.
 pub fn pick(m: &mut Model) {
     let Some(finder) = m.finder.as_ref() else { return };
-    let typed = finder.query.clone();
+    let typed = finder.query.text().to_owned();
     let picked = m.browser.selected_flat().or_else(|| m.browser.selected_entry().map(Flat::name));
     end(m, picked.as_ref().map(|flat| flat.entry.path.clone()));
     let Some(flat) = picked else { return };

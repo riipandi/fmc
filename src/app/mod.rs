@@ -15,6 +15,7 @@ mod pages;
 mod poll;
 mod preview;
 mod reader;
+mod remember;
 mod scroll;
 mod search;
 mod settings;
@@ -30,6 +31,7 @@ use fmc::diff::{ChangeList, Marks};
 use fmc::explorer::{Browser, Tree};
 use fmc::keys::{Action, Focus, Parser, Screen, State, Step};
 use fmc::layout::{Page, Tier, tier};
+use fmc::line_edit::Line;
 use fmc::reader::markdown::PARAGRAPH_REFUSED;
 use fmc::reader::position::scroll_label;
 use fmc::reader::rendered_signs::block_marks;
@@ -39,11 +41,11 @@ use fmc::theme::{DARK, Hex, LIGHT, Mode, ModeChoice, Palette, SystemTheme, page_
 use mouse::wire_mouse;
 use opentui::prelude::*;
 
-use crate::services::Event;
+use crate::services::{self, Event};
 use crate::ui::binary::BinaryView;
 use crate::ui::changes::ChangesView;
 use crate::ui::diff::DiffBody;
-use crate::ui::find::{FindBar, prompt_segments};
+use crate::ui::find::{FindBar, PromptLine};
 use crate::ui::footer::{Footer, FooterState, Message, tildify};
 use crate::ui::header::{Badge, BadgeKind, HeaderState, PaneHeader};
 use crate::ui::hints::{self, Pane, Prompt};
@@ -198,8 +200,8 @@ struct Model {
     branch: Option<String>,
     /// Counts each text shown, so a sign answer finds the showing it was asked for (`app/gutter.rs`).
     serial: u64,
-    /// The text of the `:` command line while it is open (`app/command.rs`).
-    command: Option<String>,
+    /// The `:` command line while it is open, with its caret (`app/command.rs`).
+    command: Option<Line>,
     /// The terminal's width at the last paint: the tier reads it (`app/pages.rs`).
     columns: u16,
     /// The terminal's height at the last paint: a menu that scrolls sizes its window from it (`app/open.rs`).
@@ -218,6 +220,8 @@ struct Model {
     bulk: Option<write::Bulk>,
     /// The Settings page's values, its page while it is open, and its saves (`app/settings.rs`).
     settings: settings::Store,
+    /// The remembered UI state's file and its pending write (`app/remember.rs`).
+    saves: remember::Saves,
 }
 
 impl Model {
@@ -321,6 +325,7 @@ fn new_model(app: &App, root: PathBuf, pending: Option<Pending>) -> Model {
         overlay_at: (0, 0),
         overlay_task: None,
         settings: Default::default(),
+        saves: Default::default(),
         clipboard: None,
         bulk: None,
         associations: Default::default(),
@@ -335,6 +340,7 @@ pub fn run(
     themes: crate::services::theme::Loaded,
     keys: fmc::keys::Parsed,
     settings_path: Option<PathBuf>,
+    remembered: services::state::Loaded,
 ) -> opentui::Result<()> {
     // Scouter draws on the terminal's own background (`RGBA.defaultBackground()`), not a theme color.
     let [dark, light] = [Theme::dark(), Theme::light()].map(|t| Theme { background: Color::DEFAULT_BACKGROUND, ..t });
@@ -369,6 +375,7 @@ pub fn run(
         m.git_gutter = settings.settings.git_gutter;
         m.associations = settings.settings.file_associations;
         m.matching = settings.settings.find_mode;
+        remember::start(&mut m, remembered);
         m.choice = settings.settings.theme_mode;
         let Chosen { dark, light, notices } =
             catalog::choose(themes.themes, &settings.settings.dark_theme, &settings.settings.light_theme);
@@ -461,7 +468,9 @@ pub fn run(
     if std::env::var_os("FMC_PANIC_AFTER_START").is_some() {
         app.set_timeout(std::time::Duration::from_millis(200), |_| panic!("Peeves was here"));
     }
-    app.run()
+    let result = app.run();
+    remember::flush(&model.borrow());
+    result
 }
 
 /// Focuses `pane` on a left press anywhere in `panel`.
@@ -666,6 +675,8 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let (columns, rows) = app.size();
     m.columns = columns;
     m.rows = rows;
+    // Every change passes a paint, so the remembered values are checked here (`app/remember.rs`).
+    remember::sync(app, m);
     let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
     let viewport = usize::from(rows).saturating_sub(chrome);
     m.browser.set_height(viewport);
@@ -703,7 +714,10 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     sidebar.lead = pages::back_lead(m).or_else(|| layout::list_chevron(m, columns));
     ui.browser_header.root.visible(m.finder.is_none());
     ui.browser_header.paint(&sidebar, p);
-    let bar = m.finder.as_ref().map(|finder| prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p));
+    let bar = m.finder.as_ref().map(|finder| {
+        let prompt = PromptLine::new(find::prompt(finder).0, &finder.query, &finder.status);
+        prompt.segments(FindBar::room(usize::from(width)), p, &measure)
+    });
     ui.find.paint(bar, p);
     ui.tree.root.visible(!on_changes);
     ui.changes.root.visible(on_changes);
@@ -858,15 +872,15 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let code_search = m.search.as_ref().filter(|_| !m.shown.previewing());
     ui.reader.sync_search(
         p,
-        code_search.map_or("", |search| search.query.as_str()),
+        code_search.map_or("", |search| search.query.text()),
         code_search.and_then(|search| search.current_line()),
         &search_text,
     );
-    // The compact bottom bar shows an open prompt after `Cancel` (`ui/bars.rs`), as the finder bar does in the header.
-    let prompt_text = match (&m.finder, &m.search, &m.command) {
-        (Some(finder), _, _) => Some(prompt_segments(find::prompt(finder).0, &finder.query, &finder.status, p)),
-        (None, Some(search), _) if search.editing => Some(prompt_segments("/", &search.query, "", p)),
-        (None, _, Some(text)) => Some(prompt_segments(":", text, "", p)),
+    // An open prompt replaces the footer's left side, or the compact bottom bar's segments after `Cancel` (`ui/bars.rs`).
+    let editing = match (&m.finder, &m.search, &m.command) {
+        (Some(finder), _, _) => Some(PromptLine::new(find::prompt(finder).0, &finder.query, &finder.status)),
+        (None, Some(search), _) if search.editing => Some(PromptLine::new("/", &search.query, &search.count_text())),
+        (None, _, Some(line)) => Some(PromptLine::new(":", line, "")),
         _ => None,
     };
     let footer = FooterState {
@@ -886,7 +900,6 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
             _ if m.command.is_some() => Some(Prompt::Command),
             _ => None,
         },
-        command: m.command.clone(),
         message: m.message.clone(),
         document,
         diff: if body { changes::footer(m, ui) } else { None },
@@ -896,7 +909,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
         selection: app.selected_text().is_some(),
         sidebar_hidden: !layout::shown(m, columns),
         page: m.pages.top(),
-        prompt_text,
+        editing,
         // The marks are the tree's: the finder and the changes screen show none.
         marked: if m.finder.is_none() && m.changes.is_none() { m.browser.marked().len() } else { 0 },
     };
@@ -929,6 +942,10 @@ mod search_tests;
 #[cfg(test)]
 #[path = "find_tests.rs"]
 mod find_tests;
+
+#[cfg(test)]
+#[path = "prompt_tests.rs"]
+mod prompt_tests;
 
 #[cfg(test)]
 #[path = "rendered_signs_tests.rs"]

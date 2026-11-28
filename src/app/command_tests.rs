@@ -69,7 +69,7 @@ fn escape_cancels_and_backspace_edits() {
     open(&mut m);
     type_text(&mut m, "qx");
     press(&mut m, "backspace", "");
-    assert_eq!(m.command.as_deref(), Some("q"));
+    assert_eq!(m.command.as_ref().map(|line| line.text()), Some("q"));
     press(&mut m, "escape", "");
     assert!(m.command.is_none());
 }

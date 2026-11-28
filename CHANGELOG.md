@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The finder's query, the in-file search, and the `:` line take a caret. `←` and `→` move it, `Option` or `Ctrl` with them moves by word, `Option+Backspace` and `Ctrl+W` delete a word, and `Cmd+←` or `Ctrl+A` go to the start of the line. The keys match the name field of a dialog. `Ctrl+←` and `Ctrl+→` edit the prompt while one is open, rather than resizing the sidebar.
+- A Markdown file's front matter, YAML between `---` lines or TOML between `+++` lines at the very start of the file, is a highlighted code block in the rendered view. The source view shows the file as it is.
+- `.eex` and `.leex` templates are highlighted as HEEx: their tags and HTML are coloured, and the text around them stays plain.
+- fmc keeps the sidebar's width, the reader's wrap, the changes screen's side by side, wide context, and all-files choices, the dotfiles, and the finder's fuzzy or substring matching across runs, in `meta/state.json` in its config folder. A change is written about a second after it, and the sidebar's visibility is not kept. See [Configuration](docs/configuration.md#remembered-state).
+
 ### Changed
 
+- In the in-file search, `Ctrl+U` and `Ctrl+K` edit the query while the prompt is open, rather than scrolling.
+- A Lua `---` documentation comment takes the documentation capture, so a theme can colour it apart from other comments. The built-in palettes show it as they show other comments.
+- A `find_mode` set on the Settings page, or a `Ctrl+F` in the finder, is kept in `meta/state.json`, and that file wins over `find_mode` in `settings.json` once it holds one.
+- Dotfiles stay as you set them when you go up a folder with `-`.
 - The footer's root and git branch are drawn in a muted colour, so a message and the facts stand out.
 
 ## [0.6.0] - 2026-11-28

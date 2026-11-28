@@ -34,7 +34,7 @@ Text files show line numbers and syntax colours. `j` and `k` scroll, `gg` and `G
 
 A file over 1 MiB shows its first 1 MiB.
 
-`/` searches the file. `Enter` goes to the next match, `n` and `N` step through the matches, and `Esc` ends the prompt and keeps them.
+`/` searches the file. `Enter` goes to the next match, `n` and `N` step through the matches, and `Esc` ends the prompt and keeps them. Its query takes the same caret keys as the finder's.
 
 ## Images and binary files
 
@@ -43,6 +43,8 @@ PNG, JPG, GIF, and WEBP files open scaled to fit the reader, with their size and
 ## Markdown
 
 Markdown files open rendered: headings, emphasis, links, lists, task boxes, quotes, tables, and highlighted code blocks. Headings keep their `#` markers in the heading's colour, so the level shows without a bigger font. `m` switches to the source, with line numbers, and back.
+
+Front matter at the top of a file, between `---` lines (YAML) or `+++` lines (TOML), is a highlighted code block in the rendered view, and `m` shows the file as it is.
 
 A `mermaid` code fence is drawn as a box diagram at the reader's width. A diagram too wide for the reader, or one fmc cannot draw, shows its source in a frame with the reason.
 
@@ -66,7 +68,7 @@ Inside a git repository, the reader marks the lines that differ from `HEAD`. A s
 
 ## Find a file
 
-`/` in the file list opens the finder. Its matches replace the tree until you press `Esc`, and the tree returns where it was.
+`/` in the file list opens the finder. Its matches replace the tree until you press `Esc`, and the tree returns where it was. The query has a caret: `←` and `→` move it, and `Option` or `Ctrl` with them moves by word, with the other [text field keys](keymaps.md#text-fields).
 
 Typing filters by name. By default (`substring`) every word of the query must appear in the path, ignoring case, and up to 200 matches are listed with the total. `Ctrl+F` switches to fuzzy matching: the whole query is one pattern whose letters must appear in order anywhere in the path, the best matches come first, and the matched letters are highlighted. `find_mode` in the settings sets the start. The footer names `fuzzy` while it is on, including before the first letter.
 

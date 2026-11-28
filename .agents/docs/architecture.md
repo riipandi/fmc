@@ -1,6 +1,6 @@
 # Architecture
 
-updated: 2026-11-28T16:05:30+07:00
+updated: 2026-11-28T17:15:44+07:00
 
 The architecture and the reasoning behind it. The layout lives in `shape.md`; the binding rules derived from these decisions live in `rules.md` and `rust.md`. This file keeps the why, so a settled decision is not re-litigated.
 
@@ -768,7 +768,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter always draws the sidebar. Its width is a quarter of the terminal within 28 to 40 columns, constrained so the reader keeps at least 28 (`scouter:src/explorer/sidebar-resizer.ts:48-53`), and no key or click hides it. `Ctrl+/` is unbound there; Scouter binds `/` only (`scouter:src/app/app.ts:931,965`). A live probe in Rex at 80x24 logged that `Ctrl+/` reaches fmc as `Char('/')` with Ctrl under the Kitty keyboard protocol that OpenTUI enables (`opentui-0.9.9/src/host.rs:147`), and as `Char('_')` with Ctrl from the legacy byte `0x1F` (`opentui-0.9.9/src/input/core_tests.rs:202`).
 
-Decision: below 80 columns the sidebar hides on its own, and the reader takes the full width. At 80 columns or more the layout is Scouter's, so the 80x24 captures do not change. `Ctrl+/`, or a click on the mark on the border, flips the current state: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again, and a crossing resets to the automatic state. When the focused sidebar hides, the focus moves to the reader. Nothing is saved across runs (RI-9). Approved by the owner on 2026-11-26. Amended by the owner on 2026-11-27: while no document is open (the welcome screen), the sidebar stays shown at any width, and the 80-column rule applies once a document opens; `q` closing the document brings the list back. The mark sits on the top border row (`«` left of the sidebar's top-right corner; `»` at the reader's top-left corner). While hidden: the footer shows `^/ sidebar` and drops `Tab files`; `Tab`, `Esc`, and `Ctrl+←`/`Ctrl+→` neither focus nor resize the sidebar. `Ctrl+_` is bound with `Ctrl+/`, because the legacy encoding (Terminal.app) sends `0x1F`, which OpenTUI reports as `Ctrl+_`.
+Decision: below 80 columns the sidebar hides on its own, and the reader takes the full width. At 80 columns or more the layout is Scouter's, so the 80x24 captures do not change. `Ctrl+/`, or a click on the mark on the border, flips the current state: `«` on the sidebar's border while it is shown, `»` on the reader's left border while it is hidden. A manual choice holds until the width crosses 80 again, and a crossing resets to the automatic state. When the focused sidebar hides, the focus moves to the reader. The width is saved across runs in `meta/state.json`; the visibility is not ("Approved deviation: fmc remembers its UI state in meta/state.json"). Approved by the owner on 2026-11-26. Amended by the owner on 2026-11-27: while no document is open (the welcome screen), the sidebar stays shown at any width, and the 80-column rule applies once a document opens; `q` closing the document brings the list back. The mark sits on the top border row (`«` left of the sidebar's top-right corner; `»` at the reader's top-left corner). While hidden: the footer shows `^/ sidebar` and drops `Tab files`; `Tab`, `Esc`, and `Ctrl+←`/`Ctrl+→` neither focus nor resize the sidebar. `Ctrl+_` is bound with `Ctrl+/`, because the legacy encoding (Terminal.app) sends `0x1F`, which OpenTUI reports as `Ctrl+_`.
 
 Consequences:
 
@@ -787,7 +787,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter lists every entry except its noise names (`.git`, `.hg`, `.svn`, `.DS_Store`, `.AppleDouble`, `Thumbs.db`, `desktop.ini`; `scouter:src/core/files.ts:34`), so dotfiles are shown, and it has no key that hides them. `.` and `Ctrl+.` are unbound in Scouter. A live probe in Rex logged `Ctrl+.` as `Char('.')` with Ctrl, which only the Kitty keyboard protocol can carry, and a plain `.` as `Char('.')` with no modifiers. Terminal.app cannot send `Ctrl+.`.
 
-Decision: `Ctrl+.` and `.` show or hide dotfiles in the tree and in the finder's index. Dotfiles are shown by default, and the noise names stay hidden in both states. `.` is the fallback for `Ctrl+.`, which reaches fmc only from terminals with the Kitty keyboard protocol. Nothing is saved across runs (RI-9). Approved by the owner on 2026-11-26.
+Decision: `Ctrl+.` and `.` show or hide dotfiles in the tree and in the finder's index. Dotfiles are shown by default, and the noise names stay hidden in both states. `.` is the fallback for `Ctrl+.`, which reaches fmc only from terminals with the Kitty keyboard protocol. Dotfiles are saved across runs in `meta/state.json` ("Approved deviation: fmc remembers its UI state in meta/state.json"). Approved by the owner on 2026-11-26.
 
 Consequences:
 
@@ -875,7 +875,7 @@ Context: Scouter has no configuration and no settings page (`scouter:docs/decisi
 
 Decision: `Ctrl+,` opens the Settings page over the content area (`app/settings.rs`, drawn by `ui/settings.rs`), and in the compact tier it is a page of the stack (`Page::Settings`). The page edits eight keys: `auto_preview`, `sidebar_jump`, `reader_jump`, `git_gutter`, `find_mode`, `theme_mode`, `dark_theme`, and `light_theme` (plan-00015, D2 (a)); `file_associations` is not on it. Each row is fmc's own, drawn like a tree row with a value column, not OpenTUI's `Select` (A6). Enter or Space changes a row: a setting flips, a choice steps to its next value, and a number opens the existing dialog's field, where a whole number of 1 or more is typed (D4 (a), D5 (a)). Left and Right (`h`, `l`) step a choice back and forward (plan-00015, A19). A choice stops at its ends and does not wrap (`fmc::settings::Settings::step`).
 
-Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::save_atomic` (A1, D14). After start, the UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3). The UI state RI-9 also names (the sidebar's width and visibility, wrap, the changes screen's split and context lines, dotfiles) is not saved: the owner chose D3 (a) on 2026-11-27, and saving it needs its own decision (`docs/configuration.md`).
+Each change applies to the running app at once, and saves at once: the worker re-reads `settings.json`, sets the changed keys with `settings::merged` (A2), and writes the file with `services::save_atomic` (A1, D14). After start, the UI thread never reads or writes the file. One write is in flight at a time, and a change made during a write waits for the next batch, so two saves never race (plan-00015, A20). A refused or failed save takes back its changes and the queued ones, last first, and the footer says why. A file that does not parse is refused and keeps its bytes (D13, A2). A hand edit made while fmc runs applies on the next start, and the page's save re-reads the file, so it keeps that edit too (D13 (a)). A save writes the keys sorted (A3). The UI state RI-9 also names is saved in its own file, `meta/state.json`, not here ("Approved deviation: fmc remembers its UI state in meta/state.json"); the settings file keeps no UI state.
 
 While the page is open it takes every key, except Ctrl+q and Ctrl+c, and it takes the clicks too: the catcher a dialog uses covers the screen, so the panes beneath do not act (plan-00015, A21). Ctrl+, is the only key for the page (D12, owner): a plain `,` is unbound on every page and `:settings` is not added. Only the kitty keyboard protocol sends `Ctrl+,` (`opentui-0.9.9/src/host.rs:147`, `input-parser.zig:1269-1300`), so a terminal without it has no route to the page; the owner accepted that.
 
@@ -892,6 +892,32 @@ Alternatives considered:
 - A Save row at the end (D5 (c)), or preview on move with Esc to revert and Enter to save (D5 (b)) — rejected: each needs a revert path for every row, and a theme could not preview until saved.
 - A `:settings` command and a plain `,` (D12) — rejected by the owner, who chose `Ctrl+,` only.
 - A watcher that re-reads the file (D13 (c)) — rejected: RI-8 is parked; a restart applies a hand edit.
+
+### Approved deviation: fmc remembers its UI state in meta/state.json
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter keeps the sidebar's width and the reader's wrap in memory and writes no state (`scouter:src/app/app.ts:73`, `scouter:src/explorer/sidebar-resizer.ts:10`, `scouter:docs/decision/0001-read-only-and-minimal.md:7`). RI-9 asked for saved settings, and the owner named the UI state to keep (plan-00020, 2026-11-28).
+
+Decision: fmc keeps seven values across runs in `meta/state.json` in its config folder, beside the schema: the sidebar's width (`sidebar_width`), the reader's wrap (`wrap`), the changes screen's split, wide context, and all files (`diff_split`, `diff_wide`, `diff_all_files`), the dotfiles (`dotfiles`), and the finder's matching (`find_mode`). The rules:
+
+- The sidebar's manual visibility is not saved. `fmc::layout::Visibility` returns it to automatic at each document open or close and at each 80-column crossing, so a saved choice would be undone by the first open.
+- The changes screen's folds stay unsaved: they belong to a diff.
+- The finder's matching: the state wins over `find_mode` in `settings.json` once the file holds one, and the setting seeds a fresh state. A `Ctrl+F` flip and a change on the Settings page are both saved. A flip never writes `settings.json`.
+- Dotfiles survive `-`: a new tree takes the session's choice.
+- The file is written about a second after the last change, atomically through `save_atomic`, on a worker. A write still waiting at quit is made before the process ends. A failed write is one footer notice per run.
+- The file is read forgivingly. A missing file, a file that does not parse, and a bad value each read as the default for that key, with no notice; the next write replaces the file, and unknown keys are dropped. The file has no schema, since the owner does not edit it.
+- No toggle writes the file itself: `app/remember.rs` compares the model's values at each paint.
+
+Rejected: `$XDG_STATE_HOME/fmc/state.json` (the owner chose the config folder, where `settings.json` is); keys in `settings.json` (a toggle would rewrite and re-sort the owner's hand-written file); saving on quit only (a crash would lose the whole session's choices); saving the sidebar's visibility (it would show for one screen, then reset).
+
+Consequences:
+
+- (positive) The layout, wrap, changes view options, dotfiles, and finder matching hold across runs, as the owner asked.
+- (negative) fmc writes one more file of its own, so the writes rule (`rules.md`, "Writes", and `AGENTS.md`) grows by it.
+- (negative) Once the state holds a `find_mode`, a hand edit of it in `settings.json` does not apply until the state is removed.
+
+Approved by the owner on 2026-11-28 (plan-00020, D1 to D6). The file's reading and failure rules (D7) are the agent's, and they stand.
 
 ### Approved deviation: fmc writes a JSON Schema of settings.json to meta/config.schema.json at start
 
@@ -1406,6 +1432,31 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: front matter is a code block in the rendered view
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: OpenTUI's Markdown has no front matter. An opening `---` is a thematic break, the YAML or TOML lines after it are a paragraph, and the closing `---` turns the line before it into a heading. Scouter draws through the same OpenTUI and has no front matter handling. A live run of Scouter through Rex on 2026-11-28 (the installed binary is 0.3.1, not the v0.3.4 baseline) showed a `vault.md` with YAML front matter as a rule, the fields as a paragraph, and a `---` heading line, and an `owls.md` with TOML front matter as its `+++` lines and fields in plain text.
+
+Decision (owner, 2026-11-28, plan-00020 D11 and D12): in the rendered view only, a front matter block at the very start of the file is written as a code fence before the view reads it. An opening `---` line becomes a `yaml` fence and its closing `---` becomes a fence closing; `+++` lines become a `toml` fence (`reader/frontmatter.rs` `as_fence`). The rewrite runs in `ui/markdown.rs` (`show`, and `block_lines` for the git signs), and in `ui/markdown_search.rs` (`index`), before the block split and the heading markers, so the grammar and OpenTUI read the same fence. Each line stays a line, so the search, the git signs, and the block mapping keep their rows. The source view (`m`) shows the file as it is. A file whose first line is not a marker, with no closing marker, with an empty block, or with a fence inside the block is left alone, and a `---` rule later in the file is untouched. Rejected: a property table (nested values read poorly, and its rows no longer match the source), and hiding the block.
+
+Consequences:
+
+- (positive) The fields are highlighted as YAML or TOML, and the block is set apart from the text below.
+- (negative) Front matter is drawn as code, not as text, which Scouter does not do.
+- (negative) JSON front matter, and front matter below the first line, are drawn as OpenTUI draws them.
+
+### Approved deviation: `.eex` and `.leex` are read as HEEx
+
+Context: Elixir's EEx templates (`.eex`, and `.leex` for LiveView) have a grammar, connorlay/tree-sitter-eex, that has no licence, so fmc cannot vendor it (plan-00018, O4). Scouter shows these files plain (`docs/parity.md`, "Languages beyond Scouter's"). The HEEx grammar (`tree-sitter-heex`, MIT, registered in `src/reader/language.rs`) covers the tags and HTML of a template, which is most of what an `.eex` file holds.
+
+Decision (owner, 2026-11-28, plan-00020 D9): `.eex` and `.leex` map to `heex` in `reader/language.rs` `EXTENSIONS`, so the tags and HTML are coloured and the text around them stays plain. A file with the extension reads as HEEx in every view and in a Markdown fence's `heex` name. Rejected: asking the author for a licence, and dropping eex from the owner's set.
+
+Consequences:
+
+- (positive) A template's markup is coloured in the same way as a `.heex` file's.
+- (negative) Elixir code inside `<%= %>` and `<% %>` is not coloured as Elixir: the HEEx grammar paints what it parses, and fmc has no EEx grammar.
+
 ### Approved deviation: vimdoc, just, luadoc, and luap are vendored and highlighted
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
@@ -1426,7 +1477,7 @@ Alternatives considered:
 - Leaving the four parked: not taken (O2 (a)).
 - A `doc/*.txt` default for vimdoc: rejected (every other `doc` folder is plain text).
 
-### Decision: Lua patterns are an injection; Lua documentation comments are not yet
+### Decision: Lua patterns are an injection; Lua documentation comments take the documentation capture
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
@@ -1439,6 +1490,8 @@ Consequences:
 - (positive) A Lua pattern in these four calls is coloured as a pattern (`%d` as a class, `[A-Z]` as a set).
 - (negative) Lua strings that are not patterns, `string.format` included, keep the string colour (`src/ui/syntax/tests.rs`, `lua_match_patterns_are_painted_in_their_own_languages_colours`).
 - (negative) `---@param` comments are plain comments. Scouter shows them plain too, so the gap is only against the plan.
+
+Amended by the owner on 2026-11-28 (plan-00020, D8): a `---` comment takes the `comment.documentation` capture as a whole line (`queries/lua/highlights.scm`, a `(comment)` whose text matches `^---`). The tag word cannot take a colour of its own: the grammar's `comment` has one `comment_content` child for all the text after `--`, and OpenTUI paints a capture over the whole text of its node. A `#match?` on `comment_content` or on `comment` was probed on 2026-11-28 and paints the whole line, so the sub-span fell back to the line. The palettes give `comment.documentation` the comment's style (`ui/syntax/mod.rs` `theme`, the first-part fallback), so a `---` line still reads as a `--` line; a theme can give documentation its own colour. The luadoc injection itself stays out (its leading dash, as above).
 
 Alternatives considered:
 
@@ -1503,7 +1556,7 @@ Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
 Context: Scouter's finder matches a name by substring: every word of the query must appear in the lowercase path, in a fixed order (`scouter:src/find/search.ts:56-87`). RI-3 (`roadmap-00001-post-parity.md`) asked for a fuzzy option, and the owner chose how it starts and how it is switched (O3, plan-00006, 2026-11-27).
 
-Decision (owner, O3; D4 to D6 of the plan): `find_mode` in `settings.json` is `"substring"`, the default and Scouter's match, or `"fuzzy"`. `Ctrl+F` in the finder flips it for the rest of the run and runs the open query again. Fuzzy is `neo_frizbee` 0.13.3 (D4), with the whole query as one needle, spaces included (D5). Case is ignored, typos are off (`max_typos` 0), and the rows rank by the match's score, then by Scouter's order on a tie (the shorter path, then UTF-16 code units; `find/mod.rs` `fuzzy`). The matched characters take `accent_soft` in bold, the colour the text hits use for their match (`ui/tree.rs` `marked_text`). The footer's status puts the mode first, `fuzzy, 11 matches`, so a narrow sidebar still shows it; the first live run had the count first and cut the mode. Owner confirmed the scope on 2026-11-27: a flip lasts for the run, a restart returns to `find_mode`, and fmc never writes `settings.json`. A per-run flip is the only switch that keeps `find_mode` the one saved value.
+Decision (owner, O3; D4 to D6 of the plan): `find_mode` in `settings.json` is `"substring"`, the default and Scouter's match, or `"fuzzy"`. `Ctrl+F` in the finder flips it for the rest of the run and runs the open query again. Fuzzy is `neo_frizbee` 0.13.3 (D4), with the whole query as one needle, spaces included (D5). Case is ignored, typos are off (`max_typos` 0), and the rows rank by the match's score, then by Scouter's order on a tie (the shorter path, then UTF-16 code units; `find/mod.rs` `fuzzy`). The matched characters take `accent_soft` in bold, the colour the text hits use for their match (`ui/tree.rs` `marked_text`). The footer's status puts the mode first, `fuzzy, 11 matches`, so a narrow sidebar still shows it; the first live run had the count first and cut the mode. Owner confirmed the scope on 2026-11-27: a flip lasts for the run, a restart returns to `find_mode`, and fmc never writes `settings.json`. A per-run flip is the only switch that keeps `find_mode` the one saved value. Superseded on 2026-11-28 (plan-00020, D5): a flip is saved in `meta/state.json`, which wins over `find_mode` once it holds one; a flip still never writes `settings.json`.
 
 With an empty query the hint carries the mode too (`fuzzy, type to find a file, Tab to search inside files`): a Ctrl+F on an empty prompt changed the match and nothing drawn, which the owner read as "Ctrl+F does not work" (2026-11-27). Raw bytes were not the cause: `0x06` and `\e[102;5u` both reach the toggle (`app/find_tests.rs`). A value that is not `"substring"` or `"fuzzy"` keeps substring and shows a notice (D6). Text search, under `Tab`, is unchanged.
 
@@ -1631,3 +1684,31 @@ Alternatives considered:
 - Browse screens only: rejected by the owner's D2.
 - A separate timer for the branch: rejected; the poll already runs git on the same folder.
 - A Nerd Font icon for the branch: rejected by the owner's D3.
+
+### Approved deviation: the prompts edit at a caret, by word and by line
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter's finder query, its in-file search, and its footer prompts only add a character at the end and delete the last one. The caret is always at the end: the finder draws the `▎` after the query (`scouter:src/find/file-finder.ts:49-55`), and its keys edit with `query.slice(0, -1)` and `query + key.sequence` (`scouter:src/find/file-finder.ts:140-154`). The in-file search does the same (`scouter:src/reader/document-search.ts:38-52`). fmc's dialog name field already edits by word and by line through OpenTUI's `Input`. The owner asked that every text input take Ctrl or Option with the arrows (2026-11-28). Scouter has no `:` line; fmc's own takes the same edits.
+
+Decision (owner, 2026-11-28):
+
+- The finder's query, the in-file search, and the `:` line hold a caret. `←` and `→` move it by one character. `Option+←` and `Option+→`, and `Ctrl+←` and `Ctrl+→`, move it by word. `Option+Delete` and `Option+D` delete the word after it, and `Option+Backspace` and `Ctrl+W` the word before it. `Cmd+←` and `Ctrl+A` go to the start of the line, `Cmd+→` and `Ctrl+E` to the end, `Cmd+Backspace` and `Ctrl+U` delete to the start, and `Ctrl+K` deletes to the end. These are the dialog name field's keys (`line_edit.rs` `edit_of`), so a key does the same thing in every text input.
+- A word is what OpenTUI's `Input` finds. The native rule at the locked 0.9.9 tag is `packages/native/src/edit-buffer.zig` `getNextWordBoundary` and `getPrevWordBoundary`, with the breaks in `utf8.zig` (`asciiLayoutWrapBreakKind`, `unicodeLayoutWrapBreakKind`, `isCjkAsciiTransition`, and `isWordBoundary`). The crate ships only the native query, so `line_edit_tests.rs` carries the cases of OpenTUI's own test, `tests/edit-buffer_test.zig` "word boundary and line end walks", with CJK positions in characters.
+- An edit that changes the text runs what typing runs: the finder finds again and the list follows, and the in-file search finds its hits again. A caret move runs nothing, so it keeps the search's hit and the finder's list.
+- While a prompt or a dialog is open, its edit keys reach it before the global bindings (`app/capture.rs` `prompt_takes`). So `Ctrl+←` and `Ctrl+→` edit the query and do not resize the sidebar. Plain keys, Esc, Enter, Tab, and `↑` `↓` keep their meaning, and `Ctrl+F` still flips fuzzy matching.
+- The prompt's bar draws the caret where it is, with the same glyph and colours. A query wider than the bar shows the part around the caret, with `…` where text is cut. The wide footer's search prompt draws its glyph and count as the finder's bar does; it used to show the search's text as a notice.
+
+Consequences:
+
+- (positive) A typo in the middle of a query is fixed in place, and the same keys work in the finder, the search, the `:` line, and the dialogs.
+- (positive) The word rule is OpenTUI's, so a word here is a word in the dialog's field.
+- (negative) In the in-file search, `Ctrl+U` deletes to the start of the query while the prompt is open; it scrolled half a page before. `Esc` closes the prompt, and then `Ctrl+U` scrolls again.
+- (negative) The word rule lives in OpenTUI's native library, which the crate does not ship as source. `line_edit_tests.rs` is the check: when OpenTUI moves, its test cases are read again from the new tag.
+- (negative) The caret is a glyph, so it takes one column; a long query is cut around it.
+
+Alternatives considered:
+
+- Append-only prompts, as Scouter has: rejected by the owner's request.
+- Unicode word segmentation: rejected. It would differ from the dialog's field, which OpenTUI draws, and it needs a crate the owner has not approved.
+- OpenTUI's `Input` for each prompt: rejected. Each prompt is a `Text` in a bar the app paints, and an `Input` takes the keyboard focus, which the prompts keep for the list and the reader.

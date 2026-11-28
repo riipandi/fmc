@@ -49,17 +49,18 @@ The file acts work on the selected row, or on every marked row when some are mar
 | --- | --- |
 | filter by name: every word must appear in the path (or, when fuzzy is on, the whole query in order); in text search, the lines that contain the text | type |
 | flip name matching between substring and fuzzy for this run (a restart returns to `find_mode`); the footer says `fuzzy` when it is on | `Ctrl+F` |
-| delete a character | `Backspace` |
+| delete the character before the caret | `Backspace` |
 | switch between file names and text in files | `Tab` |
+| move the caret by character; the [text field](#text-fields) keys edit by word and by line | `←` `→` |
 | move the highlight; on a text hit the reader shows its line in a preview | `↑` `↓` |
 | open the file, at the line for a text hit; reveal the folder the query found; with no text, open or toggle the row | `Enter` |
 | close the finder; the tree is back where it was | `Esc` |
 
 Text search starts at two characters and lists at most 200 hits, ten from one file.
 
-## Name field
+## Text fields
 
-The name field of a dialog (a new file or folder, a rename) holds one line. Its caret moves and its text is edited by word and by line. These keys are not in the `?` list.
+The name field of a dialog (a new file or folder, a rename), the finder's query, the search in a file, and the `:` line hold one line, each with a caret. The same keys edit all four. These keys are not in the `?` list.
 
 | Action | Keys |
 | --- | --- |
@@ -71,10 +72,10 @@ The name field of a dialog (a new file or folder, a rename) holds one line. Its 
 | move the caret to the start or the end of the line | `Cmd+←` `Cmd+→` `Ctrl+A` `Ctrl+E` |
 | delete to the start of the line | `Cmd+Backspace` `Ctrl+U` |
 | delete to the end of the line | `Ctrl+K` |
-| move the focus between the field and the buttons | `←` `→` `Tab` |
-| confirm; cancel | `Enter` `Esc` |
+| in a dialog, move the focus between the field and the buttons | `←` `→` `Tab` |
+| in a dialog, confirm; cancel | `Enter` `Esc` |
 
-The Option keys need the terminal to send Option as Alt. The Cmd keys need the terminal to pass Cmd on to fmc; a terminal that does neither sends what its own keymap maps the chord to, such as `Ctrl+A` for `Cmd+←`. The bare arrows move the focus between the field and the buttons, not the caret, so the caret moves with the keys above.
+The Option keys need the terminal to send Option as Alt. The Cmd keys need the terminal to pass Cmd on to fmc; a terminal that does neither sends what its own keymap maps the chord to, such as `Ctrl+A` for `Cmd+←`. In a dialog the bare arrows move the focus between the field and the buttons; in the finder, the search, and the `:` line they move the caret by one character, and the keys above move it by word and by line.
 
 ## Reader
 
@@ -134,7 +135,7 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 
 `Ctrl+,` opens the [Settings page](usage.md#settings). Only a terminal that supports the kitty keyboard protocol can send `Ctrl+,`, and a terminal without it cannot open the page; the other keys still work. There is no other key for the page.
 
-`:` opens a command line in the footer, as in Neovim. `:q`, `:q!`, `:qa`, `:qa!`, and `:quit` quit. `Esc`, or Enter on an empty line, cancels; any other command shows `Not a command`.
+`:` opens a command line in the footer, as in Neovim. `:q`, `:q!`, `:qa`, `:qa!`, and `:quit` quit. `Esc`, or Enter on an empty line, cancels; any other command shows `Not a command`. The line takes the same edit keys as the [text fields](#text-fields).
 
 ## Mouse
 

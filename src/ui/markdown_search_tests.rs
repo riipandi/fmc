@@ -151,3 +151,15 @@ fn block_tops_follow_the_blocks_above_the_view() {
         }
     }
 }
+
+const FRONT: &str = "---\ntitle: Hermione Granger\n---\n\n# Hogwarts\n\nHermione reads in the library.\n";
+
+#[test]
+fn a_hit_in_the_front_matter_and_one_below_it_are_marked_where_the_fence_is_drawn() {
+    let (app, view) = shown(120, FRONT);
+    let hits = view.index(FRONT).hits("hermione");
+    assert_eq!(hits.len(), 2, "the front matter's title and the paragraph below it");
+    view.mark(Some(Mark { query: "hermione".into(), current: None }));
+    let capture = app.render();
+    assert_eq!(runs_in(&capture, match_colour()).concat(), "HermioneHermione", "{}", app.text());
+}

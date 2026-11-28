@@ -2,30 +2,38 @@
 //! `quit` quit on Enter; Esc or an empty Enter cancels; anything else is a notice.
 
 use fmc::keys::Key;
+use fmc::line_edit::{Line, edit_of, is_text};
 
 use super::Model;
 use crate::ui::footer::Message;
 
 pub fn open(m: &mut Model) {
-    m.command = Some(String::new());
+    m.command = Some(Line::default());
 }
 
-/// A plain key while the line is open: typing edits it, Enter runs it. Returns true when the command quits.
+/// A key while the line is open: the field edits and the typed text work at its caret, and Enter runs it. Returns true
+/// when the command quits.
 pub fn prompt_key(m: &mut Model, key: Key<'_>) -> bool {
+    if let Some(edit) = edit_of(key) {
+        if let Some(line) = m.command.as_mut() {
+            line.edit(edit);
+        }
+        return false;
+    }
     match key.name {
         "escape" => m.command = None,
         "return" => {
-            let text = m.command.take().unwrap_or_default();
+            let text = m.command.take().map(|line| line.text().to_owned()).unwrap_or_default();
             return run(m, &text);
         }
-        "backspace" => {
-            if let Some(text) = m.command.as_mut() {
-                text.pop();
+        "left" | "right" => {
+            if let Some(line) = m.command.as_mut() {
+                if key.name == "left" { line.left() } else { line.right() }
             }
         }
-        _ if !key.text.is_empty() && !key.text.chars().any(char::is_control) => {
-            if let Some(text) = m.command.as_mut() {
-                text.push_str(key.text);
+        _ if is_text(key.text) => {
+            if let Some(line) = m.command.as_mut() {
+                line.insert(key.text);
             }
         }
         _ => {}

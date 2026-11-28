@@ -11,7 +11,7 @@ use fmc::theme::{Hex, Palette};
 use opentui::prelude::*;
 
 use super::bars;
-use super::find::prompt_segments;
+use super::find::PromptLine;
 use super::hints::{
     HINT_GAP, Hint, Mode, Pane, Prompt, Shown, fit_hints, hint_segments, hints_for, phone_rank, pill_label,
     prompt_hints, prompt_label, row_text,
@@ -62,14 +62,13 @@ pub struct FooterState {
     pub pending: Option<u32>,
     /// The sidebar is hidden, which the hints name (`Shown::sidebar_hidden`).
     pub sidebar_hidden: bool,
-    /// The `:` command line's text while it is open; it takes the footer's left side (`Prompt::Command`).
-    pub command: Option<String>,
     /// A text selection exists: below 80 columns the hints lead with `Copy`, which does what `y` does.
     pub selection: bool,
     /// The page on screen, which names the compact bottom bar's segments (`ui/bars.rs`).
     pub page: Page,
-    /// The open prompt's own text, which the compact bottom bar shows after `Cancel`.
-    pub prompt_text: Option<Vec<Seg>>,
+    /// The open prompt's line (the finder, the in-file search, or the `:` command line): the footer's left side shows it,
+    /// and the compact bottom bar shows it after `Cancel`.
+    pub editing: Option<PromptLine>,
     /// How many tree rows are marked; zero hides the count.
     pub marked: usize,
 }
@@ -89,10 +88,9 @@ impl Default for FooterState {
             wrap: false,
             pending: None,
             sidebar_hidden: false,
-            command: None,
             selection: false,
             page: Page::Files,
-            prompt_text: None,
+            editing: None,
             marked: 0,
         }
     }
@@ -166,8 +164,8 @@ impl FooterState {
         p: &Palette,
         measure: Measure<'_>,
     ) -> (Vec<Seg>, Vec<(Range<usize>, &'static str)>) {
-        if let Some(text) = &self.prompt_text {
-            return bars::prompt(text, columns, p);
+        if let Some(prompt) = &self.editing {
+            return bars::prompt(&prompt.segments(bars::prompt_room(columns), p, measure), columns, p);
         }
         if let Some(message) = &self.message {
             let fg = if message.error { p.error } else { p.accent_soft };
@@ -183,8 +181,8 @@ impl FooterState {
     }
 
     fn describe(&self, columns: usize, p: &Palette, measure: Measure<'_>) -> Vec<Seg> {
-        if let Some(text) = &self.command {
-            return prompt_segments(":", text, "", p);
+        if let Some(prompt) = &self.editing {
+            return prompt.segments(columns, p, measure);
         }
         if let Some(message) = &self.message {
             let fg = if message.error { p.error } else { p.accent_soft };

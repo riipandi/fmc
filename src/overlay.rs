@@ -3,6 +3,7 @@
 //! No widget and no I/O; the app draws the overlay and carries out what it answers.
 
 use crate::keys::Key;
+use crate::line_edit::{FieldEdit, edit_of, is_text};
 
 /// One row of a menu. A disabled row is drawn muted, and the selection skips it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -182,7 +183,7 @@ impl Dialog {
     pub fn key(&mut self, key: Key<'_>) -> Outcome {
         // Before the plain-key rule: an Option or Cmd key edits the field, where a plain key would be swallowed.
         if self.field
-            && let Some(edit) = field_edit(key)
+            && let Some(edit) = edit_of(key)
         {
             self.focus = Stop::Field;
             return Outcome::Edit(edit);
@@ -221,50 +222,6 @@ impl Dialog {
         }
         Outcome::Stay
     }
-}
-
-/// An edit of a dialog's name field. The app runs each one as the OpenTUI `Input` action of the same meaning
-/// (`app/overlay.rs` `editor_action`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FieldEdit {
-    Backspace,
-    DeleteWordBackward,
-    DeleteWordForward,
-    DeleteToLineStart,
-    DeleteToLineEnd,
-    WordBackward,
-    WordForward,
-    LineHome,
-    LineEnd,
-}
-
-/// The field edit a key asks for. Option is Alt, and Cmd is Super, which arrives only with the kitty protocol or
-/// from a terminal that passes Cmd through. The Ctrl letters are readline's. Shift is ignored: the field has no
-/// selection, so Shift+Option+Left moves by word as Option+Left does.
-fn field_edit(key: Key<'_>) -> Option<FieldEdit> {
-    use FieldEdit::*;
-    Some(match (key.name, key.ctrl, key.alt, key.cmd) {
-        ("backspace", false, false, false) => Backspace,
-        // ESC DEL is Option+Backspace without the kitty protocol; Ctrl+Backspace is OpenTUI's own binding.
-        ("backspace", false, true, false) | ("backspace", true, false, false) | ("w", true, false, false) => {
-            DeleteWordBackward
-        }
-        ("backspace", false, false, true) | ("u", true, false, false) => DeleteToLineStart,
-        ("delete", false, true, false) | ("delete", true, false, false) | ("d", false, true, false) => {
-            DeleteWordForward
-        }
-        ("k", true, false, false) => DeleteToLineEnd,
-        ("left", false, true, false) | ("left", true, false, false) | ("b", false, true, false) => WordBackward,
-        ("right", false, true, false) | ("right", true, false, false) | ("f", false, true, false) => WordForward,
-        ("left", false, false, true) | ("a", true, false, false) => LineHome,
-        ("right", false, false, true) | ("e", true, false, false) => LineEnd,
-        _ => return None,
-    })
-}
-
-/// Typed text: a key that carries printable characters, not a control key or a named one.
-fn is_text(text: &str) -> bool {
-    !text.is_empty() && text.chars().all(|c| !c.is_control())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
