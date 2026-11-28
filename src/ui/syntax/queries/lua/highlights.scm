@@ -196,6 +196,11 @@
 ; Others
 (comment) @comment
 
+; A `---` documentation comment takes the documentation capture as a whole line. OpenTUI paints a capture over the whole
+; text of a node, and the grammar has no node for a tag inside a comment, so a tag cannot take a colour of its own.
+((comment) @comment.documentation
+  (#match? @comment.documentation "^---"))
+
 (hash_bang_line) @comment
 
 (number) @number

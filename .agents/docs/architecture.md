@@ -1432,6 +1432,17 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: `.eex` and `.leex` are read as HEEx
+
+Context: Elixir's EEx templates (`.eex`, and `.leex` for LiveView) have a grammar, connorlay/tree-sitter-eex, that has no licence, so fmc cannot vendor it (plan-00018, O4). Scouter shows these files plain (`docs/parity.md`, "Languages beyond Scouter's"). The HEEx grammar (`tree-sitter-heex`, MIT, registered in `src/reader/language.rs`) covers the tags and HTML of a template, which is most of what an `.eex` file holds.
+
+Decision (owner, 2026-11-28, plan-00020 D9): `.eex` and `.leex` map to `heex` in `reader/language.rs` `EXTENSIONS`, so the tags and HTML are coloured and the text around them stays plain. A file with the extension reads as HEEx in every view and in a Markdown fence's `heex` name. Rejected: asking the author for a licence, and dropping eex from the owner's set.
+
+Consequences:
+
+- (positive) A template's markup is coloured in the same way as a `.heex` file's.
+- (negative) Elixir code inside `<%= %>` and `<% %>` is not coloured as Elixir: the HEEx grammar paints what it parses, and fmc has no EEx grammar.
+
 ### Approved deviation: vimdoc, just, luadoc, and luap are vendored and highlighted
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
@@ -1452,7 +1463,7 @@ Alternatives considered:
 - Leaving the four parked: not taken (O2 (a)).
 - A `doc/*.txt` default for vimdoc: rejected (every other `doc` folder is plain text).
 
-### Decision: Lua patterns are an injection; Lua documentation comments are not yet
+### Decision: Lua patterns are an injection; Lua documentation comments take the documentation capture
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
 
@@ -1465,6 +1476,8 @@ Consequences:
 - (positive) A Lua pattern in these four calls is coloured as a pattern (`%d` as a class, `[A-Z]` as a set).
 - (negative) Lua strings that are not patterns, `string.format` included, keep the string colour (`src/ui/syntax/tests.rs`, `lua_match_patterns_are_painted_in_their_own_languages_colours`).
 - (negative) `---@param` comments are plain comments. Scouter shows them plain too, so the gap is only against the plan.
+
+Amended by the owner on 2026-11-28 (plan-00020, D8): a `---` comment takes the `comment.documentation` capture as a whole line (`queries/lua/highlights.scm`, a `(comment)` whose text matches `^---`). The tag word cannot take a colour of its own: the grammar's `comment` has one `comment_content` child for all the text after `--`, and OpenTUI paints a capture over the whole text of its node. A `#match?` on `comment_content` or on `comment` was probed on 2026-11-28 and paints the whole line, so the sub-span fell back to the line. The palettes give `comment.documentation` the comment's style (`ui/syntax/mod.rs` `theme`, the first-part fallback), so a `---` line still reads as a `--` line; a theme can give documentation its own colour. The luadoc injection itself stays out (its leading dash, as above).
 
 Alternatives considered:
 

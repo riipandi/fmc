@@ -237,10 +237,15 @@ fn the_style_table_reads_the_palette() {
 /// The foreground the reader paints the first occurrence of `token` with: the span over it, after every capture's
 /// style is layered in the order `highlight` gives.
 fn painted(source: &str, filetype: &str, token: &str) -> Option<Color> {
+    painted_with(source, filetype, token, &theme(&DARK))
+}
+
+/// The same, highlighted with `theme`.
+fn painted_with(source: &str, filetype: &str, token: &str, theme: &SyntaxTheme) -> Option<Color> {
     register();
     let start = source.find(token).unwrap_or_else(|| panic!("the sample holds {token}"));
     let mut at = 0;
-    for span in highlight(source, filetype, &theme(&DARK))? {
+    for span in highlight(source, filetype, theme)? {
         let end = at + span.content.len();
         if at <= start && start < end {
             return span.style.fg;
@@ -316,6 +321,19 @@ fn jsdoc_and_regex_are_painted_in_their_own_languages_colours() {
         let got = painted(sample, filetype, token);
         assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
     }
+}
+
+#[test]
+fn a_lua_documentation_comment_takes_the_documentation_capture_as_a_whole_line() {
+    let sample = "---@param name string the Hogwarts house\n-- plain note\nlocal x = 1\n";
+    // The palettes give documentation the comment's style, so a `---` line reads as a `--` line does.
+    assert_eq!(painted(sample, "lua", "@param"), Some(color(DARK.syntax.comment)));
+    // A test theme gives the capture its own colour, to show that the whole line is the capture.
+    let mut theme = theme(&DARK);
+    theme.set("comment.documentation", Style::new().fg(color(DARK.syntax.keyword)));
+    assert_eq!(painted_with(sample, "lua", "@param", &theme), Some(color(DARK.syntax.keyword)));
+    assert_eq!(painted_with(sample, "lua", "string the", &theme), Some(color(DARK.syntax.keyword)));
+    assert_eq!(painted_with(sample, "lua", "plain note", &theme), Some(color(DARK.syntax.comment)));
 }
 
 #[test]

@@ -1,7 +1,7 @@
 ---
 status: in-progress
 created: 2026-11-28T16:31:56+07:00
-updated: 2026-11-28T16:47:04+07:00
+updated: 2026-11-28T17:30:00+07:00
 phases:
     - id: 1
       title: The state file, read at start and written after a change
@@ -10,11 +10,11 @@ phases:
     - id: 2
       title: Each remembered toggle reads and writes the state
       status: done
-      note: live run in a new Rex tab: each toggle kept across a restart; the Rex run's quit within a second was written
+      note: 676d439; live run in a new Rex tab: each toggle kept across a restart, and the write at a quit within a second landed
     - id: 3
       title: Lua documentation comments and eex through heex
-      status: pending
-      note: —
+      status: done
+      note: the sub-span is not possible (probed; D8 fallback: the whole line takes comment.documentation, same colour as a comment in both palettes); .eex and .leex read as heex, live run checked the tags
     - id: 4
       title: Markdown front matter as a code block in the rendered view
       status: pending
