@@ -53,3 +53,6 @@ release/
 .env.*
 !.env.example
 .*.vars
+
+# Claude Code worktrees, created by the agent tooling
+/.claude/worktrees/
