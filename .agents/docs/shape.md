@@ -24,6 +24,7 @@ The repository's shape: the layout, the toolchain, and the commands. Read once; 
 | `docs/` | Human docs, starting at `index.md` (the reading order): `install.md`, `usage.md`, `keymaps.md`, `configuration.md`, `cli.md`, `parity.md` (every difference from Scouter, with the baseline), and `development.md` (build, checks, demo repository, parity reference, releasing). |
 | `CHANGELOG.md` | Keep a Changelog; user-visible changes go under `[Unreleased]`. |
 | `README.md`, `PRODUCT.md`, `DESIGN.md` | Human docs: overview and usage, product purpose and principles, the design system (palettes, layout, components). |
+| `assets/brand/` | The logo and app icon: hand-written SVG sources (`mark.svg`, `mark-16.svg` for 16 px, `icon.svg`, `logo*.svg`, `favicon.svg`) and the files rendered from them (`png/`, `fmc.icns`, `favicon.ico`, `favicon-32.png`, `apple-touch-icon.png`). Its `README.md` gives the colours, clear space, and which file to use where. Rendered with `magick` and Quick Look (`qlmanage`); `magick` alone hangs on SVG here, since its `rsvg-convert` delegate is not installed. |
 | `.agents/docs/`, `.agents/skills/` | Agent docs and project skills (`.claude/skills` links to the skills). |
 | `.claude/` | Claude Code settings, the format hook, and the project agents (`agents/executor.md`, `agents/scout.md`). |
 | `target/` | Build output, git-ignored. |

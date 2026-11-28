@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 392 128">
+  <title>fmc</title>
+  <style>
+    @media (prefers-color-scheme: dark) {
+      .word { stroke: #d4d8de; }
+    }
+  </style>
+  <defs>
+    <path id="plate" d="M281.3 0H542.7C623.7 0 664.2 4.6 707.8 13.8C755.4 23.7 800.3 68.6 810.2 116.2C819.4 159.8 824 200.3 824 281.3V542.7C824 623.7 819.4 664.2 810.2 707.8C800.3 755.4 755.4 800.3 707.8 810.2C664.2 819.4 623.7 824 542.7 824H281.3C200.3 824 159.8 819.4 116.2 810.2C68.6 800.3 23.7 755.4 13.8 707.8C4.6 664.2 0 623.7 0 542.7V281.3C0 200.3 4.6 159.8 13.8 116.2C23.7 68.6 68.6 23.7 116.2 13.8C159.8 4.6 200.3 0 281.3 0Z"/>
+    <clipPath id="clip"><use href="#plate"/></clipPath>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262b46"/>
+      <stop offset="1" stop-color="#131519"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c7d2fe"/>
+      <stop offset="1" stop-color="#a5b4fc"/>
+    </linearGradient>
+  </defs>
+  <g transform="scale(.1553398)">
+    <use href="#plate" fill="url(#ground)"/>
+    <g clip-path="url(#clip)">
+      <rect width="280" height="824" fill="#2c365e"/>
+      <use href="#plate" fill="none" stroke="#818cf8" stroke-opacity=".45" stroke-width="20"/>
+    </g>
+    <rect x="64" y="226" width="152" height="56" rx="28" fill="#c7d2fe" fill-opacity=".3"/>
+    <rect x="48" y="352" width="184" height="120" rx="36" fill="#818cf8"/>
+    <rect x="64" y="542" width="112" height="56" rx="28" fill="#c7d2fe" fill-opacity=".3"/>
+    <path d="M384 262L560 412L384 562" fill="none" stroke="url(#ink)" stroke-width="104" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="608" y="510" width="152" height="104" rx="16" fill="#c7d2fe"/>
+  </g>
+  <path class="word" d="M185 95V51A18 18 0 0 1 203 33H219M171 57H211M251 57V95M251 72A15 15 0 0 1 281 72V95M281 72A15 15 0 0 1 311 72V95M374.2 61.4A19 19 0 1 0 374.2 90.6" fill="none" stroke="#1f2328" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

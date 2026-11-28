@@ -1,4 +1,9 @@
-# fmc
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/png/logo-dark@2x.png">
+    <img alt="fmc" src="assets/brand/png/logo-light@2x.png" width="392">
+  </picture>
+</h1>
 
 A fast file viewer and manager for the terminal. fmc browses a folder, reads code, Markdown, and images, finds files and text, shows what git reports as changed, and creates, renames, copies, moves, and deletes files from the list. A delete goes to the Trash, except for a link, which the Trash will not take. It is a Rust port of [Scouter](https://github.com/indrazm/scouter) with the same screens and keys, except for [the differences](docs/parity.md). It runs on macOS with Apple silicon.
 
