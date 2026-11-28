@@ -28,7 +28,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 - No `.unwrap()` or `.expect()` in non-test code unless the panic is a true invariant, marked `// INVARIANT: ...`.
 - `unsafe` only with a `// SAFETY: ...` comment; list each one in the change summary.
-- A comment carries a why, a contract, or a trap; never the next line.
+- A comment carries a why, a contract, or a trap; never the next line. It never cites a plan, a roadmap entry, a decision ID, or a doc file; it says the reason in its own words (`AGENTS.md`, "Working rules").
 
 ## Contracts and traps
 
@@ -97,4 +97,5 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **A menu's rows are indexed for the whole menu.** `Menu::pick` and `Menu::point` take the index in `items`. The view's row widget at slot `n` is item `top() + n` (`app/overlay.rs` `wire_views`). Passing the slot selects the wrong row once a menu scrolls.
 - **A late picker is dropped.** `Event::Apps` opens the Open With picker only while its target is still the target (`app/open.rs` `listed`). A listing that lands after the selection moved is ignored, so a picker never opens for a file the user has left.
 - **One pattern table.** `reader/associations.rs` `Patterns<T>` holds `file_associations` (`Associations`) and `open_with` (`OpenWith`), and both pick the winning pattern in `winner`. A change to the precedence moves both tables, which is the point.
+- **A vendored grammar's C symbol is unique, and its wrapper is one unsafe cast.** `build.rs` compiles each `vendor/grammars/<name>/src/parser.c` (and `scanner.c` where present), and `src/ui/syntax/vendored.rs` declares its `tree_sitter_<name>` symbol. Two crates that export one symbol cannot link into one binary: `tree-sitter-tsquery` and `konomanoasa-tree-sitter-query` both export `tree_sitter_query`, so only the first is a dependency. `tree-sitter-language` is not a direct dependency, so `LanguageFn` cannot be named; `vendored.rs` `language` transmutes the function pointer into it, which holds because `LanguageFn` is `repr(transparent)` over that pointer type (`tree-sitter-language` 0.1.9, `src/language.rs`).
 - **A menu's group rule needs rows before it.** `open.rs` `listed` sets `rule` on a row only when rows came before it, so an empty group (no configured apps) leads with no separator.
