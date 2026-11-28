@@ -1,7 +1,7 @@
 ---
 status: awaiting-approval
 created: 2026-11-28T16:31:56+07:00
-updated: 2026-11-28T16:31:56+07:00
+updated: 2026-11-28T16:35:53+07:00
 phases:
     - id: 1
       title: The state file, read at start and written after a change
@@ -16,20 +16,24 @@ phases:
       status: pending
       note: —
     - id: 4
-      title: Docs sync, agent docs sync, ledger close, handover
+      title: Markdown front matter as a code block in the rendered view
       status: pending
       note: —
     - id: 5
+      title: Docs sync, agent docs sync, ledger close, handover
+      status: pending
+      note: —
+    - id: 6
       title: Final validation and live run
       status: pending
       note: —
 ---
 
-## Finish the roadmap's partly landed entries — RI-9's remembered UI state, RI-17's luadoc and eex, RI-2's status
+## Finish the roadmap's partly landed entries, and tidy Markdown front matter — RI-9's remembered UI state, RI-17's luadoc and eex, RI-2's status, front matter as a code block
 
 ### Objective
 
-An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2, RI-9, and RI-17. RI-2's remainder is RI-17, so it only needs its status. RI-9 left the UI state unsaved (plan-00015 D3 (a)); the owner now chose which state fmc remembers and where. RI-17 left luadoc in Lua comments and eex parked; the owner chose a doc colour for the first and the heex grammar for the second. After this plan, the three entries are `landed`, fmc remembers the chosen toggles across runs in `meta/state.json`, and no new dependency is added.
+An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2, RI-9, and RI-17. RI-2's remainder is RI-17, so it only needs its status. RI-9 left the UI state unsaved (plan-00015 D3 (a)); the owner now chose which state fmc remembers and where. RI-17 left luadoc in Lua comments and eex parked; the owner chose a doc colour for the first and the heex grammar for the second. The owner also asked on 2026-11-28 for a tidier front matter in the Markdown preview. After this plan, the three entries are `landed`, fmc remembers the chosen toggles across runs in `meta/state.json`, a Markdown file's front matter shows as a highlighted code block, and no new dependency is added.
 
 ### Current state (verified in the tree, 2026-11-28)
 
@@ -39,6 +43,7 @@ An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2
 - **Scouter keeps nothing** — Scouter 434d000f holds wrap (`src/app/app.ts:73`) and the sidebar width (`src/explorer/sidebar-resizer.ts:10`) in memory and writes no state (`docs/decision/0001-read-only-and-minimal.md`). Remembering state is a deviation.
 - **luadoc** — `src/ui/syntax/queries/lua/injections.scm` leaves the `---` rule out: the luadoc grammar rejects the comment's leading dash and OpenTUI 0.9.9 does not evaluate `#offset!`. The Lua grammar has a `comment_content` node (tree-sitter-lua 0.5.0 `node-types.json`), and `CAPTURE_NAMES` already styles `comment.documentation` (`src/ui/syntax/mod.rs:212`).
 - **eex** — connorlay/tree-sitter-eex has no licence (plan-00018 O4). The heex grammar is registered (`src/reader/language.rs:30,49`).
+- **Front matter draws as Markdown** — OpenTUI has no front matter: an opening `---` is a rule, the YAML lines become a paragraph, and the closing `---` turns the last line into a setext heading (`src/ui/markdown_blocks.rs:24-26`; the `EDGES` case in `src/ui/markdown_blocks_tests.rs:63-66`, `:225`). Scouter draws through the same OpenTUI and has no front matter handling (`research/scouter-inventory.md:360`, "not tested"). The rendered view already rewrites its source before drawing, keeping the line count, for the heading markers (`src/reader/headings.rs:8` `with_markers`, applied at `src/ui/markdown.rs:115` and `src/ui/markdown_search.rs:191`).
 - **RI-2** — its status says "the rest is RI-17" (`roadmap-00001-post-parity.md:20,52`).
 
 ### Decisions
@@ -52,7 +57,9 @@ An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2
 - **D7 (agent, 2026-11-28): the file is fmc's, read forgivingly.** One JSON object with `sidebar_width` (integer), `wrap`, `diff_split`, `diff_wide`, `diff_all_files`, `dotfiles` (booleans), `find_mode` (`substring`/`fuzzy`). A missing file, a file that does not parse, or a bad value means the default for that key, with no notice; the next write replaces the file. Unknown keys are dropped. No schema file: the owner does not edit it. A failed write is a footer notice, at most once per run.
 - **D8 (owner, 2026-11-28): Lua documentation comments get the doc colour, no injection.** `queries/lua/highlights.scm` captures a `(comment)` whose text starts with `---` as `comment.documentation`, and the `@tag` words in it (`@param`, `@return`, `@class`, `@field`, `@type`, …) as a keyword-style capture through `#match?` on `comment_content`, if OpenTUI can paint a sub-span that way; otherwise the whole line takes the doc colour. Rejected: patching the vendored luadoc grammar (needs the tree-sitter CLI and diverges from upstream); waiting for `#offset!`.
 - **D9 (owner, 2026-11-28): `.eex` and `.leex` use the heex grammar.** `EXTENSIONS` maps both to `heex`; the tags and HTML are highlighted, non-HTML text stays plain. Rejected: asking the author for a licence; dropping eex.
-- **D10 (2026-11-28): the writes rule grows by one file.** `rules.md` ("Writes") and `AGENTS.md` add `meta/state.json` to fmc's own files; `architecture.md` records the deviation with the Scouter baseline (v0.3.4, `434d000f`), and `docs/parity.md` gets a line.
+- **D11 (owner, 2026-11-28): front matter is a highlighted code block.** In the rendered view only, a front matter block at the very start of the file is rewritten before drawing: an opening `---` line becomes ```` ```yaml ```` and its closing `---` becomes ```` ``` ````; for TOML, `+++` and `+++` become ```` ```toml ```` and ```` ``` ````. The line count is unchanged, so search, the git signs, and the block mapping keep their rows. The source view (`m`) shows the file as it is. A file whose first line is not the marker, or with no closing marker, is left alone. Rejected: a property table (nested values read poorly, and the rows no longer match the source); hiding it.
+- **D12 (owner, 2026-11-28): YAML and TOML.** `---` (Jekyll, Hugo, Astro, Obsidian) and `+++` (Hugo), only on the first line.
+- **D10 (2026-11-28): the writes rule grows by one file.** `rules.md` ("Writes") and `AGENTS.md` add `meta/state.json` to fmc's own files; `architecture.md` records the deviation with the Scouter baseline (v0.3.4, `434d000f`), and `docs/parity.md` gets a line. The front matter block (D11) is a second deviation with its own record and line.
 
 ### Execution rules
 
@@ -67,19 +74,20 @@ An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2
 1. **The state file** — `src/state.rs` (pure: `State` with the D7 keys, `parse(text) -> State`, `json(&State) -> String`) and `services/state.rs` (`path`, `load`, `save` through `save_atomic`); the debounce on the app side (one pending write, reset by each change, fired on a worker after about a second). Tests: parse of every key, a bad value per key, a non-object, unknown keys dropped; load of a missing file; save then load round-trips; a read-only folder gives one notice. Validation: `cargo test state`. _Commit: `feat(state): read and write meta/state.json`._
 2. **The toggles** — start values from the state (sidebar width, wrap, the three diff options, dotfiles, matching per D5); each toggle schedules a write; `-` keeps dotfiles (D6); the Settings page's `find_mode` writes the state too. App tests through `TestApp`: each toggle survives a simulated restart (state written, a new app loaded from it); a burst of toggles writes once; the sidebar's manual visibility is not saved (D4). Records: `rules.md` "Writes", `AGENTS.md`, `architecture.md` (the deviation, and `:771`, `:878` updated), `docs/parity.md`, `docs/configuration.md` (`:27` and a "Remembered state" section), `CHANGELOG.md`. Validation: `cargo test`; a live run in a new Rex tab: toggle each, quit, start, see each kept. _Commit: `feat(state): remember the layout, wrap, diff view, dotfiles, and finder mode`._
 3. **Lua documentation comments and eex** — D8 in `queries/lua/highlights.scm` (verify the sub-span; fall back as D8 says and record which landed); D9 in `src/reader/language.rs`. Tests: a Lua sample's `---@param` line takes `comment.documentation` (and the tag capture if it landed); `x.eex` and `x.leex` resolve to `heex`. Records: `architecture.md` (the luadoc and eex parts of the grammar records), `CHANGELOG.md`, `docs/configuration.md` (filetypes). Validation: `cargo test syntax`, `cargo test language`. _Commit: `feat(syntax): Lua doc comments and eex templates`._
-4. **Docs sync, agent docs sync, ledger close, handover** — roadmap RI-2, RI-9, RI-17 to `landed`, with the Status table rows; `shape.md` (`state.rs`, `services/state.rs`); plan archived with its index row; a handover. Validation: `rumdl fmt --check --quiet .`. _Commit: `docs: RI-2, RI-9, and RI-17 landed`._
-5. **Final validation and live run** — the matrix; a live run in a new Rex tab: each remembered toggle survives a restart in a temporary config folder; a `---@param` line and an `.eex` file at 120 columns. _Commit: none when green._
+4. **Front matter** — `src/reader/frontmatter.rs` (pure: `as_fence(source) -> Cow<str>`, D11 and D12), applied with `with_markers` wherever the rendered view's source is prepared (`src/ui/markdown.rs:115`, `src/ui/markdown_search.rs:191`), and before `markdown_blocks::split` so the grammar and OpenTUI see the same fence. Tests: YAML and TOML blocks become fences with the same line count; no closing marker, a marker not on line 1, `----`, and an empty block are left alone; a `---` rule later in the file is untouched; search hits and git signs inside and below the front matter land on the same rows as before (the existing search and signs tests extended); the `EDGES` block test updated. Records in the same commit: `architecture.md` (the deviation), `docs/parity.md`, `docs/usage.md` (the rendered view), `CHANGELOG.md`. Validation: `cargo test markdown`, `cargo test frontmatter`; a live run of a Markdown file with YAML and one with TOML front matter at 120 and 50 columns. _Commit: `feat(markdown): show front matter as a code block`._
+5. **Docs sync, agent docs sync, ledger close, handover** — roadmap RI-2, RI-9, RI-17 to `landed`, with the Status table rows; `shape.md` (`state.rs`, `services/state.rs`); plan archived with its index row; a handover. Validation: `rumdl fmt --check --quiet .`. _Commit: `docs: RI-2, RI-9, and RI-17 landed`._
+6. **Final validation and live run** — the matrix; a live run in a new Rex tab: each remembered toggle survives a restart in a temporary config folder; a `---@param` line, an `.eex` file, and a Markdown file with front matter at 120 columns. _Commit: none when green._
 
 ### Test matrix
 
 | What | How | Green |
 | --- | --- | --- |
 | Format | `cargo fmt --check`; `rumdl fmt --check --quiet .` | No drift |
-| Unit | `cargo test state`, `cargo test syntax`, `cargo test language` | Parse, round-trip, bad values; captures; extensions |
+| Unit | `cargo test state`, `cargo test syntax`, `cargo test language`, `cargo test frontmatter` | Parse, round-trip, bad values; captures; extensions; fences with the same line count |
 | App | `cargo test` (`TestApp`) | Each toggle survives a restart; one write per burst; visibility not saved |
 | Lint | `cargo clippy --all-targets -- -D warnings` | 0 warnings |
 | Full suite | `just verify` | All green |
-| Live run | Rex tab, temporary `XDG_CONFIG_HOME` | Toggles kept across a restart; Lua doc line and `.eex` coloured |
+| Live run | Rex tab, temporary `XDG_CONFIG_HOME` | Toggles kept across a restart; Lua doc line and `.eex` coloured; front matter drawn as a yaml or toml block |
 | E2E | n/a beyond the live run: no CLI change | — |
 
 ### Out of scope
@@ -87,3 +95,4 @@ An audit of the roadmap on 2026-11-28 found three entries `landed in part`: RI-2
 - Per-project state, the last opened folder or file, fold state, and the theme mode (already a setting).
 - A full luadoc parse inside Lua comments (waits for `#offset!` in OpenTUI).
 - An eex grammar of its own.
+- Front matter anywhere but the first line, JSON front matter, and a property-table view.
