@@ -317,3 +317,18 @@ fn jsdoc_and_regex_are_painted_in_their_own_languages_colours() {
         assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
     }
 }
+
+#[test]
+fn lua_match_patterns_are_painted_in_their_own_languages_colours() {
+    let syntax = DARK.syntax;
+    let cases = [
+        ("lua", "local owl = string.match(name, \"%d+\")\n", "%d", syntax.keyword),
+        ("lua", "local owl = (\"Hogwarts 713\"):match(\"%d+\")\n", "%d", syntax.keyword),
+        // string.format is not a pattern: its format string stays a string.
+        ("lua", "local owl = string.format(\"%d owls\", 3)\n", "%d", syntax.string),
+    ];
+    for (filetype, sample, token, expected) in cases {
+        let got = painted(sample, filetype, token);
+        assert_eq!(got, Some(color(expected)), "{filetype}: {token} is painted {got:?}");
+    }
+}

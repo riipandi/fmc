@@ -1412,6 +1412,26 @@ Alternatives considered:
 - Leaving the four parked: not taken (O2 (a)).
 - A `doc/*.txt` default for vimdoc: rejected (every other `doc` folder is plain text).
 
+### Decision: Lua patterns are an injection; Lua documentation comments are not yet
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: the owner's set includes luadoc (`---@param` documentation) and luap (Lua patterns) as injections into Lua (`research/grammar-load-spike.md`, section 5; plan-00018 phase 3). Scouter's Lua has no injection. nvim-treesitter's Lua injections (`runtime/queries/lua/injections.scm`, 04f1788) mark a comment's content for luadoc, and a pattern argument for luap, and cut the luadoc text's leading dash with the offset directive.
+
+Decision: fmc injects luap into the pattern argument of `find`, `match`, `gmatch`, and `gsub`, both as `string.match(s, p)` and as `s:match(p)` (`queries/lua/injections.scm`, Apache-2.0 with `LICENSE.nvim-treesitter`). The luadoc rule is left out. OpenTUI does not evaluate the offset directive, and the luadoc grammar parses a body that starts with optional whitespace and then `@` (`--@param` and `-@param` are a plain comment, `@param` and `@param` are annotations, probed on 2026-11-28). A `---` comment therefore has no luadoc highlighting until OpenTUI evaluates offsets, or until the owner chooses another route (below).
+
+Consequences:
+
+- (positive) A Lua pattern in these four calls is coloured as a pattern (`%d` as a class, `[A-Z]` as a set).
+- (negative) Lua strings that are not patterns, `string.format` included, keep the string colour (`src/ui/syntax/tests.rs`, `lua_match_patterns_are_painted_in_their_own_languages_colours`).
+- (negative) `---@param` comments are plain comments. Scouter shows them plain too, so the gap is only against the plan.
+
+Alternatives considered:
+
+- A luadoc rule that matches the whole comment: not taken; the grammar fails on the leading dash, so the rule adds nothing.
+- Patch the vendored Lua grammar or the luadoc grammar to accept the dash: not taken; upstream C is vendored as it is.
+- A luadoc rule through OpenTUI with an offset: needs OpenTUI support, a new upstream feature, not available on the locked 0.9.9.
+
 ### Decision: an injected sigil's body is left to its injection
 
 Context: Core's cascade orders the captures by fewer dotted parts first, then by start, and a later capture paints over an earlier one (`opentui-0.9.9/src/syntax/highlight.rs`, `highlights`, and `core_captures`). Elixir's highlights paint a whole sigil `string.special` (`src/ui/syntax/queries/elixir/highlights.scm`), a 2-part name, which paints over the 1-part captures inside it. Before the fix, a live run of a `~H` sigil coloured `<div class="owl">` and `if @name do` as strings, although the HEEx injection gave them `tag` and `keyword` (`--format=html` capture, 2026-11-27, plan-00013 phase 1).

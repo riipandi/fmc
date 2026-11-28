@@ -13,8 +13,8 @@ phases:
       note: runs, O2 (a)
     - id: 3
       title: Lua's injections for luadoc and luap
-      status: pending
-      note: runs after phase 2
+      status: landed in part
+      note: luap landed; luadoc blocked, OpenTUI has no offset directive (architecture.md, Lua patterns)
     - id: 4
       title: Docs sync, agent docs sync, ledger close, handover
       status: pending

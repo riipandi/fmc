@@ -89,7 +89,13 @@ pub fn register() {
     });
     register_lazy("hcl", || grammar(tree_sitter_hcl::LANGUAGE, include_str!("queries/hcl/highlights.scm")));
     register_lazy("jsdoc", || grammar(tree_sitter_jsdoc::LANGUAGE, include_str!("queries/jsdoc/highlights.scm")));
-    register_lazy("lua", || grammar(tree_sitter_lua::LANGUAGE, include_str!("queries/lua/highlights.scm")));
+    register_lazy("lua", || {
+        injected(
+            tree_sitter_lua::LANGUAGE,
+            include_str!("queries/lua/highlights.scm"),
+            include_str!("queries/lua/injections.scm"),
+        )
+    });
     register_lazy("regex", || grammar(tree_sitter_regex::LANGUAGE, include_str!("queries/regex/highlights.scm")));
     register_lazy("sql", || grammar(tree_sitter_sequel::LANGUAGE, include_str!("queries/sql/highlights.scm")));
     register_lazy("svelte", || {
