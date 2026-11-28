@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-28
+
+fmc highlights Dockerfiles, Makefiles, CMake, git and EditorConfig files, `.env` files, common config formats, and C++, C#, Ruby, PHP, Kotlin, Swift, and Dart.
+
 ### Added
 
 - Dockerfiles, Makefiles, CMake files, INI and Java properties files, Protocol Buffers, GraphQL, Nix, SCSS, and Vue files are highlighted. A Vue file's `<script>` and `<style>` are coloured as JavaScript, TypeScript, CSS, or SCSS, and a Dockerfile's `RUN` lines as shell. `Dockerfile.dev`, `Containerfile.prod`, and `app.dockerfile` are read as Dockerfiles, `CMakeLists.txt` as CMake, `.mk` as Make, and `.env`, `.env.local`, and `*.env` as shell. Docker Compose files were already highlighted as YAML.
@@ -202,7 +206,8 @@ These differ from Scouter v0.3.4, which a Scouter user will notice. `docs/parity
 - The changes screen opens on one file's diff. `a` stacks all files.
 - `?` shows the key list in the reader, not as a card over the panes.
 
-[Unreleased]: https://github.com/riipandi/fmc/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/riipandi/fmc/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/riipandi/fmc/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/riipandi/fmc/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/riipandi/fmc/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/riipandi/fmc/compare/v0.7.0...v0.8.0
