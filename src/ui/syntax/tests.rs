@@ -23,7 +23,7 @@ fn every_vendored_grammar_compiles_with_its_query() {
 }
 
 /// The grammars whose queries are copied into `queries/`, each with the query it is registered with.
-const COPIED: [(&str, &str); 18] = [
+const COPIED: [(&str, &str); 28] = [
     ("diff", include_str!("queries/diff/highlights.scm")),
     ("elixir", include_str!("queries/elixir/highlights.scm")),
     ("heex", include_str!("queries/heex/highlights.scm")),
@@ -42,7 +42,42 @@ const COPIED: [(&str, &str); 18] = [
     ("just", include_str!("queries/just/highlights.scm")),
     ("luadoc", include_str!("queries/luadoc/highlights.scm")),
     ("luap", include_str!("queries/luap/highlights.scm")),
+    ("dockerfile", include_str!("queries/dockerfile/highlights.scm")),
+    ("make", include_str!("queries/make/highlights.scm")),
+    ("cmake", include_str!("queries/cmake/highlights.scm")),
+    ("ini", include_str!("queries/ini/highlights.scm")),
+    ("properties", include_str!("queries/properties/highlights.scm")),
+    ("proto", include_str!("queries/proto/highlights.scm")),
+    ("graphql", include_str!("queries/graphql/highlights.scm")),
+    ("nix", include_str!("queries/nix/highlights.scm")),
+    ("scss", include_str!("queries/scss/highlights.scm")),
+    ("vue", include_str!("queries/vue/highlights.scm")),
 ];
+
+/// The grammars added after the owner's first twelve, whose captures must all be names the palette styles, or one of
+/// `LEFT_PLAIN`.
+const STYLED_ONLY: &[&str] = &[
+    "query",
+    "json5",
+    "vimdoc",
+    "just",
+    "luadoc",
+    "luap",
+    "dockerfile",
+    "make",
+    "cmake",
+    "ini",
+    "properties",
+    "proto",
+    "graphql",
+    "nix",
+    "scss",
+    "vue",
+];
+
+/// Names a query may capture that the palettes leave plain: `none` marks text left plain on purpose, and the three
+/// markup names are the ones Core's Markdown and TSX queries use too, which a theme may style.
+const LEFT_PLAIN: &[&str] = &["none", "markup.strikethrough", "markup.underline", "markup.link.label"];
 
 /// The names a query captures, from each `@name`. A string literal (`"@module"` is a keyword) and a comment are not
 /// captures, so both are cut first. A name starting with `_` is a predicate's helper (`#eq? @_scope`), which is never
@@ -96,13 +131,10 @@ fn every_capture_of_the_copied_queries_has_a_table_entry() {
 #[test]
 fn the_new_queries_capture_only_names_the_palette_styles() {
     let theme = theme(&DARK);
-    for (filetype, query) in COPIED
-        .into_iter()
-        .filter(|(filetype, _)| matches!(*filetype, "query" | "json5" | "vimdoc" | "just" | "luadoc" | "luap"))
-    {
+    for (filetype, query) in COPIED.into_iter().filter(|(filetype, _)| STYLED_ONLY.contains(filetype)) {
         for name in capture_names(query) {
             assert!(
-                name.starts_with('_') || theme.get(&name).is_some(),
+                name.starts_with('_') || LEFT_PLAIN.contains(&name.as_str()) || theme.get(&name).is_some(),
                 "{filetype} captures {name}, which the palette does not style"
             );
         }
@@ -141,6 +173,17 @@ fn the_owners_grammars_style_a_token_of_their_sample() {
         ("just", "set dotenv-load\nowl := \"Hedwig\"\n", "Hedwig", "string"),
         ("luadoc", "@class Vault\n@field key string\n", "@class", "keyword"),
         ("luap", "^[A-Z]+%d$", "A", "constant"),
+        ("dockerfile", "# Gringotts\nFROM alpine:3.20 AS vault\nENV VAULT=713\n", "FROM", "keyword"),
+        ("dockerfile", "# Gringotts\nFROM alpine:3.20 AS vault\nENV VAULT=713\n", "VAULT", "property"),
+        ("make", "ifeq ($(HOUSE),gryffindor)\nPOINTS := 150\nendif\n", "ifeq", "keyword"),
+        ("cmake", "project(Hogwarts LANGUAGES CXX)\nset(HOUSE \"Hufflepuff\")\n", "project", "function"),
+        ("ini", "; Gringotts\n[vault]\nowner = Flamel\n", "owner", "property"),
+        ("properties", "# Gringotts\nvault.owner = Flamel\n", "Flamel", "string"),
+        ("proto", "syntax = \"proto3\";\nmessage Letter { string sender = 1; }\n", "message", "keyword"),
+        ("graphql", "query Members($house: String!) { wizards(house: $house) { name } }\n", "query", "keyword"),
+        ("nix", "{ pkgs }: pkgs.mkShell { name = \"hogwarts\"; }\n", "hogwarts", "string"),
+        ("scss", "$scarlet: #740001;\n@mixin crest($size) { width: $size; }\n", "@mixin", "keyword"),
+        ("vue", "<template>\n  <div class=\"house\">{{ house }}</div>\n</template>\n", "div", "tag"),
     ];
     for (filetype, sample, token, expected) in cases {
         let start = sample.find(token).expect("the sample holds the token");
@@ -161,7 +204,16 @@ fn the_extensions_opentui_lacks_are_highlighted() {
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/live.heex")), Some("heex"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/owls.ex")), Some("elixir"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/schema.sql")), Some("sql"));
-    assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/Makefile.mk")), None);
+    assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/rules.mk")), Some("make"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("CERN/Makefile")), Some("make"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/Dockerfile")), Some("dockerfile"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/Dockerfile.dev")), Some("dockerfile"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/.env.local")), Some("bash"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/House.vue")), Some("vue"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/theme.scss")), Some("scss"));
+    // Docker Compose files are YAML by their extension.
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/compose.yaml")), Some("yaml"));
+    assert_eq!(language_for(&none, Path::new(""), Path::new("Gringotts/docker-compose.override.yml")), Some("yaml"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/justfile")), Some("just"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/Justfile")), Some("just"));
     assert_eq!(language_for(&none, Path::new(""), Path::new("Hogwarts/query.scm")), Some("query"));
@@ -201,7 +253,6 @@ fn a_path_gets_the_filetype_scouter_names_or_none() {
         Some("javascriptreact")
     );
     assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("CERN/config.toml")), Some("toml"));
-    assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("CERN/Makefile")), None);
     assert_eq!(language_for(&Associations::default(), Path::new(""), Path::new("Diagon/owls.txt")), None);
 }
 
@@ -282,6 +333,11 @@ fn injected_code_is_painted_in_its_own_languages_colours() {
         ("elixir", "def query, do: ~SQL\"\"\"\nSELECT name FROM vaults;\n\"\"\"\n", "SELECT", syntax.keyword),
         ("elixir", "def pattern, do: ~r/^[A-Z]+$/\n", "[", syntax.punctuation),
         ("elixir", "def pattern, do: ~r/^[A-Z]+$/\n", "-", syntax.keyword),
+        ("vue", "<script>\nconst house = 'Ravenclaw'\n</script>\n", "const", syntax.keyword),
+        ("vue", "<script setup lang=\"ts\">\nlet house: string = 'Ravenclaw'\n</script>\n", "string", syntax.constant),
+        ("vue", "<style scoped>\n.house { color: blue; }\n</style>\n", "color", syntax.function),
+        ("vue", "<style lang=\"scss\">\n@mixin crest { width: 2rem; }\n</style>\n", "@mixin", syntax.keyword),
+        ("dockerfile", "FROM alpine\nRUN echo \"Hedwig\" && apk add curl\n", "echo", syntax.function),
     ];
     for (filetype, sample, token, expected) in cases {
         let got = painted(sample, filetype, token);
@@ -291,7 +347,8 @@ fn injected_code_is_painted_in_its_own_languages_colours() {
 
 #[test]
 fn injections_leave_what_no_grammar_is_registered_for_plain() {
-    // scss is not registered, and neither is a script in an unknown language: the host's `none` clears the body.
+    // Svelte's injections have no rule for scss, and a script in an unknown language has none either: the host's `none`
+    // clears the body.
     let style = "<style lang=\"scss\">\n  $owl: red;\n</style>\n";
     let script = "<script lang=\"js\">\n  let owl = 'Hedwig';\n</script>\n";
     for (sample, token) in [(style, "$owl"), (script, "let")] {

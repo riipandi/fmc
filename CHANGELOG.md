@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Dockerfiles, Makefiles, CMake files, INI and Java properties files, Protocol Buffers, GraphQL, Nix, SCSS, and Vue files are highlighted. A Vue file's `<script>` and `<style>` are coloured as JavaScript, TypeScript, CSS, or SCSS, and a Dockerfile's `RUN` lines as shell. `Dockerfile.dev`, `Containerfile.prod`, and `app.dockerfile` are read as Dockerfiles, `CMakeLists.txt` as CMake, `.mk` as Make, and `.env`, `.env.local`, and `*.env` as shell. Docker Compose files were already highlighted as YAML.
+
 ## [0.9.0] - 2026-11-28
 
 The rendered Markdown view draws local images as pictures, from Markdown and from HTML `<img>` and `<picture>` blocks, and the changes screen no longer fails when an old index folder is in the way.

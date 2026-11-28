@@ -1432,6 +1432,27 @@ Alternatives considered:
 - `konomanoasa-tree-sitter-query` for `query`: rejected. It exports `tree_sitter_query`, the symbol `tree-sitter-tsquery` exports, and two such crates cannot link into one binary.
 - A `doc/*.txt` default for vimdoc, or leaving `.scm` plain: not taken (plan-00018 D2, D3).
 
+### Approved deviation: Dockerfiles, build files, and common config files are highlighted (plan-00023)
+
+Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.
+
+Context: Scouter colours its sixteen grammars (`scouter:src/reader/code-view.ts:20-29`, `scouter:grammars/`), and a `Dockerfile`, a `Makefile`, a `.vue` file, or a `.env` file shows plain. OpenTUI names `dockerfile`, `make`, `ini`, `scss`, and `vue` by file name or extension already; fmc left them plain because no grammar was registered. Research on 2026-11-28 (`research/common-grammars.md`) loaded every candidate on the locked `tree-sitter` 0.27.2 and measured its cost: the fourteen config and build grammars add 0.87 MiB to the release binary. Docker Compose files are YAML by extension in both apps, so they need nothing.
+
+Decision (owner, 2026-11-28, plan-00023 O1 to O4, D1 to D6): fmc highlights `dockerfile`, `make`, `cmake`, `ini`, `properties`, `proto`, `graphql`, `nix`, `scss`, and `vue` through ten crates pinned exactly (`rules.md`, "Dependencies"), each query under `src/ui/syntax/queries/<filetype>/` with its `LICENSE`. The crate's own query is used where it compiles and styles the sample; GraphQL's crate ships none, so its query is nvim-treesitter's. Older capture names are renamed to the palette's (Make's `conditional`, `repeat`, `include`, `exception`, `text.*`), `module` is `namespace`, and `@spell` and `@nospell` are dropped. A Vue file's `<script>` and `<style>` are injected (JavaScript, TypeScript, TSX, CSS, SCSS), and a Dockerfile's `RUN` and heredocs are bash. `.env` files are bash (D5): no dotenv grammar exists, and bash reads `KEY=value` and `#` lines. `reader/language.rs` gains a prefix step between `NAMES` and `EXTENSIONS` (`PREFIXES`): `Dockerfile.*`, `Containerfile.*`, and `.env.*` take the filetype of the name before the dot, as Neovim's rules do. `CMakeLists.txt` and `.env` are names; `.dockerfile`, `.containerfile`, `.mk`, `.mak`, `.cmake`, `.env`, `.properties`, `.proto`, `.graphql`, `.graphqls`, `.gql`, and `.nix` are extensions.
+
+Consequences:
+
+- (positive) The files nearly every repository holds are coloured in every view, and `file_associations` and Markdown fences accept the ten names.
+- (negative) These files are coloured where Scouter shows them plain.
+- (negative) A prefix rule wins over the extension, so `Dockerfile.json` would read as a Dockerfile. Neovim does the same.
+- (negative) `tree-sitter-vue-next` is a fork with no stars, the only Vue crate whose query compiles. nix's `#is-not? local` is not evaluated, so a local binding named like a builtin takes the builtin's colour.
+
+Alternatives considered:
+
+- nvim-treesitter's queries everywhere: rejected. They fail on eleven of the grammars, whose versions differ from nvim's pins (`research/common-grammars.md`, section 3).
+- `tree-sitter-dockerfile` 0.2.0: rejected, it pins `tree-sitter` 0.20 (a second C runtime). `-orchard` 0.1.0 and `-updated` 0.2.0: not taken (D4).
+- A dotenv grammar: none exists.
+
 ### Approved deviation: front matter is a code block in the rendered view
 
 Scouter baseline: v0.3.4, commit `434d000f0f934fb04fced8b1bc1d0e673c6ed4fe`.

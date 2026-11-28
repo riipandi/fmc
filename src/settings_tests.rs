@@ -135,9 +135,9 @@ fn file_associations_map_patterns_to_languages() {
 
 #[test]
 fn a_bad_entry_is_skipped_with_a_notice_that_names_it() {
-    let parsed = parse(r#"{"file_associations": {"*.log": "make", "docs/{a": "rust", "*.rs": 3, "*.bak": "json"}}"#);
+    let parsed = parse(r#"{"file_associations": {"*.log": "perl", "docs/{a": "rust", "*.rs": 3, "*.bak": "json"}}"#);
     assert_eq!(parsed.notices.len(), 3);
-    assert!(parsed.notices.iter().any(|n| n.contains("\"*.log\" is skipped: make is not a filetype fmc shows")));
+    assert!(parsed.notices.iter().any(|n| n.contains("\"*.log\" is skipped: perl is not a filetype fmc shows")));
     assert!(parsed.notices.iter().any(|n| n.contains("\"docs/{a\" is skipped: a `{` has no matching `}`")));
     assert!(parsed.notices.iter().any(|n| n.contains("\"*.rs\" is skipped: its value must be a filetype name")));
     assert_eq!(parsed.settings.file_associations.language(None, "vault.bak"), Some(Language::Filetype("json")));

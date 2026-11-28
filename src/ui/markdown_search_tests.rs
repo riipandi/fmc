@@ -27,7 +27,7 @@ fn vault() -> u32 {
 }
 ```
 
-```make
+```perl
 echo vault
 ```
 
@@ -101,7 +101,7 @@ fn a_fence_the_renderer_does_not_draw_is_counted_but_not_marked() {
     let rendered = view.index(SHOW);
     let plain = rendered.pieces.iter().find(|piece| piece.slot.is_none() && piece.text.contains("vault"));
     assert_eq!(plain.map(|piece| piece.text.as_str()), Some("echo vault"));
-    assert_eq!(rendered.hits("vault").len(), 3, "the rust fence, the make fence, and the quote");
+    assert_eq!(rendered.hits("vault").len(), 3, "the rust fence, the perl fence, and the quote");
     view.mark(Some(Mark { query: "vault".into(), current: None }));
     let capture = app.render();
     let marked = runs_in(&capture, match_colour());
