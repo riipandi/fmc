@@ -21,7 +21,7 @@ fn startup_band_and_hints_at_80_columns() {
     // Scouter's capture at 80 columns (screen 01).
     assert_eq!(plain(&hints), " j k move   Enter open   / find   - up   h back   Tab reader   ^q quit");
     assert_eq!(left[2], Seg::new("/private/tmp/fmc-ref/", DARK.dim));
-    assert_eq!(left[3], Seg::new("demo-repo", DARK.text));
+    assert_eq!(left[3], Seg::new("demo-repo", DARK.muted));
 }
 
 /// A browsed root with a branch, which the footer's left side shows from 60 columns up.
@@ -49,8 +49,8 @@ fn the_root_and_the_branch_show_on_every_screen() {
         );
         assert_eq!(
             left.last().map(|seg| seg.fg),
-            Some(Some(DARK.text)),
-            "{mode:?}: the branch is in the name's colour"
+            Some(Some(DARK.muted)),
+            "{mode:?}: the branch is in the name's muted colour"
         );
     }
 }
