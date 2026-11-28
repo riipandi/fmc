@@ -140,6 +140,8 @@ pub enum Event {
     SettingsSaved { result: Result<(), String> },
     /// A launch finished (`app/open.rs`): `done` is the footer's text on success, `result` is `open`'s first error.
     Launched { done: String, result: Result<(), String> },
+    /// The apps the Open With picker lists for `target` (`app/open.rs`); the picker opens only if `target` is still the one shown.
+    Apps { target: PathBuf, result: Result<Vec<launch::App>, String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

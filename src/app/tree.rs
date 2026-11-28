@@ -265,6 +265,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         // `app/settings.rs` answers it: a refused save takes a colour back, which needs the UI.
         Event::SettingsSaved { .. } => {}
         Event::Launched { done, result } => open::launched(m, done, result),
+        Event::Apps { target, result } => open::listed(m, target, result),
     }
 }
 

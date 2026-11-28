@@ -61,11 +61,11 @@ pub fn wire_views(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     });
     for (index, row) in views.menu.rows.iter().enumerate() {
         row.on_mouse(press(model, ui, move |m| match &m.overlay {
-            Some(Overlay::Menu(menu)) => menu.pick(index),
+            Some(Overlay::Menu(menu)) => menu.pick(menu.top() + index),
             _ => Outcome::Stay,
         }));
         row.on_mouse(hover(model, ui, move |m| match &mut m.overlay {
-            Some(Overlay::Menu(menu)) => menu.point(index),
+            Some(Overlay::Menu(menu)) => menu.point(menu.top() + index),
             _ => false,
         }));
     }
@@ -237,7 +237,7 @@ pub fn draw(app: &App, m: &Model, ui: &Ui) {
     views.dialog.root.visible(dialog_open);
     match open {
         Some(Overlay::Menu(menu)) => {
-            let rect = menu::frame(menu.items(), m.overlay_at, screen, tier(columns));
+            let rect = menu::frame(menu.window(), m.overlay_at, screen, tier(columns));
             views.menu.show(menu, rect, p, tint);
         }
         Some(Overlay::Dialog(dialog)) => {

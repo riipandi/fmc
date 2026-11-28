@@ -1,7 +1,8 @@
 ---
 status: in-progress
 created: 2026-11-28T14:48:05+07:00
-updated: 2026-11-28T15:08:34+07:00
+updated: 2026-11-28T15:28:53+07:00
+
 
 
 phases:
@@ -15,11 +16,11 @@ phases:
       note: —
     - id: 3
       title: RI-15, the editor setting and the folder in the editor or Finder
-      status: committed
+      status: committed (7adc043)
       note: —
     - id: 4
       title: RI-16, Open With
-      status: pending
+      status: committed
       note: —
     - id: 5
       title: Docs sync, agent docs sync, ledger close, handover
@@ -62,6 +63,8 @@ The owner parked three requests on 2026-11-27 and asked for their plan on 2026-1
 - **O3 (owner, 2026-11-28: (a)): the editor setting.** (a) `editor`: a string, an app name (`Zed`) or an app path (`/Applications/Zed.app`), passed to `open -a`; empty (the default) means `e` opens the folder in Finder. Not on the Settings page, as `file_associations` [recommended: `open -a` takes both forms, and an empty default needs no guess]. (b) A Settings-page row that picks from the installed editors. (c) A command line (`zed {path}`), which needs a shell or a parser for quoting.
 - **O4 (owner, 2026-11-28: (a)): the context menu rows.** (a) A file or folder row adds an "Open" group above the write rows: `Open` (o), `Open With…` (O, files only), `Show in Finder` (E); empty space adds `Open Folder in Editor` (e) [recommended: each key has a row, as the write actions do]. (b) No menu rows.
 - **O5 (owner, 2026-11-28: (a)): the picker's size.** (a) The picker is the context menu filled with app rows, and the menu gains scrolling (the selection moves past the last visible row and the rows follow), so a long list (19 apps for a `.md` file here) fits any terminal [recommended: one overlay to learn, and the scrolling helps the menu on a short compact screen too]. (b) The list stops at the rows that fit, with no scrolling.
+- **D8 (owner, 2026-11-28, amendment): the `open_with` setting.** A JSON object in `settings.json`: a glob pattern to an array of strings. Each string is an app name (`Zed`) or an absolute `.app` path (`/Applications/Pixelmator Pro.app`), launched as `open -a <value> -- <path>`. A pattern matches with the same `Glob` and precedence as `file_associations`: one shared table, `Patterns<T>` in `reader/associations.rs`, and the one pattern `file_associations` would pick wins. Not on the Settings page. A bad entry is skipped with a notice that names its pattern: a pattern that does not parse, or a value that is not an array (the pattern is skipped); an item that is not a non-empty string (only that item is skipped). Example: `"open_with": {"*.md": ["Zed", "Typora"], "**/*.png": ["/Applications/Pixelmator Pro.app"]}`.
+- **D9 (owner, 2026-11-28, amendment): the Open With picker.** `O` on a row or the shown file, a folder too, opens the menu with three groups, each separated by a rule: (1) the apps the winning `open_with` pattern names, in the list's order; (2) the apps macOS lists (D2, the default first and marked `(default)`), minus an app already in (1) (the same `.app` path, or a configured name equal to the display name) and minus Finder; (3) Finder, always last, even when (2) is empty or its listing fails: a file is revealed (`open -R -- <path>`), a folder opens (`open -- <path>`). A configured app that is not installed is not checked before the launch; `open`'s error shows in the footer (D4). The list is read on a worker, and the menu opens when it lands, if the target is still the one shown. The menu's Open With row is on files and folders (this amends O4's "files only"). The menu scrolls (O5) on every context menu, so the picker's list fits a short screen. The phase 4 note that "no apps gives a footer notice" is superseded by D9: Finder is always there.
 
 ### Shape and enforcement points
 

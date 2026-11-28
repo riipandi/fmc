@@ -98,6 +98,8 @@ pub enum Action {
     ClearMarks,
     /// `o` on a tree row or in the reader: opens the row, or the shown file, with the default app (plan-00017, D1, D5).
     OpenDefault,
+    /// `O` in the tree or the reader: lists the apps for the row or the shown file, and picks one (plan-00017, D9).
+    OpenWith,
     /// `e` in the tree or the reader: opens the browsed folder in the settings' editor, or in Finder (plan-00017, O3).
     OpenInEditor,
     /// `E` in the tree or the reader: reveals the row, or the shown file, in Finder (`open -R`).
@@ -163,6 +165,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("o", "open in the default app; a folder opens in Finder"),
             ("e", "open the folder in the editor from settings, or in Finder"),
             ("E", "show the row in Finder"),
+            ("O", "pick an app to open the row with"),
         ],
     ),
     (
@@ -181,6 +184,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("o", "open the file in its default app"),
             ("e", "open the folder in the editor from settings, or in Finder"),
             ("E", "show the file in Finder"),
+            ("O", "pick an app to open the file with"),
         ],
     ),
     (
@@ -255,6 +259,7 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Files", "o", &[Action::OpenDefault]),
     ("Files", "e", &[Action::OpenInEditor]),
     ("Files", "E", &[Action::RevealInFinder]),
+    ("Files", "O", &[Action::OpenWith]),
     ("Reader", "j k", &[Action::Scroll(1), Action::Scroll(-1)]),
     ("Reader", "/", &[Action::Search]),
     ("Reader", "n N p", &[Action::NextMatch, Action::PreviousMatch]),
@@ -266,6 +271,7 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Reader", "o", &[Action::OpenDefault]),
     ("Reader", "e", &[Action::OpenInEditor]),
     ("Reader", "E", &[Action::RevealInFinder]),
+    ("Reader", "O", &[Action::OpenWith]),
     ("Changes", "d", &[Action::ToggleChanges]),
     ("Changes", "n N p", &[Action::Hunk(1), Action::Hunk(-1)]),
     ("Changes", "a", &[Action::ToggleScope]),

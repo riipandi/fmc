@@ -29,6 +29,7 @@ const LISTED: usize = 5;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
     Open,
+    OpenWith,
     Reveal,
     Editor,
     NewFile,
@@ -46,6 +47,7 @@ impl Act {
     fn hint(self) -> &'static str {
         match self {
             Act::Open => "o",
+            Act::OpenWith => "O",
             Act::Reveal => "E",
             Act::Editor => "e",
             Act::NewFile => "a",
@@ -62,7 +64,7 @@ impl Act {
     /// The menu's groups: opening, creating, changing an entry, and deleting. A rule separates them.
     fn group(self) -> u8 {
         match self {
-            Act::Open | Act::Reveal | Act::Editor => 0,
+            Act::Open | Act::OpenWith | Act::Reveal | Act::Editor => 0,
             Act::NewFile | Act::NewFolder => 1,
             Act::Delete => 3,
             _ => 2,
@@ -117,6 +119,8 @@ impl Bulk {
 #[derive(Clone, Debug)]
 pub enum Task {
     Menu(Vec<Act>),
+    /// The Open With picker: the rows it offers for the file, and the file (`app/open.rs`).
+    Open(open::Picker),
     /// A name for a new entry in `dir`. `folder` makes a folder, and so does a name that ends in `/`.
     Name {
         folder: bool,
@@ -146,7 +150,11 @@ pub enum Task {
 fn menu_rows(row: bool, clipped: usize, acted: usize) -> Vec<(Act, String, bool)> {
     let mut rows = Vec::new();
     if row {
-        rows.extend([(Act::Open, "Open".into(), true), (Act::Reveal, "Show in Finder".into(), true)]);
+        rows.extend([
+            (Act::Open, "Open".into(), true),
+            (Act::OpenWith, "Open With…".into(), true),
+            (Act::Reveal, "Show in Finder".into(), true),
+        ]);
     } else {
         rows.push((Act::Editor, "Open Folder in Editor".into(), true));
     }
@@ -173,9 +181,13 @@ fn counted(label: &str, count: usize) -> String {
 
 /// `Space`: the context menu, anchored at the selected row's cell (plan-00012, D3).
 pub fn open_menu(m: &mut Model) {
+    open_menu_at(m, anchor(m));
+}
+
+/// The cell the context menu opens at: the selected row's cell in the list.
+pub fn anchor(m: &Model) -> (u16, u16) {
     let row = m.browser.selected_index().saturating_sub(m.browser.top());
-    let cell = (2, LIST_TOP + row as u16);
-    open_menu_at(m, cell);
+    (2, LIST_TOP + row as u16)
 }
 
 /// A right-click on a row, or `Space`: the context menu at `cell`.
@@ -194,7 +206,7 @@ pub fn open_menu_at(m: &mut Model, cell: (u16, u16)) {
         })
         .collect();
     m.overlay_at = cell;
-    m.overlay = Some(Overlay::Menu(Menu::new(items)));
+    m.overlay = Some(Overlay::Menu(Menu::scrolled(items, open::shown_rows(m.rows))));
     m.overlay_task = Some(Task::Menu(rows.into_iter().map(|(act, ..)| act).collect()));
 }
 
@@ -295,6 +307,7 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
             ask(m, ui, Task::Duplicate { source: entry.path, dir }, dialog, &copy);
         }
         Act::Open => open::default_app(m),
+        Act::OpenWith => open::with(m),
         Act::Reveal => open::reveal(m),
         Act::Editor => open::editor(m),
         Act::Copy => take(m, false),
@@ -494,6 +507,10 @@ pub fn pick(app: &App, m: &mut Model, ui: &Ui, index: usize) {
                 start(m, ui, *act);
             }
         }
+        Some(Task::Open(picker)) => {
+            overlay::close(app, m);
+            open::run(m, &picker, index);
+        }
         Some(task) => submit(app, m, ui, task, index),
         None => overlay::close(app, m),
     }
@@ -528,7 +545,7 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
         Task::Delete { items, next } => return delete(app, m, &root, items, next.clone()),
         Task::Duplicate { source, dir } => return duplicate(app, m, &root, &typed, source, dir),
         Task::Setting(row) => return settings::submit(app, m, *row, &typed),
-        Task::Menu(_) => return overlay::close(app, m),
+        Task::Menu(_) | Task::Open(_) => return overlay::close(app, m),
     };
     match done {
         Ok((folder, target)) => {

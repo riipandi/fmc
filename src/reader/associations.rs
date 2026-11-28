@@ -39,50 +39,81 @@ impl Language {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct Rule {
+struct Rule<T> {
     pattern: String,
     glob: Glob,
-    language: Language,
+    value: T,
 }
 
-/// The table, in no particular order: precedence is decided by the patterns, not by the order they were added.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Associations {
-    rules: Vec<Rule>,
+/// A table of patterns, each with a value, in no particular order: precedence is decided by the patterns, not by the
+/// order they were added. `file_associations` is `Associations`; `open_with` is `OpenWith` (plan-00017, D8), so both
+/// pick the same pattern for a file.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Patterns<T> {
+    rules: Vec<Rule<T>>,
 }
 
-impl Associations {
-    /// Adds an association. An error names the reason, and the table is unchanged.
-    pub fn add(&mut self, pattern: &str, value: &str) -> Result<(), String> {
+impl<T> Default for Patterns<T> {
+    fn default() -> Self {
+        Self { rules: Vec::new() }
+    }
+}
+
+impl<T> Patterns<T> {
+    /// Adds a pattern with its value. An error names the reason, and the table is unchanged.
+    pub fn add_value(&mut self, pattern: &str, value: T) -> Result<(), String> {
         let glob = Glob::parse(pattern)?;
-        let language = Language::named(value).ok_or_else(|| format!("{value} is not a filetype fmc shows"))?;
-        self.rules.push(Rule { pattern: pattern.to_string(), glob, language });
+        self.rules.push(Rule { pattern: pattern.to_string(), glob, value });
         Ok(())
     }
 
-    /// The language of a file under `root` (the opened folder), or `None` when no pattern matches it. A file outside
-    /// `root` matches by its name only.
-    pub fn language_of(&self, path: &Path, root: &Path) -> Option<Language> {
+    /// The value of the pattern that wins for a file under `root` (the opened folder), or `None` when no pattern
+    /// matches it. A file outside `root` matches by its name only.
+    pub fn winner_of(&self, path: &Path, root: &Path) -> Option<&T> {
         let name = path.file_name()?.to_string_lossy();
         let relative = path.strip_prefix(root).ok().map(|rest| {
             let parts: Vec<_> = rest.components().map(|part| part.as_os_str().to_string_lossy()).collect();
             parts.join("/")
         });
-        self.language(relative.as_deref(), &name)
+        self.winner(relative.as_deref(), &name)
     }
 
-    /// The language a file takes. A path pattern beats a name pattern, then the longer pattern wins, then the pattern
-    /// that sorts first: `serde_json` keeps no file order, so "the last one wins" would not be defined.
-    pub fn language(&self, relative: Option<&str>, name: &str) -> Option<Language> {
+    /// The value that wins for a file. A path pattern beats a name pattern, then the longer pattern wins, then the
+    /// pattern that sorts first: `serde_json` keeps no file order, so "the last one wins" would not be defined.
+    pub fn winner(&self, relative: Option<&str>, name: &str) -> Option<&T> {
         self.rules
             .iter()
             .filter(|rule| rule.glob.matches(relative, name))
             .max_by_key(|rule| {
                 (rule.glob.is_path, rule.pattern.chars().count(), std::cmp::Reverse(rule.pattern.as_str()))
             })
-            .map(|rule| rule.language)
+            .map(|rule| &rule.value)
     }
 }
+
+/// The `file_associations` table: a pattern's filetype.
+pub type Associations = Patterns<Language>;
+
+impl Associations {
+    /// Adds an association. An error names the reason, and the table is unchanged.
+    pub fn add(&mut self, pattern: &str, value: &str) -> Result<(), String> {
+        let language = Language::named(value).ok_or_else(|| format!("{value} is not a filetype fmc shows"))?;
+        self.add_value(pattern, language)
+    }
+
+    /// The language of a file under `root`, or `None` when no pattern matches it.
+    pub fn language_of(&self, path: &Path, root: &Path) -> Option<Language> {
+        self.winner_of(path, root).copied()
+    }
+
+    /// The language a file takes, or `None` when no pattern matches it.
+    pub fn language(&self, relative: Option<&str>, name: &str) -> Option<Language> {
+        self.winner(relative, name).copied()
+    }
+}
+
+/// The `open_with` table (plan-00017, D8): a pattern's apps, by name or `.app` path, in the order the file lists them.
+pub type OpenWith = Patterns<Vec<String>>;
 
 #[cfg(test)]
 #[path = "associations_tests.rs"]

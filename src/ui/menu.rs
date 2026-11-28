@@ -110,7 +110,7 @@ impl MenuView {
             .border_color(color(p.accent));
         let inner = usize::from(rect.width).saturating_sub(2);
         for (index, (row, (slot, rule))) in self.rows.iter().zip(&self.slots).enumerate() {
-            let item = menu.items().get(index);
+            let item = menu.window().get(index);
             slot.visible(item.is_some());
             let Some(item) = item else { continue };
             rule.visible(item.rule);
@@ -121,7 +121,7 @@ impl MenuView {
                 bold: false,
             };
             rule.width(Length::Cells(inner as f32)).set_text(content(&[line], p.text));
-            let chosen = index == menu.selected();
+            let chosen = menu.top() + index == menu.selected();
             let fill = chosen.then_some(p.row_active_bg);
             let hint = item.hint.chars().count();
             let pad = inner.saturating_sub(2 + item.label.chars().count() + hint + 2);

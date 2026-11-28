@@ -202,6 +202,8 @@ struct Model {
     command: Option<String>,
     /// The terminal's width at the last paint: the tier reads it (`app/pages.rs`).
     columns: u16,
+    /// The terminal's height at the last paint: a menu that scrolls sizes its window from it (`app/open.rs`).
+    rows: u16,
     /// The page stack the compact tier draws (plan-00005, D2).
     pages: fmc::layout::Pages,
     /// The open context menu or dialog, which takes every key and click until it closes (`app/overlay.rs`).
@@ -314,6 +316,7 @@ fn new_model(app: &App, target: &Path, root: PathBuf, pending: Option<Pending>) 
         serial: 0,
         command: None,
         columns: app.size().0,
+        rows: app.size().1,
         pages: Default::default(),
         overlay: None,
         overlay_at: (0, 0),
@@ -663,6 +666,7 @@ fn paint(app: &App, m: &mut Model, ui: &mut Ui) {
     let p = &palette;
     let (columns, rows) = app.size();
     m.columns = columns;
+    m.rows = rows;
     let chrome = if m.compact() { COMPACT_CHROME_ROWS } else { LIST_CHROME_ROWS };
     let viewport = usize::from(rows).saturating_sub(chrome);
     m.browser.set_height(viewport);

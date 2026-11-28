@@ -9,6 +9,7 @@ use opentui::testing::TestApp;
 use tempfile::TempDir;
 
 use fmc::overlay::Overlay;
+use fmc::reader::associations::OpenWith;
 
 use crate::app::reader::Shown;
 use crate::ui::binary::OPEN_HINT;
@@ -26,6 +27,11 @@ struct Opening {
 /// A folder that holds `names` (a name ending in `/` is a folder, one ending in `.bin` holds a NUL byte), browsed on a
 /// 120 by 40 screen with its listing read and the first row selected. The app's worker events are wired.
 fn opening(names: &[&str]) -> Opening {
+    opening_sized(names, 120, 40)
+}
+
+/// `opening` on a screen of `columns` by `rows`.
+fn opening_sized(names: &[&str], columns: u16, rows: u16) -> Opening {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().canonicalize().unwrap();
     for name in names {
@@ -35,7 +41,7 @@ fn opening(names: &[&str]) -> Opening {
             None => fs::write(root.join(name), "Hogwarts\n").unwrap(),
         }
     }
-    let app = TestApp::new(120, 40);
+    let app = TestApp::new(columns, rows);
     let model = Rc::new(RefCell::new(new_model(app.app(), &root, root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     wire_mouse(&model, &ui);
@@ -198,7 +204,137 @@ fn capital_e_shows_the_selected_file_in_finder() {
 fn the_menu_show_in_finder_row_reveals_the_row() {
     let b = opening(&["Gringotts.md"]);
     b.app.press("space");
+    // Open, then Open With, then Show in Finder.
+    b.app.press("down");
     b.app.press("down");
     b.app.press("return");
     b.await_footer("Showed Gringotts.md in Finder.");
+}
+
+/// The labels of the open menu's rows, in item order; `None` when no menu is open.
+fn menu_labels(b: &Opening) -> Option<Vec<String>> {
+    match &b.model.borrow().overlay {
+        Some(Overlay::Menu(menu)) => Some(menu.items().iter().map(|item| item.label.clone()).collect()),
+        _ => None,
+    }
+}
+
+/// Waits until the picker is open: the list of apps lands on the worker.
+fn await_picker(b: &Opening) {
+    let open = b.app.wait_until(Duration::from_secs(5), || matches!(b.model.borrow().overlay, Some(Overlay::Menu(_))));
+    assert!(open, "the picker does not open");
+    paint(b.app.app(), &mut b.model.borrow_mut(), &mut b.ui.borrow_mut());
+}
+
+/// Sets the `open_with` pattern `pattern` to the apps `apps`, as `settings.json` would.
+fn open_with(b: &Opening, pattern: &str, apps: &[&str]) {
+    let mut table = OpenWith::default();
+    table.add_value(pattern, apps.iter().map(|app| app.to_string()).collect()).unwrap();
+    b.model.borrow_mut().settings.values.open_with = table;
+}
+
+#[test]
+fn the_picker_lists_the_configured_apps_then_the_listed_ones_then_finder_once() {
+    let b = opening(&["Gringotts.md"]);
+    open_with(&b, "*.md", &["Zed", "Typora"]);
+    b.app.press("O");
+    await_picker(&b);
+    // Zed is configured, so the list's Zed is dropped; the default comes first in the list; Finder is last.
+    assert_eq!(
+        menu_labels(&b),
+        Some(vec!["Zed".into(), "Typora".into(), "Pensieve (default)".into(), "Finder".into()])
+    );
+}
+
+#[test]
+fn the_picker_keeps_finder_when_the_listing_is_empty_or_fails() {
+    let silent = opening(&["Sirius-Silent.md"]);
+    silent.app.press("O");
+    await_picker(&silent);
+    assert_eq!(menu_labels(&silent), Some(vec!["Finder".into()]));
+
+    let unlisted = opening(&["Dobby-Unlisted.md"]);
+    unlisted.app.press("O");
+    let failed = unlisted.app.wait_until(Duration::from_secs(5), || unlisted.footer().is_some_and(|m| m.error));
+    assert!(failed, "the listing failure does not reach the footer");
+    await_picker(&unlisted);
+    assert_eq!(menu_labels(&unlisted), Some(vec!["Finder".into()]));
+}
+
+#[test]
+fn a_folder_opens_the_same_picker_and_finder_opens_the_folder_in_finder() {
+    let b = opening(&["Hogwarts/"]);
+    b.app.press("O");
+    await_picker(&b);
+    assert_eq!(menu_labels(&b), Some(vec!["Pensieve (default)".into(), "Zed".into(), "Finder".into()]));
+    b.app.press("down");
+    b.app.press("down");
+    b.app.press("return");
+    b.await_footer("Opened Hogwarts in Finder.");
+}
+
+#[test]
+fn picking_a_configured_app_opens_the_file_with_it() {
+    let b = opening(&["Gringotts.md"]);
+    open_with(&b, "*.md", &["Zed"]);
+    b.app.press("O");
+    await_picker(&b);
+    b.app.press("return");
+    b.await_footer("Opened Gringotts.md in Zed.");
+}
+
+#[test]
+fn escape_closes_the_picker_and_launches_nothing() {
+    let b = opening(&["Gringotts.md"]);
+    b.app.press("O");
+    await_picker(&b);
+    b.app.press("escape");
+    assert!(menu_labels(&b).is_none(), "the picker stays open");
+    assert!(b.footer().is_none(), "something launched");
+}
+
+#[test]
+fn a_long_picker_scrolls_so_the_selection_stays_in_view_at_120_columns() {
+    let b = opening(&["Crowded.md"]);
+    b.app.press("O");
+    await_picker(&b);
+    for _ in 0..17 {
+        b.app.press("down");
+    }
+    let shown = match &b.model.borrow().overlay {
+        Some(Overlay::Menu(menu)) => menu.window().iter().map(|item| item.label.clone()).collect::<Vec<_>>(),
+        _ => panic!("the picker closed"),
+    };
+    assert!(shown.contains(&"Marauder 17".to_string()), "the selection scrolled out of view: {shown:?}");
+    assert_eq!(shown.len(), 16, "the window shows sixteen rows");
+    b.app.press("return");
+    b.await_footer("Opened Crowded.md in Marauder 17.");
+}
+
+#[test]
+fn a_long_picker_scrolls_at_40_columns_too() {
+    let b = opening_sized(&["Crowded.md"], 40, 24);
+    b.app.press("O");
+    await_picker(&b);
+    for _ in 0..17 {
+        b.app.press("down");
+    }
+    let shown = match &b.model.borrow().overlay {
+        Some(Overlay::Menu(menu)) => menu.window().iter().map(|item| item.label.clone()).collect::<Vec<_>>(),
+        _ => panic!("the picker closed"),
+    };
+    assert!(shown.contains(&"Marauder 17".to_string()), "the selection scrolled out of view: {shown:?}");
+}
+
+#[test]
+fn the_picker_draws_a_rule_only_between_groups_that_have_rows() {
+    let b = opening(&["Gringotts.md"]);
+    b.app.press("O");
+    await_picker(&b);
+    let rules: Vec<bool> = match &b.model.borrow().overlay {
+        Some(Overlay::Menu(menu)) => menu.items().iter().map(|item| item.rule).collect(),
+        _ => panic!("the picker does not open"),
+    };
+    // No configured app leads the list with no rule; Finder starts its own group after the listed apps.
+    assert_eq!(rules, vec![false, false, true]);
 }

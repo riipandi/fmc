@@ -1,8 +1,6 @@
 //! Hands a file or folder to macOS (plan-00017, D1 to D3). Every launch is `/usr/bin/open` with argv only, and the apps
 //! that open a file come from one constant JXA script run by `/usr/bin/osascript`. No shell runs here: a path with
 //! quotes or `$(…)` is only a path.
-// The picker (`list_apps`, `parse_apps`, `App`) and the Reveal and App forms have no caller yet; plan-00017 phases 3 and 4 wire them and remove this line.
-#![allow(dead_code)]
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -83,6 +81,7 @@ pub struct App {
 }
 
 /// The apps that open `file`, from the application folders only (D3). A failure is the script's first stderr line.
+#[cfg_attr(test, allow(dead_code))] // the picker's tests stand in for it (app/open.rs `list`)
 pub fn list_apps(file: &Path, home: &Path) -> Result<Vec<App>, String> {
     let listed = capture(listing_command(file), APPS_LIMIT, false, TIMEOUT)?;
     Ok(parse_apps(&listed.text, home))
