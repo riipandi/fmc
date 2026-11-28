@@ -1,6 +1,6 @@
 # Rust
 
-updated: 2026-11-28T14:15:51+07:00
+updated: 2026-11-28T15:32:12+07:00
 
 Rust contracts and traps for the `fmc` crate. Gates and commands: `shape.md`. Cross-area rules, including parity with Scouter: `rules.md`.
 
@@ -28,7 +28,7 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 
 - No `.unwrap()` or `.expect()` in non-test code unless the panic is a true invariant, marked `// INVARIANT: ...`.
 - `unsafe` only with a `// SAFETY: ...` comment; list each one in the change summary.
-- A comment carries a why, a contract, or a trap; never the next line.
+- A comment carries a why, a contract, or a trap; never the next line. It never cites a plan, a roadmap entry, a decision ID, or a doc file; it says the reason in its own words (`AGENTS.md`, "Working rules").
 
 ## Contracts and traps
 
@@ -93,3 +93,9 @@ The layout and its reasoning: `architecture.md` ("a pure core, I/O services, and
 - **An injection query compiles with its grammar, and a bad one drops the grammar.** `ui/syntax/mod.rs` `injected` gives each `queries/<filetype>/injections.scm` to `Grammar::injections`, and OpenTUI compiles it with the highlights (`opentui-0.9.9/src/syntax/highlight.rs:246-255`). A node name the grammar does not have makes the whole grammar fail, so the file shows plain; `every_vendored_grammar_compiles_with_its_query` catches it. An injection's language is resolved by name, and a name that is not registered is skipped (`highlight.rs:383-410`), which is how the Elixir `~VUE` rule stays inert.
 - **Core's cascade paints a 2-part host capture over the injected text.** Captures are ordered by fewer dotted parts first, then by start (`highlight.rs`, `highlights`), and the later one paints, so a host `string.special` covers an injected `tag` or `keyword`. A host rule over injected content leaves that content out: `queries/elixir/highlights.scm` does it for the injected sigils (plan-00013; `architecture.md`, "an injected sigil's body is left to its injection"), and the JavaScript, TypeScript, and TSX queries do it for regex patterns and `/** */` comments (`architecture.md`, "JavaScript, TypeScript, and Python code inside a file is highlighted"). Those files and the Elixir one differ from their Core or crate copies by these rules, so a fresh copy needs them again.
 - **A colour is a `Hex`, and a palette is a value.** `theme::Hex` is seven ASCII bytes (`#rrggbb`, lowercase), so a palette read is a copy: `Seg.fg` and `Seg.bg` are `Option<Hex>`, and the views take `Hex` where a colour is passed. A built-in value is `Hex::new` in a `const` (a bad literal fails the build); a file's or the catalog's value is `Hex::parse`, which returns `None` on a bad one. `Hex` derefs to `str` for the engine's `color`. The palettes are owned: the Model keeps the dark and the light palette it chose (`app/mod.rs` `Model::palette`), and a user theme is a value, never a leaked `&'static str` (plan-00015, A5 as amended by A15). A view that holds the palette across a write copies it first, as `paint` does.
+- **One subprocess runner.** `services/mod.rs` `capture` runs git and the launcher: argv only, stdin null, a 15 s timeout, a capped output, and an error that names the program (`git exited with status 3.`, `/usr/bin/open exited with status 1.`). A new subprocess calls it; it does not start its own reader loop.
+- **A menu's rows are indexed for the whole menu.** `Menu::pick` and `Menu::point` take the index in `items`. The view's row widget at slot `n` is item `top() + n` (`app/overlay.rs` `wire_views`). Passing the slot selects the wrong row once a menu scrolls.
+- **A late picker is dropped.** `Event::Apps` opens the Open With picker only while its target is still the target (`app/open.rs` `listed`). A listing that lands after the selection moved is ignored, so a picker never opens for a file the user has left.
+- **One pattern table.** `reader/associations.rs` `Patterns<T>` holds `file_associations` (`Associations`) and `open_with` (`OpenWith`), and both pick the winning pattern in `winner`. A change to the precedence moves both tables, which is the point.
+- **A vendored grammar's C symbol is unique, and its wrapper is one unsafe cast.** `build.rs` compiles each `vendor/grammars/<name>/src/parser.c` (and `scanner.c` where present), and `src/ui/syntax/vendored.rs` declares its `tree_sitter_<name>` symbol. Two crates that export one symbol cannot link into one binary: `tree-sitter-tsquery` and `konomanoasa-tree-sitter-query` both export `tree_sitter_query`, so only the first is a dependency. `tree-sitter-language` is not a direct dependency, so `LanguageFn` cannot be named; `vendored.rs` `language` transmutes the function pointer into it, which holds because `LanguageFn` is `repr(transparent)` over that pointer type (`tree-sitter-language` 0.1.9, `src/language.rs`).
+- **A menu's group rule needs rows before it.** `open.rs` `listed` sets `rule` on a row only when rows came before it, so an empty group (no configured apps) leads with no separator.

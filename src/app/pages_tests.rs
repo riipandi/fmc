@@ -15,7 +15,7 @@ use crate::services::{Event, fs};
 fn compact() -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(40, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -140,7 +140,7 @@ fn a_move_in_compact_schedules_no_preview() {
 fn a_move_schedules_a_preview_at_80_columns() {
     let app = TestApp::new(80, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();

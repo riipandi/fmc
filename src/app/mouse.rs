@@ -9,7 +9,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     let list = ui.borrow().tree.root.clone();
     list.on_mouse({
         let (model, ui) = (model.clone(), ui.clone());
-        // The row a press took while the list had the focus; its release acts on it (plan-00005, record 8).
+        // The row a press took while the list had the focus; its release acts on it.
         let mut click = Click::default();
         let mut pressed: Option<usize> = None;
         move |cx, event| {
@@ -29,7 +29,7 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
                     }
                 }
                 MouseEventKind::Down(MouseButton::Right) => {
-                    // A right press on a row selects it and opens its context menu at the pointer (plan-00012, D3).
+                    // A right press on a row selects it and opens its context menu at the pointer.
                     let row = line_at(event.y, LIST_TOP, m.browser.height()).and_then(|line| m.browser.row_at(line));
                     let Some(index) = row else { return };
                     m.focus = Focus::List;
@@ -79,15 +79,15 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         }
     });
 
-    // A press anywhere in a pane focuses it, its header and its bar included (approved deviation, architecture.md). A row
-    // press has already set the focus and stopped here, so the row's own action is what the focus ends on.
+    // A press anywhere in a pane focuses it, its header and its bar included, where Scouter only takes a click on a row.
+    // A row press has already set the focus and stopped here, so the row's own action is what the focus ends on.
     let (sidebar, viewer) = {
         let u = ui.borrow();
         (u.browser_panel.clone(), u.viewer_panel.clone())
     };
     focus_on_press(model, ui, &sidebar, Focus::List);
     focus_on_press(model, ui, &viewer, Focus::Reader);
-    // A drag's release ends a text selection, which the footer's `Copy` hint shows (plan-00004, P8). The selection is
+    // A drag's release ends a text selection, which the footer's `Copy` hint shows. The selection is
     // settled after the handlers, so the frame repaints shortly after.
     viewer.on_mouse({
         let (model, ui) = (model.clone(), ui.clone());
@@ -136,12 +136,12 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
         );
     }
 
-    // A tap on a footer hint presses the hint's key through the key path, so it runs the same Action (plan-00004, D2).
-    // `^q` has no tap (P2).
+    // A tap on a footer hint presses the hint's key through the key path, so it runs the same Action.
+    // `^q` has no tap.
     ui.borrow().footer.on_hint_press({
         let (model, ui) = (model.clone(), ui.clone());
         move |cx, event| {
-            // A phone rule: at 80 columns and wider the hints are not buttons (plan-00004, P2).
+            // A phone rule: at 80 columns and wider the hints are not buttons.
             if event.kind != MouseEventKind::Down(MouseButton::Left)
                 || fmc::layout::tier(cx.app().size().0) == fmc::layout::Tier::Wide
             {
@@ -190,7 +190,7 @@ fn press_acts(m: &Model, columns: u16) -> bool {
     m.focus == Focus::List || tier(columns) != Tier::Wide
 }
 
-/// A row's action once its click completes: the finder picks it, a file under a drawer opens (P3), and anything else
+/// A row's action once its click completes: the finder picks it, a file under a drawer opens, and anything else
 /// is a click on the tree (a folder toggles, a file is selected).
 fn act_on_row(m: &mut Model, index: usize, columns: u16) {
     m.browser.select_index(index);
@@ -206,9 +206,9 @@ fn act_on_row(m: &mut Model, index: usize, columns: u16) {
     }
 }
 
-/// A click completes on the release that ends a press at one cell, with no drag between (architecture.md, record 8).
-/// A header folds on it (approved deviation), and so does a list row. A swipe that starts on a row is a drag, so it
-/// acts on nothing.
+/// A click completes on the release that ends a press at one cell, with no drag between.
+/// A header folds on it, where Scouter folds on the press, and so does a list row. A swipe that starts on a row is a drag,
+/// so it acts on nothing.
 #[derive(Default)]
 pub struct Click(Option<(u16, u16)>);
 

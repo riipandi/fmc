@@ -1,4 +1,4 @@
-//! The write layer of the file-manager phase (plan-00012, D5 and D6). Each operation takes the browsed `root` and refuses
+//! The write layer of the file manager. Each operation takes the browsed `root` and refuses
 //! to write outside it. None overwrites: a taken name is an error. A link is created, renamed, copied, moved, and trashed
 //! as the link, never followed. Paths in, a path or an error out; the UI calls it from a worker (copy and move) or inline.
 
@@ -9,7 +9,7 @@ use std::io;
 use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
 use std::path::{Path, PathBuf};
 
-/// What a worker does with one item of a run: a copy, a move, or a move to the Trash (plan-00014, D12).
+/// What a worker does with one item of a run: a copy, a move, or a move to the Trash.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kind {
     Copy,
@@ -35,7 +35,7 @@ pub enum Error {
     /// A pipe, a socket, or a device: copying it would block on a reader or writer that never comes.
     Unsupported,
     /// The name is not UTF-8. The Trash and a paste name an entry by its path as text, so the entry they would use is
-    /// another one (plan-00012, D6).
+    /// another one.
     NotUtf8,
     /// The Trash refused the entry.
     Trash(String),
@@ -101,7 +101,7 @@ pub fn rename(root: &Path, path: &Path, name: &str) -> Result<PathBuf, Error> {
 }
 
 /// Pastes `source` into `dest_dir`: a copy, or a move when `cut`. The name is the source's, or `free_name`'s when the
-/// folder has it (plan-00012, D5). The app runs it on a worker (D8).
+/// folder has it. The app runs it on a worker.
 pub fn paste(root: &Path, source: &Path, dest_dir: &Path, cut: bool) -> Result<PathBuf, Error> {
     let base = source.file_name().and_then(OsStr::to_str).ok_or(Error::NotUtf8)?;
     let is_dir = fs::symlink_metadata(source)?.is_dir();
@@ -131,7 +131,7 @@ pub fn move_to(root: &Path, source: &Path, dest_dir: &Path, name: &str) -> Resul
     move_with(root, source, dest_dir, name, trash_path)
 }
 
-/// Moves the entry at `path` to the Trash, where Finder's Put Back restores it (plan-00012, D4).
+/// Moves the entry at `path` to the Trash, where Finder's Put Back restores it.
 #[cfg_attr(test, allow(dead_code))] // the app's tests stand in for it (app/write.rs)
 pub fn trash(root: &Path, path: &Path) -> Result<(), Error> {
     trash_with(root, path, trash_path)
@@ -297,7 +297,7 @@ fn copy_children(source: &Path, dest: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-/// A name is one path segment (plan-00012, D6): not empty, not `.` or `..`, and without a `/` or a NUL.
+/// A name is one path segment: not empty, not `.` or `..`, and without a `/` or a NUL.
 fn segment(name: &[u8]) -> Result<(), Error> {
     let bad = name.is_empty() || name == b"." || name == b".." || name.iter().any(|&byte| byte == b'/' || byte == 0);
     if bad { Err(Error::BadName) } else { Ok(()) }

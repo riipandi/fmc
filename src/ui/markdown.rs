@@ -184,7 +184,7 @@ impl MarkdownView {
     }
 }
 
-/// Registers the offscreen index's hook and renderers: every language the shown view renders (D5) and the diagram.
+/// Registers the offscreen index's hook and renderers: every language the shown view renders and the diagram.
 fn register_capture(offscreen: &Markdown, captured: &Rc<RefCell<Vec<Captured>>>) {
     let hook = Rc::clone(captured);
     offscreen.inline_hook(move |spans, _| capture_prose(spans, &hook));

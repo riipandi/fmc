@@ -13,7 +13,7 @@ use super::*;
 fn browsing() -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(80, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -42,6 +42,32 @@ fn enter_on_a_file_opens_it_and_focuses_the_reader() {
     apply(&mut model.borrow_mut(), &ui.borrow(), &event);
     assert!(model.borrow().shown.text().is_some(), "the file is shown");
     assert_eq!(model.borrow().focus, Focus::Reader);
+}
+
+#[test]
+fn a_browse_poll_names_the_branch_and_opening_a_file_keeps_the_browsed_root() {
+    let (_app, model, ui) = browsing();
+    let root = PathBuf::from("/hogwarts");
+    let poll = Event::BrowsePolled {
+        root: root.clone(),
+        chain: false,
+        folders: Vec::new(),
+        marks: Ok(None),
+        branch: Some("hogwarts".into()),
+        document: None,
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &poll);
+    assert_eq!(model.borrow().branch.as_deref(), Some("hogwarts"));
+    activate(&mut model.borrow_mut());
+    let opened = Event::Opened {
+        path: root.join("owls.txt"),
+        result: Ok(fs::Opened::Text { document: decode(b"Hedwig\n").unwrap(), stamp: String::new() }),
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &opened);
+    let m = model.borrow();
+    assert!(m.shown.text().is_some(), "the file is shown");
+    assert_eq!(m.browser.tree.root(), root.as_path(), "the footer names the browsed root, not the file");
+    assert_eq!(m.branch.as_deref(), Some("hogwarts"));
 }
 
 #[test]
@@ -100,4 +126,31 @@ fn brackets_move_the_list_by_the_sidebar_jump() {
     assert_eq!(model.borrow().browser.selected(), root.join("hogsmeade"));
     jump(&mut model.borrow_mut(), -1);
     assert_eq!(model.borrow().browser.selected(), root.join("owls.txt"));
+}
+
+#[test]
+fn going_up_a_folder_clears_the_branch_until_the_next_poll_names_the_new_root() {
+    let (_app, model, ui) = browsing();
+    let root = PathBuf::from("/hogwarts");
+    let poll = Event::BrowsePolled {
+        root: root.clone(),
+        chain: false,
+        folders: Vec::new(),
+        marks: Ok(None),
+        branch: Some("hogwarts".into()),
+        document: None,
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &poll);
+    act(&mut model.borrow_mut(), Action::GoUp);
+    assert_eq!(model.borrow().branch, None, "the old root's branch does not show over the new root");
+    let stale = Event::BrowsePolled {
+        root: root.clone(),
+        chain: false,
+        folders: Vec::new(),
+        marks: Ok(None),
+        branch: Some("hogwarts".into()),
+        document: None,
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &stale);
+    assert_eq!(model.borrow().branch, None, "a poll of the old root does not set the branch");
 }

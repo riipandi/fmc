@@ -1,5 +1,5 @@
-//! The keymap file's read at start (plan-00015 phase 4): the path rule, a missing file, a file past the cap, and text that
-//! is not UTF-8. Every file is in a temporary folder (A12); no test reads the owner's `~/.config/fmc`.
+//! The keymap file's read at start: the path rule, a missing file, a file past the cap, and text that
+//! is not UTF-8. Every file is in a temporary folder; no test reads the owner's `~/.config/fmc`.
 
 use std::ffi::OsString;
 use std::fs;

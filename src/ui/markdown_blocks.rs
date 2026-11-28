@@ -1,4 +1,4 @@
-//! The source's top-level Markdown blocks with their source lines (plan-00010). OpenTUI's Markdown keeps its own block
+//! The source's top-level Markdown blocks with their source lines. OpenTUI's Markdown keeps its own block
 //! list and shows no block's source lines, so the lines come from tree-sitter-md, which parses the same source. The
 //! `tree_sitter` crate is reached through `opentui::syntax::tree_sitter`, as `ui/syntax` reaches it, so this module sits
 //! in the UI layer rather than the core.

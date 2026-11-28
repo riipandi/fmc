@@ -20,7 +20,13 @@
             "Bash(just *)",
             "Bash(cargo *)",
             "Bash(git *)",
-            "Bash(gh *)"
+            "Bash(gh *)",
+            "Bash(rm /tmp/*)",
+            "Bash(rm -r /tmp/*)",
+            "Bash(rm -rf /tmp/*)",
+            "Bash(rm /private/tmp/*)",
+            "Bash(rm -r /private/tmp/*)",
+            "Bash(rm -rf /private/tmp/*)"
         ],
         "ask": [
             "Edit(/Cargo.toml)",
@@ -70,7 +76,11 @@
             "Bash(gh cache delete *)",
             "Bash(gh auth *)",
             "Bash(gh ssh-key *)",
-            "Bash(gh gpg-key *)"
+            "Bash(gh gpg-key *)",
+            "Bash(rm *..*)",
+            "Bash(rm * ~*)",
+            "Bash(rm * /tmp/* /*)",
+            "Bash(rm * /private/tmp/* /*)"
         ]
     }
 }

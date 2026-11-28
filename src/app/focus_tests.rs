@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use fmc::explorer::{Entry, Kind};
 use opentui::testing::TestApp;
 
@@ -10,7 +8,7 @@ use crate::ui::tree::LIST_TOP;
 fn panes() -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(80, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root, None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
     wire_mouse(&model, &ui);

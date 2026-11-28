@@ -68,7 +68,7 @@ pub struct Shown {
     pub image: bool,
     /// Something is open, so `q` closes it; the welcome screen has nothing to close.
     pub open: bool,
-    /// The sidebar is hidden: `Tab` cannot reach it, and `Ctrl+/` shows it (plan-00002, D8).
+    /// The sidebar is hidden: `Tab` cannot reach it, and `Ctrl+/` shows it.
     pub sidebar_hidden: bool,
 }
 
@@ -209,7 +209,7 @@ pub fn hint_segments(hints: &[Hint], palette: &Palette) -> Vec<Seg> {
     segments
 }
 
-/// Below 80 columns a short row keeps these hints first (plan-00004, P6): the one that leaves the current state, then
+/// Below 80 columns a short row keeps these hints first: the one that leaves the current state, then
 /// help, find, and the pane switch. A sort is stable, so the other hints keep their order after them.
 pub fn phone_rank(hint: &Hint) -> u8 {
     match *hint {

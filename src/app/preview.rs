@@ -1,4 +1,4 @@
-//! Auto-preview (architecture.md, "Auto-preview in the sidebar, and Enter alone opens"): while the list has the focus, the
+//! Auto-preview: while the list has the focus, the
 //! file it selects shows in the reader after a short debounce. A preview replaces the document as an open does, but it
 //! neither moves the focus nor records a jump, and a folder selection leaves the reader as it is.
 
@@ -15,7 +15,7 @@ use super::{Model, Ui, tree};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
-/// A held key reads only the file it stops on: each move restarts the wait (architecture.md, D1).
+/// A held key reads only the file it stops on: each move restarts the wait.
 pub const DEBOUNCE: Duration = Duration::from_millis(100);
 
 /// The list moved: the file it now selects is read after `DEBOUNCE`, unless another move comes first.

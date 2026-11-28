@@ -76,6 +76,14 @@ impl Shown {
         matches!(self, Self::Text { .. } | Self::Keys { .. } | Self::Image { .. })
     }
 
+    /// The file the reader shows, when it shows one: a text, an image, or the binary notice.
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            Self::Text { path, .. } | Self::Image { path, .. } | Self::Binary { path, .. } => Some(path),
+            _ => None,
+        }
+    }
+
     /// The text the reader shows, with its filetype and Markdown view: a file's, or the key page's.
     pub fn text(&self) -> Option<(&Document, Option<&'static str>, Option<View>)> {
         match self {
@@ -91,31 +99,21 @@ impl Shown {
     }
 }
 
-/// Reveals a file the worker read: it is selected, and the footer shows its path. A file that left the tree while
-/// the read ran is dropped (`rust.md`, "Workers answer through events"). The reader takes focus only for the startup
-/// file, which Scouter opens with the reader focused; a binary keeps the list, as Scouter's `showBinary` does.
+/// Reveals a file the worker read: it is selected. A file that left the tree while the read ran is dropped.
+/// The reader takes focus only for the startup file, which Scouter opens with the reader focused; a binary keeps
+/// the list, as Scouter's `showBinary` does.
 fn reveal(m: &mut Model, path: &Path, focus_reader: bool) -> bool {
     let startup = std::mem::take(&mut m.focus_reader_on_open);
     if m.browser.tree.entry(path).is_none() {
         return false;
     }
     m.browser.select(path);
-    m.location = location_of(m, path);
     m.message = None;
     m.notice = None;
     if startup && focus_reader {
         m.focus = Focus::Reader;
     }
     true
-}
-
-/// The path the footer names a shown file by: the tree's, or the one a change opened from the changes screen names
-/// (`OpenAt::shown`).
-fn location_of(m: &Model, path: &Path) -> String {
-    match &m.open_at {
-        Some(open) if open.path == path => open.shown.as_deref().unwrap_or(path).to_string_lossy().into_owned(),
-        _ => path.to_string_lossy().into_owned(),
-    }
 }
 
 /// Puts a shown text into the views that draw it: the code view, and the rendered view for Markdown.
@@ -203,7 +201,7 @@ pub fn show_image(m: &mut Model, ui: &Ui, path: &Path, info: image::Info, bytes:
 }
 
 /// Shows a binary file's notice. Focus stays on the list, as in Scouter; the compact tier opens the reader page for the
-/// notice instead, since a list tap there would otherwise show nothing (plan-00005, D2).
+/// notice instead, since a list tap there would otherwise show nothing.
 pub fn show_binary(m: &mut Model, path: &Path, size: u64) {
     if !reveal(m, path, false) {
         return;
@@ -234,7 +232,7 @@ pub fn toggle_markdown(m: &mut Model) {
 }
 
 /// `?`: shows the key page, or puts the document back when the page is shown. The page takes focus, so the reader keys
-/// scroll it; the document returns with its focus, scroll position, and search (architecture.md).
+/// scroll it; the document returns with its focus, scroll position, and search.
 pub fn toggle_keys(m: &mut Model, ui: &Ui) {
     if m.shown.shows_keys() {
         return close_keys(m, ui);
@@ -256,7 +254,7 @@ pub fn toggle_keys(m: &mut Model, ui: &Ui) {
 }
 
 /// `q`: closes the document, so the welcome screen returns and focus goes to the tree; the file's row stays selected
-/// (architecture.md, approved deviation). On the key page it puts back what the page replaced, as `?` does.
+/// (Scouter's `q` quits; here `Ctrl+q` quits). On the key page it puts back what the page replaced, as `?` does.
 pub fn close(m: &mut Model, ui: &Ui) {
     if m.shown.shows_keys() {
         return close_keys(m, ui);
@@ -334,7 +332,7 @@ pub fn content_rows(shown: &Shown, rendered_rows: usize, text_rows: usize) -> us
 }
 
 /// The footer's facts for what is shown (Scouter `documentInfo`, `setDocument`), and its scroll position in a
-/// viewport of `viewport` rows. A binary has no position: Scouter's stale `All` is not copied (`plan-00001` phase 13).
+/// viewport of `viewport` rows. A binary has no position: Scouter's stale `All` is not copied.
 pub fn footer_facts(
     shown: &Shown,
     viewport: usize,

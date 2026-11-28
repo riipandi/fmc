@@ -1,6 +1,6 @@
 use super::*;
 
-// Sample diagrams with Harry Potter and Dan Brown names (rules.md, "Sample data").
+// Sample diagrams with Harry Potter and Dan Brown names.
 const FLOWCHART: &str = "flowchart LR\n    subgraph Hogwarts\n        A[Harry Potter] --> B{Sorting Hat}\n        B -->|Gryffindor| C[Gryffindor Tower]\n        B -->|Slytherin| D[Slytherin Dungeon]\n    end\n    C --> E[Albus Dumbledore]\n    D --> F[Severus Snape]\n";
 const SEQUENCE: &str = "sequenceDiagram\n    Robert->>Sophie: Where is the cryptex?\n    Sophie-->>Robert: Under the Louvre\n    Robert->>Leigh: Who holds the Grail?\n    Leigh-->>Robert: The Priory of Sion\n";
 const CLASS: &str = "classDiagram\n    class Cryptex {\n        +String passcode\n        +open() bool\n    }\n    class Keystone {\n        +String location\n    }\n    Cryptex --> Keystone : holds\n";

@@ -33,7 +33,7 @@ pub struct Browser {
     flat: Option<Vec<Flat>>,
     /// The selected index among the flat rows.
     flat_at: usize,
-    /// The entries the user marked with `s` (plan-00014, D2). A listing that drops an entry drops its mark, and a new root
+    /// The entries the user marked with `s`. A listing that drops an entry drops its mark, and a new root
     /// starts with none, since `-` builds a new browser.
     marked: BTreeSet<PathBuf>,
 }
@@ -66,7 +66,7 @@ impl Browser {
     }
 
     /// The paths a copy, move, or Trash acts on: the marked set in path order, without a marked path inside a marked
-    /// folder, since the folder's action already takes it (plan-00014, D5).
+    /// folder, since the folder's action already takes it.
     pub fn targets(&self) -> Vec<PathBuf> {
         let mut kept: Vec<PathBuf> = Vec::new();
         for path in &self.marked {

@@ -1,5 +1,5 @@
 //! The sidebar width (Scouter `src/explorer/sidebar-resizer.ts`): a quarter of the terminal within 28..=40
-//! columns, never below 24 or so wide that the reader gets fewer than 28. The mark that shows and hides it (plan-00002).
+//! columns, never below 24 or so wide that the reader gets fewer than 28. The mark that shows and hides it.
 
 use fmc::theme::Palette;
 use opentui::prelude::*;
@@ -10,7 +10,7 @@ const MIN_SIDEBAR_COLUMNS: i64 = 24;
 const MIN_READER_COLUMNS: i64 = 28;
 
 /// The one-cell mark on the top border row: `«` on the sidebar's border while it shows, `»` on the reader's corner
-/// while it is hidden (plan-00002, D8). It is a child of the row, above the borders, so its press is its own.
+/// while it is hidden. It is a child of the row, above the borders, so its press is its own.
 pub struct Mark {
     pub root: View,
     glyph: Text,

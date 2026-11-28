@@ -37,11 +37,11 @@ pub enum Action {
     Quit,
     /// `?`: shows the key page, or puts the document back when it is shown.
     Help,
-    /// `q`: closes the open document or the key page (architecture.md, approved deviation).
+    /// `q`: closes the open document or the key page.
     Close,
-    /// `Ctrl+/` (and `Ctrl+_`, the legacy `0x1F`): shows or hides the sidebar (plan-00002).
+    /// `Ctrl+/` (and `Ctrl+_`, the legacy `0x1F`): shows or hides the sidebar.
     ToggleSidebar,
-    /// `Ctrl+.` and `.`: shows or hides dotfiles in the tree and the finder (plan-00002).
+    /// `Ctrl+.` and `.`: shows or hides dotfiles in the tree and the finder.
     ToggleDotfiles,
     SwitchPane,
     Escape,
@@ -71,32 +71,40 @@ pub enum Action {
     Jump(i8),
     /// `:` outside a prompt: opens the one-line command prompt in the footer (`:q` quits).
     OpenCommand,
-    /// `Ctrl+,`: opens the Settings page (plan-00015, D12). Only the kitty keyboard protocol sends it.
+    /// `Ctrl+,`: opens the Settings page. Only the kitty keyboard protocol sends it.
     OpenSettings,
     Find,
-    /// `Space` on a tree row: the context menu for the row (plan-00012, D3).
+    /// `Space` on a tree row: the context menu for the row.
     ContextMenu,
-    /// `a` on a tree row: a dialog for a new file, or a folder when the name ends in `/` (plan-00012, D3).
+    /// `a` on a tree row: a dialog for a new file, or a folder when the name ends in `/`.
     NewFile,
     /// `A` on a tree row: a dialog for a new folder.
     NewFolder,
-    /// `R` on a tree row: a name dialog for a copy of the row in its folder (plan-00012, D9).
+    /// `R` on a tree row: a name dialog for a copy of the row in its folder.
     Duplicate,
     /// `r` on a tree row: a dialog that renames the row.
     Rename,
     /// `D` and Delete on a tree row: a confirm dialog that moves the row to the Trash.
     Delete,
-    /// `c` on a tree row: the row goes on fmc's clipboard to copy (plan-00012, D2).
+    /// `c` on a tree row: the row goes on fmc's clipboard to copy.
     CopyFile,
     /// `x` on a tree row: the row goes on the clipboard to move, and is dimmed until a paste or Esc.
     CutFile,
     /// `v` in the tree: the clipboard goes into the selected folder, or the folder of the selected file.
     PasteFile,
-    /// `s` in the tree: marks the selected row and moves the selection down one row (plan-00014, D1).
+    /// `s` in the tree: marks the selected row and moves the selection down one row.
     ToggleMark,
     /// `S` in the tree: clears every mark.
     ClearMarks,
-    /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
+    /// `o` on a tree row or in the reader: opens the row, or the shown file, with the default app.
+    OpenDefault,
+    /// `O` in the tree or the reader: lists the apps for the row or the shown file, and picks one.
+    OpenWith,
+    /// `e` in the tree or the reader: opens the browsed folder in the settings' editor, or in Finder.
+    OpenInEditor,
+    /// `E` in the tree or the reader: reveals the row, or the shown file, in Finder (`open -R`).
+    RevealInFinder,
+    /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy.
     ToggleFuzzy,
     FocusDiff,
     Scroll(i32),
@@ -119,7 +127,7 @@ pub enum Action {
     Hunk(i8),
 }
 
-/// One help row: the keys, then what they do. The Keys page and `docs/keymaps.md` show the action first.
+/// One help row: the keys, then what they do. The Keys page shows the action first.
 pub type KeyRow = (&'static str, &'static str);
 
 /// The sections, each in groups of related acts: moving, then opening, then finding and viewing; in Files, the menu,
@@ -154,6 +162,10 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("D Delete", "move the marked rows, or the row, to the Trash"),
             ("s", "mark the row and move down"),
             ("S", "clear the marks"),
+            ("o", "open in the default app; a folder opens in Finder"),
+            ("e", "open the folder in the editor from settings, or in Finder"),
+            ("E", "show the row in Finder"),
+            ("O", "pick an app to open the row with"),
         ],
     ),
     (
@@ -169,6 +181,10 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("zz", "centre the match, or the middle line"),
             ("w", "wrap long lines"),
             ("m", "Markdown: rendered / source"),
+            ("o", "open the file in its default app"),
+            ("e", "open the folder in the editor from settings, or in Finder"),
+            ("E", "show the file in Finder"),
+            ("O", "pick an app to open the file with"),
         ],
     ),
     (
@@ -216,7 +232,7 @@ pub const MOUSE_ROWS: &[KeyRow] = &[
     ("Click «»", "show / hide the sidebar, from its mark"),
 ];
 
-/// The actions each card row shows, by section and label (A10): a row lists the keys its actions have in the merged
+/// The actions each card row shows, by section and label: a row lists the keys its actions have in the merged
 /// table, so a rebound key shows on its row. A row with no actions is fixed text.
 const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Browse", "j k ↑ ↓", &[Action::Move(1), Action::Move(-1)]),
@@ -240,6 +256,10 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Files", "v", &[Action::PasteFile]),
     ("Files", "s", &[Action::ToggleMark]),
     ("Files", "S", &[Action::ClearMarks]),
+    ("Files", "o", &[Action::OpenDefault]),
+    ("Files", "e", &[Action::OpenInEditor]),
+    ("Files", "E", &[Action::RevealInFinder]),
+    ("Files", "O", &[Action::OpenWith]),
     ("Reader", "j k", &[Action::Scroll(1), Action::Scroll(-1)]),
     ("Reader", "/", &[Action::Search]),
     ("Reader", "n N p", &[Action::NextMatch, Action::PreviousMatch]),
@@ -248,6 +268,10 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Reader", "{ }", &[Action::Paragraph(-1), Action::Paragraph(1)]),
     ("Reader", "w", &[Action::ToggleWrap]),
     ("Reader", "m", &[Action::ToggleMarkdown]),
+    ("Reader", "o", &[Action::OpenDefault]),
+    ("Reader", "e", &[Action::OpenInEditor]),
+    ("Reader", "E", &[Action::RevealInFinder]),
+    ("Reader", "O", &[Action::OpenWith]),
     ("Changes", "d", &[Action::ToggleChanges]),
     ("Changes", "n N p", &[Action::Hunk(1), Action::Hunk(-1)]),
     ("Changes", "a", &[Action::ToggleScope]),
@@ -292,7 +316,7 @@ fn row_keys(title: &str, label: &str, keymap: &Keymap, defaults: &Keymap) -> Str
     if now.is_empty() { "unbound".into() } else { now.join(" ") }
 }
 
-/// The card's sections, as `(title, (keys, action))` rows, from the merged keys (plan-00015, A10). A binding of an
+/// The card's sections, as `(title, (keys, action))` rows, from the merged keys. A binding of an
 /// action with no row gets a row of its own, under the section of its context. Mouse comes last.
 pub fn key_sections(keymap: &Keymap) -> Vec<(String, Vec<(String, String)>)> {
     let defaults = Keymap::defaults();

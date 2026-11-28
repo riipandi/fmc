@@ -148,7 +148,7 @@ impl CodeView {
     }
 
     /// Draws the stored signs in both gutters. A blank sign on line 1 holds the strip's column while no line has a sign,
-    /// so the numbers do not move as signs come and go (plan-00008, D1).
+    /// so the numbers do not move as signs come and go.
     fn draw_signs(&self, p: &Palette) {
         let stored = self.signs.borrow();
         let Some((signs, strip)) = stored.as_ref() else { return };

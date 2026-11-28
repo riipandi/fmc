@@ -18,7 +18,7 @@ The file list shows the folder as a tree. Each file has a git mark when git repo
 
 `Tab` moves focus between the two panes, and a click focuses the pane under the pointer. `Ctrl+←` and `Ctrl+→` change the list's width two columns at a time, and dragging its edge does the same.
 
-The footer names the pane and the file's line count, language, and position, then lists the keys that work here.
+The footer names the pane, then the browsed root (with `~` for the home folder) and the git branch as `⎇ name` (a detached `HEAD` shows its short hash), from 60 columns up. A reader's footer then names the file's line count, language, and position. Below 60 columns the bottom bar shows the page's words and no root or branch. The footer then lists the keys that work here.
 
 fmc follows the terminal's background and switches between a dark and a light palette when the background changes. The tree, the open file, and the changes refresh by themselves, about every two seconds, so a file that an editor or an agent changes shows up without a reload.
 
@@ -90,6 +90,18 @@ The file list creates, renames, copies, moves, and deletes files. Each action wo
 fmc never overwrites. A name that is taken is refused with a notice, and the dialog stays open for another name. A paste into a folder that has the same name takes `copy`, then `copy 2`, before the extension. A copy of a folder keeps its links as links, and fmc does not follow them. A paste runs in the background, and the footer says `copying` or `moving` while it runs, with `copying 2 of 5…` for several rows. The rows go one at a time: the first error stops the paste and the footer says how many landed. A second paste is refused until the first one finishes.
 
 There is no undo beyond the Trash. `r`, `R`, and `a` work on one row; the copy, cut, paste, and delete keys work on every marked row.
+
+## Opening in other apps
+
+fmc hands a file or a folder to macOS, and the app that opens it does what it does with the file. fmc writes nothing.
+
+- `o` opens the selected row, or the file in the reader, with the app macOS picks for it. A folder opens in Finder. A file fmc cannot show, such as a binary, shows a notice that names this key.
+- `O` opens a picker. It lists the apps set for the file in [`open_with`](configuration.md#opening-in-other-apps), then the apps macOS lists for it (the default is marked), then Finder. Finder is always last: it reveals a file and opens a folder. Enter opens the file with the row you pick, and Esc closes the picker with nothing opened. A long list scrolls with the arrows or `j` and `k`.
+- `e` opens the browsed folder in the editor that [`editor`](configuration.md#opening-in-other-apps) names, or in Finder when `editor` is empty.
+- `E` shows the selected row, or the file in the reader, in Finder, selected in its folder.
+- `Space` opens the menu with these actions: Open, Open With…, and Show in Finder on a row, and Open Folder in Editor on empty space.
+
+A launch reports in the footer: `Opened <name>.` when it works, or the reason macOS gives when it does not.
 
 ## Help
 

@@ -1,6 +1,6 @@
 //! Git reads for the changes screen and the tree's marks (Scouter `src/diff/git.ts` and `src/diff/patch.ts`). Git never
 //! reads the repository's own index: a `Repository` keeps a copy and runs every command against it, because `git diff`
-//! rewrites the index it reads (`architecture.md`, "Git is read by running `git`"; Scouter decision 0007). The parsing
+//! rewrites the index it reads. The parsing
 //! and the patch text are in `fmc::diff`.
 
 use std::collections::HashMap;
@@ -8,36 +8,30 @@ use std::fs::{self, File};
 use std::io::{self, Read};
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::process::{ChildStdout, Command, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-use std::thread;
-use std::time::{Duration, Instant, SystemTime};
+use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::time::{Duration, SystemTime};
 
 use fmc::diff::{
     ALL_LIMIT, Change, ChangeKind, ChangeSet, FilePatch, Listing, PATCH_LIMIT, Patch, Sign, binary, change_set,
     from_diff, from_file, not_shown, order, parse_name_status, split, split_z, too_large, utf16_len,
 };
 use fmc::reader::document::{self, Document};
-use fmc::text::display_text;
 
 use super::fs::describe;
+use super::{Output, capture};
 
 /// Scouter's cap on a git call's output (`src/diff/git.ts:8`).
 const LIST_LIMIT: usize = 8 * 1024 * 1024;
 /// Scouter's time limit for a git call (`src/diff/git.ts:9`).
 const TIMEOUT: Duration = Duration::from_secs(15);
 /// An index written this recently can hide a same-second change from git's stat check, so its copy is never reused
-/// (`src/diff/git.ts:10`, Scouter decision 0007).
+/// (`src/diff/git.ts:10`).
 const RACY_WINDOW: Duration = Duration::from_secs(2);
-/// How often a running command is checked for its exit, for an overflow, and for the timeout.
-const POLL: Duration = Duration::from_millis(5);
-/// The status Bun reports for a process ended by SIGTERM, which is how Scouter's timeout ends git (`src/diff/git.ts:59`).
-const TERMINATED: i32 = 143;
 /// Scouter's diff options (`src/diff/git.ts:32`).
 const DIFF_OPTIONS: [&str; 4] = ["--no-ext-diff", "--no-textconv", "--no-color", "-M"];
 const NOT_A_REPOSITORY: &str = "Not a git repository.";
-const NO_OUTPUT: &str = "Git output could not be read.";
 
 /// A repository a worker reads. Each git call holds its queue, so calls on one repository never overlap
 /// (`src/diff/git.ts:141-148`). Dropping it removes the copy of the index.
@@ -68,12 +62,6 @@ type Key = (u64, u64, i64, i64, i64, i64);
 
 fn key(metadata: &fs::Metadata) -> Key {
     (metadata.ino(), metadata.size(), metadata.mtime(), metadata.mtime_nsec(), metadata.ctime(), metadata.ctime_nsec())
-}
-
-/// What one git call printed: its text, and whether the cap cut it (`src/diff/git.ts:76`).
-struct Output {
-    text: String,
-    truncated: bool,
 }
 
 impl Repository {
@@ -158,8 +146,8 @@ impl Repository {
         parts.join("\n")
     }
 
-    /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`, plan-00008
-    /// D2). The whole tree's status is read with the listing's rename detection, so a renamed file diffs from its old
+    /// The signs of `path`, a repository-relative file, against the change base with no context (`patch`).
+    /// The whole tree's status is read with the listing's rename detection, so a renamed file diffs from its old
     /// path, and a pure rename has no signs, as the changes screen shows it. An untracked file is all added.
     fn file_signs(&self, path: &str) -> Result<Vec<(u32, Sign)>, String> {
         let change = {
@@ -313,8 +301,20 @@ pub fn marks(dir: &Path) -> Result<Option<Listing>, String> {
     repository.listing(within).map(Some)
 }
 
-/// The signs of the file at `path` against the change base (plan-00008, D2). `Err` outside a repository and on a git
-/// failure; the reader clears its signs then, with no notice (D5).
+/// The branch `dir` is on: its name, or the short hash of a detached `HEAD`. `None` outside a repository or when git
+/// fails. The name is read without `--short`, which prints `heads/main` when a tag has the same name.
+pub fn branch(dir: &Path) -> Option<String> {
+    let text = |args: &[&str]| run(dir, None, args).ok().map(|output| output.text.trim().to_string());
+    // A detached `HEAD` fails `symbolic-ref`, so the hash stands in for the name.
+    text(&["symbolic-ref", "-q", "HEAD"])
+        .map(|reference| reference.strip_prefix("refs/heads/").unwrap_or(&reference).to_string())
+        .filter(|name| !name.is_empty())
+        .or_else(|| text(&["rev-parse", "--short", "HEAD"]))
+        .filter(|name| !name.is_empty())
+}
+
+/// The signs of the file at `path` against the change base. `Err` outside a repository and on a git
+/// failure; the reader clears its signs then, with no notice.
 pub fn signs(path: &Path) -> Result<Vec<(u32, Sign)>, String> {
     let folder = fs::canonicalize(path.parent().unwrap_or(Path::new("."))).map_err(|error| error.to_string())?;
     let repository = Repository::open(&folder)?;
@@ -439,63 +439,6 @@ fn command(dir: &Path, index: Option<&Path>, args: &[&str]) -> Command {
         command.env("GIT_INDEX_FILE", index);
     }
     command
-}
-
-/// Runs `command` and collects its stdout up to `limit` bytes. The command is killed when it writes past the limit or
-/// runs past `timeout`. Past the limit, a `partial` run keeps the bytes it read; any other run is cut and has no text
-/// (`src/diff/git.ts:47-107`).
-fn capture(mut command: Command, limit: usize, partial: bool, timeout: Duration) -> Result<Output, String> {
-    command.stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::piped());
-    let mut child = command.spawn().map_err(|_| "Git is not installed or could not be started.".to_string())?;
-    let stdout = child.stdout.take().ok_or(NO_OUTPUT)?;
-    let mut stderr = child.stderr.take().ok_or(NO_OUTPUT)?;
-    let overflow = Arc::new(AtomicBool::new(false));
-    let reader = {
-        let overflow = Arc::clone(&overflow);
-        thread::spawn(move || read_capped(stdout, limit, &overflow))
-    };
-    // stderr is drained beside stdout, so a command that fills either pipe cannot wait on this loop.
-    let errors = thread::spawn(move || {
-        let mut bytes = Vec::new();
-        let _ = stderr.read_to_end(&mut bytes);
-        bytes
-    });
-    let deadline = Instant::now() + timeout;
-    let status = loop {
-        if let Some(status) = child.try_wait().map_err(|error| error.to_string())? {
-            break status;
-        }
-        if overflow.load(Ordering::SeqCst) || Instant::now() >= deadline {
-            let _ = child.kill();
-            break child.wait().map_err(|error| error.to_string())?;
-        }
-        thread::sleep(POLL);
-    };
-    let mut bytes = reader.join().map_err(|_| NO_OUTPUT.to_string())?.map_err(|error| error.to_string())?;
-    let stderr = errors.join().unwrap_or_default();
-    let truncated = overflow.load(Ordering::SeqCst);
-    if !truncated && !status.success() {
-        let code = status.code().unwrap_or(TERMINATED);
-        let stderr = String::from_utf8_lossy(&stderr);
-        let reason = stderr.trim().split('\n').next().unwrap_or_default();
-        return Err(if reason.is_empty() { format!("git exited with status {code}.") } else { display_text(reason) });
-    }
-    if truncated {
-        bytes.truncate(limit);
-    }
-    let text = if truncated && !partial { String::new() } else { String::from_utf8_lossy(&bytes).into_owned() };
-    Ok(Output { text, truncated })
-}
-
-/// Reads stdout up to `limit` bytes, and one byte past it, so a cut is told from an output that ends exactly there.
-/// A read past the limit sets `overflow`, and the waiting loop kills the command.
-fn read_capped(stdout: ChildStdout, limit: usize, overflow: &AtomicBool) -> io::Result<Vec<u8>> {
-    let mut bytes = Vec::new();
-    stdout.take(limit as u64 + 1).read_to_end(&mut bytes)?;
-    if bytes.len() > limit {
-        overflow.store(true, Ordering::SeqCst);
-    }
-    Ok(bytes)
 }
 
 #[cfg(test)]

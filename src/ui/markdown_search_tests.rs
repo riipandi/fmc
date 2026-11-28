@@ -1,4 +1,4 @@
-//! The rendered view's search marks (plan-00010 D3 and D5): every occurrence the index counts is marked where the index
+//! The rendered view's search marks: every occurrence the index counts is marked where the index
 //! says, the current one in the current colour, and a fence the renderer does not draw is counted but not marked.
 
 use fmc::reader::rendered_search::Slot;

@@ -1,4 +1,4 @@
-//! The file operations of the tree (plan-00012, D2 to D9): what `a`, `A`, `r`, `c`, `x`, `v`, `D`, Delete, and the context
+//! The file operations of the tree: what `a`, `A`, `r`, `c`, `x`, `v`, `D`, Delete, and the context
 //! menu ask for, the name and confirm dialogs they open, the clipboard, and the reveal of what a write made. The I/O is
 //! `services/write.rs`; this file picks the target and says what a dialog's answer does.
 
@@ -28,6 +28,10 @@ const LISTED: usize = 5;
 /// What the tree's keys and the context menu ask for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
+    Open,
+    OpenWith,
+    Reveal,
+    Editor,
     NewFile,
     NewFolder,
     Rename,
@@ -42,6 +46,10 @@ impl Act {
     /// The tree key that does the act (`keys/parser.rs`), shown at the menu row's right edge.
     fn hint(self) -> &'static str {
         match self {
+            Act::Open => "o",
+            Act::OpenWith => "O",
+            Act::Reveal => "E",
+            Act::Editor => "e",
             Act::NewFile => "a",
             Act::NewFolder => "A",
             Act::Rename => "r",
@@ -53,29 +61,30 @@ impl Act {
         }
     }
 
-    /// The menu's groups: creating, changing an entry, and deleting. A rule separates them.
+    /// The menu's groups: opening, creating, changing an entry, and deleting. A rule separates them.
     fn group(self) -> u8 {
         match self {
-            Act::NewFile | Act::NewFolder => 0,
-            Act::Delete => 2,
-            _ => 1,
+            Act::Open | Act::OpenWith | Act::Reveal | Act::Editor => 0,
+            Act::NewFile | Act::NewFolder => 1,
+            Act::Delete => 3,
+            _ => 2,
         }
     }
 }
 
-/// The entries copy or cut put on fmc's clipboard (plan-00012, D2; plan-00014, D11): their paths, and whether a paste
+/// The entries copy or cut put on fmc's clipboard: their paths, and whether a paste
 /// moves them. The clipboard is fmc's own, not the system's.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Clip {
     pub paths: Vec<PathBuf>,
     /// Each path's device and inode when `c` or `x` took it, in the same order. A run refuses an entry that has been
-    /// replaced since, as the Trash does (security review of phase 3, finding 1).
+    /// replaced since, as the Trash does.
     pub ids: Vec<(u64, u64)>,
     pub cut: bool,
 }
 
 /// One item of a run: the entry it acts on, the folder it goes into, the name a copy takes (`None` takes the free name
-/// a paste gives, plan-00012 D5), and the entry's device and inode when the run was started.
+/// a paste gives), and the entry's device and inode when the run was started.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Op {
     id: (u64, u64),
@@ -84,8 +93,8 @@ pub struct Op {
     name: Option<String>,
 }
 
-/// A run of items on the worker, one at a time (plan-00014, D7 and D12). The run stops at its first error, and the
-/// marks of a run that lands every item go away (D13).
+/// A run of items on the worker, one at a time. The run stops at its first error, and the
+/// marks of a run that lands every item go away.
 pub struct Bulk {
     kind: store::Kind,
     queue: VecDeque<Op>,
@@ -110,6 +119,8 @@ impl Bulk {
 #[derive(Clone, Debug)]
 pub enum Task {
     Menu(Vec<Act>),
+    /// The Open With picker: the rows it offers for the file, and the file (`app/open.rs`).
+    Open(open::Picker),
     /// A name for a new entry in `dir`. `folder` makes a folder, and so does a name that ends in `/`.
     Name {
         folder: bool,
@@ -126,7 +137,7 @@ pub enum Task {
     /// A number row of the Settings page: the dialog's text is the new value (`app/settings.rs`).
     Setting(fmc::settings::Row),
     /// The entries to trash, each with its device and inode when the dialog opened (an entry swapped since then is not
-    /// trashed, plan-00014 D15), and the row to select after them: the next row, or the one before it when it was last.
+    /// trashed), and the row to select after them: the next row, or the one before it when it was last.
     Delete {
         items: Vec<(PathBuf, (u64, u64))>,
         next: Option<PathBuf>,
@@ -135,9 +146,19 @@ pub enum Task {
 
 /// The menu's rows: New file and New folder always, the entry's acts when a row is selected, and Paste when the
 /// clipboard holds something (its target is the selected folder, or the root). Copy, Cut, and Paste name how many
-/// entries they take (plan-00014, D6).
+/// entries they take.
 fn menu_rows(row: bool, clipped: usize, acted: usize) -> Vec<(Act, String, bool)> {
-    let mut rows = vec![(Act::NewFile, "New file…".into(), true), (Act::NewFolder, "New folder…".into(), true)];
+    let mut rows = Vec::new();
+    if row {
+        rows.extend([
+            (Act::Open, "Open".into(), true),
+            (Act::OpenWith, "Open With…".into(), true),
+            (Act::Reveal, "Show in Finder".into(), true),
+        ]);
+    } else {
+        rows.push((Act::Editor, "Open Folder in Editor".into(), true));
+    }
+    rows.extend([(Act::NewFile, "New file…".into(), true), (Act::NewFolder, "New folder…".into(), true)]);
     if row {
         rows.extend([
             (Act::Rename, "Rename…".into(), true),
@@ -158,11 +179,15 @@ fn counted(label: &str, count: usize) -> String {
     if count > 1 { format!("{label} {count} items") } else { label.to_owned() }
 }
 
-/// `Space`: the context menu, anchored at the selected row's cell (plan-00012, D3).
+/// `Space`: the context menu, anchored at the selected row's cell.
 pub fn open_menu(m: &mut Model) {
+    open_menu_at(m, anchor(m));
+}
+
+/// The cell the context menu opens at: the selected row's cell in the list.
+pub fn anchor(m: &Model) -> (u16, u16) {
     let row = m.browser.selected_index().saturating_sub(m.browser.top());
-    let cell = (2, LIST_TOP + row as u16);
-    open_menu_at(m, cell);
+    (2, LIST_TOP + row as u16)
 }
 
 /// A right-click on a row, or `Space`: the context menu at `cell`.
@@ -181,7 +206,7 @@ pub fn open_menu_at(m: &mut Model, cell: (u16, u16)) {
         })
         .collect();
     m.overlay_at = cell;
-    m.overlay = Some(Overlay::Menu(Menu::new(items)));
+    m.overlay = Some(Overlay::Menu(Menu::scrolled(items, open::shown_rows(m.rows))));
     m.overlay_task = Some(Task::Menu(rows.into_iter().map(|(act, ..)| act).collect()));
 }
 
@@ -229,7 +254,7 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
         }
         Act::Delete => {
             let paths = acted_paths(m);
-            // The Trash names each entry by its path as text (plan-00012, D6), as the write layer refuses.
+            // The Trash names each entry by its path as text, as the write layer refuses.
             if paths.iter().any(|path| path.file_name().and_then(|name| name.to_str()).is_none()) {
                 return refuse(m, "This name is not UTF-8, so fmc cannot move it to the Trash.");
             }
@@ -263,7 +288,7 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
         }
         Act::Duplicate => {
             let Some(entry) = entry else { return };
-            // The field types the name as text, as a rename does. The copy is named as a paste names one (D5).
+            // The field types the name as text, as a rename does. The copy is named as a paste names one.
             let Some(name) = entry.path.file_name().and_then(|name| name.to_str()) else {
                 return refuse(m, "This name is not UTF-8, so fmc cannot duplicate it.");
             };
@@ -281,6 +306,10 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
                 Dialog::new("Duplicate", "Name the copy. It goes in the same folder.", true, &["Cancel", "OK"], 1);
             ask(m, ui, Task::Duplicate { source: entry.path, dir }, dialog, &copy);
         }
+        Act::Open => open::default_app(m),
+        Act::OpenWith => open::with(m),
+        Act::Reveal => open::reveal(m),
+        Act::Editor => open::editor(m),
         Act::Copy => take(m, false),
         Act::Cut => take(m, true),
         Act::Paste => paste(m),
@@ -288,7 +317,7 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
 }
 
 /// The entries `c`, `x`, and `D` act on: the marked entries in path order, or the selected row when none is marked
-/// (plan-00014, D4). A mark on an entry that is gone from disk is left out, so it cannot stop a run.
+/// A mark on an entry that is gone from disk is left out, so it cannot stop a run.
 fn acted_on(m: &Model) -> Vec<(PathBuf, (u64, u64))> {
     acted_paths(m).into_iter().filter_map(with_id).collect()
 }
@@ -308,7 +337,7 @@ fn with_id(path: PathBuf) -> Option<(PathBuf, (u64, u64))> {
     Some((path, id))
 }
 
-/// `c` and `x`, and the menu's Copy and Cut: the entries go on the clipboard, and a notice says so (plan-00014, D4).
+/// `c` and `x`, and the menu's Copy and Cut: the entries go on the clipboard, and a notice says so.
 pub fn take(m: &mut Model, cut: bool) {
     let (paths, ids): (Vec<PathBuf>, Vec<(u64, u64)>) = acted_on(m).into_iter().unzip();
     let verb = if cut { "Cut" } else { "Copied" };
@@ -321,8 +350,8 @@ pub fn take(m: &mut Model, cut: bool) {
     m.message = Some(Message { text, error: false });
 }
 
-/// `v`, and the menu's Paste: the clipboard goes into the target folder, one item at a time on the worker (plan-00012,
-/// D8; plan-00014, D7). A cut entry already in that folder is skipped, and a cut with nothing left to move ends.
+/// `v`, and the menu's Paste: the clipboard goes into the target folder, one item at a time on the worker.
+/// A cut entry already in that folder is skipped, and a cut with nothing left to move ends.
 pub fn paste(m: &mut Model) {
     let Some(clip) = m.clipboard.clone() else { return };
     if m.bulk.is_some() {
@@ -380,7 +409,7 @@ fn advance(m: &mut Model) {
     });
 }
 
-/// Runs one item on the worker: the write layer's copy, paste, or move, (plan-00014, D12).
+/// Runs one item on the worker: the write layer's copy, paste, or move.
 fn run(root: &Path, kind: store::Kind, op: &Op) -> Result<PathBuf, String> {
     // An entry replaced since `c`, `x`, or the duplicate's dialog is left alone. An entry that is gone gets the write
     // layer's own error instead. The check and the write are two calls, the same shortcut as the Trash's (`submit`).
@@ -422,7 +451,7 @@ pub fn written(m: &mut Model, kind: store::Kind, source: &Path, result: Result<P
     }
 }
 
-/// Ends a run. The cut it moved ends with it. The marks go when every item landed (plan-00014, D13). The tree reveals
+/// Ends a run. The cut it moved ends with it. The marks go when every item landed. The tree reveals
 /// the last new entry, or lists the folder again when no entry was made.
 fn end(m: &mut Model, bulk: Bulk, error: Option<String>) {
     if bulk.kind == store::Kind::Move && m.clipboard.as_ref().is_some_and(|clip| clip.cut && clip.paths == bulk.sources)
@@ -464,7 +493,7 @@ fn relist_shown(m: &mut Model, folder: PathBuf) {
 }
 
 /// An entry's name as the footer shows it.
-fn label(path: &Path) -> String {
+pub fn label(path: &Path) -> String {
     display_label(&path.file_name().unwrap_or(OsStr::new("")).to_string_lossy())
 }
 
@@ -477,6 +506,10 @@ pub fn pick(app: &App, m: &mut Model, ui: &Ui, index: usize) {
             if let Some(act) = acts.get(index) {
                 start(m, ui, *act);
             }
+        }
+        Some(Task::Open(picker)) => {
+            overlay::close(app, m);
+            open::run(m, &picker, index);
         }
         Some(task) => submit(app, m, ui, task, index),
         None => overlay::close(app, m),
@@ -512,7 +545,7 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
         Task::Delete { items, next } => return delete(app, m, &root, items, next.clone()),
         Task::Duplicate { source, dir } => return duplicate(app, m, &root, &typed, source, dir),
         Task::Setting(row) => return settings::submit(app, m, *row, &typed),
-        Task::Menu(_) => return overlay::close(app, m),
+        Task::Menu(_) | Task::Open(_) => return overlay::close(app, m),
     };
     match done {
         Ok((folder, target)) => {
@@ -528,8 +561,8 @@ fn submit(app: &App, m: &mut Model, ui: &Ui, task: Task, index: usize) {
     }
 }
 
-/// Starts the Trash of a confirm's entries, as a run on the worker (plan-00014, D12). Every entry is checked before the
-/// first call: one that was replaced since the dialog opened refuses the whole run, as a single delete always did (D15).
+/// Starts the Trash of a confirm's entries, as a run on the worker. Every entry is checked before the
+/// first call: one that was replaced since the dialog opened refuses the whole run, as a single delete always did.
 fn delete(app: &App, m: &mut Model, root: &Path, items: &[(PathBuf, (u64, u64))], next: Option<PathBuf>) {
     let Some((first, _)) = items.first() else { return overlay::close(app, m) };
     if m.bulk.is_some() {
@@ -556,7 +589,7 @@ fn delete(app: &App, m: &mut Model, root: &Path, items: &[(PathBuf, (u64, u64))]
     begin(m, bulk);
 }
 
-/// The names a confirm lists: one a line, up to `LISTED` of them, then `and K more` (plan-00014, D6).
+/// The names a confirm lists: one a line, up to `LISTED` of them, then `and K more`.
 fn listed(names: &[String]) -> String {
     let mut text = names.iter().take(LISTED).cloned().collect::<Vec<_>>().join("\n");
     let more = names.len().saturating_sub(LISTED);
@@ -567,7 +600,7 @@ fn listed(names: &[String]) -> String {
 }
 
 /// Starts a duplicate. The name is checked here, so a taken name or a paste that is running keeps the dialog open with its
-/// line; the copy runs on the paste worker, and `pasted` reveals it (D9).
+/// line; the copy runs on the paste worker, and `pasted` reveals it.
 fn duplicate(app: &App, m: &mut Model, root: &Path, typed: &str, source: &Path, dir: &Path) {
     let refused = if m.bulk.is_some() {
         Some(BUSY.to_owned())
@@ -587,7 +620,7 @@ fn duplicate(app: &App, m: &mut Model, root: &Path, typed: &str, source: &Path, 
     begin(m, Bulk::new(store::Kind::Copy, vec![op], vec![source.to_path_buf()], dir.to_path_buf()));
 }
 
-/// Moves the entry to the Trash, where Finder's Put Back restores it (plan-00012, D4).
+/// Moves the entry to the Trash, where Finder's Put Back restores it.
 #[cfg(not(test))]
 fn trash(root: &Path, path: &Path) -> Result<(), store::Error> {
     store::trash(root, path)
@@ -618,8 +651,8 @@ fn ask(m: &mut Model, ui: &Ui, task: Task, dialog: Dialog, text: &str) {
     m.overlay_task = Some(task);
 }
 
-/// The folder a new entry goes into: the selected folder, the folder of the selected file (as paste does, plan-00012
-/// D2), or the root when no row is selected.
+/// The folder a new entry goes into: the selected folder, the folder of the selected file (as paste does), or the
+/// root when no row is selected.
 fn target_folder(m: &Model, entry: Option<&Entry>) -> PathBuf {
     let root = m.browser.tree.root();
     match entry {
@@ -634,7 +667,7 @@ fn parent_of(path: &Path, root: &Path) -> PathBuf {
     path.parent().unwrap_or(root).to_path_buf()
 }
 
-/// The row a delete selects (plan-00012, D9): the row after the entry and the rows under it, or the row before the entry
+/// The row a delete selects: the row after the entry and the rows under it, or the row before the entry
 /// when it was the last.
 fn successor(m: &Model) -> Option<PathBuf> {
     let rows = m.browser.tree.rows();

@@ -63,7 +63,7 @@ pub fn name(event: &KeyEvent) -> Option<Named> {
     Some(Named { name, text, ctrl: m.contains(Modifiers::CTRL), alt, shift, cmd: m.contains(Modifiers::SUPER) })
 }
 
-/// The presses a tap on a footer hint sends, named by the hint's key (plan-00004, P2): the hint's own key, or its first
+/// The presses a tap on a footer hint sends, named by the hint's key: the hint's own key, or its first
 /// where it names several. `None` for a hint with no key to press; `^q` stays on the keyboard.
 pub fn hint_presses(key: &str) -> Option<Vec<Named>> {
     let press = |name: &str, text: &str, ctrl: bool| Named {

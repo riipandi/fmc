@@ -24,7 +24,7 @@ pub enum Command {
 }
 
 /// The usage, the arguments, and where the keys and the settings are. The keys themselves are on the `?` page, not
-/// here (the owner, 2026-11-27).
+/// here.
 pub fn help_text() -> String {
     "fmc — a minimal terminal file manager\n\n\
      Usage: fmc [file-or-directory]\n\n\

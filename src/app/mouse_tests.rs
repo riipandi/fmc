@@ -53,7 +53,7 @@ fn listing() -> (TestApp, Rc<RefCell<Model>>) {
 fn listing_at(columns: u16, rows: u16) -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(columns, rows);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -119,7 +119,7 @@ const SWIPE_DOWN: &str =
 fn phone() -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(49, 40);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -201,7 +201,7 @@ fn changes_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>, R
         fs::write(root.join(name), "Hogwarts, changed\n").unwrap();
     }
     let app = TestApp::new(columns, 24);
-    let model = Rc::new(RefCell::new(new_model(app.app(), root, root.to_path_buf(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.to_path_buf(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -272,7 +272,7 @@ fn name_on(app: &TestApp, row: u16, names: &[String]) -> Option<String> {
 fn tree_of(columns: u16, names: &[String]) -> (TestApp, Rc<RefCell<Model>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();
@@ -314,7 +314,7 @@ fn the_first_and_last_finder_rows_open_their_file_in_compact() {
                 fs::write(dir.path().join(name), "Hogwarts\n").unwrap();
             }
             let app = TestApp::new(columns, 24);
-            let model = Rc::new(RefCell::new(new_model(app.app(), dir.path(), dir.path().to_path_buf(), None)));
+            let model = Rc::new(RefCell::new(new_model(app.app(), dir.path().to_path_buf(), None)));
             let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
             crate::app::capture::wire(app.app(), &model, &ui);
             wire_mouse(&model, &ui);
@@ -366,12 +366,12 @@ fn a_tap_on_the_find_segment_of_the_bottom_bar_opens_the_finder_at_59_columns() 
     assert!(model.borrow().finder.is_some(), "the Find segment presses /");
 }
 
-/// issue-00013: after the terminal gets shorter, the tree's thumb still ends on the list's last row.
+/// After the terminal gets shorter, the tree's thumb still ends on the list's last row.
 #[test]
 fn the_tree_thumb_reaches_the_bottom_after_the_terminal_shrinks() {
     let app = TestApp::new(80, 40);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui: Rc<RefCell<Ui>> = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     let names: Vec<String> = (0..60).map(|n| format!("owl-{n:02}.txt")).collect();
     model.borrow_mut().browser.listed(&root, names.iter().map(|name| Entry::new(&root, name, Kind::File)).collect());

@@ -1,7 +1,7 @@
 name: Release
 
 # A pushed tag `vX.Y.Z` builds the macOS Apple silicon binary and publishes a GitHub Release with it. The tag must
-# match the version in Cargo.toml, and CHANGELOG.md must have a `## [X.Y.Z]` section: it becomes the release notes.
+# match the version in Cargo.toml, and the changelog must have a `## [X.Y.Z]` section: it becomes the release notes.
 
 on:
   push:

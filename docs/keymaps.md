@@ -36,6 +36,10 @@ The file acts work on the selected row, or on every marked row when some are mar
 | move the marked rows, or the row, to the Trash | `D` `Delete` |
 | mark the row and move down | `s` |
 | clear the marks | `S` |
+| open in the default app; a folder opens in Finder | `o` |
+| pick an app to open the row with | `O` |
+| open the folder in the editor from settings, or in Finder | `e` |
+| show the row in Finder | `E` |
 
 ## Find a file
 
@@ -86,6 +90,10 @@ The Option keys need the terminal to send Option as Alt. The Cmd keys need the t
 | centre the match, or the middle line | `zz` |
 | wrap long lines | `w` |
 | Markdown: rendered / source | `m` |
+| open the file in its default app | `o` |
+| pick an app to open the file with | `O` |
+| open the folder in the editor from settings, or in Finder | `e` |
+| show the file in Finder | `E` |
 
 ## Changes
 
@@ -243,6 +251,10 @@ The names are fixed; a name that changes is a breaking change to the file. A def
 | `paste_file` | `v` |
 | `toggle_mark` | `s` |
 | `clear_marks` | `S` |
+| `open_default` | `o` |
+| `open_with` | `O` |
+| `open_in_editor` | `e` |
+| `reveal_in_finder` | `E` |
 | `toggle_fuzzy` | `ctrl-f` |
 | `focus_diff` | `enter` `l` `L` `right` |
 | `scroll_down` | `J` `j` `down` |

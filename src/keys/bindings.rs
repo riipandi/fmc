@@ -1,4 +1,4 @@
-//! The default key table (plan-00015, A8): every key the parser binds is one row of (context, key, typing, action).
+//! The default key table: every key the parser binds is one row of (context, key, typing, action).
 //! The parser walks it, the `?` card and `--help` read it, and `keymap.json` edits it (`keymap.rs`). Count digits and
 //! `z` are not rows: the parser keeps them (`parser.rs`).
 
@@ -239,6 +239,10 @@ pub const ACTION_NAMES: &[(&str, Action)] = &[
     ("paste_file", PasteFile),
     ("toggle_mark", ToggleMark),
     ("clear_marks", ClearMarks),
+    ("open_default", OpenDefault),
+    ("open_in_editor", OpenInEditor),
+    ("reveal_in_finder", RevealInFinder),
+    ("open_with", OpenWith),
     ("toggle_fuzzy", ToggleFuzzy),
     ("focus_diff", FocusDiff),
     ("scroll_down", Scroll(1)),
@@ -379,6 +383,14 @@ pub const DEFAULTS: &[(Context, &str, Option<bool>, Action)] = &[
     (Context::Reader, "B", ANY, Page(-1)),
     (Context::Reader, "b", ANY, Page(-1)),
     (Context::Reader, "pageup", ANY, Page(-1)),
+    (Context::Browse, "o", ANY, OpenDefault),
+    (Context::Reader, "o", ANY, OpenDefault),
+    (Context::Browse, "e", ANY, OpenInEditor),
+    (Context::Reader, "e", ANY, OpenInEditor),
+    (Context::Browse, "E", ANY, RevealInFinder),
+    (Context::Reader, "E", ANY, RevealInFinder),
+    (Context::Browse, "O", ANY, OpenWith),
+    (Context::Reader, "O", ANY, OpenWith),
     (Context::Reader, "/", ANY, Search),
     (Context::Reader, "n", ANY, NextMatch),
     (Context::Reader, "N", ANY, PreviousMatch),

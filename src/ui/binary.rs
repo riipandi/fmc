@@ -6,14 +6,18 @@ use opentui::prelude::*;
 
 use super::styled::{Seg, content};
 
-/// The line under the title: what the reader shows instead (the product name is fmc, `docs/parity.md`).
+/// The line under the title: what the reader shows instead (the product name is fmc).
 pub const HINT: &str = "fmc only displays UTF-8 text and images.";
+
+/// The line under the hint: the key that hands the file to its default app.
+pub const OPEN_HINT: &str = "Press o to open it in the default app.";
 
 pub struct BinaryView {
     root: View,
     title: Text,
     meta: Text,
     hint: Text,
+    open: Text,
 }
 
 impl BinaryView {
@@ -35,9 +39,9 @@ impl BinaryView {
                 .wrap(WrapMode::None)
                 .selectable(false)
         };
-        let (title, meta, hint) = (line(0), line(1), line(1));
-        root.add(&title).add(&meta).add(&hint);
-        Self { root, title, meta, hint }
+        let (title, meta, hint, open) = (line(0), line(1), line(1), line(1));
+        root.add(&title).add(&meta).add(&hint).add(&open);
+        Self { root, title, meta, hint, open }
     }
 
     pub fn root(&self) -> View {
@@ -56,6 +60,7 @@ impl BinaryView {
             p.text,
         ));
         self.hint.set_text(content(&[Seg::new(HINT, p.dim)], p.text));
+        self.open.set_text(content(&[Seg::new(OPEN_HINT, p.dim)], p.text));
     }
 }
 

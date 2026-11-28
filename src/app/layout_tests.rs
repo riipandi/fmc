@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use opentui::testing::TestApp;
 
 use super::*;
@@ -8,7 +6,7 @@ use super::*;
 fn panes(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root, None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root, None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     paint(app.app(), &mut model.borrow_mut(), &mut ui.borrow_mut());
     wire_mouse(&model, &ui);
@@ -256,7 +254,7 @@ fn the_welcome_tagline_and_menu_line_draw_at_80_and_60_by_24() {
     let (app, _, _) = panes(80);
     let lines = rows(&app);
     assert!(lines.iter().any(|row| row.contains("a quiet terminal file manager")), "80: the tagline is whole");
-    // The closing line is cut at the reader's edge at 80 columns, as Scouter's is (scouter-inventory.md, section 18).
+    // The closing line is cut at the reader's edge at 80 columns, as Scouter's is.
     assert!(lines.iter().any(|row| row.contains("Press ? for every key.  ·  Space")), "80: the closing line starts");
     let (app, _, _) = panes(60);
     let lines = rows(&app);

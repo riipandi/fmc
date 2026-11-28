@@ -1,4 +1,4 @@
-//! The reader's git sign strip (plan-00008): the open text's signs against the change base. A job asks for them when a
+//! The reader's git sign strip: the open text's signs against the change base. A job asks for them when a
 //! text is shown and on each browse tick, and an answer is kept only for the showing it was asked for.
 
 use std::path::Path;
@@ -23,7 +23,7 @@ pub fn request(m: &Model) {
     });
 }
 
-/// Keeps a job's answer for the text shown as `serial`. A git failure leaves no signs, with no notice (D5).
+/// Keeps a job's answer for the text shown as `serial`. A git failure leaves no signs, with no notice.
 pub fn apply(m: &mut Model, path: &Path, serial: u64, result: &Result<Vec<(u32, Sign)>, String>) {
     if let Shown::Text { path: shown, serial: shown_serial, signs, .. } = &mut m.shown
         && shown == path

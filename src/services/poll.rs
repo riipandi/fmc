@@ -23,10 +23,11 @@ pub fn browse(
             .filter_map(|(path, parents)| fs::list(&path, &parents).ok().map(|entries| (path, entries)))
             .collect();
         let marks = git::marks(&root);
+        let branch = git::branch(&root);
         let document = document.map(|(path, stamp)| {
             let reread = fs::reread(&path, &stamp);
             (path, reread)
         });
-        Event::BrowsePolled { root, chain, folders, marks, document }
+        Event::BrowsePolled { root, chain, folders, marks, branch, document }
     });
 }

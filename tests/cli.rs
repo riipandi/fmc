@@ -6,7 +6,7 @@ use std::process::Command;
 use assert_cmd::cargo::cargo_bin;
 use assert_cmd::prelude::*;
 
-/// A config folder that does not exist: no test reads the owner's `~/.config/fmc`, and every file is missing (A12).
+/// A config folder that does not exist: no test reads the owner's `~/.config/fmc`, and every file is missing.
 const NO_CONFIG: &str = "/nonexistent-fmc-test-config";
 
 fn fmc() -> Command {
@@ -30,7 +30,7 @@ fn fmc_on_tty(arg: &str) -> std::process::Output {
 fn help_prints_usage_and_points_to_the_keys() {
     let out = fmc().args(["the-louvre", "--help"]).assert().success().get_output().stdout.clone();
     let text = String::from_utf8(out).unwrap();
-    // The keys are on the `?` page, not here (the owner, 2026-11-27).
+    // The keys are on the `?` page, not here.
     let expected = "fmc — a minimal terminal file manager\n\n\
      Usage: fmc [file-or-directory]\n\n\
      Arguments:\n  \

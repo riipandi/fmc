@@ -71,14 +71,14 @@ fn design_md_lists_the_same_colors() {
     }
 }
 
-/// Every palette the app can show: Scouter's pair, and each bundled theme (plan-00015, phase 2).
+/// Every palette the app can show: Scouter's pair, and each bundled theme.
 fn shown_palettes() -> Vec<(String, Palette)> {
     let mut palettes = vec![("scouter dark".to_string(), DARK), ("scouter light".to_string(), LIGHT)];
     palettes.extend(catalog::bundled().into_iter().map(|theme| (theme.id, theme.palette)));
     palettes
 }
 
-/// The pairs a bundled theme is known to fall short of (plan-00015, A16), found when the catalog was added. The thresholds
+/// The pairs a bundled theme is known to fall short of, found when the catalog was added. The thresholds
 /// do not change: each listed pair is short of its threshold on purpose, until the owner changes the colour or the rule.
 /// A pair that is short and not listed fails the test, and so does a listed pair that is no longer short.
 const SHORT: &[(&str, &str)] = &[
@@ -191,7 +191,7 @@ fn tint_nudges_toward_white_on_dark_and_black_on_light() {
 
 #[test]
 fn the_page_is_tinted_only_in_the_terminals_own_mode() {
-    // A14: a forced mode that differs from the terminal paints the palette's fallback, not a tint of the terminal's.
+    // A forced mode that differs from the terminal paints the palette's fallback, not a tint of the terminal's.
     let dark_fallback = DARK.fallback_background;
     assert_eq!(&*page_background(Some("#101010"), Mode::Dark, Mode::Dark, dark_fallback), "#161616");
     assert_eq!(page_background(Some("#ffffff"), Mode::Light, Mode::Dark, dark_fallback), dark_fallback);

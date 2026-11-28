@@ -1,4 +1,4 @@
-//! Reads the user's themes from `themes/` in the config folder once, before the first frame (plan-00015, D7), as
+//! Reads the user's themes from `themes/` in the config folder once, before the first frame, as
 //! `services/settings.rs` reads the settings. The UI thread never reads the folder again.
 
 use std::ffi::OsString;

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `o` opens the selected row, or the shown file, with the macOS default app; a folder opens in Finder. The context menu gets an Open row for it, and the binary notice names the key.
+- `e` opens the browsed folder in the editor that `editor` in `settings.json` names (an app name or path); an empty `editor`, the default, opens it in Finder. `E` shows the selected row, or the shown file, in Finder. Both have context menu rows.
+- `O` opens a picker of the apps that open the selected row, or the shown file: the apps `open_with` in `settings.json` names for the file's pattern, then the apps macOS lists, then Finder. Context menus scroll when they are longer than the screen.
+- The pattern argument of `find`, `match`, `gmatch`, and `gsub` in a Lua file is highlighted as a Lua pattern.
+- JSON5 files (`.json5`), tree-sitter queries (`.scm`), `justfile`s, and Vim help files are highlighted. Vim help has no default name: `file_associations` takes `vimdoc` for a pattern such as `doc/*.txt`. `file_associations` accepts `json5`, `just`, `query`, and `vimdoc` as filetypes.
+
+### Changed
+
+- The footer's left side shows the browsed root and the git branch (`⎇ name`) on the files, reader, Settings, and changes screens from 60 columns up, in place of the selected file's path. A detached `HEAD` shows its short hash. The reader's header still names the file.
+
 ## [0.5.0] - 2026-11-28
 
 fmc writes a JSON Schema for `settings.json` and links the file to it, so an editor completes and checks your settings.

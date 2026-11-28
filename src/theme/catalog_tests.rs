@@ -54,7 +54,7 @@ fn the_catalog_holds_sixteen_bundled_themes_nine_dark_and_seven_light() {
 
 #[test]
 fn each_source_role_lands_in_its_fmc_token() {
-    // A9: the source value of each mapped role, read from the file itself and compared with the palette.
+    // The source value of each mapped role, read from the file itself and compared with the palette.
     for (id, text) in BUNDLED {
         let source: serde_json::Value = serde_json::from_str(text).unwrap();
         let role = |key: &str| source[key].as_str().unwrap().to_ascii_lowercase();

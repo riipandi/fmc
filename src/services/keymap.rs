@@ -1,5 +1,5 @@
-//! Reads `keymap.json` once, before the first frame, as `services/settings.rs` reads settings.json (plan-00015 phase 4).
-//! The UI thread never reads it again, so an edit applies at the next start (plan-00015, D13 (a)).
+//! Reads `keymap.json` once, before the first frame, as `services/settings.rs` reads settings.json.
+//! The UI thread never reads it again, so an edit applies at the next start.
 
 use std::ffi::OsString;
 use std::io::ErrorKind;

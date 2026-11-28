@@ -18,7 +18,7 @@ fn browsing() -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
 fn browsing_at(columns: u16) -> (TestApp, Rc<RefCell<Model>>, Rc<RefCell<Ui>>) {
     let app = TestApp::new(columns, 24);
     let root = PathBuf::from("/hogwarts");
-    let model = Rc::new(RefCell::new(new_model(app.app(), Path::new("/hogwarts"), root.clone(), None)));
+    let model = Rc::new(RefCell::new(new_model(app.app(), root.clone(), None)));
     let ui = Rc::new(RefCell::new(build(app.app(), model.borrow().palette())));
     {
         let mut m = model.borrow_mut();

@@ -1,8 +1,7 @@
 //! A Mermaid fence in rendered Markdown, drawn as its box diagram (`reader/mermaid.rs`) in the palette: box lines in
-//! `border`, labels in `text`, the fallback's reason in `muted` (plan-00006, D3), on the panel tone `fallback-background`
+//! `border`, labels in `text`, the fallback's reason in `muted`, on the panel tone `fallback-background`
 //! over the diagram's box. It is a measured widget, so layout
-//! offers it the reader's width and a resize measures it again; the renderer is not called on resize
-//! (`architecture.md`, "Mermaid in rendered Markdown").
+//! offers it the reader's width and a resize measures it again; the renderer is not called on resize.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -78,7 +77,7 @@ impl Diagram {
 impl Component for Diagram {
     fn paint(&self, painter: &mut Painter<'_>) {
         let drawn = self.fitted(painter.width() as usize);
-        // The fill goes first and spans the reader's width (owner request), so the diagram reads as one block like a code
+        // The fill goes first and spans the reader's width, so the diagram reads as one block like a code
         // block. A text run without a background keeps the cell's colour, so the text sits on the fill.
         painter.fill(0, 0, painter.width(), painter.height(), self.colors.fill);
         let last = drawn.rows.len().saturating_sub(1);

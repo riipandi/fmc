@@ -1,4 +1,4 @@
-//! Search marks in the rendered view (plan-00010, D3 and D5) and the text index they count (D1, D2, D4). OpenTUI's inline
+//! Search marks in the rendered view and the text index they count. OpenTUI's inline
 //! hook sees spans, not blocks, so the hook and the code renderers count their calls in document order: a call's
 //! number is its slot, and the index names each slot's block. The index walks the blocks in the same order, one at a
 //! time, through an offscreen Markdown widget that is never shown.
@@ -22,7 +22,7 @@ use super::syntax;
 /// The layer the marks go on, over the syntax layer (1), as the code view's search layer is (`ui/reader.rs`).
 pub const MARK_LAYER: u32 = 2;
 
-/// The styles of a mark: every match, and the match the view is on (`target_bg`, D3). A palette change rebuilds them.
+/// The styles of a mark: every match, and the match the view is on (`target_bg`). A palette change rebuilds them.
 pub struct Styles {
     pub text: Color,
     pub theme: Arc<SyntaxTheme>,
@@ -121,7 +121,7 @@ fn split(
 }
 
 /// The code renderer of a highlighted language, for the shown view: a fence with a match draws its code with the marks,
-/// and any other fence keeps the default block (`None`), so its look does not change (plan-00010 phase 1).
+/// and any other fence keeps the default block (`None`), so its look does not change.
 pub fn paint_code(block: &CodeBlock<'_>, paint: &Paint) -> Option<AnyWidget> {
     let slot = count_code(paint);
     let mark = paint.mark.borrow();
@@ -185,7 +185,7 @@ pub fn capture_code(block: &CodeBlock<'_>, captured: &RefCell<Vec<Captured>>) ->
 
 /// The index of `source`: each top-level block's rendered text, in document order. The blocks are built one at a time,
 /// with the link definitions above each, so a reference resolves as it does in the whole document. A block with no
-/// captured text that is a code or HTML block is counted as plain text (D5: not marked).
+/// captured text that is a code or HTML block is counted as plain text, and it is not marked.
 pub fn index(offscreen: &Markdown, captured: &RefCell<Vec<Captured>>, source: &str) -> Rendered {
     let split = markdown_blocks::split(source);
     let shown = headings::with_markers(source);
