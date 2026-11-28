@@ -96,6 +96,8 @@ pub enum Action {
     ToggleMark,
     /// `S` in the tree: clears every mark.
     ClearMarks,
+    /// `o` on a tree row or in the reader: opens the row, or the shown file, with the default app (plan-00017, D1, D5).
+    OpenDefault,
     /// `Ctrl+F` while a finder is open: flips the name matching between substring and fuzzy (plan-00006 D5).
     ToggleFuzzy,
     FocusDiff,
@@ -154,6 +156,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("D Delete", "move the marked rows, or the row, to the Trash"),
             ("s", "mark the row and move down"),
             ("S", "clear the marks"),
+            ("o", "open in the default app; a folder opens in Finder"),
         ],
     ),
     (
@@ -169,6 +172,7 @@ pub const KEY_SECTIONS: &[(&str, &[KeyRow])] = &[
             ("zz", "centre the match, or the middle line"),
             ("w", "wrap long lines"),
             ("m", "Markdown: rendered / source"),
+            ("o", "open the file in its default app"),
         ],
     ),
     (
@@ -240,6 +244,7 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Files", "v", &[Action::PasteFile]),
     ("Files", "s", &[Action::ToggleMark]),
     ("Files", "S", &[Action::ClearMarks]),
+    ("Files", "o", &[Action::OpenDefault]),
     ("Reader", "j k", &[Action::Scroll(1), Action::Scroll(-1)]),
     ("Reader", "/", &[Action::Search]),
     ("Reader", "n N p", &[Action::NextMatch, Action::PreviousMatch]),
@@ -248,6 +253,7 @@ const ROW_ACTIONS: &[(&str, &str, &[Action])] = &[
     ("Reader", "{ }", &[Action::Paragraph(-1), Action::Paragraph(1)]),
     ("Reader", "w", &[Action::ToggleWrap]),
     ("Reader", "m", &[Action::ToggleMarkdown]),
+    ("Reader", "o", &[Action::OpenDefault]),
     ("Changes", "d", &[Action::ToggleChanges]),
     ("Changes", "n N p", &[Action::Hunk(1), Action::Hunk(-1)]),
     ("Changes", "a", &[Action::ToggleScope]),

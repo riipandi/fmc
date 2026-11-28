@@ -76,6 +76,14 @@ impl Shown {
         matches!(self, Self::Text { .. } | Self::Keys { .. } | Self::Image { .. })
     }
 
+    /// The file the reader shows, when it shows one: a text, an image, or the binary notice (plan-00017, D5).
+    pub fn path(&self) -> Option<&Path> {
+        match self {
+            Self::Text { path, .. } | Self::Image { path, .. } | Self::Binary { path, .. } => Some(path),
+            _ => None,
+        }
+    }
+
     /// The text the reader shows, with its filetype and Markdown view: a file's, or the key page's.
     pub fn text(&self) -> Option<(&Document, Option<&'static str>, Option<View>)> {
         match self {

@@ -9,6 +9,7 @@ mod gutter;
 mod keys;
 mod layout;
 mod mouse;
+mod open;
 mod overlay;
 mod pages;
 mod poll;
@@ -409,6 +410,10 @@ pub fn run(
                 let mut u = ui.borrow_mut();
                 settings::event(cx.app(), &mut m, &mut u, event);
                 paint(cx.app(), &mut m, &mut u);
+            }
+            // A failed launch stays in the footer, so the reason can be read; a launch that worked clears like a copy does.
+            if matches!(event, Event::Launched { result: Ok(()), .. }) {
+                clear_message_later(cx.app(), &model, &ui);
             }
             repaint_after_layout(cx.app(), &model, &ui);
             poll::schedule(cx.app(), &model, &ui);

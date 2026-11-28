@@ -1,7 +1,7 @@
 //! Hands a file or folder to macOS (plan-00017, D1 to D3). Every launch is `/usr/bin/open` with argv only, and the apps
 //! that open a file come from one constant JXA script run by `/usr/bin/osascript`. No shell runs here: a path with
 //! quotes or `$(…)` is only a path.
-// No caller until plan-00017 phase 2 wires the open actions; that phase removes this line.
+// The picker (`list_apps`, `parse_apps`, `App`) and the Reveal and App forms have no caller yet; plan-00017 phases 3 and 4 wire them and remove this line.
 #![allow(dead_code)]
 
 use std::ffi::OsString;
@@ -29,7 +29,10 @@ function run(argv) {
   for (let i = 0; i < apps.count; i++) {
     const app = apps.objectAtIndex(i);
     const bid = $.NSBundle.bundleWithURL(app).bundleIdentifier;
-    out.push((ObjC.unwrap(app.path) === defPath ? '*' : ' ') + '\\t' + ObjC.unwrap(fm.displayNameAtPath(app.path)) + '\\t' + (bid.isNil() ? '-' : ObjC.unwrap(bid)) + '\\t' + ObjC.unwrap(app.path));
+    const mark = ObjC.unwrap(app.path) === defPath ? '*' : ' ';
+    const name = ObjC.unwrap(fm.displayNameAtPath(app.path));
+    const id = bid.isNil() ? '-' : ObjC.unwrap(bid);
+    out.push([mark, name, id, ObjC.unwrap(app.path)].join('\\t'));
   }
   return out.length ? out.join('\\n') : '(none)';
 }";

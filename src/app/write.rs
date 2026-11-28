@@ -28,6 +28,7 @@ const LISTED: usize = 5;
 /// What the tree's keys and the context menu ask for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Act {
+    Open,
     NewFile,
     NewFolder,
     Rename,
@@ -42,6 +43,7 @@ impl Act {
     /// The tree key that does the act (`keys/parser.rs`), shown at the menu row's right edge.
     fn hint(self) -> &'static str {
         match self {
+            Act::Open => "o",
             Act::NewFile => "a",
             Act::NewFolder => "A",
             Act::Rename => "r",
@@ -53,12 +55,13 @@ impl Act {
         }
     }
 
-    /// The menu's groups: creating, changing an entry, and deleting. A rule separates them.
+    /// The menu's groups: opening, creating, changing an entry, and deleting. A rule separates them.
     fn group(self) -> u8 {
         match self {
-            Act::NewFile | Act::NewFolder => 0,
-            Act::Delete => 2,
-            _ => 1,
+            Act::Open => 0,
+            Act::NewFile | Act::NewFolder => 1,
+            Act::Delete => 3,
+            _ => 2,
         }
     }
 }
@@ -137,7 +140,11 @@ pub enum Task {
 /// clipboard holds something (its target is the selected folder, or the root). Copy, Cut, and Paste name how many
 /// entries they take (plan-00014, D6).
 fn menu_rows(row: bool, clipped: usize, acted: usize) -> Vec<(Act, String, bool)> {
-    let mut rows = vec![(Act::NewFile, "New file…".into(), true), (Act::NewFolder, "New folder…".into(), true)];
+    let mut rows = Vec::new();
+    if row {
+        rows.push((Act::Open, "Open".into(), true));
+    }
+    rows.extend([(Act::NewFile, "New file…".into(), true), (Act::NewFolder, "New folder…".into(), true)]);
     if row {
         rows.extend([
             (Act::Rename, "Rename…".into(), true),
@@ -281,6 +288,7 @@ pub fn start(m: &mut Model, ui: &Ui, act: Act) {
                 Dialog::new("Duplicate", "Name the copy. It goes in the same folder.", true, &["Cancel", "OK"], 1);
             ask(m, ui, Task::Duplicate { source: entry.path, dir }, dialog, &copy);
         }
+        Act::Open => open::default_app(m),
         Act::Copy => take(m, false),
         Act::Cut => take(m, true),
         Act::Paste => paste(m),
@@ -464,7 +472,7 @@ fn relist_shown(m: &mut Model, folder: PathBuf) {
 }
 
 /// An entry's name as the footer shows it.
-fn label(path: &Path) -> String {
+pub fn label(path: &Path) -> String {
     display_label(&path.file_name().unwrap_or(OsStr::new("")).to_string_lossy())
 }
 

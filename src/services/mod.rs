@@ -138,6 +138,8 @@ pub enum Event {
     Written { kind: write::Kind, source: PathBuf, result: Result<PathBuf, String> },
     /// The Settings page's batch of changes was written, or refused with the reason (`app/settings.rs`).
     SettingsSaved { result: Result<(), String> },
+    /// A launch finished (`app/open.rs`): `name` is the footer's label for the target, `result` is `open`'s first error.
+    Launched { name: String, result: Result<(), String> },
 }
 
 /// Runs `work` on its own thread, which sends as many events as it likes through `send` (a search reports its

@@ -9,7 +9,7 @@ use fmc::keys::{Action, Focus};
 use fmc::text::display_label;
 
 use super::poll::{self, Chain, POLL, Tick};
-use super::{Model, Pending, Ui, changes, find, gutter, preview, reader, write};
+use super::{Model, Pending, Ui, changes, find, gutter, open, preview, reader, write};
 use crate::services::{self, Event, fs};
 use crate::ui::footer::Message;
 
@@ -264,6 +264,7 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::Written { kind, source, result } => write::written(m, *kind, source, result.clone()),
         // `app/settings.rs` answers it: a refused save takes a colour back, which needs the UI.
         Event::SettingsSaved { .. } => {}
+        Event::Launched { name, result } => open::launched(m, name, result),
     }
 }
 

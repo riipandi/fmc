@@ -405,6 +405,7 @@ fn the_menu_on_a_file_row_lists_the_acts_with_paste_disabled_until_a_copy() {
     assert_eq!(
         labels,
         [
+            ("Open", true),
             ("New file…", true),
             ("New folder…", true),
             ("Rename…", true),
@@ -436,8 +437,8 @@ fn the_menu_enables_paste_once_a_row_is_copied() {
 fn a_menu_row_starts_the_act_it_names_and_a_disabled_row_is_skipped() {
     let b = browsing(&["robert-langdon.md"]);
     b.app.press("space");
-    // New file, then New folder, then Rename: two moves down the menu.
-    for _ in 0..2 {
+    // Open, New file, then New folder: three moves down the menu, to Rename.
+    for _ in 0..3 {
         b.app.press("down");
     }
     b.app.press("return");
@@ -452,8 +453,8 @@ fn a_click_on_the_delete_row_asks_for_the_trash() {
     b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
     b.app.render();
     assert!(b.menu().is_some(), "a right-click opens the menu");
-    // Delete is the eighth item: after the new items, Rename, Copy, Cut, Paste, and Duplicate, and below two rules.
-    b.app.click(x + 2, y + 1 + 7 + 2);
+    // Delete is the ninth item: after Open, the new items, Rename, Copy, Cut, Paste, and Duplicate, below three rules.
+    b.app.click(x + 2, y + 1 + 8 + 3);
     assert_eq!(b.dialog().map(|d| d.title), Some("Move to Trash?".into()));
 }
 
@@ -480,8 +481,8 @@ fn a_click_on_the_copy_row_puts_the_row_on_the_clipboard() {
     let (x, y) = b.row(0);
     b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
     b.app.render();
-    // Copy is the fourth item, below the rule that opens the second group.
-    b.app.click(x + 2, y + 1 + 3 + 1);
+    // Copy is the fifth item, below the two rules that open the second and third groups.
+    b.app.click(x + 2, y + 1 + 4 + 2);
     assert!(b.menu().is_none());
     let clip = b.model.borrow().clipboard.clone().expect("the copy is on the clipboard");
     assert_eq!((clip.paths, clip.cut), (vec![b.root.join("robert-langdon.md")], false));
@@ -664,13 +665,13 @@ fn a_pointer_over_a_menu_row_selects_it_and_a_disabled_row_is_not_selected() {
     let (x, y) = b.row(0);
     b.app.mouse(MouseEventKind::Down(MouseButton::Right), x, y);
     b.app.render();
-    assert_eq!(b.menu_selected(), Some(0), "the first enabled row is selected when the menu opens");
-    // A rule opens the second group, so Copy (item 3) is drawn one row lower.
-    b.app.hover(x + 2, y + 1 + 3 + 1);
-    assert_eq!(b.menu_selected(), Some(3), "Copy is selected under the pointer");
-    // Paste is item 5 and disabled with nothing copied: the pointer over it leaves the selection where it was.
-    b.app.hover(x + 2, y + 1 + 5 + 1);
-    assert_eq!(b.menu_selected(), Some(3));
+    assert_eq!(b.menu_selected(), Some(0), "the first enabled row, Open, is selected when the menu opens");
+    // Rules open the second and third groups, so Copy (item 4) is drawn two rows lower.
+    b.app.hover(x + 2, y + 1 + 4 + 2);
+    assert_eq!(b.menu_selected(), Some(4), "Copy is selected under the pointer");
+    // Paste is item 6 and disabled with nothing copied: the pointer over it leaves the selection where it was.
+    b.app.hover(x + 2, y + 1 + 6 + 2);
+    assert_eq!(b.menu_selected(), Some(4));
 }
 
 #[test]

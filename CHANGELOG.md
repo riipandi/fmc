@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `o` opens the selected row, or the shown file, with the macOS default app; a folder opens in Finder. The context menu gets an Open row for it, and the binary notice names the key.
+
 ## [0.5.0] - 2026-11-28
 
 fmc writes a JSON Schema for `settings.json` and links the file to it, so an editor completes and checks your settings.

@@ -1,16 +1,17 @@
 ---
 status: in-progress
 created: 2026-11-28T14:48:05+07:00
-updated: 2026-11-28T15:02:02+0700
+updated: 2026-11-28T15:08:34+07:00
+
 
 phases:
     - id: 1
       title: The launch service
-      status: committed
+      status: committed (12fdaa1)
       note: —
     - id: 2
       title: RI-14, open with the default app
-      status: pending
+      status: committed
       note: —
     - id: 3
       title: RI-15, the editor setting and the folder in the editor or Finder
