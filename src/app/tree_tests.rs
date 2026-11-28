@@ -127,3 +127,30 @@ fn brackets_move_the_list_by_the_sidebar_jump() {
     jump(&mut model.borrow_mut(), -1);
     assert_eq!(model.borrow().browser.selected(), root.join("owls.txt"));
 }
+
+#[test]
+fn going_up_a_folder_clears_the_branch_until_the_next_poll_names_the_new_root() {
+    let (_app, model, ui) = browsing();
+    let root = PathBuf::from("/hogwarts");
+    let poll = Event::BrowsePolled {
+        root: root.clone(),
+        chain: false,
+        folders: Vec::new(),
+        marks: Ok(None),
+        branch: Some("hogwarts".into()),
+        document: None,
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &poll);
+    act(&mut model.borrow_mut(), Action::GoUp);
+    assert_eq!(model.borrow().branch, None, "the old root's branch does not show over the new root");
+    let stale = Event::BrowsePolled {
+        root: root.clone(),
+        chain: false,
+        folders: Vec::new(),
+        marks: Ok(None),
+        branch: Some("hogwarts".into()),
+        document: None,
+    };
+    apply(&mut model.borrow_mut(), &ui.borrow(), &stale);
+    assert_eq!(model.borrow().branch, None, "a poll of the old root does not set the branch");
+}

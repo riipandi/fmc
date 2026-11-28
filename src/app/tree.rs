@@ -120,6 +120,8 @@ fn go_up(m: &mut Model) {
     let height = m.browser.height();
     m.browser = Browser::new(Tree::new(parent.clone()));
     m.browser.set_height(height);
+    // The branch belongs to the root it was read for: a stale one never shows until the next poll answers.
+    m.branch = None;
     m.pending = Some(Pending { target: root, expand: true, open: false });
     list(m, parent);
     refresh_marks(m);
