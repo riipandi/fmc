@@ -133,13 +133,54 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
             track,
             Focus::Reader,
             |m, u, rows| {
-                bar_box(m, u).scroll_by(0.0, rows as f64);
+                if hex_bar(m) {
+                    hex::scroll(m, rows);
+                } else {
+                    bar_box(m, u).scroll_by(0.0, rows as f64);
+                }
             },
             |m, u, row| {
-                bar_box(m, u).scroll_to(0.0, row as f64);
+                if hex_bar(m) {
+                    hex::to_row(m, row);
+                } else {
+                    bar_box(m, u).scroll_to(0.0, row as f64);
+                }
             },
         );
     }
+    // A press on a notice's button runs its key's action; the press stops here, so the pane's focus is the action's.
+    for (button, action) in ui.borrow().binary.buttons() {
+        let (model, ui) = (model.clone(), ui.clone());
+        button.on_mouse(move |cx, event| {
+            if event.kind != MouseEventKind::Down(MouseButton::Left) {
+                return;
+            }
+            cx.stop_propagation();
+            let mut m = model.borrow_mut();
+            match action {
+                Action::OpenAsHex => hex::open_shown(&mut m),
+                Action::OpenAsText => reader::open_as_text(&mut m),
+                Action::OpenDefault => open::default_app(&mut m),
+                _ => {}
+            }
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        });
+    }
+    // The hex view is no scroll box: the wheel moves its rows.
+    let hex_view = ui.borrow().hex.widget();
+    hex_view.on_mouse({
+        let (model, ui) = (model.clone(), ui.clone());
+        move |cx, event| {
+            let rows = match event.kind {
+                MouseEventKind::ScrollUp => -1,
+                MouseEventKind::ScrollDown => 1,
+                _ => return,
+            };
+            let mut m = model.borrow_mut();
+            hex::scroll(&mut m, rows);
+            paint(cx.app(), &mut m, &mut ui.borrow_mut());
+        }
+    });
 
     // A tap on a footer hint presses the hint's key through the key path, so it runs the same Action.
     // `^q` has no tap.
@@ -169,6 +210,11 @@ pub fn wire_mouse(model: &Rc<RefCell<Model>>, ui: &Rc<RefCell<Ui>>) {
     wire_gutter(model, ui, &preview_gutter, |u| &u.preview_viewer);
 
     layout::wire(model, ui);
+}
+
+/// Whether the reader's bar moves the hex view: it shows, and no finder preview or changes body takes the bar.
+fn hex_bar(m: &Model) -> bool {
+    m.shown.is_hex() && m.finder.is_none() && !changes::body_shows(m)
 }
 
 /// A wheel over a gutter scrolls the box that holds its text, one row or one column a step.

@@ -1,5 +1,6 @@
 //! The `:` command line, where `:q` quits as in Neovim: one line in the footer. `q`, `q!`, `qa`, `qa!`, and
-//! `quit` quit on Enter; Esc or an empty Enter cancels; anything else is a notice.
+//! `quit` quit on Enter; Esc or an empty Enter cancels; in the hex view any other line is an offset to go to, and
+//! elsewhere it is a notice.
 
 use fmc::keys::Key;
 use fmc::line_edit::{Line, edit_of, is_text};
@@ -46,6 +47,8 @@ fn run(m: &mut Model, text: &str) -> bool {
     match text.trim() {
         "" => false,
         "q" | "q!" | "qa" | "qa!" | "quit" => true,
+        // In the hex view any other line is an offset to go to.
+        other if super::hex::go_to(m, other) => false,
         other => {
             m.message = Some(Message { text: format!("Not a command: {other}"), error: true });
             false

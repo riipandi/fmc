@@ -65,6 +65,7 @@ fn reading(dir: &Path, git_gutter: bool) -> (TestApp, Rc<RefCell<Model>>, Rc<Ref
             stamp: Some(String::new()),
             serial,
             signs: Vec::new(),
+            lossy: None,
         };
         if m.git_gutter && m.in_repo {
             apply(&mut m, &path, serial, &git::signs(&path));
@@ -149,6 +150,7 @@ fn an_answer_for_another_showing_or_file_is_dropped() {
         stamp: Some(String::new()),
         serial: 2,
         signs: Vec::new(),
+        lossy: None,
     };
     let added = Ok(vec![(0, Sign::Added)]);
     apply(&mut m, &path, 1, &added);

@@ -23,9 +23,24 @@ const MIN_LOCATION_COLUMNS: usize = 16;
 /// What the reader shows, for the facts on the right.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DocumentInfo {
-    Text { lines: usize, language: String, truncated: bool, rendered: Option<bool> },
-    Image { width: u32, height: u32, format: String },
-    Binary { size: String },
+    Text {
+        lines: usize,
+        language: String,
+        truncated: bool,
+        rendered: Option<bool>,
+    },
+    Image {
+        width: u32,
+        height: u32,
+        format: String,
+    },
+    Binary {
+        size: String,
+    },
+    /// The hex view: the file's size.
+    Hex {
+        size: String,
+    },
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -238,6 +253,10 @@ impl FooterState {
                 facts.push(Fact { key: "size", segments: muted(format!("{width}×{height}")) });
                 facts.push(Fact { key: "language", segments: muted(format.clone()) });
             }
+            (Mode::Browse, Some(DocumentInfo::Hex { size }), _) => {
+                facts.push(Fact { key: "size", segments: muted(size.clone()) });
+                facts.push(Fact { key: "language", segments: muted("hex".into()) });
+            }
             (Mode::Browse, Some(DocumentInfo::Binary { size }), _) => {
                 facts.push(Fact { key: "size", segments: muted(size.clone()) });
                 facts.push(Fact { key: "language", segments: muted("binary".into()) });
@@ -316,9 +335,10 @@ impl FooterState {
                 let sidebar_hidden = self.sidebar_hidden;
                 let shown = match &self.document {
                     Some(DocumentInfo::Text { rendered, .. }) => {
-                        Shown { markdown: *rendered, image: false, open, sidebar_hidden }
+                        Shown { markdown: *rendered, open, sidebar_hidden, ..Shown::default() }
                     }
-                    Some(DocumentInfo::Image { .. }) => Shown { markdown: None, image: true, open, sidebar_hidden },
+                    Some(DocumentInfo::Image { .. }) => Shown { image: true, open, sidebar_hidden, ..Shown::default() },
+                    Some(DocumentInfo::Hex { .. }) => Shown { hex: true, open, sidebar_hidden, ..Shown::default() },
                     _ => Shown { open, sidebar_hidden, ..Shown::default() },
                 };
                 hints_for(self.mode, self.pane, self.wrap, all_files, shown)

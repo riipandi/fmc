@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A binary file, or a text file that is not UTF-8, can open as text or in a hex view: `t` or `X` on its notice, or a click on the notice's buttons, and either key switches between the two. The text is the first 1 MiB, with `�` for bytes that are not UTF-8 and symbols such as `␀` for control bytes. The hex view shows the offset, the bytes in hex coloured by kind, and an ASCII column, and the row width follows the pane. Only the rows on screen are read, so a file of several gigabytes opens, scrolls, and jumps at once. `:` with an offset (`:0x1f40`, `:8000`, `:50%`) jumps there, and `/` searches the whole file for a string, ignoring case, with `n` and `N` for the next and previous hit. Scouter's notice has no action, and it shows a file that is not UTF-8 as a footer error.
+
 ## [0.9.0] - 2026-11-28
 
 The rendered Markdown view draws local images as pictures, from Markdown and from HTML `<img>` and `<picture>` blocks, and the changes screen no longer fails when an old index folder is in the way.

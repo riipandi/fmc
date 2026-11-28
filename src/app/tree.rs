@@ -252,7 +252,8 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
                     reader::show_text(m, ui, path, document.clone(), stamp.clone())
                 }
                 Ok(fs::Opened::Image { info, bytes }) => reader::show_image(m, ui, path, info.clone(), bytes),
-                Ok(fs::Opened::Binary { size }) => reader::show_binary(m, path, *size),
+                Ok(fs::Opened::Binary { size, refusal }) => reader::show_binary(m, path, *size, *refusal),
+                Ok(fs::Opened::Lossy { document, size }) => reader::show_lossy(m, ui, path, document.clone(), *size),
                 Err(text) => {
                     m.focus_reader_on_open = false;
                     m.restore = None;
@@ -274,6 +275,8 @@ pub fn apply(m: &mut Model, ui: &Ui, event: &Event) {
         Event::StateSaved { result } => remember::saved(m, result),
         Event::Launched { done, result } => open::launched(m, done, result),
         Event::Apps { target, result } => open::listed(m, target, result),
+        Event::Block { path, index, result } => super::hex::block(m, path, *index, result),
+        Event::HexFound { path, search, result } => super::hex::found(m, path, *search, result),
     }
 }
 

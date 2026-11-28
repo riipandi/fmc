@@ -1,6 +1,7 @@
-//! The binary notice (Scouter `src/reader/binary-view.ts`): a centred block with the file's name and size, and what
-//! the reader does show.
+//! The binary notice (Scouter `src/reader/binary-view.ts`): a centred block with the file's name and size, what the
+//! reader does show, and the choices it offers instead, as buttons a key or a click takes.
 
+use fmc::keys::Action;
 use fmc::theme::Palette;
 use opentui::prelude::*;
 
@@ -9,15 +10,19 @@ use super::styled::{Seg, content};
 /// The line under the title: what the reader shows instead (the product name is fmc).
 pub const HINT: &str = "fmc only displays UTF-8 text and images.";
 
-/// The line under the hint: the key that hands the file to its default app.
-pub const OPEN_HINT: &str = "Press o to open it in the default app.";
+/// The choices under the hint: the key, what it does, and the action a click runs.
+pub const CHOICES: &[(&str, &str, Action)] = &[
+    ("t", "as text", Action::OpenAsText),
+    ("X", "hex view", Action::OpenAsHex),
+    ("o", "open in the default app", Action::OpenDefault),
+];
 
 pub struct BinaryView {
     root: View,
     title: Text,
     meta: Text,
     hint: Text,
-    open: Text,
+    buttons: Vec<Text>,
 }
 
 impl BinaryView {
@@ -39,9 +44,24 @@ impl BinaryView {
                 .wrap(WrapMode::None)
                 .selectable(false)
         };
-        let (title, meta, hint, open) = (line(0), line(1), line(1), line(1));
-        root.add(&title).add(&meta).add(&hint).add(&open);
-        Self { root, title, meta, hint, open }
+        let (title, meta, hint) = (line(0), line(1), line(1));
+        let row = View::new(app).row().height(1).shrink(0.0).margin_edge(Edge::Top, 1);
+        let buttons: Vec<Text> = CHOICES
+            .iter()
+            .enumerate()
+            .map(|(index, _)| {
+                let button = Text::new(app, "")
+                    .height(1)
+                    .shrink(0.0)
+                    .wrap(WrapMode::None)
+                    .selectable(false)
+                    .margin_edge(Edge::Left, if index == 0 { 0 } else { 3 });
+                row.add(&button);
+                button
+            })
+            .collect();
+        root.add(&title).add(&meta).add(&hint).add(&row);
+        Self { root, title, meta, hint, buttons }
     }
 
     pub fn root(&self) -> View {
@@ -52,15 +72,26 @@ impl BinaryView {
         self.root.visible(visible);
     }
 
-    /// Paints the notice for `name` (already display-safe) and `size` (already formatted).
-    pub fn paint(&self, name: &str, size: &str, p: &Palette) {
-        self.title.set_text(content(&[Seg::new("Binary files are not supported.", p.text).bold()], p.text));
+    /// Each choice's button, with the action a click on it runs.
+    pub fn buttons(&self) -> Vec<(Text, Action)> {
+        self.buttons.iter().cloned().zip(CHOICES.iter().map(|(_, _, action)| *action)).collect()
+    }
+
+    /// Paints the notice: `title` says why the reader refused the file, `name` is already display-safe, and `size` is
+    /// already formatted.
+    pub fn paint(&self, title: &str, name: &str, size: &str, p: &Palette) {
+        self.title.set_text(content(&[Seg::new(title, p.text).bold()], p.text));
         self.meta.set_text(content(
             &[Seg::new(name, p.accent_soft), Seg::new("  ·  ", p.ignored), Seg::new(size, p.muted)],
             p.text,
         ));
         self.hint.set_text(content(&[Seg::new(HINT, p.dim)], p.text));
-        self.open.set_text(content(&[Seg::new(OPEN_HINT, p.dim)], p.text));
+        for (button, (key, label, _)) in self.buttons.iter().zip(CHOICES) {
+            button.set_text(content(
+                &[Seg::new(*key, p.accent_soft).bold(), Seg::new(format!(" {label}"), p.dim)],
+                p.text,
+            ));
+        }
     }
 }
 
