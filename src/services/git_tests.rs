@@ -476,3 +476,19 @@ fn a_renamed_file_is_diffed_from_its_old_path() {
     fs::write(dir.path().join("incantations.txt"), "Hermione Granger\nLeigh Teabing\nSophie Neveu\n").unwrap();
     assert_eq!(signs(&dir.path().join("incantations.txt")), Ok(vec![(1, Sign::Modified)]));
 }
+
+#[test]
+fn a_copy_folder_left_by_an_earlier_process_is_skipped() {
+    let first = create_copy_dir().unwrap();
+    let name = first.file_name().unwrap().to_string_lossy().into_owned();
+    let (prefix, number) = name.rsplit_once('-').unwrap();
+    let taken = first.with_file_name(format!("{prefix}-{}", number.parse::<u64>().unwrap() + 1));
+    fs::create_dir(&taken).unwrap();
+    let next = create_copy_dir().unwrap();
+    assert_ne!(next, taken);
+    assert!(next.is_dir());
+    for dir in [&first, &taken, &next] {
+        let _ = fs::remove_dir(dir);
+    }
+    copies().retain(|dir| dir != &first && dir != &next);
+}

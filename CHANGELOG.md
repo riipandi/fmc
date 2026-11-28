@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A local image that is a paragraph of its own draws as its picture in the rendered Markdown view. An HTML `<img>` or `<picture>` block draws its picture too, with its `width` attribute, its dark-theme source in the dark theme, and centring with `align="center"`. Remote images, SVG, and files that are missing or cannot be decoded keep their box with the reason.
 
+### Fixed
+
+- The changes screen no longer fails with "File exists" when an earlier fmc left its temporary index folder behind and the system reused its process id.
+
 ## [0.8.0] - 2026-11-28
 
 The rendered Markdown view shows an image paragraph as a box with its alt text, size, and format, and Enter or a click opens the picture.
